@@ -54,9 +54,12 @@ import {useControladorAgendar} from "./fluxos/agendar/ControladorAgendar";
 import type {IntencoesAgendamento} from "./fluxos/agendar/intencao-agendamento";
 import type {PortaRascunhoAgendamento} from "@/components/conversa/porta-rascunho-agendamento";
 import type {RespostaDoCompositor} from "@/components/conversa/respostas-rapidas";
+import type {AgendadaNoFio} from "@/server/inbox/agendadas-leitura";
+export interface ContextoCartoesNoFio{agora:Date;aoEditar?(agendada:AgendadaNoFio,origem?:HTMLElement):void}
 export interface PropsConversaAberta {
   item: ItemListaInbox | null;
   tarefasNoFio?: TarefaPainel[];
+  cartoesNoFio?(contexto:ContextoCartoesNoFio): ReactNode;
   aoCriarTarefa?: () => void;
   aoEditarTarefa?: (t:TarefaPainel) => void;
   pedidoNota?: number;
@@ -112,7 +115,7 @@ export function podeEnviarNaConversa(item: Pick<ItemListaInbox, "status">, podeE
 }
 
 const TAREFAS_FIO_VAZIAS:TarefaPainel[]=[];
-export function ConversaAberta({ item, tarefasNoFio=TAREFAS_FIO_VAZIAS, aoCriarTarefa, aoEditarTarefa, pedidoNota, versaoInsights, podeUsarInsights=false, aoPortaRascunhoInsight, intencoesAgendamento, pedidoAgendamento, aoPedidoAgendamentoConsumido, podeLerAgendamento=false, tarefaEmEdicaoId, usuario, fuso, conversa, podeEnviar, falhaPermissao, destinos, aoVoltar, aoAlternarPainel, painelAberto, painelAuto, aoMudar, aoTransferirConcluido, agoraInicial, aria, leituraPainel, bloquearDecisoesAria = false }: PropsConversaAberta) {
+export function ConversaAberta({ item, tarefasNoFio=TAREFAS_FIO_VAZIAS, cartoesNoFio, aoCriarTarefa, aoEditarTarefa, pedidoNota, versaoInsights, podeUsarInsights=false, aoPortaRascunhoInsight, intencoesAgendamento, pedidoAgendamento, aoPedidoAgendamentoConsumido, podeLerAgendamento=false, tarefaEmEdicaoId, usuario, fuso, conversa, podeEnviar, falhaPermissao, destinos, aoVoltar, aoAlternarPainel, painelAberto, painelAuto, aoMudar, aoTransferirConcluido, agoraInicial, aria, leituraPainel, bloquearDecisoesAria = false }: PropsConversaAberta) {
   const [portaAgendamento,setPortaAgendamento]=useState<PortaRascunhoAgendamento|null>(null);
   const publicarPortaAgendamento=useCallback((p:PortaRascunhoAgendamento|null)=>setPortaAgendamento(p),[]);
   const tentativasNota = useChavesPorAlvo();
@@ -216,6 +219,7 @@ export function ConversaAberta({ item, tarefasNoFio=TAREFAS_FIO_VAZIAS, aoCriarT
             );
           }}
         />
+        {cartoesNoFio && item && !conversa.temMaisDepois && !janelaDesconhecida && <div data-slot="cartoesNoFio">{cartoesNoFio({ agora: new Date(agora), aoEditar: acoes?.abrirEditarAgendada })}</div>}
       </div>
       {item ? (
         <RodapeConversa
@@ -272,5 +276,5 @@ function CoordenadorAcoesConversa({ item,intencoesAgendamento,pedidoAgendamento,
   });
   const opcoes = opcoesTransferir({ usuario, grupo: item.grupo, atendimento: { finalidade: item.finalidade as Setor, responsavelId: item.responsavelId, encerrado: item.status === "ENCERRADO", linhaComercial: item.linhaComercial, donoLinhaId: item.numeroDonoId }, setoresDoNumero: item.setoresDoNumero, ariaPodeDevolver: aria?.podeDevolver === true });
   const identidadeTransferir = JSON.stringify([usuario.id, usuario.papeis, item.finalidade, item.numeroId, item.contatoId, item.numeroDonoId, item.linhaComercial, item.status === "ENCERRADO"]);
-  return <ControladorTransferir atendimentoId={item.id} identidade={identidadeTransferir} responsavelAtualId={item.responsavelId} opcoes={opcoes} destinos={destinos} executar={executarTransferenciaInbox} carregarPessoas={carregarPessoasTransferir} carregarResumo={carregarResumoTransferir} aoConcluir={mensagem => { aoTransferirConcluido?.(mensagem); aoMudar(); }} renderizar={({ transferir, dialogo }) => <ControladorDevolverAria permitido={aria?.podeDevolver === true && !item.grupo && item.status !== "ENCERRADO"} atendimentoId={item.id} dica={linhaAria?.dica ?? null} aoMudar={aoMudar}>{(devolver) => renderizar({ ...acoes, transferir, refDoMenu:intencoesAgendamento?agendamento.refDoMenu:undefined, feedback:<>{acoes.feedback}{agendamento.feedback}</>, menu: acoes.menu.filter(i => i.id !== "atribuir" && i.id !== "devolver"), dialogos: <>{acoes.dialogos}{dialogo}{agendamento.dialogo}</> }, devolver, handoff, tomada)}</ControladorDevolverAria>} />;
+  return <ControladorTransferir atendimentoId={item.id} identidade={identidadeTransferir} responsavelAtualId={item.responsavelId} opcoes={opcoes} destinos={destinos} executar={executarTransferenciaInbox} carregarPessoas={carregarPessoasTransferir} carregarResumo={carregarResumoTransferir} aoConcluir={mensagem => { aoTransferirConcluido?.(mensagem); aoMudar(); }} renderizar={({ transferir, dialogo }) => <ControladorDevolverAria permitido={aria?.podeDevolver === true && !item.grupo && item.status !== "ENCERRADO"} atendimentoId={item.id} dica={linhaAria?.dica ?? null} aoMudar={aoMudar}>{(devolver) => renderizar({ ...acoes, transferir, refDoMenu:intencoesAgendamento?agendamento.refDoMenu:undefined, abrirEditarAgendada:intencoesAgendamento?agendamento.abrirEditar:undefined, feedback:<>{acoes.feedback}{agendamento.feedback}</>, menu: acoes.menu.filter(i => i.id !== "atribuir" && i.id !== "devolver"), dialogos: <>{acoes.dialogos}{dialogo}{agendamento.dialogo}</> }, devolver, handoff, tomada)}</ControladorDevolverAria>} />;
 }
