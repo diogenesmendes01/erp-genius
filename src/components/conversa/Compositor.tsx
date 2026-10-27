@@ -1,8 +1,9 @@
 "use client";
 import type { PublicarPortaRascunhoInsight } from "./rascunho-insight";
 
+import Link from "next/link";
 import { Suspense, lazy, useCallback, useEffect, useId, useLayoutEffect, useRef, useState, type ChangeEvent, type KeyboardEvent } from "react";
-import { IconCalendarEvent, IconMicrophone, IconMoodSmile, IconPaperclip, IconPlayerStop, IconSend, IconTrash } from "@tabler/icons-react";
+import { IconCalendarEvent, IconChevronLeft, IconFileCheck, IconMicrophone, IconMoodSmile, IconPaperclip, IconPlayerStop, IconSend, IconTrash } from "@tabler/icons-react";
 import { comandoDaNota, consultaMencaoNoCursor, tokensAposEdicao, type CandidatoMencao, type TokenMencao } from "@/lib/mencoes-nota";
 import type { Resultado } from "@/server/_shared/resultado";
 import { executarAcaoCliente } from "@/lib/acao-cliente";
@@ -14,6 +15,8 @@ import { CLASSE_ITEM_MENU, CLASSE_PAINEL_MENU } from "@/components/Menu";
 import { aplicarVariaveisResposta, respostasDoAtalho, type RespostaDoCompositor } from "./respostas-rapidas";
 import { AVISO_RECURSO_MOTOR, mimeVozAceito, type RecursoMotor } from "./recursos-canal";
 import { ITENS_ANEXO, type IdItemAnexo } from "./itens-anexo";
+import type { PropostaAnexavel } from "@/server/whatsapp/proposta-atendimento";
+import { formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
 
 import { useRevisoesRascunhos, type RevisoesRascunhos } from "./rascunhos-conversa";
 
@@ -24,6 +27,7 @@ export const CARREGANDO_ENVIO = "Carregando…";
 export const FALHA_PERMISSAO_ENVIO = "Não foi possível verificar se você pode enviar nesta conversa.";
 export const AVISO_NOTA = "Nota interna: fica só para a equipe e não é enviada ao contato.";
 export const AVISO_ANEXO_EM_BREVE = "O envio deste tipo pelo Inbox ainda não está disponível.";
+export const SEM_PROPOSTAS = "Nenhuma proposta anexada a esta oportunidade.";
 const MAX_BYTES_MIDIA = 10 * 1024 * 1024;
 
 export interface PropsCompositor {
@@ -45,7 +49,8 @@ export interface PropsCompositor {
   aoPortaRascunhoInsight?: PublicarPortaRascunhoInsight;
   contido?: boolean;
   respostas?: readonly RespostaDoCompositor[];
-  propostas?: { oportunidadeId: string | null; aoAbrir: () => void };
+  propostas?: { oportunidadeId: string | null; itens: readonly PropostaAnexavel[]; fuso?: string | null };
+  aoEnviarProposta?(documentoId: string, chaveIdempotencia?: string): Promise<Resultado<unknown>>;
   variaveisResposta?: { nome?: string | null; responsavel?: string | null; curso?: string | null };
 }
 
@@ -64,7 +69,7 @@ function formatoDeVoz(): string | null {
   return ["audio/ogg;codecs=opus", "audio/mp4"].find((t) => mimeVozAceito(t) && MediaRecorder.isTypeSupported(t)) ?? null;
 }
 
-export function Compositor({ atendimentoId, pedidoFoco, aoCampoResponder, modo, bloqueioExterno = false, podeEnviar, falhaPermissao, capacidades, aoEnviarTexto, aoEnviarMidia, aoNota, buscarMencoes, respostas = [], propostas, variaveisResposta = {}, tentativasNota, revisoesRascunhos, aoAgendar, aoPortaRascunhoInsight, contido = false }: PropsCompositor) {
+export function Compositor({ atendimentoId, pedidoFoco, aoCampoResponder, modo, bloqueioExterno = false, podeEnviar, falhaPermissao, capacidades, aoEnviarTexto, aoEnviarMidia, aoNota, buscarMencoes, respostas = [], propostas, aoEnviarProposta, variaveisResposta = {}, tentativasNota, revisoesRascunhos, aoAgendar, aoPortaRascunhoInsight, contido = false }: PropsCompositor) {
   const idAvisosAnexos = useId();
   const [texto, setTexto] = useState(() => lerRascunho(atendimentoId, modo));
   const [arquivo, setArquivo] = useState<File | null>(null);
@@ -72,6 +77,7 @@ export function Compositor({ atendimentoId, pedidoFoco, aoCampoResponder, modo, 
   const [enviando, setEnviando] = useState(false);
   const [emoji, setEmoji] = useState(false);
   const [anexos, setAnexos] = useState(false);
+  const [listaPropostas, setListaPropostas] = useState(false);
   const [gravando, setGravando] = useState(false);
   const entrada = useRef<HTMLTextAreaElement | null>(null);
   const focoAtendido=useRef<{atendimentoId:string;pedido:number}|null>(null);
@@ -93,6 +99,8 @@ export function Compositor({ atendimentoId, pedidoFoco, aoCampoResponder, modo, 
   const [opcaoMencao, setOpcaoMencao] = useState(0);
   const tentativasLocais = useChavesPorAlvo();
   const tentativas = tentativasNota ?? tentativasLocais;
+  const tentativasPropostas = useChavesPorAlvo();
+  const propostaDisponivel = !!propostas?.oportunidadeId && typeof aoEnviarProposta === "function";
   const revisoesLocais = useRevisoesRascunhos();
   const revisoes = revisoesRascunhos ?? revisoesLocais;
 
@@ -113,6 +121,7 @@ export function Compositor({ atendimentoId, pedidoFoco, aoCampoResponder, modo, 
     setEnviando(false);
     setEmoji(false);
     setAnexos(false);
+    setListaPropostas(false);
     setGravando(false);
   }
   useLayoutEffect(() => {
@@ -369,6 +378,24 @@ export function Compositor({ atendimentoId, pedidoFoco, aoCampoResponder, modo, 
     setAnexos(false);
   }
 
+  async function enviarProposta(documentoId: string) {
+    if (!contextoVigente() || !saidaPermitida() || nota || podeEnviar !== true || !aoEnviarProposta || enviando || emCurso.current.has(contexto)) return;
+    emCurso.current.add(contexto);
+    setEnviando(true);
+    setErro("");
+    try {
+      const tentativa = tentativasPropostas.para(JSON.stringify([atendimentoId, documentoId]));
+      const desfecho = await executarAcaoCliente(() => aoEnviarProposta(documentoId, tentativa.atual), { idempotente: true });
+      tentativa.depoisDo(desfecho);
+      if (!contextoVigente()) return;
+      if (desfecho.tipo === "ok") setListaPropostas(false);
+      else setErro(desfecho.mensagem);
+    } finally {
+      emCurso.current.delete(contexto);
+      if (contextoVigente()) setEnviando(false);
+    }
+  }
+
   function selecionarAnexo(item: IdItemAnexo) {
     if (!contextoVigente() || !saidaPermitida() || nota || podeEnviar !== true) return;
     if (item === "documento") abrirSeletor("*/*");
@@ -379,9 +406,9 @@ export function Compositor({ atendimentoId, pedidoFoco, aoCampoResponder, modo, 
       mudar("/");
       setAnexos(false);
       entrada.current?.focus();
-    } else if (item === "proposta" && propostas?.oportunidadeId && typeof propostas.aoAbrir === "function") {
+    } else if (item === "proposta" && propostaDisponivel) {
       setAnexos(false);
-      propostas.aoAbrir();
+      setListaPropostas(true);
     }
   }
   const vazio = !texto.trim() && !arquivo;
@@ -436,13 +463,13 @@ export function Compositor({ atendimentoId, pedidoFoco, aoCampoResponder, modo, 
         )}
         {!nota && (
           <>
-            <button type="button" aria-label="Anexar" aria-haspopup="menu" aria-expanded={anexos} onClick={() => setAnexos(!anexos)} className="grid h-11 w-11 shrink-0 place-items-center rounded-full text-gray-600 hover:bg-highlight">
+            <button type="button" aria-label="Anexar" aria-haspopup="menu" aria-expanded={anexos} onClick={() => { setListaPropostas(false); setAnexos(!anexos); }} className="grid h-11 w-11 shrink-0 place-items-center rounded-full text-gray-600 hover:bg-highlight">
               <IconPaperclip size={20} aria-hidden />
             </button>
             {anexos && (
               <div role="menu" aria-label="Anexar" className={`absolute bottom-12 left-0 z-20 grid w-[340px] max-w-[calc(100vw-32px)] grid-cols-3 gap-1 ${CLASSE_PAINEL_MENU}`}>
                 {ITENS_ANEXO.filter(i => i.id !== "resposta" || respostas.length > 0)
-                  .filter(i => i.id !== "proposta" || (!!propostas?.oportunidadeId && typeof propostas.aoAbrir === "function"))
+                  .filter(i => i.id !== "proposta" || propostaDisponivel)
                   .map(i => {
                     const Icone = i.icone;
                     const aviso = i.recurso ? (capacidades.includes(i.recurso) ? AVISO_ANEXO_EM_BREVE : AVISO_RECURSO_MOTOR) : null;
@@ -455,6 +482,31 @@ export function Compositor({ atendimentoId, pedidoFoco, aoCampoResponder, modo, 
                       {i.recurso && <small id={idAvisosAnexos + "-" + i.recurso} className="block px-2 pb-1 text-center text-xs text-gray-600">{aviso}</small>}
                     </div>;
                   })}
+              </div>
+            )}
+            {listaPropostas && propostaDisponivel && propostas?.oportunidadeId && (
+              <div role="dialog" aria-label="Enviar proposta" className={`absolute bottom-12 left-0 z-20 w-[340px] max-w-[calc(100vw-32px)] ${CLASSE_PAINEL_MENU}`}>
+                <div className="flex items-center gap-1 px-1 pb-1">
+                  <button type="button" aria-label="Voltar para anexos" onClick={() => { setListaPropostas(false); setAnexos(true); }} className="grid h-9 w-9 shrink-0 place-items-center rounded-full text-gray-600 hover:bg-highlight"><IconChevronLeft size={18} aria-hidden /></button>
+                  <p className="text-sm font-medium text-gray-800">Propostas da oportunidade</p>
+                </div>
+                {propostas.itens.length ? (
+                  <ul aria-label="Propostas da oportunidade" className="max-h-64 overflow-y-auto">
+                    {propostas.itens.map((d) => (
+                      <li key={d.id}>
+                        <button type="button" aria-label={`Enviar ${d.nome}`} disabled={enviando} aria-busy={enviando || undefined} onClick={() => void enviarProposta(d.id)} className={`${CLASSE_ITEM_MENU} w-full text-left text-gray-800 disabled:cursor-not-allowed disabled:opacity-50`}>
+                          <span aria-hidden className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-green-100 text-green-700"><IconFileCheck size={18} /></span>
+                          <span className="min-w-0 flex-1">
+                            <span className="block truncate text-sm font-medium">{d.nome}</span>
+                            <time dateTime={d.criadoEm} className="block text-xs text-gray-600">{formatarInstanteExibicao(d.criadoEm, propostas.fuso, "UTC", "data").texto}</time>
+                          </span>
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <EstadoVazio role="status" className="mx-1 mb-1" acao={<Link href={`/funil?o=${encodeURIComponent(propostas.oportunidadeId)}`} className="text-sm font-medium text-brand-700 underline">Abrir oportunidade</Link>}>{SEM_PROPOSTAS}</EstadoVazio>
+                )}
               </div>
             )}
           </>
