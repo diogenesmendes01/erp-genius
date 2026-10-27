@@ -4,13 +4,17 @@ import { normalizarNotaComMencoes, type TokenMencao } from "@/lib/mencoes-nota";
 import { notificarMencoesNaNota } from "@/server/inbox/mencoes";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
+import { Papel } from "@prisma/client";
+import { cancelarAgendadaInboxTx } from "@/server/inbox/agendadas-cancelamento";
 import { prisma } from "@/lib/prisma";
 import { avisarAtendimentoAtualizado } from "@/server/inbox/barramento";
 import { ChaveIdempotenciaSchema, ErroRegra, executarAcao, exigirSessao, registrarEvento, type Resultado } from "@/server/_shared";
 import { marcaIdempotencia, repeticaoIdempotente } from "@/server/_shared/idempotencia";
 import { exigirInstanteDoCampoLocal } from "@/server/_shared/campo-local";
-import { agendarMensagem, cancelarMensagemAgendada } from "@/server/crm/mensagens-agendadas";
+import { capacidadesCrm } from "@/server/crm/permissoes";
+import { cancelarMensagemAgendada } from "@/server/crm/mensagens-agendadas";
 import { atendimentoVisivel } from "./atendimentos";
+import { executarAgendadaInbox } from "@/server/inbox/agendadas-operacao-inbox";
 import type { NotaInternaThread } from "./consultas-inbox";
 import { notasInternasDoAtendimento } from "./notas-consulta";
 import { despacharFila } from "./despachante";
@@ -64,27 +68,48 @@ export async function notasDoAtendimento(atendimentoId: string): Promise<NotaInt
   return notasInternasDoAtendimento(id);
 }
 
-/** Número fixo do atendimento (o da conversa), sem conferir escopo: serve só para montar a entrada da repetição. */
-async function numeroDoAtendimento(atendimentoId: string): Promise<string | null> {
-  const a = await prisma.atendimentoWhatsApp.findUnique({ where: { id: atendimentoId }, select: { conversa: { select: { numeroId: true } } } });
-  return a?.conversa.numeroId ?? null;
+/** As ações invalidam as agendas somente depois do commit do núcleo. */
+function revalidarAgendadas() {
+  revalidatePath("/inbox");
+  revalidatePath("/tarefas");
+  revalidatePath("/inicio");
 }
 
-/** Agenda uma mensagem pelo atendimento (Fase 2, Tarefa 29, reusada): o acesso e o número vêm do atendimento; horário, opt-out e validade ficam em `agendarMensagem`. */
+/** Cria no destino resolvido pelo núcleo transacional, com D11 e replay autorizados atuais. */
 export async function agendarMensagemNoAtendimento(input: { atendimentoId: string; texto: string; quando: string; chaveIdempotencia?: string }): Promise<Resultado<{ id: string }>> {
   return executarAcao(async () => {
     const u = await exigirSessao();
     const atendimentoId = z.string().min(1).parse(input.atendimentoId);
-    const a = await atendimentoVisivel(u, atendimentoId, true);
-    // C3 da R2 do #267: com chave, o atendimento encerrado ou sem destinatário (opt-out) ainda segue para
-    // `agendarMensagem`, que procura a repetição antes de validar e só devolve a mensagem que este autor já
-    // agendou com a mesma entrada; qualquer outro caso cai nas mesmas validações e é recusado lá.
-    const numeroId = a && !a.encerradoEm ? a.numeroId : input.chaveIdempotencia ? await numeroDoAtendimento(atendimentoId) : null;
-    if (!numeroId) throw new ErroRegra("Atendimento não encontrado.");
-    const r = await agendarMensagem({ numeroId, atendimentoId, texto: input.texto, agendadaPara: input.quando, chaveIdempotencia: input.chaveIdempotencia });
-    if (!r.ok) throw new ErroRegra(r.erro);
-    revalidatePath("/inbox");
-    return r.dado!;
+    const r = await executarAgendadaInbox(prisma, u.id, {
+      tipo: "CRIAR", atendimentoId, texto: input.texto, agendadaPara: input.quando, chaveIdempotencia: input.chaveIdempotencia,
+    });
+    revalidarAgendadas();
+    return r;
+  });
+}
+
+/** Reagenda no fuso explícito exibido pelo Inbox; autorização e CAS pertencem ao núcleo. */
+export async function reagendarAgendamentoDoAtendimento(input: { atendimentoId: string; intencaoId: string; quandoLocal: string; fuso: string; chaveIdempotencia?: string }): Promise<Resultado<{ id: string }>> {
+  return executarAcao(async () => {
+    const u = await exigirSessao();
+    const atendimentoId = z.string().min(1).parse(input.atendimentoId);
+    const intencaoId = z.string().min(1).parse(input.intencaoId);
+    const agendadaPara = exigirInstanteDoCampoLocal(input.quandoLocal, input.fuso).toISOString();
+    const r = await executarAgendadaInbox(prisma, u.id, { tipo: "REAGENDAR", atendimentoId, intencaoId, agendadaPara, chaveIdempotencia: input.chaveIdempotencia });
+    revalidarAgendadas();
+    return r;
+  });
+}
+
+/** Torna elegível ao próximo ciclo, sem despacho ou relógio calculado pelo wrapper. */
+export async function enviarAgendamentoAgoraDoAtendimento(input: { atendimentoId: string; intencaoId: string; chaveIdempotencia?: string }): Promise<Resultado<{ id: string }>> {
+  return executarAcao(async () => {
+    const u = await exigirSessao();
+    const atendimentoId = z.string().min(1).parse(input.atendimentoId);
+    const intencaoId = z.string().min(1).parse(input.intencaoId);
+    const r = await executarAgendadaInbox(prisma, u.id, { tipo: "ENVIAR_AGORA", atendimentoId, intencaoId, chaveIdempotencia: input.chaveIdempotencia });
+    revalidarAgendadas();
+    return r;
   });
 }
 
@@ -106,13 +131,19 @@ export async function cancelarAgendamentoDoAtendimento(input: { atendimentoId: s
     const u = await exigirSessao();
     const atendimentoId = z.string().min(1).parse(input.atendimentoId);
     const intencaoId = z.string().min(1).parse(input.intencaoId);
+    if (u.papeis.includes(Papel.GERENTE_PEDAGOGICO) && !capacidadesCrm(u.papeis).has("tarefas.ver")) {
+      await cancelarAgendadaInboxTx(u, atendimentoId, intencaoId);
+      return null;
+    }
     const a = await atendimentoVisivel(u, atendimentoId);
     if (!a) throw new ErroRegra("Atendimento não encontrado.");
     const m = await prisma.intencaoMensagem.findFirst({ where: { id: intencaoId, atendimentoId }, select: { id: true } });
     if (!m) throw new ErroRegra("Mensagem agendada não encontrada.");
     return intencaoId;
   });
-  if (!pre.ok || !pre.dado) return pre.ok ? { ok: false, erro: "Mensagem agendada não encontrada." } : pre;
+  if (!pre.ok) return pre;
+  if (pre.dado === null) { revalidatePath("/inbox"); return { ok: true }; }
+  if (!pre.dado) return { ok: false, erro: "Mensagem agendada não encontrada." };
   const r = await cancelarMensagemAgendada(pre.dado);
   if (r.ok) revalidatePath("/inbox");
   return r;

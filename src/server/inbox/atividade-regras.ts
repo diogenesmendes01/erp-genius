@@ -8,12 +8,14 @@ export function autorDaAgendada(usuarioId:string,m:{autorId:string|null;origem:O
  if(m.autorId===usuarioId)return {tipo:"voce"};
  return {tipo:"pessoa",nome:m.autorNome?.trim()||"Sistema"};
 }
-/** Política operacional específica Inbox; não amplia o default HUMANO nem o escopo de equipe CRM. */
-export function podeGerirAgendadaInbox(u:Pick<UsuarioSessao,"id"|"papeis">,m:AgendadaParaCancelamento):boolean{
- if(!u.id||!capacidadesCrm(u.papeis).has("tarefas.ver")||!m.agendadaPara||m.passo!==null||m.passoComercial!==null)return false;
+export type ContextoCancelarAgendadaInbox={ativo:boolean;responsavelId:string|null};
+/** Contexto GP somente servidor; omiti-lo mantém o contrato333 anterior. */
+export function podeGerirAgendadaInbox(u:Pick<UsuarioSessao,"id"|"papeis">,m:AgendadaParaCancelamento,contexto?:ContextoCancelarAgendadaInbox):boolean{
+ if(!u.id||!m.agendadaPara||m.passo!==null||m.passoComercial!==null)return false;
+ if(!capacidadesCrm(u.papeis).has("tarefas.ver"))return u.papeis.includes(Papel.GERENTE_PEDAGOGICO)&&contexto?.ativo===true&&contexto.responsavelId===u.id&&m.origem==="HUMANO"&&m.autorId===u.id;
  const admin=u.papeis.includes(Papel.ADMINISTRADOR);
  return m.origem==="IA"?admin:admin||m.autorId===u.id;
 }
-export function podeCancelarAgendadaInbox(u:Pick<UsuarioSessao,"id"|"papeis">,m:AgendadaParaCancelamento):boolean{
- return (m.status==="PENDENTE"||m.status==="ADIADA")&&podeGerirAgendadaInbox(u,m);
+export function podeCancelarAgendadaInbox(u:Pick<UsuarioSessao,"id"|"papeis">,m:AgendadaParaCancelamento,contexto?:ContextoCancelarAgendadaInbox):boolean{
+ return (m.status==="PENDENTE"||m.status==="ADIADA")&&podeGerirAgendadaInbox(u,m,contexto);
 }

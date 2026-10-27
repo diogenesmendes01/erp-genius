@@ -10,8 +10,16 @@ import { contextoPessoas } from "./pessoas-atendimento";
 import { ehGerenteDoSetor, papeisDoSetor, type Setor } from "./setor";
 import { Papel } from "@prisma/client";
 import { resumoDaAriaParaNota } from "@/server/aria/resumo-nota";
+import { lerAgendadasDoAtendimento, type AgendadaNoFio } from "@/server/inbox/agendadas-leitura";
 
 const IdSchema = z.string().min(1);
+
+/** Agendadas do fio: DTO e capacidade atuais são calculados pelo leitor canônico. */
+export async function agendadasDoAtendimento(atendimentoId: string): Promise<AgendadaNoFio[]> {
+  const u = await exigirSessao();
+  const id = IdSchema.parse(atendimentoId);
+  return lerAgendadasDoAtendimento(prisma, u.id, id);
+}
 
 /**
  * Pessoas para os diálogos do cabeçalho (Task 31). `atribuir`: quem atende o setor do atendimento; `convidar`: qualquer

@@ -98,3 +98,5 @@ prisma/migrations/20260929130000_contato_whatsapp_nome_editado/migration.sql -te
 /prisma/migrations/20261025204000_inbox_tarefa_prioridade_baixa/migration.sql text eol=lf
 /prisma/migrations/20261025204100_inbox_tarefa_notificados/migration.sql text eol=lf
 /prisma/migrations/20261026040000_inbox_tarefa_recorrencia_d10/migration.sql text eol=lf
+/prisma/migrations/20261026020000_inbox_agendadas_atualizacao/migration.sql text eol=lf
+/prisma/migrations/20261026030000_inbox_agendadas_ciclo/migration.sql text eol=lf

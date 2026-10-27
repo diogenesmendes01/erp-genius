@@ -1,0 +1,27 @@
+import {describe,expect,it} from "vitest";
+import {Papel} from "@prisma/client";
+import {podeAlterarAgendadaNoInbox,type AtorAgendadaInbox,type AlvoAgendadaInbox,type ContextoAlterarAgendada} from "./agendadas-policy";
+const usuario=(papeis:Papel[]=[Papel.VENDEDOR]):AtorAgendadaInbox=>({id:"ator",nome:"Pessoa fictícia",papeis,ativo:true});
+const alvo=():AlvoAgendadaInbox=>({atendimentoId:"a",origem:"HUMANO",autorId:"ator",autorGerenteComercialId:null,status:"PENDENTE",agendadaPara:new Date("2030-01-02T15:00:00Z"),passo:null,passoComercial:null});
+const contexto=():ContextoAlterarAgendada=>({id:"a",responsavelId:"ator",encerradoEm:null,autorizadoEnviar:true,estadoAria:"humano",numeroAtivo:true,optOut:false});
+describe("D11: política específica de alteração de agendadas",()=>{
+ it("autor vendedor que assumiu altera a própria",()=>expect(podeAlterarAgendadaNoInbox(usuario(),alvo(),contexto())).toBe(true));
+ it("autor pedagógico sem tarefas.ver também altera após assumir",()=>expect(podeAlterarAgendadaNoInbox(usuario([Papel.GERENTE_PEDAGOGICO]),alvo(),contexto())).toBe(true));
+ it("gerente comercial altera mensagem de sua equipe quando é o responsável atual",()=>expect(podeAlterarAgendadaNoInbox(usuario([Papel.GERENTE_COMERCIAL]),{...alvo(),autorId:"colega",autorGerenteComercialId:"ator"},contexto())).toBe(true));
+ it("Admin responsável altera HUMANO de outro autor",()=>expect(podeAlterarAgendadaNoInbox(usuario([Papel.ADMINISTRADOR]),{...alvo(),autorId:"colega"},contexto())).toBe(true));
+ it("vendedor não ganha equipe por ser responsável",()=>expect(podeAlterarAgendadaNoInbox(usuario(),{...alvo(),autorId:"colega",autorGerenteComercialId:"ator"},contexto())).toBe(false));
+ it("gerente não altera outra equipe",()=>expect(podeAlterarAgendadaNoInbox(usuario([Papel.GERENTE_COMERCIAL]),{...alvo(),autorId:"colega",autorGerenteComercialId:"outro"},contexto())).toBe(false));
+ it("Admin não ignora Assumir",()=>expect(podeAlterarAgendadaNoInbox(usuario([Papel.ADMINISTRADOR]),alvo(),{...contexto(),responsavelId:"outro"})).toBe(false));
+ it("responsável nulo não significa assumido",()=>expect(podeAlterarAgendadaNoInbox(usuario(),alvo(),{...contexto(),responsavelId:null})).toBe(false));
+ it.each(["ia","aprovacao","handoff"] as const)("estado %s bloqueia alteração",estadoAria=>expect(podeAlterarAgendadaNoInbox(usuario(),alvo(),{...contexto(),estadoAria})).toBe(false));
+ it("autorização de leitura não substitui envio",()=>expect(podeAlterarAgendadaNoInbox(usuario(),alvo(),{...contexto(),autorizadoEnviar:false})).toBe(false));
+ it("atendimento encerrado recusa",()=>expect(podeAlterarAgendadaNoInbox(usuario(),alvo(),{...contexto(),encerradoEm:new Date()})).toBe(false));
+ it("IA não fica editável para Admin",()=>expect(podeAlterarAgendadaNoInbox(usuario([Papel.ADMINISTRADOR]),{...alvo(),origem:"IA"},contexto())).toBe(false));
+ it.each(["ENVIANDO","DESPACHADA","CANCELADA","FALHOU"] as const)("estado terminal/claim %s não altera",status=>expect(podeAlterarAgendadaNoInbox(usuario(),{...alvo(),status},contexto())).toBe(false));
+ it("ADIADA continua elegível",()=>expect(podeAlterarAgendadaNoInbox(usuario(),{...alvo(),status:"ADIADA"},contexto())).toBe(true));
+ it("outra conversa recusa",()=>expect(podeAlterarAgendadaNoInbox(usuario(),{...alvo(),atendimentoId:"b"},contexto())).toBe(false));
+ it.each([{agendadaPara:null},{passo:"D1"},{passoComercial:"D1"}])("não confunde intenção de régua com agendada manual (%j)",patch=>expect(podeAlterarAgendadaNoInbox(usuario(),{...alvo(),...patch},contexto())).toBe(false));
+ it("ator inativo recusa",()=>expect(podeAlterarAgendadaNoInbox({...usuario(),ativo:false},alvo(),contexto())).toBe(false));
+ it("papel exclusivamente Portal recusa mesmo sendo autor",()=>expect(podeAlterarAgendadaNoInbox(usuario([Papel.ALUNO]),alvo(),contexto())).toBe(false));
+ it.each([{numeroAtivo:false},{optOut:true}])("preserva veto de destinatário/canal (%j)",patch=>expect(podeAlterarAgendadaNoInbox(usuario(),alvo(),{...contexto(),...patch})).toBe(false));
+});
