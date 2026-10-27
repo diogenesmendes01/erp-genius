@@ -32,6 +32,6 @@ export function CabecalhoConversa({ atendimento, acoes, linhaAria, acoesAria, pa
    <BotaoIcone tamanho={36} rotulo="Painel do contato" ativo={painelAberto} aria-controls="painel-contato" aria-pressed={painelAberto} onClick={aoAlternarPainel} className={painelAuto ? "min-[1400px]:bg-gray-100" : ""}><IconLayoutSidebarRight size={17} /></BotaoIcone>
   </div>
   </div></div>
-  <div className="col-start-2 row-start-2 self-end"><MenuConversa itens={acoes.menu} /></div>
+  <div className="col-start-2 row-start-2 self-end"><MenuConversa itens={acoes.menu} refDoGatilho={acoes.refDoMenu} /></div>
  </header>;
 }
