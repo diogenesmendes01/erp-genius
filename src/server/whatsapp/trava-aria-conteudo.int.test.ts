@@ -35,6 +35,7 @@ async function cenario() {
   const admin = await criarUsuario([Papel.ADMINISTRADOR]);
   const numero = await criarNumeroSetor({ telefoneE164: "+5500000000446", setores: ["COMERCIAL"], finalidade: "AGENDA" });
   await prisma.numeroWhatsApp.update({ where: { id: numero.id }, data: { sessao: "CONECTADO" } });
+  await criarNumeroSetor({ telefoneE164: "+5500000000447", setores: ["COMERCIAL"] });
   const contato = await prisma.contatoWhatsApp.create({ data: { telefoneE164: "+50680000446" } });
   const at = await prisma.$transaction(tx => garantirAtendimento(tx, { numeroId: numero.id, contatoId: contato.id, finalidade: "COMERCIAL" }));
   const msg = await prisma.mensagemWhatsApp.create({ data: { numeroId: numero.id, conversaId: at.conversaId, atendimentoId: at.id, direcao: "ENTRADA", driver: "MOTOR", corpo: "Fixture fictícia446" } });
@@ -59,7 +60,7 @@ function entrada(tipo: typeof tipos[number]): { atendimentoId: string; conteudo:
   const base = { atendimentoId: c.at.id };
   if (tipo === "ENQUETE") return { ...base, conteudo: { tipo, nome: "Pergunta fictícia", opcoes: ["Opção A", "Opção B"], maxEscolhas: 1 } };
   if (tipo === "LOCALIZACAO") return { ...base, conteudo: { tipo, latitude: 0, longitude: 0, nome: "Local fictício" } };
-  if (tipo === "CONTATO") return { ...base, conteudo: { tipo, contatoJid: "50680000446@s.whatsapp.net" } };
+  if (tipo === "CONTATO") return { ...base, conteudo: { tipo, contatoJid: "5500000000447@s.whatsapp.net" } };
   return { ...base, conteudo: { tipo }, midiaUrl: `/api/files/whatsapp-out/${c.admin.id}/fixture446.${tipo === "FIGURINHA" ? "webp" : "mp4"}` };
 }
 function semDriver() {
