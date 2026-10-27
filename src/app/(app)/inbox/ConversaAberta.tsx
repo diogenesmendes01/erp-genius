@@ -22,7 +22,7 @@ import type { ConversaHook } from "@/components/conversa/useConversa";
 import { SETOR_ATENDIMENTO_LABEL, rotular } from "@/lib/labels";
 import type { ItemListaInbox } from "@/server/inbox/consultas-pagina";
 import { intercalarSugestoes } from "./aria/intercalar";
-import { CartaoSugestaoAria } from "./aria/CartaoSugestaoAria";
+import { CartaoPacoteAria, CartaoSugestaoAria } from "./aria/CartaoSugestaoAria";
 
 import { ControladorTransferir } from "./fluxos/transferir/ControladorTransferir";
 import { opcoesTransferir } from "./fluxos/transferir/opcoes-transferir";
@@ -32,6 +32,7 @@ import { linhaEstadoAria, type LinhaEstadoAria } from "./aria/textos-aria";
 import type { AriaDoAtendimento } from "@/server/whatsapp/consultas-inbox";
 import type { MensagemThread } from "@/server/whatsapp/consultas-inbox";
 import { enviarMidiaInbox, enviarTextoInbox } from "@/server/whatsapp/acoes";
+import { enviarConteudoInbox } from "@/server/whatsapp/motor/acoes-mensagem";
 import { respostasRapidasDoCompositor } from "@/server/crm-config/acoes-respostas";
 import { enviarPropostaNoAtendimento, registrarNotaAtendimento } from "@/server/whatsapp/acoes-conversa";
 import { origemVisivelDaTransferencia, propostasDoAtendimento } from "@/server/whatsapp/consultas-acoes-atendimento";
@@ -219,6 +220,7 @@ export function ConversaAberta({ item, tarefasNoFio=TAREFAS_FIO_VAZIAS, cartoesN
             if (i.tipo === "evento") return <EventoSistema tom={i.tom} icone={<IconArrowsExchange size={13} />} texto={i.texto} hora={i.hora} />;
             if (i.tipo === "nota") return <BalaoMensagem m={notaComoMensagem(i.n)} nota={i.n} autor="nota" emSequencia={i.emSequencia} fuso={fuso} comandos={[]} recursos={() => false} aoComando={() => {}} />;
             if (i.tipo === "tarefa") return <CartaoTarefaDoInbox atendimentoId={item?.id??""} t={i.t} bloqueado={bloquearDecisoesAria} fuso={fuso} usuarioNome={usuario.nome??null} aoEditar={aoEditarTarefa} aoMudar={aoMudar}/>;
+            if (i.tipo === "sugestao-aria" && i.pacote) return <CartaoPacoteAria pacote={i.pacote} atendimentoId={item!.id} bloqueado={bloquearDecisoesAria} usuarioId={usuario.id} fuso={fuso} aoDecidir={aoMudar} />;
             if (i.tipo === "sugestao-aria") return <CartaoSugestaoAria s={i.s} atendimentoId={item!.id} bloqueado={bloquearDecisoesAria} usuarioId={usuario.id} fuso={fuso} aoDecidir={aoMudar} />;
             const m = i.m;
             return (
@@ -257,6 +259,7 @@ export function ConversaAberta({ item, tarefasNoFio=TAREFAS_FIO_VAZIAS, cartoesN
           respostas={respostas}
           propostas={propostasDaConversa}
           aoEnviarProposta={propostasDaConversa ? (documentoId, chaveIdempotencia) => enviarPropostaNoAtendimento({ atendimentoId: item.id, documentoId, chaveIdempotencia }) : undefined}
+          aoEnviarConteudo={(conteudo) => enviarConteudoInbox({ atendimentoId: item.id, conteudo })}
           variaveisResposta={{ nome: item.contatoNome, responsavel: item.responsavelNome }}
         />
       ) : <p className="border-t p-3 text-sm text-gray-600">{MOTIVO_SEM_ENVIO}</p>}
