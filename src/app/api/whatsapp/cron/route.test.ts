@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
-const m = vi.hoisted(() => ({ reservas: vi.fn(), outras: vi.fn() }));
+const m = vi.hoisted(() => ({ reservas: vi.fn(), outras: vi.fn(), recorrencias: vi.fn() }));
 vi.mock("@/server/matricula/reserva-particular-cron", () => ({ rodarVencimentoParticulares: m.reservas }));
 vi.mock("@/server/agenda/inicio-turmas", () => ({ iniciarTurmasDaAgenda: m.outras }));
 vi.mock("@/server/cobrancas/acesso-aulas", () => ({ rodarControleAcessoAulas: m.outras }));
@@ -16,8 +16,9 @@ vi.mock("@/server/aria/expiracao", () => ({ expirarSugestoesAria: m.outras }));
 vi.mock("@/server/whatsapp/despachante", () => ({ despacharFila: m.outras }));
 vi.mock("@/server/whatsapp/linha-comercial", () => ({ adotarMensagensOrfasDaLinha: m.outras }));
 vi.mock("@/server/contratos/vencimento-acesso", () => ({ rodarReconciliacaoAcessoVencimento: m.outras }));
+vi.mock("@/server/crm/tarefa-recorrencia-materializacao", () => ({ rodarRecorrenciasTarefas: m.recorrencias }));
 import { POST } from "./route";
-beforeEach(() => { vi.resetAllMocks(); m.reservas.mockResolvedValue({ avaliadas: 0 }); m.outras.mockResolvedValue({}); });
+beforeEach(() => { vi.resetAllMocks(); m.reservas.mockResolvedValue({ avaliadas: 0 }); m.outras.mockResolvedValue({}); m.recorrencias.mockResolvedValue({criadas:0}); });
 afterEach(() => vi.unstubAllEnvs());
 it("não executa rotinas sem configuração do segredo", async () => {
   vi.stubEnv("CRON_SECRET", "");
@@ -45,7 +46,7 @@ it("chamada autenticada adota mensagens órfãs das linhas comerciais (SPEC-ERP-
 it("tick só com etapas de base: sem comercial, copiloto e gestão (E1)", async () => {
   vi.stubEnv("CRON_SECRET", "segredo-fixture");
   const corpo = await (await POST(new Request("https://example.test/cron", { method: "POST", headers: { "x-cron-secret": "segredo-fixture" } }))).json();
-  expect(Object.keys(corpo).sort()).toEqual(["acessoAulas", "acessoVencimentos", "alertasSla", "aria", "ariaExpiracao", "cobranca", "comissoes", "despacho", "eventosMotor", "fechamentosPendentes", "inicioTurmas", "lembretesTarefas", "linhaComercial", "reservasParticulares"]);
+  expect(Object.keys(corpo).sort()).toEqual(["acessoAulas", "acessoVencimentos", "alertasSla", "aria", "ariaExpiracao", "cobranca", "comissoes", "despacho", "eventosMotor", "fechamentosPendentes", "inicioTurmas", "lembretesTarefas", "linhaComercial", "recorrenciasTarefas", "reservasParticulares"]);
 });
 it("resposta inclui a chave lembretesTarefas (Fase 2)", async () => {
   vi.stubEnv("CRON_SECRET", "segredo-fixture");
@@ -77,4 +78,10 @@ it("resposta inclui a chave alertasSla (alerta de prazo estourado no app)", asyn
   m.outras.mockResolvedValue({ alertados: 1, notificacoes: 2 });
   const corpo = await (await POST(new Request("https://example.test/cron", { method: "POST", headers: { "x-cron-secret": "segredo-fixture" } }))).json();
   expect(corpo.alertasSla).toEqual({ alertados: 1, notificacoes: 2 });
+});
+
+it("458 C1 falha de recorrência fica explícita e não impede lembretes",async()=>{
+ vi.stubEnv("CRON_SECRET","segredo-fixture");const erro=new Error("recorrência indisponível");m.recorrencias.mockRejectedValueOnce(erro);
+ const log=vi.spyOn(console,"error").mockImplementation(()=>{});
+ try{const corpo=await(await POST(new Request("https://example.test/cron",{method:"POST",headers:{"x-cron-secret":"segredo-fixture"}}))).json();expect(m.recorrencias).toHaveBeenCalledOnce();expect(corpo.recorrenciasTarefas).toEqual({erro:erro.message});expect(corpo.lembretesTarefas).toEqual({});expect(log).toHaveBeenCalledWith("[cron recorrencias_tarefas] falhou:",erro);}finally{log.mockRestore();}
 });
