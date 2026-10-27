@@ -205,8 +205,9 @@ async function alterar(
       const jaFeito = async (status: string | undefined) => {
         const agregado = aggregadoDe(m);
         if (!estadoAlvo || status !== estadoAlvo || !agregado) return false;
+        const agregados = [agregado, ...(m.atendimentoId && agregado.agregadoTipo !== "AtendimentoWhatsApp" ? [{ agregadoTipo: "AtendimentoWhatsApp" as const, agregadoId: m.atendimentoId }] : [])];
         const ultimo = await tx.evento.findFirst({
-          where: { tipo: tipoEvento, ...agregado, payload: { path: ["intencaoId"], equals: id } },
+          where: { tipo: tipoEvento, OR: agregados, payload: { path: ["intencaoId"], equals: id } },
           orderBy: [{ criadoEm: "desc" }, { id: "desc" }], select: { autorId: true },
         });
         return ultimo?.autorId === autor.id;

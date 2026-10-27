@@ -4,11 +4,12 @@ import {ErroRegra,apenasPortal} from "@/server/_shared/sessao";
 import {ChaveIdempotenciaSchema} from "@/server/_shared/validacao";
 import {marcaIdempotencia,repeticaoIdempotente} from "@/server/_shared/idempotencia";
 import {registrarEvento} from "@/server/_shared/evento";
-import {AgendarSchema,InstanteSchema,TextoAgendadaSchema,futuro,dataFutura} from "@/server/crm/mensagens-agendadas-regras";
+import {AgendarSchema,InstanteSchema,LegendaAgendadaSchema,futuro,dataFutura,nomeAnexoCurto} from "@/server/crm/mensagens-agendadas-regras";
 import {capacidadesCrm} from "@/server/crm/permissoes";
 import {escopoTarefas} from "@/server/crm/tarefas";
 import {contentTypePorExtensao} from "@/lib/uploads";
-import {copiarDocumentoParaSaida,descartarMidiaSaida,midiaSaidaDoAutor,tipoPorMime} from "@/server/whatsapp/midia";
+import {copiarDocumentoParaSaida,descartarMidiaSaida,midiaSaidaDoAutor,midiaSaidaExiste,tipoPorMime} from "@/server/whatsapp/midia";
+import {podeVerLeadNaThread} from "@/server/whatsapp/visibilidade-lead";
 import {ERRO_ANEXAR_PROPOSTA,exigirPropostaVisivel} from "@/server/whatsapp/proposta-atendimento";
 import {atendimentoVisivel} from "@/server/whatsapp/atendimentos";
 import {lerContextoAtualInbox} from "@/server/whatsapp/enfileirar-inbox";
@@ -67,10 +68,10 @@ async function conferirLeituraRecibo(tx:Tx,autorId:string,atendimentoId:string){
 export async function executarAgendadaInbox(db:BancoAgendadaInbox,autorId:string,comando:ComandoAgendadaInbox):Promise<{id:string}>{
  z.string().min(1).parse(autorId);z.string().min(1).parse(comando.atendimentoId);
  ChaveIdempotenciaSchema.optional().parse(comando.chaveIdempotencia);
- const c=comando.tipo==="CRIAR"?{...comando,...AgendarSchema.parse({...comando,numeroId:comando.numeroEsperado??"resolvido-no-servidor"})}:comando;
+ const c=comando.tipo==="CRIAR"?{...comando,...AgendarSchema.parse({...comando,anexoNome:nomeAnexoCurto(comando.anexoNome),numeroId:comando.numeroEsperado??"resolvido-no-servidor"})}:comando;
  if(c.tipo!=="CRIAR")z.string().min(1).parse(c.intencaoId);
  if(c.tipo==="REAGENDAR"||c.tipo==="EDITAR")InstanteSchema.parse(c.agendadaPara);
- const texto=c.tipo==="EDITAR"?TextoAgendadaSchema.parse(c.texto):null;
+ const texto=c.tipo==="EDITAR"?LegendaAgendadaSchema.parse(c.texto):null;
  let copiada:string|null=null;
  try{return await db.$transaction(async tx=>{
   const resolvido=await tx.atendimentoWhatsApp.findUnique({where:{id:c.atendimentoId},select:{conversa:{select:{numeroId:true}}}});
@@ -115,7 +116,10 @@ export async function executarAgendadaInbox(db:BancoAgendadaInbox,autorId:string
    if(!m||(m.status!=="PENDENTE"&&m.status!=="ADIADA")||(c.tipo==="CRIAR"&&m.autorId!==autorId))throw semAlvo();
   }
   await gate(tx,autorId,c.atendimentoId,numeroId,c.tipo,alvo,m??undefined);
-  if(c.tipo==="EDITAR"&&(m?.tipo!=="TEXTO"||m.templateId!=null||m.midiaPath!=null||m.conteudo!=null))throw new ErroRegra("Só mensagens de texto podem ter o texto editado.");
+  if(c.tipo==="EDITAR"){
+   if(!m||m.templateId!=null||m.conteudo!=null||(m.tipo==="TEXTO")!==(m.midiaPath==null))throw new ErroRegra("Só mensagens de texto podem ter o texto editado.");
+   if(!texto&&m.midiaPath==null)throw new ErroRegra("Escreva a mensagem.");
+  }
   if(c.tipo==="MANTER"){
    if(!m)throw semAlvo();
    if(!m.perguntarSeResponder)throw new ErroRegra("Esta mensagem não aguarda confirmação.");
@@ -135,15 +139,15 @@ export async function executarAgendadaInbox(db:BancoAgendadaInbox,autorId:string
   let anexo:{midiaPath:string;tipo:TipoMensagem;nome:string|null}|null=null;
   if(c.tipo==="CRIAR"){
    const oportunidade=inicial.leadId??inicial.conversa.contato.leadId??null,pessoaId=inicial.conversa.contato.pessoaId??null;
-   if(c.leadId&&c.leadId!==oportunidade)throw new ErroRegra("Oportunidade não é desta conversa.");
-   const ator=c.tarefaId||c.documentoPropostaId?await tx.usuario.findUnique({where:{id:autorId},select:selecionarAtor}):null;
+   const ator=c.leadId||c.tarefaId||c.documentoPropostaId?await tx.usuario.findUnique({where:{id:autorId},select:selecionarAtor}):null;
+   if(c.leadId&&(c.leadId!==oportunidade||inicial.finalidade!=="COMERCIAL"||!ator||!await podeVerLeadNaThread(ator,c.atendimentoId,c.leadId,Date.now(),tx)))throw new ErroRegra("Oportunidade não é desta conversa.");
    if(c.tarefaId){
     const ligacoes:Prisma.TarefaWhereInput[]=[...(oportunidade?[{leadId:oportunidade}]:[]),...(pessoaId?[{pessoaId}]:[])];
     const t=ator&&ligacoes.length?await tx.tarefa.findFirst({where:{AND:[{id:c.tarefaId,status:"ABERTA"},await escopoTarefas(ator,capacidadesCrm(ator.papeis).has("tarefas.equipe")),{OR:ligacoes}]},select:{id:true}}):null;
     if(!t)throw new ErroRegra("Tarefa não encontrada ou já concluída.");
    }
    if(c.midiaUrl){
-    if(!midiaSaidaDoAutor(c.midiaUrl,autorId))throw new ErroRegra("Anexo inválido: envie o arquivo pelo uploader da inbox.");
+    if(!midiaSaidaDoAutor(c.midiaUrl,autorId)||!await midiaSaidaExiste(autorId,c.midiaUrl))throw new ErroRegra("Anexo inválido: envie o arquivo pelo uploader da inbox.");
     anexo={midiaPath:c.midiaUrl,tipo:tipoAnexo(c.midiaUrl),nome:c.anexoNome||null};
    }
    if(c.documentoPropostaId){

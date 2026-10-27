@@ -22,6 +22,12 @@ const MSG_FUTURO = "Escolha uma data e hora no futuro.";
 
 export const InstanteSchema = z.string().refine((v) => !Number.isNaN(new Date(v).getTime()), "Informe uma data e hora válidas.");
 export const TextoAgendadaSchema = z.string().trim().min(1, "Escreva a mensagem.").max(4096, "A mensagem deve ter até 4096 caracteres.");
+export const LegendaAgendadaSchema = z.string().trim().max(4096, "A mensagem deve ter até 4096 caracteres.");
+export const MAX_NOME_ANEXO = 255;
+export function nomeAnexoCurto(nome: string | undefined): string | undefined {
+  const t = nome?.trim();
+  return t ? [...t].slice(0, MAX_NOME_ANEXO).join("") : undefined;
+}
 export const AgendarSchema = z.object({
   numeroId: z.string().min(1, "Escolha o número de envio."),
   texto: z.string().trim().max(4096, "A mensagem deve ter até 4096 caracteres."),
@@ -34,7 +40,7 @@ export const AgendarSchema = z.object({
   perguntarSeResponder: z.boolean().optional(),
   midiaUrl: z.string().min(1).max(500).optional(),
   documentoPropostaId: z.string().min(1).optional(),
-  anexoNome: z.string().trim().max(255).optional(),
+  anexoNome: z.string().trim().max(MAX_NOME_ANEXO).optional(),
   chaveIdempotencia: ChaveIdempotenciaSchema.optional(),
 }).superRefine((d, ctx) => {
   if (d.midiaUrl && d.documentoPropostaId) ctx.addIssue({ code: "custom", path: ["midiaUrl"], message: "Escolha só um anexo." });

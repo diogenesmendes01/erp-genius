@@ -8,6 +8,7 @@ import { prisma } from "@/lib/prisma";
 import { criarUsuario, truncarBanco } from "@/test/integracao";
 import { criarNumeroSetor } from "@/test/integracao-whatsapp";
 import { garantirAtendimento } from "./atendimentos";
+import { cancelarMensagemAgendada } from "@/server/crm/mensagens-agendadas";
 import { agendarMensagemNoAtendimento, agendarMensagemNoAtendimentoLocal, cancelarAgendamentoDoAtendimento, editarAgendamentoDoAtendimento, enviarAgendamentoAgoraDoAtendimento, manterAgendadaAposResposta } from "./acoes-conversa";
 import { agendadasDoAtendimento, tarefasAbertasParaVinculo } from "./consultas-acoes-atendimento";
 import { valorCampoLocal } from "@/server/operacao/fuso-entrada";
@@ -411,6 +412,36 @@ describe("anexo e vínculo no agendamento", () => {
     const r = await agendarMensagemNoAtendimento({ atendimentoId: c.a.id, texto: "x", quando: util(10).toISOString(), documentoPropostaId: doc.id, leadId: c.lead.id });
     expect(r.ok).toBe(false);
     expect(await prisma.intencaoMensagem.count()).toBe(0);
+  });
+
+  it("edita legenda e horário de agendada com anexo sem trocar o arquivo; legenda vazia é aceita", async () => {
+    const c = await comOportunidade();
+    comoUsuario(c.vend);
+    const doc = await proposta(c.lead.id);
+    const id = idDe(await agendarMensagemNoAtendimento({ atendimentoId: c.a.id, texto: "Segue a proposta", quando: util(10).toISOString(), documentoPropostaId: doc.id }));
+    const antes = await prisma.intencaoMensagem.findUniqueOrThrow({ where: { id } });
+    const FUSO = "America/Sao_Paulo", quando = util(15);
+    expect(await editarAgendamentoDoAtendimento({ atendimentoId: c.a.id, intencaoId: id, texto: "Proposta revisada", quandoLocal: valorCampoLocal(quando, FUSO), fuso: FUSO })).toEqual({ ok: true, dado: { id } });
+    const depois = await prisma.intencaoMensagem.findUniqueOrThrow({ where: { id } });
+    expect(depois).toMatchObject({ corpoRenderizado: "Proposta revisada", tipo: "DOCUMENTO", midiaPath: antes.midiaPath, status: "PENDENTE" });
+    expect(depois.agendadaPara?.toISOString()).toBe(new Date(Math.floor(quando.getTime() / 60_000) * 60_000).toISOString());
+    expect(await editarAgendamentoDoAtendimento({ atendimentoId: c.a.id, intencaoId: id, texto: "  ", quandoLocal: valorCampoLocal(quando, FUSO), fuso: FUSO })).toEqual({ ok: true, dado: { id } });
+    expect(await prisma.intencaoMensagem.findUniqueOrThrow({ where: { id } })).toMatchObject({ corpoRenderizado: "", midiaPath: antes.midiaPath });
+    expect(await prisma.evento.count({ where: { tipo: "MensagemAgendadaEditada", agregadoTipo: "AtendimentoWhatsApp", agregadoId: c.a.id } })).toBe(2);
+    vi.stubEnv("WHATSAPP_LIVE", "1");
+    await despacharFila(new Date(quando.getTime() + 60_000));
+    expect(enviarMock).toHaveBeenCalledOnce();
+    expect(enviarMock.mock.calls[0]![2]).toMatchObject({ tipo: "DOCUMENTO", mime: "application/pdf" });
+  });
+
+  it("agendada com tarefa cancelada pelo Inbox: repetir o cancelamento pelo CRM é idempotente", async () => {
+    const c = await comOportunidade();
+    comoUsuario(c.vend);
+    const aberta = await tarefa({ responsavelId: c.vend.id, leadId: c.lead.id });
+    const id = idDe(await agendarMensagemNoAtendimento({ atendimentoId: c.a.id, texto: "Lembrete", quando: util(10).toISOString(), tarefaId: aberta.id }));
+    expect((await cancelarAgendamentoDoAtendimento({ atendimentoId: c.a.id, intencaoId: id })).ok).toBe(true);
+    expect(await cancelarMensagemAgendada(id)).toEqual({ ok: true });
+    expect(await prisma.evento.count({ where: { tipo: "MensagemAgendadaCancelada" } })).toBe(1);
   });
 
   it("agendada com anexo sai como mídia no horário", async () => {

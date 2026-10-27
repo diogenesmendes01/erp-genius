@@ -48,6 +48,21 @@ it("proposta escolhida vai na action e dispensa o texto",async()=>{
  await clicar("Proposta");await clicar("Proposta anual.pdf");expect(doc.body.textContent).toContain("Proposta anual.pdf");expect(eventos(botao("Agendar")).disabled).toBe(false);
  await submeter();expect(executar).toHaveBeenCalledExactlyOnceWith(expect.objectContaining({tipo:"CRIAR",texto:"",anexo:{tipo:"proposta",documentoId:"d1",nome:"Proposta anual.pdf"}}));
 });
+it("editar agendada com anexo: mostra o anexo, aceita legenda vazia e salva só legenda e horário",async()=>{
+ await montar({opcoes,editar:{...existente(),texto:"Segue a proposta",tipo:"DOCUMENTO",temAnexo:true,anexoNome:"Proposta anual.pdf"},intencao:dono.para({tipo:"EDITAR",atendimentoId:"a",intencaoId:"i"})});
+ expect(doc.body.textContent).toContain("Proposta anual.pdf");expect(doc.body.textContent).toContain("Legenda");expect(doc.body.textContent).not.toContain("Anexar");
+ await mudar("texto","");expect(eventos(botao("Salvar")).disabled).toBe(false);await clicar("Em 1 hora");await submeter();
+ expect(executar).toHaveBeenCalledExactlyOnceWith({tipo:"EDITAR",atendimentoId:"a",intencaoId:"i",texto:"",quandoLocal:"2026-10-22T11:30",fuso:"America/Sao_Paulo",chaveIdempotencia:"chave-ui363"});
+});
+it("falha ao carregar propostas avisa o erro em vez de dizer que não há oportunidade",async()=>{
+ await montar({opcoes:{oportunidadeId:null,propostas:[],tarefas:[],erroPropostas:true}});await clicar("Proposta");
+ expect(doc.body.textContent).toContain("Não foi possível carregar as propostas.");expect(doc.body.textContent).not.toContain("Esta conversa não tem oportunidade");
+});
+it("Mais opções fica desabilitado enquanto o envio está em andamento",async()=>{
+ let fim!:(r:{ok:true;dado:{id:string}})=>void;executar.mockImplementation(()=>new Promise(r=>{fim=r;}));
+ await montar({opcoes});await act(async()=>{void eventos(doc.body.querySelector("form")!).onSubmit({preventDefault(){}});});
+ expect(eventos(botao("Mais opções")).disabled).toBe(true);await act(async()=>fim({ok:true,dado:{id:"ack"}}));
+});
 it("sem oportunidade, Proposta avisa e não oferece Oportunidade no vínculo",async()=>{
  await montar({opcoes:{oportunidadeId:null,propostas:[],tarefas:[]}});await clicar("Proposta");expect(doc.body.textContent).toContain("Esta conversa não tem oportunidade com propostas.");
  await clicar("Mais opções");expect(doc.body.querySelectorAll('[name="vinculo"]').map(o=>o.parentNode?.textContent)).toEqual(["Nenhum"]);

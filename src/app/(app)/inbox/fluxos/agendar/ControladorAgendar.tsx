@@ -69,7 +69,7 @@ export function useControladorAgendar(props:PropsControladorAgendar){
  },[abertura,chave,props.intencoes,props.podeLer,props.usuarioId]);
  const [opcoes,setOpcoes]=useState<{geracao:number;dado:OpcoesAgendamento}|null>(null);
  useEffect(()=>{if(!abertura||abertura.alvo.tipo!=="CRIAR"||!props.podeLer||abertura.atorId!==props.usuarioId)return;let vigente=true;const capturada=abertura,id=capturada.alvo.atendimentoId;
-  void Promise.all([Promise.resolve().then(()=>propostasDoAtendimento(id)).catch(()=>({oportunidadeId:null,propostas:[]})),Promise.resolve().then(()=>tarefasAbertasParaVinculo(id)).catch(()=>[])]).then(([p,tarefas])=>{if(vigente&&viva.current&&abertaRef.current===capturada)setOpcoes({geracao:capturada.geracao,dado:{oportunidadeId:p.oportunidadeId,propostas:p.propostas,tarefas}});});
+  void Promise.all([Promise.resolve().then(()=>propostasDoAtendimento(id)).catch(()=>({oportunidadeId:null,propostas:[],erroPropostas:true})),Promise.resolve().then(()=>tarefasAbertasParaVinculo(id)).catch(()=>[])]).then(([p,tarefas])=>{if(vigente&&viva.current&&abertaRef.current===capturada)setOpcoes({geracao:capturada.geracao,dado:{oportunidadeId:p.oportunidadeId,propostas:p.propostas,tarefas,...("erroPropostas" in p?{erroPropostas:true}:{})}});});
   return()=>{vigente=false;};
  },[abertura,props.podeLer,props.usuarioId]);
  const lerAgora=leitura?.chave===chave?leitura:null,lista=lerAgora?.lista??[],carregando=!!abertura&&!lerAgora;

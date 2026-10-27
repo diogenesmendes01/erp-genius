@@ -13,6 +13,7 @@ import { marcaIdempotencia, repeticaoIdempotente } from "@/server/_shared/idempo
 import { exigirInstanteDoCampoLocal } from "@/server/_shared/campo-local";
 import { capacidadesCrm } from "@/server/crm/permissoes";
 import { cancelarMensagemAgendada } from "@/server/crm/mensagens-agendadas";
+import { nomeAnexoCurto } from "@/server/crm/mensagens-agendadas-regras";
 import { atendimentoVisivel } from "./atendimentos";
 import { executarAgendadaInbox } from "@/server/inbox/agendadas-operacao-inbox";
 import type { NotaInternaThread } from "./consultas-inbox";
@@ -74,7 +75,7 @@ export type AnexoVinculoAgendamento = { midiaUrl?: string; documentoPropostaId?:
 const AnexoVinculoSchema = z.object({
   midiaUrl: z.string().min(1).optional(),
   documentoPropostaId: z.string().min(1).optional(),
-  anexoNome: z.string().optional(),
+  anexoNome: z.string().optional().transform(nomeAnexoCurto),
   leadId: z.string().min(1).optional(),
   tarefaId: z.string().min(1).optional(),
 });
