@@ -1,6 +1,6 @@
 "use client";
 
-import { Fragment, type CSSProperties, useCallback, useEffect, useId, useLayoutEffect, useRef, useState, type ReactNode } from "react";
+import { Fragment, type CSSProperties, useCallback, useEffect, useId, useImperativeHandle, useLayoutEffect, useRef, useState, type ReactNode, type Ref } from "react";
 import { acaoTecladoMenu, posicaoPopover } from "@/lib/popover";
 
 export const CLASSE_PAINEL_MENU = "min-w-[220px] rounded-[9px] border border-gray-200 bg-surface-raised py-2 shadow-popover";
@@ -63,11 +63,12 @@ export function ligarMenuAberto(o: {
 
 export type ItemMenu = { rotulo: string; icone?: ReactNode; dica?: string; divisorDepois?: boolean; perigo?: boolean; desabilitado?: boolean; aoEscolher: () => void };
 
-export function Menu({ rotulo, gatilho, itens, densidade = "padrao", classeGatilho = "", abertoInicial = false, folhaNoCelular = false }: { rotulo: string; gatilho: ReactNode; itens: ItemMenu[]; densidade?: "padrao" | "compacta"; classeGatilho?: string; abertoInicial?: boolean; folhaNoCelular?: boolean }) {
+export function Menu({ rotulo, gatilho, itens, densidade = "padrao", classeGatilho = "", abertoInicial = false, folhaNoCelular = false, refDoGatilho }: { rotulo: string; gatilho: ReactNode; itens: ItemMenu[]; densidade?: "padrao" | "compacta"; classeGatilho?: string; abertoInicial?: boolean; folhaNoCelular?: boolean; refDoGatilho?: Ref<HTMLButtonElement> }) {
   const compacto = densidade === "compacta";
   const [aberto, setAberto] = useState(abertoInicial);
   const [pos, setPos] = useState<{ topo: number; esquerda: number } | null>(null);
   const gatilhoRef = useRef<HTMLButtonElement>(null);
+  useImperativeHandle<HTMLButtonElement|null,HTMLButtonElement|null>(refDoGatilho,()=>gatilhoRef.current,[]);
   const painelRef = useRef<HTMLDivElement>(null);
   const id = useId();
 

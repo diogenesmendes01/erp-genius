@@ -1,5 +1,6 @@
 "use client";
 import type { PublicarPortaRascunhoInsight } from "./rascunho-insight";
+import type {PublicarPortaRascunhoAgendamento} from "./porta-rascunho-agendamento";
 
 import Link from "next/link";
 import { Suspense, lazy, useCallback, useEffect, useId, useLayoutEffect, useRef, useState, type ChangeEvent, type KeyboardEvent } from "react";
@@ -45,7 +46,8 @@ export interface PropsCompositor {
   buscarMencoes?: (busca: string, signal?: AbortSignal) => Promise<CandidatoMencao[]>;
   tentativasNota?: ChavesPorAlvo;
   revisoesRascunhos?: RevisoesRascunhos;
-  aoAgendar?: () => void;
+  aoAgendar?: (ancora?:HTMLElement) => void;
+  aoPortaRascunhoAgendamento?: PublicarPortaRascunhoAgendamento;
   aoPortaRascunhoInsight?: PublicarPortaRascunhoInsight;
   contido?: boolean;
   respostas?: readonly RespostaDoCompositor[];
@@ -69,7 +71,7 @@ function formatoDeVoz(): string | null {
   return ["audio/ogg;codecs=opus", "audio/mp4"].find((t) => mimeVozAceito(t) && MediaRecorder.isTypeSupported(t)) ?? null;
 }
 
-export function Compositor({ atendimentoId, pedidoFoco, aoCampoResponder, modo, bloqueioExterno = false, podeEnviar, falhaPermissao, capacidades, aoEnviarTexto, aoEnviarMidia, aoNota, buscarMencoes, respostas = [], propostas, aoEnviarProposta, variaveisResposta = {}, tentativasNota, revisoesRascunhos, aoAgendar, aoPortaRascunhoInsight, contido = false }: PropsCompositor) {
+export function Compositor({ atendimentoId, pedidoFoco, aoCampoResponder, modo, bloqueioExterno = false, podeEnviar, falhaPermissao, capacidades, aoEnviarTexto, aoEnviarMidia, aoNota, buscarMencoes, respostas = [], propostas, aoEnviarProposta, variaveisResposta = {}, tentativasNota, revisoesRascunhos, aoAgendar, aoPortaRascunhoInsight, aoPortaRascunhoAgendamento, contido = false }: PropsCompositor) {
   const idAvisosAnexos = useId();
   const [texto, setTexto] = useState(() => lerRascunho(atendimentoId, modo));
   const [arquivo, setArquivo] = useState<File | null>(null);
@@ -185,7 +187,7 @@ export function Compositor({ atendimentoId, pedidoFoco, aoCampoResponder, modo, 
 
   function registrarIntencao() {
     revisaoRascunho.current += 1;
-    if(aoPortaRascunhoInsight)setRevisaoPonteInsight(r=>r+1);
+    if(aoPortaRascunhoInsight||aoPortaRascunhoAgendamento)setRevisaoPonteInsight(r=>r+1);
     revisoes.alterar(chave, contexto);
   }
 
@@ -217,6 +219,18 @@ export function Compositor({ atendimentoId, pedidoFoco, aoCampoResponder, modo, 
       }});
     return()=>{viva=false;aoPortaRascunhoInsight(null);};
   },[aoPortaRascunhoInsight,atendimentoId,contexto,nota,bloqueioExterno,podeEnviar,enviando,texto,arquivo,revisaoPonteInsight,idAvisosAnexos]);
+  useLayoutEffect(()=>{
+    if(!aoPortaRascunhoAgendamento)return;
+    if(nota){aoPortaRascunhoAgendamento(null);return;}
+    let viva=true;const revisao=revisaoRascunho.current,token=`${idAvisosAnexos}:agendar:${revisao}`;
+    aoPortaRascunhoAgendamento({atendimentoId,textoAtual:texto,revisao:token,salvar(pedido){
+      if(!viva||contextoAtual.current!==contexto||revisaoRascunho.current!==revisao||emCurso.current.has(contexto)
+        ||pedido.revisaoEsperada!==token||typeof pedido.texto!=="string"||pedido.texto.length>4000)
+        return {ok:false,erro:"O rascunho mudou. Reabra o agendamento antes de salvar."};
+      editarTextoInsight.current(pedido.texto);return {ok:true};
+    }});
+    return()=>{viva=false;aoPortaRascunhoAgendamento(null);};
+  },[aoPortaRascunhoAgendamento,atendimentoId,contexto,nota,enviando,texto,arquivo,revisaoPonteInsight,idAvisosAnexos]);
   if (!nota && bloqueioExterno) return null;
   if (!nota && podeEnviar !== true && falhaPermissao) {
     return (
@@ -511,7 +525,7 @@ export function Compositor({ atendimentoId, pedidoFoco, aoCampoResponder, modo, 
             )}
           </>
         )}
-        {!nota && aoAgendar && <button type="button" aria-label="Agendar mensagem" title="Agendar mensagem" onClick={aoAgendar} className="grid h-11 w-11 shrink-0 place-items-center rounded-full text-gray-600 hover:bg-highlight"><IconCalendarEvent size={18} aria-hidden /></button>}
+        {!nota && aoAgendar && <button type="button" aria-label="Agendar mensagem" title="Agendar mensagem" onClick={e=>aoAgendar(e?.currentTarget)} className="grid h-11 w-11 shrink-0 place-items-center rounded-full text-gray-600 hover:bg-highlight"><IconCalendarEvent size={18} aria-hidden /></button>}
         <button type="button" aria-label="Emojis" aria-pressed={emoji} onClick={() => setEmoji(!emoji)} className="grid h-11 w-11 shrink-0 place-items-center rounded-full text-gray-600 hover:bg-highlight">
           <IconMoodSmile size={20} aria-hidden />
         </button>
