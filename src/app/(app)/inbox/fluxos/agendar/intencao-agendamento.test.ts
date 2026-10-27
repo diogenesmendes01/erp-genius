@@ -3,7 +3,7 @@ import {criarIntencoesAgendamento,type EntradaAgendamento} from "./intencao-agen
 const entrada=(id="a"):Extract<EntradaAgendamento,{tipo:"CRIAR"}>=>({tipo:"CRIAR",atendimentoId:id,texto:"Rascunho fictício",quandoLocal:"2035-01-01T09:00",fuso:"America/Sao_Paulo"});
 it("donoMap acima da conversa conserva intenção A→B→A e separa operação/intençãodeeditar",()=>{
  const dono=criarIntencoesAgendamento();const a=dono.para(entrada());dono.para(entrada("b"));expect(dono.para(entrada())).toBe(a);
- expect(dono.para({tipo:"REAGENDAR",atendimentoId:"a",intencaoId:"i"})).not.toBe(a);expect(dono.para({tipo:"REAGENDAR",atendimentoId:"a",intencaoId:"i"})).not.toBe(dono.para({tipo:"REAGENDAR",atendimentoId:"a",intencaoId:"j"}));
+ expect(dono.para({tipo:"EDITAR",atendimentoId:"a",intencaoId:"i"})).not.toBe(a);expect(dono.para({tipo:"EDITAR",atendimentoId:"a",intencaoId:"i"})).not.toBe(dono.para({tipo:"EDITAR",atendimentoId:"a",intencaoId:"j"}));
 });
 it("incerto preserva input/chave exatos apesar de fechar view ou passar outra entrada",async()=>{
  const gerar=vi.fn(()=>"chave-363");const dono=criarIntencoesAgendamento(gerar);const i=dono.para(entrada());const action=vi.fn().mockRejectedValueOnce(new Error("rede")).mockResolvedValueOnce({ok:true,dado:{id:"ack"}});
@@ -30,7 +30,7 @@ it("recusa de acesso ao recuperar incerto não prova rollback e não libera nova
  const i=criarIntencoesAgendamento(()=>"k").para(entrada());const action=vi.fn().mockRejectedValueOnce(new Error("rede")).mockResolvedValueOnce({ok:false,erro:"Atendimento não encontrado."});await i.enviar(entrada(),action);const antes=i.ler().comando;
  await i.enviar(entrada(),action);expect(i.ler().incerto).toBe(true);i.reiniciar();expect(i.ler().comando).toBe(antes);
 });
-it("owner reencontra operação incerta de reagendar após A→B→A sem enviar automaticamente",async()=>{
- const dono=criarIntencoesAgendamento(()=>"k");const e:EntradaAgendamento={tipo:"REAGENDAR",atendimentoId:"a",intencaoId:"i",quandoLocal:"2035-01-01T09:00",fuso:"UTC"};const i=dono.para(e),action=vi.fn().mockRejectedValue(new Error("rede"));await i.enviar(e,action);dono.para(entrada("b"));
- expect(dono.pendente?.("a")).toMatchObject({alvo:{atendimentoId:"a",tipo:"REAGENDAR",intencaoId:"i"},intencao:i});expect(dono.pendente?.("b")).toBeNull();expect(action).toHaveBeenCalledOnce();
+it("owner reencontra operação incerta de editar após A→B→A sem enviar automaticamente",async()=>{
+ const dono=criarIntencoesAgendamento(()=>"k");const e:EntradaAgendamento={tipo:"EDITAR",atendimentoId:"a",intencaoId:"i",texto:"Texto editado",quandoLocal:"2035-01-01T09:00",fuso:"UTC"};const i=dono.para(e),action=vi.fn().mockRejectedValue(new Error("rede"));await i.enviar(e,action);dono.para(entrada("b"));
+ expect(dono.pendente?.("a")).toMatchObject({alvo:{atendimentoId:"a",tipo:"EDITAR",intencaoId:"i"},intencao:i});expect(dono.pendente?.("b")).toBeNull();expect(action).toHaveBeenCalledOnce();
 });

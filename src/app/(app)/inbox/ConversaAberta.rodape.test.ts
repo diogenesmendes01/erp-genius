@@ -70,3 +70,19 @@ it("377 encaminha porta opt-in ao rodapé sem mudar controlador ou permissões",
  expect(elementos(t).find(n=>n.type===RodapeConversa)!.props.aoPortaRascunhoInsight).toBe(publicar);
  expect(m.usar).toHaveBeenCalledTimes(1);
 });
+
+it("364 slot cartoesNoFio fica depois da lista, recebe o relógio do fio e some com janela parcial",()=>{
+ const cartoes=vi.fn(()=>"CARTOES364"),t=tela({...base,cartoesNoFio:cartoes});
+ const slot=elementos(t).find(n=>n.type==="div"&&n.props["data-slot"]==="cartoesNoFio");
+ expect(slot?.props.children).toBe("CARTOES364");
+ expect(cartoes).toHaveBeenCalledWith({agora:new Date(Date.UTC(2026,9,22,12)),aoEditar:undefined});
+ const rolagem=elementos(t).find(n=>n.type==="div"&&Array.isArray(n.props.children)&&(n.props.children as unknown[]).includes(slot))!;
+ const filhos=rolagem.props.children as unknown[];expect(filhos.indexOf(slot)).toBeGreaterThan(filhos.findIndex(f=>(f as {type?:unknown})?.type===VirtualList));
+ cartoes.mockClear();const parcial=tela({...base,cartoesNoFio:cartoes,conversa:{...base.conversa,temMaisDepois:true}});
+ expect(elementos(parcial).some(n=>n.props?.["data-slot"]==="cartoesNoFio")).toBe(false);expect(cartoes).not.toHaveBeenCalled();
+});
+it("364 com dono de intenções, Editar do cartão usa o mesmo controlador do agendar",async()=>{
+ const {criarIntencoesAgendamento}=await import("./fluxos/agendar/intencao-agendamento");
+ const cartoes=vi.fn(()=>null);tela({...base,cartoesNoFio:cartoes,intencoesAgendamento:criarIntencoesAgendamento()});
+ expect(cartoes).toHaveBeenCalledWith({agora:expect.any(Date),aoEditar:expect.any(Function)});
+});

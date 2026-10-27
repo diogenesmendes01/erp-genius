@@ -9,7 +9,7 @@ import { driverMotor } from "./drivers/motor";
 import { lerMidiaParaEnvio } from "./midia";
 import { snapshotCobranca } from "./elegibilidade";
 import { atendimentoVisivel } from "./atendimentos";
-import { DriverWhatsApp, Papel, type EstadoPolitica } from "@prisma/client";
+import { DriverWhatsApp, Papel, type EstadoPolitica, type IntencaoMensagem, type Prisma } from "@prisma/client";
 import { destinatarioAtualDoAtendimento } from "./destinatario-atual";
 import { suspensaoPorConferencia } from "@/server/cobrancas/conferencia";
 import { claimAvisoAgendaTx, motivoAvisoAgendaInvalido, registrarResultadoAvisoAgendaTx } from "@/server/comunicacoes-agenda/whatsapp";
@@ -92,6 +92,10 @@ export function decidirEnvio(e: EntradaShadow & { envioAgendaHabilitado: boolean
 }
 
 const CLAIM_STALE_MS = 15 * 60_000;
+
+export function vigente(it: Pick<IntencaoMensagem, "id" | "status" | "agendadaPara" | "corpoRenderizado">): Prisma.IntencaoMensagemWhereInput {
+  return { id: it.id, status: it.status, agendadaPara: it.agendadaPara, corpoRenderizado: it.corpoRenderizado };
+}
 
 export interface OpcoesDespacho {
   intencaoId?: string;
@@ -277,7 +281,7 @@ export async function despacharFila(
     }
     if (decisao === "SIMULAR") {
       await prisma.intencaoMensagem.updateMany({
-        where: { id: it.id, status: it.status },
+        where: vigente(it),
         data: { status: "SIMULADA", despachadaEm: agora, motivoFalha: live ? null : "ambiente_sem_live" },
       });
       r.simuladas += 1;
@@ -295,7 +299,7 @@ export async function despacharFila(
     try {
       await prisma.$transaction(confirmarTransacao(async (tx) => {
         const claim = await tx.intencaoMensagem.updateMany({
-          where: { id: it.id, status: it.status },
+          where: vigente(it),
           data: { status: "ENVIANDO", despacharAposEm: new Date(agora.getTime() + CLAIM_STALE_MS), clientMessageId },
         });
         if (claim.count !== 1) return;
