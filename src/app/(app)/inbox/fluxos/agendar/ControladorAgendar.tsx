@@ -8,6 +8,7 @@ import {PopoverAgendar} from "./PopoverAgendar";
 import {PopoverFluxo} from "../PopoverFluxo";
 import {Botao} from "@/components/Botao";
 import {FeedbackAcao} from "@/components/FeedbackAcao";
+import {MensagemStatus} from "@/components/MensagemStatus";
 import {agendadasDoAtendimento} from "@/server/whatsapp/consultas-acoes-atendimento";
 import {agendarMensagemNoAtendimentoLocal,reagendarAgendamentoDoAtendimento} from "@/server/whatsapp/acoes-conversa";
 import {MOTIVO_SEM_ENVIO} from "@/components/conversa/Compositor";
@@ -49,7 +50,7 @@ export function useControladorAgendar(props:PropsControladorAgendar){
  useEffect(()=>{const pedido=aguardandoPorta.current;if(props.porta&&pedido)abrirBase(pedido.dto,pedido.ancora);},[props.porta,abrirBase]);
  const chave=abertura?`${abertura.geracao}:${props.versao}:${tentativa}`:"";
  useEffect(()=>{if(!abertura||!props.intencoes||!props.podeLer||abertura.atorId!==props.usuarioId||abertura.dono!==props.intencoes)return;let vigente=true;const capturada=abertura,chaveCapturada=chave;
-  void agendadasDoAtendimento(capturada.alvo.atendimentoId).then(lista=>{if(vigente&&viva.current&&abertaRef.current===capturada){if(capturada.alvo.tipo==="REAGENDAR"){const id=capturada.alvo.intencaoId,dto=lista.find(l=>l.id===id);if(dto)setEdicao(anterior=>anterior?.geracao===capturada.geracao?anterior:{geracao:capturada.geracao,dto});}setLeitura({chave:chaveCapturada,lista,erro:null});}},()=>{if(vigente&&viva.current&&abertaRef.current===capturada)setLeitura({chave:chaveCapturada,lista:null,erro:"Não foi possível carregar os agendamentos."});});
+  void agendadasDoAtendimento(capturada.alvo.atendimentoId).then(lista=>{if(vigente&&viva.current&&abertaRef.current===capturada){if(capturada.alvo.tipo==="REAGENDAR"){const id=capturada.alvo.intencaoId,dto=lista.find(l=>l.id===id);if(dto)setEdicao(anterior=>anterior?.geracao===capturada.geracao?anterior:{geracao:capturada.geracao,dto});}setLeitura({chave:chaveCapturada,lista,erro:null});}}).catch(()=>{if(vigente&&viva.current&&abertaRef.current===capturada)setLeitura({chave:chaveCapturada,lista:null,erro:"Não foi possível carregar os agendamentos."});});
   return()=>{vigente=false;};
  },[abertura,chave,props.intencoes,props.podeLer,props.usuarioId]);
  const lerAgora=leitura?.chave===chave?leitura:null,lista=lerAgora?.lista??[],carregando=!!abertura&&!lerAgora;
@@ -67,7 +68,7 @@ export function useControladorAgendar(props:PropsControladorAgendar){
    if(!e.incerto&&!podeMutar(p))return {ok:false,erro:"Assuma a conversa para agendar a mensagem."};
    return c.tipo==="CRIAR"?agendarMensagemNoAtendimentoLocal({atendimentoId:c.atendimentoId,texto:c.texto,quandoLocal:c.quandoLocal,fuso:c.fuso,chaveIdempotencia:c.chaveIdempotencia}):reagendarAgendamentoDoAtendimento({atendimentoId:c.atendimentoId,intencaoId:c.intencaoId,quandoLocal:c.quandoLocal,fuso:c.fuso,chaveIdempotencia:c.chaveIdempotencia});
   };
-  if(capturada.alvo.tipo==="REAGENDAR"&&!dtoExibido&&!incerto)dialogo=<PopoverFluxo titulo="Editar agendamento" ancora={ancora} aoFechar={fecharCapturada}>{carregando&&<p role="status">Carregando agendamentos…</p>}<FeedbackAcao erro={lerAgora?.erro??(faltouAlvo?"Agendamento não encontrado ou mudou de situação.":null)}/>{lerAgora?.erro&&<Botao variante="neutro" onClick={()=>setTentativa(t=>t+1)}>Tentar de novo</Botao>}<Botao variante="neutro" onClick={fecharCapturada}>Cancelar</Botao></PopoverFluxo>;
+  if(capturada.alvo.tipo==="REAGENDAR"&&!dtoExibido&&!incerto)dialogo=<PopoverFluxo titulo="Editar agendamento" ancora={ancora} aoFechar={fecharCapturada}><MensagemStatus texto={carregando?"Carregando agendamentos…":null}/><FeedbackAcao erro={lerAgora?.erro??(faltouAlvo?"Agendamento não encontrado ou mudou de situação.":null)}/>{lerAgora?.erro&&<Botao variante="neutro" onClick={()=>setTentativa(t=>t+1)}>Tentar de novo</Botao>}<Botao variante="neutro" onClick={fecharCapturada}>Cancelar</Botao></PopoverFluxo>;
   else dialogo=<PopoverAgendar key={capturada.geracao} atendimentoId={props.atendimentoId} nomeContato={props.nomeContato} fuso={capturada.fuso} textoInicial={capturada.porta?.textoAtual??""} ancora={ancora} agendadas={lista} respostas={props.respostas} variaveisResposta={props.variaveisResposta} intencao={capturada.intencao} executar={executar} editar={dto??(dtoExibido?{...dtoExibido,podeAlterar:false}:undefined)} agora={props.agora}
    podeAgendar={podeMutar(props)&&!!lerAgora&&!lerAgora.erro&&!faltouAlvo} podeRecuperar={props.podeLer} motivoBloqueio={motivo}
    estadoLeitura={carregando?"carregando":lerAgora?.erro?"erro":"ok"} erroLeitura={lerAgora?.erro??null} aoTentarLeitura={()=>setTentativa(t=>t+1)} insightsAplicaveis={props.insightsAplicaveis} versaoInsights={props.versaoInsights}
