@@ -1,4 +1,4 @@
-import { mkdir, readFile, writeFile } from "fs/promises";
+import { mkdir, readFile, rm, writeFile } from "fs/promises";
 import path from "path";
 import type { TipoMensagem } from "@prisma/client";
 import { UPLOAD_DIR, contentTypePorExtensao, resolverCaminhoUpload } from "@/lib/uploads";
@@ -83,11 +83,25 @@ export function midiaSaidaDoAutor(url: string, autorId: string): boolean {
   );
 }
 
+export async function descartarMidiaSaida(autorId: string, url: string): Promise<void> {
+  if (!midiaSaidaDoAutor(url, autorId)) return;
+  const caminho = resolverCaminhoUpload(url.slice("/api/files/".length).split("/"));
+  if (caminho) await rm(caminho, { force: true }).catch(() => undefined);
+}
+
 export async function copiarMidiaParaSaida(autorId: string, midiaPath: string): Promise<string | null> {
+  return copiarArquivoParaSaida(autorId, midiaPath, (segmentos) => segmentos[0] === SUBPASTA || segmentos[0] === SUBPASTA_SAIDA);
+}
+
+export async function copiarDocumentoParaSaida(autorId: string, url: string): Promise<string | null> {
+  return copiarArquivoParaSaida(autorId, url, () => true);
+}
+
+async function copiarArquivoParaSaida(autorId: string, url: string, origemAceita: (segmentos: string[]) => boolean): Promise<string | null> {
   const prefixo = "/api/files/";
-  if (!midiaPath.startsWith(prefixo)) return null;
-  const segmentos = midiaPath.slice(prefixo.length).split("/").filter(Boolean);
-  if (segmentos[0] !== SUBPASTA && segmentos[0] !== SUBPASTA_SAIDA) return null;
+  if (!url.startsWith(prefixo)) return null;
+  const segmentos = url.slice(prefixo.length).split("/").filter(Boolean);
+  if (!segmentos.length || !origemAceita(segmentos)) return null;
   const caminho = resolverCaminhoUpload(segmentos);
   if (!caminho) return null;
   const mime = contentTypePorExtensao(caminho);

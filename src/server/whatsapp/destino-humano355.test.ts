@@ -1,0 +1,15 @@
+import type { Prisma } from "@prisma/client";
+import {beforeEach,expect,it,vi} from "vitest";
+const h=vi.hoisted(()=>({visivel:vi.fn()}));
+vi.mock("./atendimentos",()=>({atendimentoVisivel:h.visivel}));
+import {validarDestinoSaidaHumanaInboxTx,enfileirarSaidaInbox} from "./enfileirar-inbox";
+const autor={id:"u",nome:"Vendedor",ativo:true,papeis:["VENDEDOR"],permissoes:[]};
+const conversa={id:"a",numero:{ativo:true},contato:{optOutEm:null}};
+const findUnique=vi.fn();const tx={usuario:{findUnique}} as unknown as Prisma.TransactionClient;
+beforeEach(()=>{findUnique.mockReset().mockResolvedValue(autor);h.visivel.mockReset().mockResolvedValue(conversa);});
+it("reutiliza ACL de envio e autor fresco dentro da TX sem exigir Assumir",async()=>{const r=await validarDestinoSaidaHumanaInboxTx(tx,"u","a");expect(r.u).toEqual(autor);expect(r.conversa).toEqual(conversa);expect(h.visivel).toHaveBeenCalledExactlyOnceWith(autor,"a",true,tx);});
+it.each([null,{...autor,ativo:false}])("autor removido/inativo não chega à leitura do destino %j",async u=>{findUnique.mockResolvedValue(u);await expect(validarDestinoSaidaHumanaInboxTx(tx,"u","a")).rejects.toThrow("Sua sessão não está mais ativa.");expect(h.visivel).not.toHaveBeenCalled();});
+it("ACL fresca revogada recusa destino",async()=>{h.visivel.mockResolvedValue(null);await expect(validarDestinoSaidaHumanaInboxTx(tx,"u","a")).rejects.toThrow("Conversa não encontrada ou fora do seu escopo.");});
+it("número inativo continua recusado",async()=>{h.visivel.mockResolvedValue({...conversa,numero:{ativo:false}});await expect(validarDestinoSaidaHumanaInboxTx(tx,"u","a")).rejects.toThrow("Este número está inativo.");});
+it("optout atual continua recusado",async()=>{h.visivel.mockResolvedValue({...conversa,contato:{optOutEm:new Date()}});await expect(validarDestinoSaidaHumanaInboxTx(tx,"u","a")).rejects.toThrow("O contato pediu para não receber mensagens");});
+it("wrapper legado preserva recusa de especial encerrado antes do estado do número",async()=>{h.visivel.mockResolvedValue({...conversa,encerradoEm:new Date(),numero:{ativo:false}});const t={usuario:{findUnique},configIA:{upsert:vi.fn(async()=>({}))},$queryRaw:vi.fn(async()=>[])} as unknown as Prisma.TransactionClient;const db={$transaction:async<T>(fn:(tx:Prisma.TransactionClient)=>Promise<T>)=>fn(t)} as Parameters<typeof enfileirarSaidaInbox>[0];await expect(enfileirarSaidaInbox(db,"u","a",{tipo:"especial",conteudo:{tipo:"LOCALIZACAO",latitude:0,longitude:0}})).rejects.toThrow("Conversa não encontrada ou fora do seu escopo.");});

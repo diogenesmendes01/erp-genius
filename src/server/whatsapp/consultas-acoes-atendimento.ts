@@ -11,6 +11,7 @@ import { ehGerenteDoSetor, papeisDoSetor, type Setor } from "./setor";
 import { Papel } from "@prisma/client";
 import { resumoDaAriaParaNota } from "@/server/aria/resumo-nota";
 import { lerAgendadasDoAtendimento, type AgendadaNoFio } from "@/server/inbox/agendadas-leitura";
+import { propostasVisiveis, type PropostaAnexavel } from "./proposta-atendimento";
 
 const IdSchema = z.string().min(1);
 
@@ -18,6 +19,12 @@ export async function agendadasDoAtendimento(atendimentoId: string): Promise<Age
   const u = await exigirSessao();
   const id = IdSchema.parse(atendimentoId);
   return lerAgendadasDoAtendimento(prisma, u.id, id);
+}
+
+export async function propostasDoAtendimento(atendimentoId: string): Promise<{ oportunidadeId: string | null; propostas: PropostaAnexavel[] }> {
+  const u = await exigirSessao();
+  const { oportunidadeId, propostas } = await propostasVisiveis(u, IdSchema.parse(atendimentoId));
+  return { oportunidadeId, propostas: propostas.map(({ id, nome, criadoEm }) => ({ id, nome, criadoEm })) };
 }
 
 export async function listarPessoasParaAtendimento(atendimentoId:string,para:"atribuir"|"convidar"):Promise<{id:string;nome:string}[]>{

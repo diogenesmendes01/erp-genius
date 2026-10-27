@@ -1,10 +1,11 @@
 "use server";
 
+import { TextoNotaInternaSchema } from "../_shared/efeitos-humanos-schema";
 import { normalizarNotaComMencoes, type TokenMencao } from "@/lib/mencoes-nota";
 import { notificarMencoesNaNota } from "@/server/inbox/mencoes";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
-import { Papel } from "@prisma/client";
+import { Papel, type Evento } from "@prisma/client";
 import { cancelarAgendadaInboxTx } from "@/server/inbox/agendadas-cancelamento";
 import { prisma } from "@/lib/prisma";
 import { avisarAtendimentoAtualizado } from "@/server/inbox/barramento";
@@ -18,12 +19,15 @@ import { executarAgendadaInbox } from "@/server/inbox/agendadas-operacao-inbox";
 import type { NotaInternaThread } from "./consultas-inbox";
 import { notasInternasDoAtendimento } from "./notas-consulta";
 import { despacharFila } from "./despachante";
-import { copiarMidiaParaSaida } from "./midia";
+import { copiarDocumentoParaSaida, copiarMidiaParaSaida, descartarMidiaSaida } from "./midia";
+import { enfileirarSaidaInboxTx } from "./enfileirar-inbox";
+import { ERRO_ANEXAR_PROPOSTA, exigirPropostaVisivel } from "./proposta-atendimento";
+import type { EnvioInboxResultado } from "./acoes";
 
 const TokenMencaoSchema = z.object({ usuarioId: z.string().min(1).max(200), inicio: z.number().int().nonnegative(), fim: z.number().int().positive() });
 const NotaSchema = z.object({
   atendimentoId: z.string().min(1),
-  nota: z.string().trim().min(1, "Escreva a nota.").max(2000, "A nota pode ter no máximo 2000 caracteres."),
+  nota: TextoNotaInternaSchema,
   mencoes: z.array(TokenMencaoSchema).max(50).optional(),
   chaveIdempotencia: ChaveIdempotenciaSchema.optional(),
 });
@@ -192,5 +196,63 @@ export async function encaminharMensagem(input: { mensagemId: string; destinoAte
     for (const intencaoId of intencaoIds) await despacharFila(new Date(), { intencaoId });
     revalidatePath("/inbox");
     return { intencaoIds };
+  });
+}
+
+const PropostaSchema = z.object({
+  atendimentoId: z.string().min(1),
+  documentoId: z.string().min(1),
+  legenda: z.string().max(1024, "A legenda pode ter no máximo 1024 caracteres.").optional(),
+  chaveIdempotencia: ChaveIdempotenciaSchema.optional(),
+});
+const EVENTO_PROPOSTA = "PropostaEnviadaNoAtendimento";
+
+function intencaoDoEvento(e: Evento): string {
+  const id = (e.payload as Record<string, unknown> | null)?.intencaoId;
+  if (typeof id !== "string") throw new ErroRegra("Não foi possível confirmar o envio anterior desta proposta. Confira a conversa antes de repetir.");
+  return id;
+}
+
+async function situacaoDoEnvio(intencaoId: string): Promise<EnvioInboxResultado> {
+  await despacharFila(new Date(), { intencaoId });
+  const final = await prisma.intencaoMensagem.findUnique({ where: { id: intencaoId }, select: { status: true, motivoFalha: true } });
+  revalidatePath("/inbox");
+  return { status: final?.status ?? "PENDENTE", motivo: final?.motivoFalha ?? null };
+}
+
+export async function enviarPropostaNoAtendimento(input: { atendimentoId: string; documentoId: string; legenda?: string; chaveIdempotencia?: string }): Promise<Resultado<EnvioInboxResultado>> {
+  return executarAcao(async () => {
+    const u = await exigirSessao();
+    const { atendimentoId, documentoId, legenda, chaveIdempotencia } = PropostaSchema.parse(input);
+    const texto = legenda?.trim() ?? "";
+    const marca = marcaIdempotencia(chaveIdempotencia, { atendimentoId, documentoId, legenda: texto });
+    const alvo = marca ? {
+      tipo: EVENTO_PROPOSTA, agregadoTipo: "AtendimentoWhatsApp", autorId: u.id, marca,
+      mensagemConflito: "Esta tentativa já foi usada com outra proposta. Feche e reabra a conversa e confira as mensagens antes de repetir.",
+    } : null;
+    if (alvo) {
+      const repetido = await prisma.$transaction((tx) => repeticaoIdempotente(tx, alvo));
+      if (repetido) return situacaoDoEnvio(intencaoDoEvento(repetido));
+    }
+    const proposta = await exigirPropostaVisivel(u, atendimentoId, documentoId);
+    const midiaPath = await copiarDocumentoParaSaida(u.id, proposta.url);
+    if (!midiaPath) throw new ErroRegra(ERRO_ANEXAR_PROPOSTA);
+    let gravado: { intencaoId: string; nova: boolean };
+    try {
+      gravado = await prisma.$transaction(async (tx) => {
+        if (alvo) {
+          const repetido = await repeticaoIdempotente(tx, alvo);
+          if (repetido) return { intencaoId: intencaoDoEvento(repetido), nova: false };
+        }
+        const intencao = await enfileirarSaidaInboxTx(tx, u.id, atendimentoId, { tipo: "midia", url: midiaPath, ...(texto ? { legenda: texto } : {}) });
+        await registrarEvento(tx, { tipo: EVENTO_PROPOSTA, agregadoTipo: "AtendimentoWhatsApp", agregadoId: atendimentoId, autorId: u.id, payload: { documentoId, intencaoId: intencao.id, ...marca } });
+        return { intencaoId: intencao.id, nova: true };
+      });
+    } catch (e) {
+      await descartarMidiaSaida(u.id, midiaPath);
+      throw e;
+    }
+    if (!gravado.nova) await descartarMidiaSaida(u.id, midiaPath);
+    return situacaoDoEnvio(gravado.intencaoId);
   });
 }
