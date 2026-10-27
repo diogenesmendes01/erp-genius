@@ -31,9 +31,9 @@ export interface PropsPopoverAgendar {
 function agoraReal(){return new Date();}
 export function PopoverAgendar({atendimentoId,fuso,nomeContato,textoInicial,ancora,agendadas,respostas,variaveisResposta,intencao,executar,podeAgendar,podeRecuperar,motivoBloqueio,editar,relogio=agoraReal,podeSalvarRascunho=true,insightsAplicaveis=false,versaoInsights=0,estadoLeitura="ok",erroLeitura=null,aoTentarLeitura,aoSalvarRascunho,aoFechar,aoConcluir}:PropsPopoverAgendar){
  const estado=useSyncExternalStore(intencao.assinar,intencao.ler,intencao.ler);
- const modoEditar=!!editar||estado.comando?.tipo==="REAGENDAR";
+ const modoEditar=!!editar||estado.comando?.tipo==="EDITAR";
  const [agoraAtual,setAgoraAtual]=useState(relogio);
- const [texto,setTexto]=useState(()=>{const c=intencao.ler().comando;return c?.tipo==="CRIAR"?c.texto:editar?.texto??(c?.tipo==="REAGENDAR"?"Agendamento em confirmação.":textoInicial);});
+ const [texto,setTexto]=useState(()=>{const c=intencao.ler().comando;return c?c.texto:editar?.texto??textoInicial;});
  const [quando,setQuando]=useState(()=>intencao.ler().comando?.quandoLocal??(editar?valorCampoLocal(editar.agendadaPara,fuso):atalhosDeAgendamento(agoraAtual,fuso).find(a=>a.id==="amanha9")?.valorLocal??""));
  const [erroLocal,setErroLocal]=useState<string|null>(null),[revisaoTexto,setRevisaoTexto]=useState(0);
  const viva=useRef(true);useEffect(()=>{viva.current=true;return()=>{viva.current=false;};},[]);
@@ -42,9 +42,9 @@ export function PopoverAgendar({atendimentoId,fuso,nomeContato,textoInicial,anco
  const validacao=recuperando?null:validarQuando(quando,fusoEfetivo,agoraAtual);
  const conversao=instanteDoCampoLocal(quando,fusoEfetivo);
  const conflito=conversao.ok?agendadaProxima(conversao.instante,agendadas,editar?.id):null;
- const bloqueado=estado.ocupado||estado.incerto;
+ const bloqueado=estado.ocupado||estado.incerto,somenteLeitura=bloqueado||!!editar&&!editar.podeAlterar;
  const permitido=recuperando?podeRecuperar:podeAgendar===true&&estadoLeitura==="ok"&&(!editar||editar.podeAlterar)&&!!texto.trim()&&texto.length<=4000&&!validacao;
- function mudarTexto(t:string){if(!viva.current||bloqueado||modoEditar)return;setAgoraAtual(relogio());intencao.reiniciar();setTexto(t);setRevisaoTexto(r=>r+1);setErroLocal(null);}
+ function mudarTexto(t:string){if(!viva.current||somenteLeitura)return;setAgoraAtual(relogio());intencao.reiniciar();setTexto(t);setRevisaoTexto(r=>r+1);setErroLocal(null);}
  const sugestao=useSugestaoAgendamento({atendimentoId,texto,revisao:revisaoTexto,ocupado:bloqueado,versao:versaoInsights,ativo:insightsAplicaveis&&!modoEditar,aoTexto:mudarTexto});
  function mudarQuando(valor:string){if(!viva.current||bloqueado)return;setAgoraAtual(relogio());intencao.reiniciar();setQuando(valor);setErroLocal(null);}
  async function enviar(e:FormEvent){e.preventDefault();if(!viva.current)return;if(intencao.ler().ocupado)return;
@@ -54,15 +54,15 @@ export function PopoverAgendar({atendimentoId,fuso,nomeContato,textoInicial,anco
    if(podeAgendar!==true||estadoLeitura!=="ok"||editar&&!editar.podeAlterar){setErroLocal(motivoBloqueio??"Assuma a conversa para agendar a mensagem.");return;}
    if(erro||!texto.trim()||texto.length>4000){setErroLocal(erro??"Escreva uma mensagem de até 4000 caracteres.");return;}
   }
-  const entrada:EntradaAgendamento=recuperar&&atual.comando?atual.comando:editar?{tipo:"REAGENDAR",atendimentoId,intencaoId:editar.id,quandoLocal:quando,fuso:fusoEfetivo}:{tipo:"CRIAR",atendimentoId,texto,quandoLocal:quando,fuso:fusoEfetivo};
+  const entrada:EntradaAgendamento=recuperar&&atual.comando?atual.comando:editar?{tipo:"EDITAR",atendimentoId,intencaoId:editar.id,texto,quandoLocal:quando,fuso:fusoEfetivo}:{tipo:"CRIAR",atendimentoId,texto,quandoLocal:quando,fuso:fusoEfetivo};
   const resultado=await intencao.enviar(entrada,executar);
   if(viva.current&&resultado?.tipo==="ok")aoConcluir(modoEditar?"Agendamento atualizado.":"Mensagem agendada.");
  }
  function salvar(){if(!viva.current||bloqueado||modoEditar||!podeRecuperar||!podeSalvarRascunho)return;const r=aoSalvarRascunho(texto);if(r.ok){intencao.reiniciar();aoFechar();}else setErroLocal(r.erro);}
  return <PopoverFluxo titulo={modoEditar?"Editar agendamento":"Agendar mensagem"} ancora={ancora} aoFechar={aoFechar} ocupado={estado.ocupado}>
   <form onSubmit={e=>void enviar(e)} className="space-y-3">
-   <Campo rotulo="Mensagem" obrigatorio>{c=><CampoTexto {...c} name="texto" rows={4} maxLength={4000} className="w-full rounded-lg border border-border-soft bg-brand-bg p-3 text-sm" value={texto} readOnly={modoEditar||bloqueado} onChange={e=>mudarTexto(e.target.value)}/>}</Campo>
-   {modoEditar?<p className="text-xs text-gray-600">Para mudar o texto, cancele e agende de novo.</p>:<div className="flex flex-wrap gap-1">{respostas.slice(0,5).map(r=><Botao key={r.id} variante="fantasma" tamanho="sm" disabled={bloqueado} onClick={()=>mudarTexto(aplicarVariaveisResposta(r.corpo,variaveisResposta))}><IconBolt size={14} aria-hidden/>{r.titulo}</Botao>)}</div>}
+   <Campo rotulo="Mensagem" obrigatorio>{c=><CampoTexto {...c} name="texto" rows={4} maxLength={4000} className="w-full rounded-lg border border-border-soft bg-brand-bg p-3 text-sm" value={texto} readOnly={somenteLeitura} onChange={e=>mudarTexto(e.target.value)}/>}</Campo>
+   <div className="flex flex-wrap gap-1">{respostas.slice(0,5).map(r=><Botao key={r.id} variante="fantasma" tamanho="sm" disabled={somenteLeitura} onClick={()=>mudarTexto(aplicarVariaveisResposta(r.corpo,variaveisResposta))}><IconBolt size={14} aria-hidden/>{r.titulo}</Botao>)}</div>
    {insightsAplicaveis&&!modoEditar&&<><Botao variante="iaFantasma" tamanho="sm" disabled={!sugestao.disponivel||bloqueado} ocupado={sugestao.ocupado} onClick={sugestao.pedirUso}>Escrever com Aria</Botao><MensagemStatus texto={sugestao.aviso} progresso={sugestao.carregando?"Carregando sugestão…":null}/><FeedbackAcao erro={sugestao.erro} sucesso={sugestao.sucesso}/>{sugestao.confirmacao}</>}
    <fieldset className="space-y-2"><legend className="text-sm font-medium">Quando</legend><div className="flex flex-wrap gap-1">{atalhosDeAgendamento(agoraAtual,fusoEfetivo).map(a=><Botao key={a.id} aria-pressed={quando===a.valorLocal} variante={quando===a.valorLocal?"secundario":"fantasma"} tamanho="sm" disabled={bloqueado} onClick={()=>mudarQuando(a.valorLocal)}>{a.rotulo}</Botao>)}</div>
     <Campo rotulo="Data e hora" obrigatorio erro={quando?validacao:null}>{c=><CampoDataHoraLocal {...c} name="quandoLocal" fuso={fusoEfetivo} className="w-full rounded-lg border border-border-soft bg-surface p-2" value={quando} disabled={bloqueado} onChange={e=>mudarQuando(e.target.value)}/>}</Campo>

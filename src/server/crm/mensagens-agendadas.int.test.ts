@@ -13,7 +13,7 @@ import { mensagemForaDaJanela } from "@/server/whatsapp/janela-envio";
 import { exigirSessao } from "@/server/_shared/sessao";
 import { criarTarefa } from "./tarefas";
 import {
-  numerosParaAgendar, agendarMensagem, reagendarMensagem, cancelarMensagemAgendada, enviarAgora, listarItensAgenda,
+  numerosParaAgendar, agendarMensagem, reagendarMensagem, cancelarMensagemAgendada, enviarAgora, listarItensAgenda, editarMensagemAgendada,
 } from "./mensagens-agendadas";
 
 function logadoComo(id: string) {
@@ -171,6 +171,28 @@ describe("reagendar, cancelar e enviar agora", () => {
     const t = (await prisma.intencaoMensagem.findUniqueOrThrow({ where: { id: m } })).agendadaPara!.getTime();
     expect(t).toBeGreaterThanOrEqual(antes - 1000);
     expect(t).toBeLessThanOrEqual(Date.now() + 1000);
+  });
+
+  it("editar muda texto e horário com Evento MensagemAgendadaEditada sem o texto no payload", async () => {
+    const m = await nova();
+    const quando = util(16);
+    expect(await editarMensagemAgendada(m, { texto: "  Texto novo  ", agendadaPara: quando })).toEqual({ ok: true });
+    expect(await prisma.intencaoMensagem.findUniqueOrThrow({ where: { id: m } })).toMatchObject({ corpoRenderizado: "Texto novo", agendadaPara: new Date(quando), status: "PENDENTE" });
+    const evento = (await eventosDo("Tarefa", tarefaId)).find((e) => e.tipo === "MensagemAgendadaEditada");
+    expect(evento?.payload).toEqual({ intencaoId: m, agendadaPara: new Date(quando).toISOString(), textoAlterado: true });
+    expect(JSON.stringify(evento?.payload)).not.toContain("Texto novo");
+  });
+
+  it("editar recusa texto vazio, horário passado, mensagem enviada e outro autor", async () => {
+    const m = await nova();
+    expect((await editarMensagemAgendada(m, { texto: "   ", agendadaPara: util(16) })).ok).toBe(false);
+    expect(await editarMensagemAgendada(m, { texto: "Novo", agendadaPara: emHoras(-1) })).toEqual({ ok: false, erro: "Escolha uma data e hora no futuro." });
+    logadoComo(outro.id);
+    expect(await editarMensagemAgendada(m, { texto: "Novo", agendadaPara: util(16) })).toEqual({ ok: false, erro: "Mensagem não encontrada." });
+    logadoComo(vendedor.id);
+    await prisma.intencaoMensagem.update({ where: { id: m }, data: { status: "DESPACHADA" } });
+    expect(await editarMensagemAgendada(m, { texto: "Novo", agendadaPara: util(16) })).toEqual({ ok: false, erro: "A mensagem já foi enviada." });
+    expect((await prisma.intencaoMensagem.findUniqueOrThrow({ where: { id: m } })).corpoRenderizado).toBe("Oi");
   });
 });
 

@@ -186,7 +186,7 @@ type Montagem = { data: Prisma.IntencaoMensagemUpdateManyMutationInput; payload:
 async function alterar(
   id: string,
   tipoEvento: string,
-  montar: (m: { validaAte: Date | null }) => Montagem | Promise<Montagem>,
+  montar: (m: { validaAte: Date | null; atendimentoId: string | null; corpoRenderizado: string }) => Montagem | Promise<Montagem>,
   estadoAlvo?: "CANCELADA",
 ): Promise<Resultado> {
   return executarAcao(async () => {
@@ -195,7 +195,7 @@ async function alterar(
     await prisma.$transaction(async (tx) => {
       const m = await tx.intencaoMensagem.findFirst({
         where: { AND: [{ id }, baseAgendada, escopoAutores(autor, true)] },
-        select: { status: true, tarefaId: true, leadId: true, atendimentoId: true, validaAte: true, contato: { select: { pessoaId: true } } },
+        select: { status: true, tarefaId: true, leadId: true, atendimentoId: true, validaAte: true, corpoRenderizado: true, contato: { select: { pessoaId: true } } },
       });
       if (!m) throw recusa(undefined);
       const jaFeito = async (status: string | undefined) => {
@@ -232,6 +232,20 @@ export async function reagendarMensagem(id: string, agendadaPara: string): Promi
     dataFutura(m, quando);
     await exigirAgendamentoNaJanela(quando);
     return { data: { agendadaPara: quando, status: "PENDENTE", despacharAposEm: null, motivoFalha: null }, payload: { agendadaPara: quando.toISOString() } };
+  });
+}
+
+export async function editarMensagemAgendada(id: string, dados: { texto: string; agendadaPara: string }): Promise<Resultado> {
+  return alterar(id, "MensagemAgendadaEditada", async (m) => {
+    if (m.atendimentoId) throw new ErroRegra("Assuma a conversa para alterar a mensagem agendada.");
+    const texto = AgendarSchema.shape.texto.parse(dados.texto);
+    const quando = futuro(InstanteSchema.parse(dados.agendadaPara));
+    dataFutura(m, quando);
+    await exigirAgendamentoNaJanela(quando);
+    return {
+      data: { corpoRenderizado: texto, agendadaPara: quando, status: "PENDENTE", despacharAposEm: null, motivoFalha: null },
+      payload: { agendadaPara: quando.toISOString(), textoAlterado: texto !== m.corpoRenderizado },
+    };
   });
 }
 

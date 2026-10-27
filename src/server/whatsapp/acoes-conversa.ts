@@ -91,6 +91,19 @@ export async function reagendarAgendamentoDoAtendimento(input: { atendimentoId: 
   });
 }
 
+export async function editarAgendamentoDoAtendimento(input: { atendimentoId: string; intencaoId: string; texto: string; quandoLocal: string; fuso: string; chaveIdempotencia?: string }): Promise<Resultado<{ id: string }>> {
+  return executarAcao(async () => {
+    const u = await exigirSessao();
+    const atendimentoId = z.string().min(1).parse(input.atendimentoId);
+    const intencaoId = z.string().min(1).parse(input.intencaoId);
+    const texto = z.string().parse(input.texto);
+    const agendadaPara = exigirInstanteDoCampoLocal(input.quandoLocal, input.fuso).toISOString();
+    const r = await executarAgendadaInbox(prisma, u.id, { tipo: "EDITAR", atendimentoId, intencaoId, texto, agendadaPara, chaveIdempotencia: input.chaveIdempotencia });
+    revalidarAgendadas();
+    return r;
+  });
+}
+
 export async function enviarAgendamentoAgoraDoAtendimento(input: { atendimentoId: string; intencaoId: string; chaveIdempotencia?: string }): Promise<Resultado<{ id: string }>> {
   return executarAcao(async () => {
     const u = await exigirSessao();

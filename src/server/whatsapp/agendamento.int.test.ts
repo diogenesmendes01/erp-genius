@@ -7,7 +7,7 @@ import { prisma } from "@/lib/prisma";
 import { criarUsuario, truncarBanco } from "@/test/integracao";
 import { criarNumeroSetor } from "@/test/integracao-whatsapp";
 import { garantirAtendimento } from "./atendimentos";
-import { agendarMensagemNoAtendimento, agendarMensagemNoAtendimentoLocal } from "./acoes-conversa";
+import { agendarMensagemNoAtendimento, agendarMensagemNoAtendimentoLocal, editarAgendamentoDoAtendimento } from "./acoes-conversa";
 import { valorCampoLocal } from "@/server/operacao/fuso-entrada";
 import { transferirAtendimento } from "./acoes-atendimento";
 import { despacharFila } from "./despachante";
@@ -92,5 +92,77 @@ describe("agendar mensagem pelo atendimento", () => {
       erro: "Fora da janela de envio da escola: as mensagens saem das 9h às 20h, de segunda a sexta (horário de America/Sao_Paulo). Escolha outro horário.",
     });
     expect(await prisma.intencaoMensagem.count()).toBe(0);
+  });
+});
+
+describe("editar mensagem agendada pelo atendimento (D11)", () => {
+  const FUSO = "America/Sao_Paulo";
+  async function agendada() {
+    const c = await cenario();
+    comoUsuario(c.vend);
+    const id = idDe(await agendarMensagemNoAtendimento({ atendimentoId: c.a.id, texto: "Texto antigo", quando: util(10).toISOString() }));
+    return { ...c, id };
+  }
+  const editar = (c: { a: { id: string }; id: string }, extra: Partial<{ texto: string; quando: Date; chaveIdempotencia: string }> = {}) =>
+    editarAgendamentoDoAtendimento({ atendimentoId: c.a.id, intencaoId: c.id, texto: extra.texto ?? "Texto novo", quandoLocal: valorCampoLocal(extra.quando ?? util(15), FUSO), fuso: FUSO, chaveIdempotencia: extra.chaveIdempotencia });
+  const editados = (atendimentoId: string) => prisma.evento.findMany({ where: { tipo: "MensagemAgendadaEditada", agregadoTipo: "AtendimentoWhatsApp", agregadoId: atendimentoId } });
+
+  it("edita texto e horário: Evento MensagemAgendadaEditada, sem o texto no payload; sai com o texto novo", async () => {
+    const c = await agendada();
+    const quando = util(15);
+    expect(await editar(c, { quando })).toEqual({ ok: true, dado: { id: c.id } });
+    const m = await prisma.intencaoMensagem.findUniqueOrThrow({ where: { id: c.id } });
+    expect(m).toMatchObject({ corpoRenderizado: "Texto novo", status: "PENDENTE" });
+    expect(m.agendadaPara?.toISOString()).toBe(new Date(Math.floor(quando.getTime() / 60_000) * 60_000).toISOString());
+    const [evento, ...resto] = await editados(c.a.id);
+    expect(resto).toHaveLength(0);
+    expect(evento).toMatchObject({ autorId: c.vend.id, payload: expect.objectContaining({ operacao: "EDITAR", intencaoId: c.id, textoAlterado: true }) });
+    expect(JSON.stringify(evento!.payload)).not.toContain("Texto novo");
+    await despacharFila(new Date(m.agendadaPara!.getTime() + 60_000));
+    const enviada = await prisma.mensagemWhatsApp.findFirst({ where: { atendimentoId: c.a.id, direcao: "SAIDA" }, orderBy: { criadoEm: "desc" } });
+    expect(enviada?.corpo).toBe("Texto novo");
+  });
+
+  it("já enviada: 'A mensagem já foi enviada.'", async () => {
+    const c = await agendada();
+    await prisma.intencaoMensagem.update({ where: { id: c.id }, data: { status: "DESPACHADA" } });
+    expect(await editar(c)).toEqual({ ok: false, erro: "A mensagem já foi enviada." });
+    expect((await prisma.intencaoMensagem.findUniqueOrThrow({ where: { id: c.id } })).corpoRenderizado).toBe("Texto antigo");
+    expect(await editados(c.a.id)).toHaveLength(0);
+  });
+
+  it("de outro autor (vendedor sem equipe): 'Mensagem não encontrada.'", async () => {
+    const c = await agendada();
+    const outro = await criarUsuario([Papel.VENDEDOR], "Outro");
+    await prisma.intencaoMensagem.update({ where: { id: c.id }, data: { autorId: outro.id } });
+    const r = await editar(c);
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.erro).toMatch(/Mensagem não encontrada/);
+    expect(await editados(c.a.id)).toHaveLength(0);
+  });
+
+  it("sem ter assumido a conversa recusa a edição", async () => {
+    const c = await agendada();
+    await prisma.atendimentoWhatsApp.update({ where: { id: c.a.id }, data: { responsavelId: null } });
+    const r = await editar(c);
+    expect(r.ok).toBe(false);
+    expect((await prisma.intencaoMensagem.findUniqueOrThrow({ where: { id: c.id } })).corpoRenderizado).toBe("Texto antigo");
+  });
+
+  it("mesma chave duas vezes: um Evento; mesma chave com outro texto é conflito", async () => {
+    const c = await agendada();
+    expect((await editar(c, { chaveIdempotencia: "editar-374" })).ok).toBe(true);
+    expect((await editar(c, { chaveIdempotencia: "editar-374" })).ok).toBe(true);
+    expect(await editados(c.a.id)).toHaveLength(1);
+    const conflito = await editar(c, { chaveIdempotencia: "editar-374", texto: "Outro texto" });
+    expect(conflito.ok).toBe(false);
+    expect(await editados(c.a.id)).toHaveLength(1);
+    expect((await prisma.intencaoMensagem.findUniqueOrThrow({ where: { id: c.id } })).corpoRenderizado).toBe("Texto novo");
+  });
+
+  it("texto vazio é recusado sem alterar", async () => {
+    const c = await agendada();
+    expect((await editar(c, { texto: "   " })).ok).toBe(false);
+    expect(await editados(c.a.id)).toHaveLength(0);
   });
 });
