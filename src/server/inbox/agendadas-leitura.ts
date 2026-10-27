@@ -6,7 +6,7 @@ import {apenasPortal} from "@/server/_shared/sessao";
 import {derivarEstadoAria,linhaEstadoDe} from "./estado-aria";
 import {podeAlterarAgendadaNoInbox} from "./agendadas-policy";
 import {respondeuDepoisDeAgendar} from "@/server/crm/mensagens-agendadas-regras";
-export interface AgendadaNoFio{id:string;texto:string;agendadaPara:string;status:"PENDENTE"|"ADIADA";tipo:TipoMensagem;temAnexo:boolean;anexoNome?:string|null;autor:"voce"|"aria"|"equipe";autorNome:string|null;podeAlterar:boolean;perguntaPendente:boolean}
+export interface AgendadaNoFio{id:string;texto:string;agendadaPara:string;status:"PENDENTE"|"ADIADA";tipo:TipoMensagem;temAnexo:boolean;anexoNome?:string|null;editavel?:boolean;autor:"voce"|"aria"|"equipe";autorNome:string|null;podeAlterar:boolean;perguntaPendente:boolean}
 type Atendimento=NonNullable<Awaited<ReturnType<typeof atendimentoVisivel>>>;
 function binding(a:Atendimento){const c=a.conversa.contato;return JSON.stringify([
  a.id,a.finalidade,a.numeroId,a.conversaId,a.contatoId,a.leadId??null,a.alunoId??null,a.matriculaId??null,a.turmaId??null,a.autorizacaoComunicacaoAcademicaId??null,
@@ -21,7 +21,7 @@ export async function lerAgendadasDoAtendimento(db:Db,autorId:string,atendimento
  const alvo=binding(a);
  const linhas=await db.intencaoMensagem.findMany({where:{atendimentoId,agendadaPara:{not:null},passo:null,passoComercial:null,status:{in:["PENDENTE","ADIADA"]},origem:{in:["HUMANO","IA"]}},
   orderBy:[{agendadaPara:"asc"},{id:"asc"}],take:50,
-  select:{id:true,atendimentoId:true,corpoRenderizado:true,agendadaPara:true,status:true,tipo:true,midiaPath:true,conteudo:true,origem:true,autorId:true,passo:true,passoComercial:true,perguntarSeResponder:true,confirmadaAposRespostaEm:true,criadaEm:true,autor:{select:{nome:true,gerenteComercialId:true}}}});
+  select:{id:true,atendimentoId:true,corpoRenderizado:true,agendadaPara:true,status:true,tipo:true,templateId:true,midiaPath:true,conteudo:true,origem:true,autorId:true,passo:true,passoComercial:true,perguntarSeResponder:true,confirmadaAposRespostaEm:true,criadaEm:true,autor:{select:{nome:true,gerenteComercialId:true}}}});
  const u=await atorAtual(db,autorId);if(!u)return [];
  const atual=await atendimentoVisivel(u,atendimentoId,false,db);if(!atual||atual.encerradoEm||binding(atual)!==alvo)return [];
  const envio=await atendimentoVisivel(u,atendimentoId,true,db);
@@ -42,7 +42,7 @@ export async function lerAgendadasDoAtendimento(db:Db,autorId:string,atendimento
  return linhas.flatMap(m=>{
   if(!m.agendadaPara||(m.status!=="PENDENTE"&&m.status!=="ADIADA"))return [];
   const dto:AgendadaNoFio={id:m.id,texto:m.corpoRenderizado,agendadaPara:m.agendadaPara.toISOString(),status:m.status,tipo:m.tipo,
-   temAnexo:m.midiaPath!==null||m.conteudo!==null,...(nomesAnexo.has(m.id)?{anexoNome:nomesAnexo.get(m.id)}:{}),autor:m.origem==="IA"?"aria":m.autorId===ultimo.id?"voce":"equipe",autorNome:m.autor?.nome??null,
+   temAnexo:m.midiaPath!==null||m.conteudo!==null,...(m.templateId==null&&m.conteudo==null&&(m.tipo==="TEXTO")===(m.midiaPath==null)?{}:{editavel:false}),...(nomesAnexo.has(m.id)?{anexoNome:nomesAnexo.get(m.id)}:{}),autor:m.origem==="IA"?"aria":m.autorId===ultimo.id?"voce":"equipe",autorNome:m.autor?.nome??null,
    podeAlterar:podeAlterarAgendadaNoInbox(ultimo,{...m,autorGerenteComercialId:(m.autorId?porId.get(m.autorId)?.gerenteComercialId:null)??null},{id:final.id,responsavelId:final.responsavelId,encerradoEm:final.encerradoEm,autorizadoEnviar,estadoAria,numeroAtivo:final.conversa.numero.ativo,optOut:final.conversa.contato?.optOutEm!=null}),
    perguntaPendente:respondeuDepoisDeAgendar(m,ultimoInboundEm)};
   return [dto];

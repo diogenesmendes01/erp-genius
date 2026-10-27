@@ -2,6 +2,7 @@ import { RecorrenciaTarefaSchema } from "./tarefa-recorrencia-configuracao";
 import type { RecorrenciaTarefa } from "@prisma/client";
 import {erroContencaoNotificadosTarefaD10} from "./tarefa-notificados";
 import {CamposAdicionaisTarefaD10Schema,LembreteTarefaD10Schema,PrioridadeTarefaD10Schema} from "./tarefa-d10-schema";
+import { TituloTarefaHumanaSchema } from "../_shared/efeitos-humanos-schema";
 import { criarTarefaTx, editarTarefaTx, agendamentoTarefa } from "./tarefas-escrita";
 import { concluirTarefaTx, reabrirTarefaTx, reagendarTarefaTx, cancelarTarefaTx } from "./tarefas-transicoes";
 import { revalidatePath } from "next/cache";
@@ -50,7 +51,7 @@ const DataCivilSchema = z
 const HoraSchema = z.string().regex(/^(?:[01]\d|2[0-3]):[0-5]\d$/, "Informe um horário válido (HH:MM).");
 
 export const CamposTarefaSchema = z.object({
-  titulo: z.string().trim().min(1, "Informe o título da tarefa.").max(200, "O título deve ter até 200 caracteres."),
+  titulo: TituloTarefaHumanaSchema,
   tipo: z.enum(["WHATSAPP", "LIGACAO", "EMAIL", "REUNIAO", "OUTRO"], { errorMap: () => ({ message: "Escolha o tipo da tarefa." }) }),
   descricao: z.string().trim().max(2000, "A descrição deve ter até 2000 caracteres.").optional(),
   dataCivil: DataCivilSchema.nullish(),

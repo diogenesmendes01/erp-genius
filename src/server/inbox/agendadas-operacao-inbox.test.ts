@@ -124,6 +124,8 @@ vi.mock("@/server/whatsapp/visibilidade-lead",()=>({podeVerLeadNaThread:anexo.ve
 vi.mock("@/server/whatsapp/proposta-atendimento",()=>({ERRO_ANEXAR_PROPOSTA:"Não foi possível anexar esta proposta.",exigirPropostaVisivel:anexo.proposta}));
 vi.mock("@/server/whatsapp/midia",async(original)=>({...await original<typeof import("@/server/whatsapp/midia")>(),copiarDocumentoParaSaida:anexo.copiar,descartarMidiaSaida:anexo.descartar,midiaSaidaExiste:anexo.existe}));
 vi.mock("@/server/crm/tarefas",()=>({escopoTarefas:anexo.escopo}));
+function comProposta(f:ReturnType<typeof fixture>){Object.assign(f.a,{leadId:"op1"});anexo.verLead.mockResolvedValue(true);const documento=vi.fn().mockResolvedValue({id:"d1"});Object.assign(f.tx,{documento:{findFirst:documento}});anexo.proposta.mockResolvedValue({url:"/api/files/documentos/p.pdf",nome:"Proposta anual.pdf"});anexo.copiar.mockResolvedValue("/api/files/whatsapp-out/u/copia.pdf");return documento;}
+function rastrearTx(f:ReturnType<typeof fixture>){const estado={dentro:false,txs:0};f.banco.$transaction.mockImplementation(async(fn:(db:typeof f.tx)=>Promise<unknown>)=>{estado.dentro=true;estado.txs++;try{return await fn(f.tx);}finally{estado.dentro=false;}});return estado;}
 function comTarefa(f:ReturnType<typeof fixture>,tarefa:{id:string}|null){const findFirst=vi.fn().mockResolvedValue(tarefa);Object.assign(f.tx,{tarefa:{findFirst}});anexo.escopo.mockResolvedValue({responsavelId:"u"});return findFirst;}
 it("CRIAR com arquivo do uploader grava a mídia do autor e dispensa o texto",async()=>{
  const f=fixture();anexo.existe.mockResolvedValue(true);await executarAgendadaInbox(f.db,"u",{...criar(),texto:"",midiaUrl:"/api/files/whatsapp-out/u/1.pdf",anexoNome:"Foto da turma.pdf"});
@@ -139,7 +141,7 @@ it("sem texto e sem anexo continua exigindo a mensagem; arquivo e proposta junto
  expect(f.tx.intencaoMensagem.create).not.toHaveBeenCalled();
 });
 it("CRIAR com proposta copia o documento para a saída do autor e grava o nome",async()=>{
- const f=fixture();anexo.proposta.mockResolvedValue({url:"/api/files/documentos/p.pdf",nome:"Proposta anual.pdf"});anexo.copiar.mockResolvedValue("/api/files/whatsapp-out/u/copia.pdf");
+ const f=fixture();comProposta(f);
  await executarAgendadaInbox(f.db,"u",{...criar(),documentoPropostaId:"d1"});
  expect(anexo.proposta).toHaveBeenCalledWith(expect.objectContaining({id:"u"}),"a","d1");expect(anexo.copiar).toHaveBeenCalledWith("u","/api/files/documentos/p.pdf");
  expect(f.tx.intencaoMensagem.create).toHaveBeenCalledWith(expect.objectContaining({data:expect.objectContaining({tipo:"DOCUMENTO",midiaPath:"/api/files/whatsapp-out/u/copia.pdf"})}));
@@ -147,7 +149,7 @@ it("CRIAR com proposta copia o documento para a saída do autor e grava o nome",
  expect(anexo.descartar).not.toHaveBeenCalled();
 });
 it("falha depois de copiar a proposta descarta a cópia",async()=>{
- const f=fixture();anexo.proposta.mockResolvedValue({url:"/api/files/documentos/p.pdf",nome:"P.pdf"});anexo.copiar.mockResolvedValue("/api/files/whatsapp-out/u/copia.pdf");f.tx.intencaoMensagem.create.mockRejectedValue(new Error("banco"));
+ const f=fixture();comProposta(f);f.tx.intencaoMensagem.create.mockRejectedValue(new Error("banco"));
  await expect(executarAgendadaInbox(f.db,"u",{...criar(),documentoPropostaId:"d1"})).rejects.toThrow("banco");expect(anexo.descartar).toHaveBeenCalledWith("u","/api/files/whatsapp-out/u/copia.pdf");
 });
 it("vínculo com a oportunidade da conversa grava leadId; de outra oportunidade é recusado",async()=>{
@@ -196,4 +198,34 @@ it("nome do anexo acima de 255 caracteres é encurtado em vez de recusar",async(
  anexo.existe.mockResolvedValue(true);const f=fixture();const nome="a".repeat(300)+".pdf";
  await executarAgendadaInbox(f.db,"u",{...criar(),midiaUrl:"/api/files/whatsapp-out/u/1.pdf",anexoNome:nome});
  expect(f.tx.evento.create).toHaveBeenCalledWith(expect.objectContaining({data:expect.objectContaining({payload:expect.objectContaining({anexoNome:"a".repeat(255)})})}));
+});
+it("proposta é lida e copiada fora de qualquer transação e revalidada com o tx antes de gravar",async()=>{
+ const f=fixture();const documento=comProposta(f);const tx=rastrearTx(f);const fora:boolean[]=[];
+ anexo.proposta.mockImplementation(async()=>{fora.push(!tx.dentro);return {url:"/api/files/documentos/p.pdf",nome:"Proposta anual.pdf"};});
+ anexo.copiar.mockImplementation(async()=>{fora.push(!tx.dentro);return "/api/files/whatsapp-out/u/copia.pdf";});
+ expect(await executarAgendadaInbox(f.db,"u",{...criar(),documentoPropostaId:"d1"})).toEqual({id:"nova"});
+ expect(fora).toEqual([true,true]);expect(tx.txs).toBe(2);
+ expect(documento).toHaveBeenCalledWith({where:{id:"d1",leadId:"op1",categoria:"PROPOSTA",arquivado:false},select:{id:true}});
+ expect(anexo.verLead).toHaveBeenCalledWith(expect.objectContaining({id:"u"}),"a","op1",expect.any(Number),f.tx);
+});
+it("proposta arquivada ou conversa trocada entre a cópia e a gravação recusa e descarta a cópia",async()=>{
+ const f=fixture();const documento=comProposta(f);documento.mockResolvedValue(null);
+ await expect(executarAgendadaInbox(f.db,"u",{...criar(),documentoPropostaId:"d1"})).rejects.toThrow("Proposta não encontrada.");
+ expect(anexo.descartar).toHaveBeenCalledWith("u","/api/files/whatsapp-out/u/copia.pdf");expect(f.tx.intencaoMensagem.create).not.toHaveBeenCalled();
+ anexo.descartar.mockClear();const g=fixture();comProposta(g);anexo.copiar.mockImplementation(async()=>{Object.assign(g.a,{leadId:"op2"});return "/api/files/whatsapp-out/u/copia.pdf";});
+ await expect(executarAgendadaInbox(g.db,"u",{...criar(),documentoPropostaId:"d1"})).rejects.toThrow("Atendimento não encontrado.");
+ expect(anexo.descartar).toHaveBeenCalledWith("u","/api/files/whatsapp-out/u/copia.pdf");expect(g.tx.intencaoMensagem.create).not.toHaveBeenCalled();
+});
+it("repetição de agendar com proposta não lê nem copia o arquivo de novo",async()=>{
+ const f=fixture();comProposta(f);const comando={...criar(),documentoPropostaId:"d1"};
+ const marca=marcaIdempotencia(comando.chaveIdempotencia,{atendimentoId:"a",numeroId:"n",texto:"Texto fictício",agendadaPara:"2035-01-02T15:00:00.000Z",validaAte:null,documentoPropostaId:"d1"});
+ const evento={id:"e",tipo:"MensagemAgendada",agregadoTipo:"AtendimentoWhatsApp",agregadoId:"a",autorId:"u",payload:{intencaoId:"i",...marca}};
+ f.tx.$queryRaw.mockImplementation(async(q:unknown)=>sqlTexto(q).includes('FROM "Evento"')?[evento]:[]);
+ expect(await executarAgendadaInbox(f.db,"u",comando)).toEqual({id:"i"});
+ expect(anexo.proposta).not.toHaveBeenCalled();expect(anexo.copiar).not.toHaveBeenCalled();expect(anexo.descartar).not.toHaveBeenCalled();expect(f.tx.intencaoMensagem.create).not.toHaveBeenCalled();
+});
+it("arquivo do uploader é conferido no disco antes de abrir a transação",async()=>{
+ const f=fixture();const tx=rastrearTx(f);const fora:boolean[]=[];anexo.existe.mockImplementation(async()=>{fora.push(!tx.dentro);return true;});
+ await executarAgendadaInbox(f.db,"u",{...criar(),midiaUrl:"/api/files/whatsapp-out/u/1.pdf"});
+ expect(fora).toEqual([true]);expect(tx.txs).toBe(1);
 });
