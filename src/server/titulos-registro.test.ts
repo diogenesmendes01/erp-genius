@@ -14,6 +14,7 @@ vi.mock("@/server/alunos/consultas", () => ({
 }));
 
 import { tituloAluno, tituloEmpresa } from "./titulos-registro";
+import { PAPEIS_FICHA_EMPRESA } from "./empresas/papeis";
 
 const u = (...papeis: Papel[]) => ({ id: "u1", nome: "U", papeis });
 
@@ -31,8 +32,8 @@ describe("títulos de aba das fichas (E2)", () => {
     expect(await tituloAluno("a1")).toBe("Aluno");
   });
 
-  it("empresa: só financeiro/admin consultam", async () => {
-    m.sessao.mockResolvedValue(u(Papel.VENDEDOR));
+  it("empresa: papel fora da ficha não consulta", async () => {
+    m.sessao.mockResolvedValue(u(Papel.PROFESSOR));
     expect(await tituloEmpresa("e1")).toBe("Empresa");
     expect(m.empresa).not.toHaveBeenCalled();
     m.sessao.mockResolvedValue(u(Papel.FINANCEIRO));
@@ -41,5 +42,15 @@ describe("títulos de aba das fichas (E2)", () => {
     m.sessao.mockResolvedValue(u(Papel.ADMINISTRADOR));
     m.empresa.mockResolvedValueOnce({ nome: "Beta" });
     expect(await tituloEmpresa("e2")).toBe("Beta · Empresa");
+  });
+
+  it("empresa: o título segue a mesma lista de papéis da ficha", async () => {
+    for (const papel of Object.values(Papel)) {
+      m.empresa.mockReset();
+      m.empresa.mockResolvedValue({ nome: "Acme" });
+      m.sessao.mockResolvedValue(u(papel));
+      const abre = papel === Papel.ADMINISTRADOR || PAPEIS_FICHA_EMPRESA.includes(papel);
+      expect(await tituloEmpresa("e1")).toBe(abre ? "Acme · Empresa" : "Empresa");
+    }
   });
 });

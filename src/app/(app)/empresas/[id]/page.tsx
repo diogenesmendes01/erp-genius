@@ -3,14 +3,13 @@ import { Papel } from "@prisma/client";
 import { exigirPapelLeitura } from "@/lib/guards";
 import { AcessoNegado } from "@/components/AcessoNegado";
 import { competenciasFaturaveis, obterEmpresa } from "@/server/empresas/consultas";
+import { PAPEIS_FICHA_EMPRESA } from "@/server/empresas/papeis";
 import { listarProdutosParaMatricula } from "@/server/matricula/consultas";
 import { FichaEmpresa } from "./FichaEmpresa";
 
-const PAPEIS: Papel[] = [Papel.FINANCEIRO, Papel.GERENTE_COMERCIAL, Papel.VENDEDOR];
-
 export default async function EmpresaDetalhePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const papeis = await exigirPapelLeitura(...PAPEIS);
+  const papeis = await exigirPapelLeitura(...PAPEIS_FICHA_EMPRESA);
   if (!papeis) return <AcessoNegado recurso="as empresas (B2B)" />;
 
   const dados = await obterEmpresa(id);
