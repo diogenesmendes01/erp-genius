@@ -475,6 +475,8 @@ describe("SeletorEmoji", () => {
 });
 
 import { ITENS_ANEXO } from "./itens-anexo";
+import { SEM_PROPOSTAS } from "./Compositor";
+import { EstadoVazio } from "@/components/EstadoVazio";
 function abrirAnexos365(raiz: ReactNode) {
  const b=elementos(raiz).find(n=>n.type==="button"&&n.props["aria-label"]==="Anexar");
  expect(b).toBeDefined(); (b!.props.onClick as ()=>void)();
@@ -494,14 +496,14 @@ describe("Compositor: itens de anexo (#365 E4.6)",()=>{
   expect(ITENS_ANEXO.map(i=>i.rotulo)).toEqual(["Documento","Fotos e vídeos","Câmera","Áudio","Localização","Contato","Enquete","Proposta","Resposta rápida"]);
  });
  it("apresenta nove ícones em quadrados arredondados de 40px com tokens por categoria",()=>{
-  m.g=criarGanchos();const p=props({respostas:[RESPOSTA365],propostas:{oportunidadeId:"op365",aoAbrir:vi.fn()}}),tela=()=>m.g!.renderizar(Compositor,p);abrirAnexos365(tela());
+  m.g=criarGanchos();const p=props({respostas:[RESPOSTA365],propostas:{oportunidadeId:"op365",itens:[]},aoEnviarProposta:vi.fn(async()=>({ok:true as const}))}),tela=()=>m.g!.renderizar(Compositor,p);abrirAnexos365(tela());
   const quadrados=elementos(tela()).filter(n=>n.type==="span"&&String(n.props.className).includes("h-10"));
   expect(quadrados).toHaveLength(9);
   const cores=["bg-blue-100 text-blue-700","bg-ai-100 text-ai-700","bg-red-100 text-red-700","bg-red-100 text-red-700","bg-green-100 text-green-700","bg-blue-100 text-blue-700","bg-orange-100 text-orange-700","bg-green-100 text-green-700","bg-ai-100 text-ai-700"];
   quadrados.forEach((n,i)=>{expect(n.props.className).toContain("h-10 w-10 shrink-0 items-center justify-center rounded-lg");expect(n.props.className).toContain(cores[i]);expect(n.props["aria-hidden"]).toBe(true);});
  });
  it("ordem renderizada preserva Motor e inclui somente portas disponíveis",()=>{
-  m.g=criarGanchos();const p=props({respostas:[RESPOSTA365],propostas:{oportunidadeId:"op365",aoAbrir:vi.fn()}}),tela=()=>m.g!.renderizar(Compositor,p);
+  m.g=criarGanchos();const p=props({respostas:[RESPOSTA365],propostas:{oportunidadeId:"op365",itens:[]},aoEnviarProposta:vi.fn(async()=>({ok:true as const}))}),tela=()=>m.g!.renderizar(Compositor,p);
   abrirAnexos365(tela());
   expect(elementos(tela()).filter(n=>n.props.role==="menuitem").map(n=>n.props["aria-label"]??n.props.children)).toEqual(["Documento","Fotos e vídeos","Câmera","Áudio","Localização","Contato","Enquete","Proposta","Resposta rápida"]);
  });
@@ -526,11 +528,13 @@ describe("Compositor: itens de anexo (#365 E4.6)",()=>{
   m.g=criarGanchos();const p=props(),tela=()=>m.g!.renderizar(Compositor,p);abrirAnexos365(tela());
   const itens=elementos(tela()).filter(n=>n.props.role==="menuitem");expect(itens.some(n=>n.props["aria-label"]==="Resposta rápida"||n.props.children==="Resposta rápida")).toBe(false);expect(itens.some(n=>n.props["aria-label"]==="Proposta"||n.props.children==="Proposta")).toBe(false);
  });
- it("Proposta exige oportunidade e callback pronto; clique só abre uma vez",()=>{
-  m.g=criarGanchos();const abrir=vi.fn();let p=props({propostas:{oportunidadeId:null,aoAbrir:abrir}});const tela=()=>m.g!.renderizar(Compositor,p);abrirAnexos365(tela());
+ it("Proposta exige oportunidade e envio pronto; clique abre a lista sem enviar",()=>{
+  m.g=criarGanchos();const enviarProposta=vi.fn(async()=>({ok:true as const}));let p=props({propostas:{oportunidadeId:null,itens:[]},aoEnviarProposta:enviarProposta});const tela=()=>m.g!.renderizar(Compositor,p);abrirAnexos365(tela());
   expect(elementos(tela()).some(n=>n.props.role==="menuitem"&&n.props["aria-label"]==="Proposta")).toBe(false);
-  p=props({propostas:{oportunidadeId:"op365",aoAbrir:abrir}});clicarBotao(tela(),"Proposta");expect(abrir).toHaveBeenCalledOnce();expect(p.aoEnviarTexto).not.toHaveBeenCalled();expect(p.aoEnviarMidia).not.toHaveBeenCalled();
-  expect(elementos(tela()).some(n=>n.props.role==="menu")).toBe(false);
+  p=props({propostas:{oportunidadeId:"op365",itens:[]}});expect(elementos(tela()).some(n=>n.props.role==="menuitem"&&n.props["aria-label"]==="Proposta")).toBe(false);
+  p=props({propostas:{oportunidadeId:"op365",itens:[]},aoEnviarProposta:enviarProposta});clicarBotao(tela(),"Proposta");
+  expect(enviarProposta).not.toHaveBeenCalled();expect(p.aoEnviarTexto).not.toHaveBeenCalled();expect(p.aoEnviarMidia).not.toHaveBeenCalled();
+  expect(elementos(tela()).some(n=>n.props.role==="menu")).toBe(false);expect(elementos(tela()).some(n=>n.props.role==="dialog"&&n.props["aria-label"]==="Enviar proposta")).toBe(true);
  });
  it("callback de resposta retido não altera nem foca outra conversa",()=>{
   m.g=criarGanchos();let p=props({respostas:[RESPOSTA365]});const tela=()=>m.g!.renderizar(Compositor,p),focus=vi.fn();focarRef365(tela(),focus);abrirAnexos365(tela());
@@ -541,5 +545,56 @@ describe("Compositor: itens de anexo (#365 E4.6)",()=>{
   m.g=criarGanchos();let resolver!:(r:{ok:true})=>void;const pendente=new Promise<{ok:true}>(r=>{resolver=r;}),p=props({respostas:[RESPOSTA365],aoEnviarTexto:()=>pendente}),tela=()=>m.g!.renderizar(Compositor,p);
   digitar(tela(),"Tentativa anterior");const enviando=clicarBotao(tela(),"Enviar");abrirAnexos365(tela());clicarBotao(tela(),"Resposta rápida");resolver({ok:true});await enviando;
   expect(campo365(tela()).props.value).toBe("/");expect(localStorage.getItem("conversa-rascunho:at1:responder")).toBe("/");
+ });
+});
+
+const PROPOSTAS366=[{id:"doc-nova",nome:"Proposta 2026 - Ana.pdf",criadoEm:"2026-10-20T15:00:00.000Z"},{id:"doc-antiga",nome:"Proposta inicial.pdf",criadoEm:"2026-09-02T12:00:00.000Z"}];
+function abrirPropostas366(raiz:ReactNode){abrirAnexos365(raiz);}
+function clicarRotulo366(raiz:ReactNode,rotulo:string){const b=elementos(raiz).filter(n=>n.type==="button"&&n.props["aria-label"]===rotulo);expect(b).toHaveLength(1);return (b[0].props.onClick as ()=>unknown)();}
+describe("Compositor: anexo de proposta (#366 E4.7)",()=>{
+ it("Proposta lista as propostas com nome e data, e o clique chama aoEnviarProposta(documentoId) com chave",async()=>{
+  m.g=criarGanchos();const enviarProposta=vi.fn<(id:string,chave?:string)=>Promise<{ok:true}>>(async()=>({ok:true}));
+  const p=props({propostas:{oportunidadeId:"op366",itens:PROPOSTAS366,fuso:"America/Sao_Paulo"},aoEnviarProposta:enviarProposta}),tela=()=>m.g!.renderizar(Compositor,p);
+  abrirPropostas366(tela());clicarBotao(tela(),"Proposta");
+  const lista=elementos(tela()).find(n=>n.type==="ul"&&n.props["aria-label"]==="Propostas da oportunidade");expect(lista).toBeDefined();
+  const botoes=elementos(tela()).filter(n=>n.type==="button"&&String(n.props["aria-label"]).startsWith("Enviar "));
+  expect(botoes.map(b=>b.props["aria-label"])).toEqual(["Enviar Proposta 2026 - Ana.pdf","Enviar Proposta inicial.pdf"]);
+  const datas=elementos(tela()).filter(n=>n.type==="time");expect(datas.map(t=>t.props.dateTime)).toEqual(PROPOSTAS366.map(d=>d.criadoEm));expect(datas.map(t=>t.props.children)).toEqual(["20/10/2026","02/09/2026"]);
+  clicarRotulo366(tela(),"Enviar Proposta inicial.pdf");await esvaziar();
+  expect(enviarProposta).toHaveBeenCalledOnce();expect(enviarProposta.mock.calls[0][0]).toBe("doc-antiga");expect(typeof enviarProposta.mock.calls[0][1]).toBe("string");
+  expect(p.aoEnviarTexto).not.toHaveBeenCalled();expect(p.aoEnviarMidia).not.toHaveBeenCalled();
+  expect(elementos(tela()).some(n=>n.props.role==="dialog")).toBe(false);
+ });
+ it("falha mantém a lista aberta, mostra o erro e repete com a mesma chave",async()=>{
+  m.g=criarGanchos();const enviarProposta=vi.fn<(id:string,chave?:string)=>Promise<{ok:false;erro:string}>>(async()=>({ok:false,erro:"Proposta não encontrada."}));
+  const p=props({propostas:{oportunidadeId:"op366",itens:PROPOSTAS366},aoEnviarProposta:enviarProposta}),tela=()=>m.g!.renderizar(Compositor,p);
+  abrirPropostas366(tela());clicarBotao(tela(),"Proposta");
+  clicarRotulo366(tela(),"Enviar Proposta 2026 - Ana.pdf");await esvaziar();
+  expect(elementos(tela()).some(n=>n.props.role==="dialog")).toBe(true);
+  expect(elementos(tela()).find(n=>n.props.role==="alert")?.props.children).toBe("Proposta não encontrada.");
+  clicarRotulo366(tela(),"Enviar Proposta 2026 - Ana.pdf");await esvaziar();
+  expect(enviarProposta).toHaveBeenCalledTimes(2);expect(enviarProposta.mock.calls[1][1]).toBe(enviarProposta.mock.calls[0][1]);
+ });
+ it("sem proposta: estado vazio com 'Abrir oportunidade' para /funil?o=<id>",()=>{
+  m.g=criarGanchos();const enviarProposta=vi.fn(async()=>({ok:true as const}));
+  const p=props({propostas:{oportunidadeId:"op366",itens:[]},aoEnviarProposta:enviarProposta}),tela=()=>m.g!.renderizar(Compositor,p);
+  abrirPropostas366(tela());clicarBotao(tela(),"Proposta");
+  const vazio=elementos(tela()).find(n=>n.type===EstadoVazio);expect(vazio).toBeDefined();expect(vazio!.props.children).toBe(SEM_PROPOSTAS);expect(SEM_PROPOSTAS).toBe("Nenhuma proposta anexada a esta oportunidade.");
+  const link=elementos(tela()).find(n=>n.props.href==="/funil?o=op366");expect(link).toBeDefined();expect(link!.props.children).toBe("Abrir oportunidade");
+  expect(enviarProposta).not.toHaveBeenCalled();
+ });
+ it("Voltar reabre o menu de anexos e Anexar fecha a lista",()=>{
+  m.g=criarGanchos();const p=props({propostas:{oportunidadeId:"op366",itens:PROPOSTAS366},aoEnviarProposta:vi.fn(async()=>({ok:true as const}))}),tela=()=>m.g!.renderizar(Compositor,p);
+  abrirPropostas366(tela());clicarBotao(tela(),"Proposta");clicarRotulo366(tela(),"Voltar para anexos");
+  expect(elementos(tela()).some(n=>n.props.role==="dialog")).toBe(false);expect(elementos(tela()).some(n=>n.props.role==="menu")).toBe(true);
+  clicarBotao(tela(),"Proposta");abrirAnexos365(tela());
+  expect(elementos(tela()).some(n=>n.props.role==="dialog")).toBe(false);
+ });
+ it("lista de outra conversa não envia depois da troca",async()=>{
+  m.g=criarGanchos();const enviarProposta=vi.fn(async()=>({ok:true as const}));let p=props({propostas:{oportunidadeId:"op366",itens:PROPOSTAS366},aoEnviarProposta:enviarProposta});const tela=()=>m.g!.renderizar(Compositor,p);
+  abrirPropostas366(tela());clicarBotao(tela(),"Proposta");
+  const retido=elementos(tela()).find(n=>n.type==="button"&&n.props["aria-label"]==="Enviar Proposta inicial.pdf")!;
+  p={...p,atendimentoId:"at2"};tela();tela();(retido.props.onClick as ()=>void)();await esvaziar();
+  expect(enviarProposta).not.toHaveBeenCalled();expect(elementos(tela()).some(n=>n.props.role==="dialog")).toBe(false);
  });
 });

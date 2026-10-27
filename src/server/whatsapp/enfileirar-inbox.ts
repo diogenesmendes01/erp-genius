@@ -37,7 +37,8 @@ export async function lerContextoAtualInbox(tx:Tx,id:string){
  return{ctx:{agora,ariaAtiva:ariaAtivaGlobal({estado:s.estado,pausada:s.pausada,temVersao:s.versao!==null},o),handoffPendentes:new Set(await idsHandoffPendente(tx,[id]))},sugestao:(await sugestoesPendentesPorAtendimento(tx,[id],agora)).has(id)};
 }
 async function autorAtual(tx:Tx,id:string){const u=await tx.usuario.findUnique({where:{id},select:{id:true,nome:true,papeis:true,permissoes:true,ativo:true}});if(!u?.ativo)throw new ErroPermissao("Sua sessão não está mais ativa.");if(apenasPortal(u))throw new ErroPermissao("Acesso restrito ao portal do aluno.");return u;}
-export function enfileirarSaidaInbox(db:Pick<PrismaClient,"$transaction">,autorId:string,id:string,payload:SaidaInbox){return db.$transaction(async tx=>{
+export function enfileirarSaidaInbox(db:Pick<PrismaClient,"$transaction">,autorId:string,id:string,payload:SaidaInbox){return db.$transaction(tx=>enfileirarSaidaInboxTx(tx,autorId,id,payload));}
+export async function enfileirarSaidaInboxTx(tx:Tx,autorId:string,id:string,payload:SaidaInbox){
  await tx.configIA.upsert({where:{id:"ia"},create:{id:"ia"},update:{}});
  await tx.$queryRaw`SELECT id FROM "AtendimentoWhatsApp" WHERE id=${id} FOR NO KEY UPDATE`;
  const {u,conversa}=await lerDestinoHumanoAutorizadoTx(tx,autorId,id);
@@ -54,7 +55,7 @@ export function enfileirarSaidaInbox(db:Pick<PrismaClient,"$transaction">,autorI
  const estado=derivarEstadoAria(linhaEstadoDe(conversa),ctx,sugestao);
  if(estado==="ia"||estado==="aprovacao"||estado==="handoff")throw new ErroRegra("Assuma a conversa para responder.");
  return tx.intencaoMensagem.create({data:{numeroId:conversa.numeroId,atendimentoId:conversa.id,contatoId:conversa.contatoId,origem:"HUMANO",...detalhes,autorId:u.id},select:{id:true}});
- });}
+}
 
 async function lerDestinoHumanoAutorizadoTx(tx:Tx,autorId:string,id:string){
  const u=await autorAtual(tx,autorId);
