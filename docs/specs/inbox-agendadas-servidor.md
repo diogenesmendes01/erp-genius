@@ -5,7 +5,7 @@ Checkpoint fase1: política/leitor privados, sem SQL e sem runtime público liga
 
 ## Contrato aprovado
 D11 exige responsável atual igual ao ator, autorização contextual fresca e estado358 fora de ia/aprovacao/handoff antes de criar, reagendar ou enviar imediatamente. Não existe override Admin nem Assumir automático. OrigemIA é somente leitura neste recorte. Autor próprio sem tarefas.ver pode operar pelo atendimento se passou D11; equipe permanece condicionada à capacidadeCRM existente.
-Replay362 confirmado exige mesmo autor do Evento/agregado/hash/operação/intenção e ACL canônica de leitura fresca; não exige owner/Assumir/aberto/estado/optout/tempo para recuperar ACK e não escreve ConfigIA/intenção/Evento/NOTIFY. Nova mutação conserva todos os gates atuais. CRM legado conserva defaults e replay. Cancelamento333 permanece literal e não exige Assumir. Pergunta de produto encaminhada pelo integrador sobre GP sem tarefas.ver no cancelamento continua pendente; esta entrega não amplia sua alçada.
+Replay362 confirmado exige mesmo autor do Evento/agregado/hash/operação/intenção e ACL canônica de leitura fresca; não exige owner/Assumir/aberto/estado/optout/tempo para recuperar ACK e não escreve ConfigIA/intenção/Evento/NOTIFY. Nova mutação conserva todos os gates atuais. CRM legado conserva defaults e replay. Cancelamento333 mantém seu contrato geral; a exceção contextual GP sem tarefas.ver foi autorizada pelo humano call52bba613 e está discriminada na tabela atual abaixo. As pendências registradas nas fases históricas não substituem essa decisão.
 
 ## Leitura
 AgendadaNoFio contém somente id/texto/agendadaParaISO/status/tipo/temAnexo/autor/autorNome/podeAlterar. Atendimento autorizado e aberto; intenção direta desse atendimento, agendadaPara não nula, passo e passoComercial nulos, PENDENTE/ADIADA, HUMANO/IA. Ordem agendadaPara,id e limite50. Não devolver caminho de arquivo, conteúdoJSON, telefone, IDs de vínculo ou cadastroDoc/DOB.
@@ -119,3 +119,22 @@ Nova chave continua no caminho anterior Config→pai→intenção, com Assumir, 
 
 DEV UNIT: RED 50bfb9 EXIT1 17falhas/16controles; GREEN d4e81a EXIT0 33/33; regressão 8afaeb EXIT0 sete arquivos completos115/115. Nativos DEV posteriormente aprovados: legado10 inteiro a66ddb EXIT0 e operacional16 f5c95e EXIT0, total26 casos distintos. Duas falhas intermediárias de fixture (23514 fechamento/status e42P01 tabela lógica) foram corrigidas somente no teste após restauração, sem alterar asserts/core. ROOTrestore93feae confirmou1389/428t/502ledger. QA independente, CI e visual deste delta permanecem pendentes; não herdar gates históricos.
 C2 limita-se a zeroDML/upsert no ACK confirmado; não houve medição concorrente do restante da preparação. UNIT final4ac9dc115/115, native26/26, lint0 e TSC0 da fonte produtiva registrados na QA. Global/build/QA pública da composição final ainda pendentes, sem herdar79 históricos ou fechar362.
+
+### Tabela D11 atual — revisão C6 (substitui pendências históricas GP)
+
+| Operação | Condições atuais |
+| --- | --- |
+| CRIAR nova mensagem | Ator ativo, capacidade contextual canônica de envio, responsável atual/Assumir, número/bindings/estado/optout/horário atuais; GP pode criar no próprio contexto pedagógico autorizado, sem ampliar CRM. |
+| REAGENDAR/ENVIAR_AGORA nova mutação | Mesmos gates de envio/Assumir; origem HUMANO e status elegível; autoria/equipe/capacidade pela policy canônica, CAS/claim preservados. |
+| ACK confirmado | Mesmo autor do Evento, agregado/hash/operação/intenção e leitura canônica fresca. Autor original da intenção pode ser outro. Sem Assumir/status/optout/relógio/ConfigDML; sessão/ACL revogada recusa. |
+| CANCELAR pelo GP sem tarefas.ver | Decisão humana call52bba613: GP ativo, HUMANO/manual, autor próprio, responsável atual e leitura atual. Encerrado sozinho não veta; outro autor/IA/perda de ACL não recebem exceção. API CRM global não ampliada. |
+| Portal ou acesso revogado | Recusa, sem recuperar recibo ou criar efeito novo. |
+
+C5: ao recusar CRIAR por falta de responsabilidade/estado, o gate orienta “Assuma a conversa para agendar a mensagem.”; REAGENDAR e ENVIAR_AGORA preservam “Assuma a conversa para alterar a mensagem agendada.”. A mudança somente discrimina texto, sem modificar alçada/estado/locks.
+
+C4:501/502 permanecem bytes aplicados imutáveis1302d3f9/3a8532b5.502 remove o trigger de Evento501, conserva a função inerte e observa INSERT/UPDATE da intenção agendada inclusive OLDagenda→NULL, IA/dispatcher/legado. Justificativa da sequência fica nos docs, não se reescreve migração/checksum ou se adiciona DDL de reparo.
+
+C2 nova operação: medição concorrente adicional está apenas autorada em agendadas-config-concorrencia362.int.test.ts, dois casos. Não executada antes de lease ROOT. Não inferir lock/DML de update:{} nem declarar C2 resolvida por zeroDML no ACK.
+Medição C2 concluída22ef92 EXIT0,2/2: Prisma5.22/singletonConfigIAexistente fez somenteSELECT (semINSERT/UPDATE), paiBindependente conclui antes de liberarA; ACKBzeroConfigqueries,4PIDs/cleanupfulfilled. Não reproduziu lockglobal no hotpath; inicialização ausente não medida. Ordem produtiva preservada. Rootrestorec47cf3/1389. Tabela D11 em decisões-produto e IDs reais501/502 no índice do plano foram esclarecidos; UI#363 permanece recorte próprio, sem homologação presumida.
+
+Regressão final na MESMAfonteC5corec2c608ab: legado10 2fc331 EXIT0(10/10), operacional16 d1b0f6 EXIT0(16/16), completos/seriais/semfiltro/skip/retry. Somados aos dois C2 já executados nesta fonte,28casos distintos/trêsarquivos. UNIT118/lint/TSC0 preservados;global/build/QA pública final continuam pendentes. QA distingue seções históricas da situação atual e conserva os negativos de fixture.

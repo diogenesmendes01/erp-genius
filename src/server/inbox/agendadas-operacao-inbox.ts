@@ -19,13 +19,13 @@ type Tx=Prisma.TransactionClient;
 type Atendimento=NonNullable<Awaited<ReturnType<typeof atendimentoVisivel>>>;
 type Alvo=Pick<IntencaoMensagem,"id"|"atendimentoId"|"numeroId"|"contatoId"|"origem"|"autorId"|"status"|"agendadaPara"|"validaAte"|"passo"|"passoComercial">;
 const semAlvo=()=>new ErroRegra("Mensagem não encontrada ou mudou de situação.");
-const assumir=()=>new ErroRegra("Assuma a conversa para alterar a mensagem agendada.");
+const assumir=(tipo:ComandoAgendadaInbox["tipo"])=>new ErroRegra(tipo==="CRIAR"?"Assuma a conversa para agendar a mensagem.":"Assuma a conversa para alterar a mensagem agendada.");
 function binding(a:Atendimento){const c=a.conversa.contato;return JSON.stringify([
  a.id,a.finalidade,a.numeroId,a.conversaId,a.contatoId,a.leadId??null,a.alunoId??null,a.matriculaId??null,a.turmaId??null,a.autorizacaoComunicacaoAcademicaId??null,
  a.conversa.id,a.conversa.grupoId,c.id,c.pessoaId??null,c.leadId??null,c.alunoId??null,c.responsavelId??null,c.telefoneE164??null,
 ]);}
 const selecionarAtor={id:true,nome:true,papeis:true,permissoes:true,ativo:true,gerenteComercialId:true} as const;
-async function gate(tx:Tx,autorId:string,id:string,numeroId:string,alvo?:string,m?:Alvo){
+async function gate(tx:Tx,autorId:string,id:string,numeroId:string,tipo:ComandoAgendadaInbox["tipo"],alvo?:string,m?:Alvo){
  const u=await tx.usuario.findUnique({where:{id:autorId},select:selecionarAtor});
  if(!u?.ativo||apenasPortal(u))throw new ErroRegra("Sua sessão não está mais ativa.");
  const {ctx,sugestao}=await lerContextoAtualInbox(tx,id);
@@ -34,7 +34,7 @@ async function gate(tx:Tx,autorId:string,id:string,numeroId:string,alvo?:string,
  if(a.numeroId!==numeroId||!a.numero.ativo)throw new ErroRegra("Número de envio indisponível.");
  if(a.contato.optOutEm)throw new ErroRegra("Contato pediu para não receber mensagens.");
  const estado=derivarEstadoAria(linhaEstadoDe(a),ctx,sugestao);
- if(a.responsavelId!==autorId||estado==="ia"||estado==="aprovacao"||estado==="handoff")throw assumir();
+ if(a.responsavelId!==autorId||estado==="ia"||estado==="aprovacao"||estado==="handoff")throw assumir(tipo);
  // Batch final depois de contexto/ACL/destino. Sem await após a conferência.
  const usuarios=await tx.usuario.findMany({where:{id:{in:[...new Set([autorId,...(m?.autorId?[m.autorId]:[])])]}},select:selecionarAtor});
  const ultimo=usuarios.find(x=>x.id===autorId);
@@ -94,7 +94,7 @@ export async function executarAgendadaInbox(db:BancoAgendadaInbox,autorId:string
   }
   await tx.configIA.upsert({where:{id:"ia"},create:{id:"ia"},update:{}});
   await tx.$queryRaw`SELECT id FROM "AtendimentoWhatsApp" WHERE id=${c.atendimentoId} FOR SHARE`;
-  const inicial=await gate(tx,autorId,c.atendimentoId,numeroId);
+  const inicial=await gate(tx,autorId,c.atendimentoId,numeroId,c.tipo);
   if(c.tipo==="CRIAR"&&c.numeroEsperado!==undefined&&c.numeroEsperado!==numeroId)throw new ErroRegra("Número de envio indisponível.");
   const alvo=binding(inicial);
   const id=c.tipo==="CRIAR"?null:c.intencaoId;
@@ -105,13 +105,13 @@ export async function executarAgendadaInbox(db:BancoAgendadaInbox,autorId:string
    m=await tx.intencaoMensagem.findFirst({where:{id,atendimentoId:c.atendimentoId,origem:"HUMANO",agendadaPara:{not:null},passo:null,passoComercial:null}});
    if(!m||(m.status!=="PENDENTE"&&m.status!=="ADIADA")||(c.tipo==="CRIAR"&&m.autorId!==autorId))throw semAlvo();
   }
-  await gate(tx,autorId,c.atendimentoId,numeroId,alvo,m??undefined);
+  await gate(tx,autorId,c.atendimentoId,numeroId,c.tipo,alvo,m??undefined);
   const quando=c.tipo==="ENVIAR_AGORA"?new Date():futuro(c.agendadaPara);
   const validaAte=c.tipo==="CRIAR"?(c.validaAte?new Date(c.validaAte):null):m?.validaAte??null;
   if(c.tipo==="CRIAR"){if(validaAte&&validaAte.getTime()<=quando.getTime())throw new ErroRegra("A validade deve ser depois do horário agendado.");}
   else {if(!m)throw semAlvo();dataFutura(m,quando);}
   if(c.tipo!=="ENVIAR_AGORA")await exigirAgendamentoNaJanela(quando,tx);
-  await gate(tx,autorId,c.atendimentoId,numeroId,alvo,m??undefined);
+  await gate(tx,autorId,c.atendimentoId,numeroId,c.tipo,alvo,m??undefined);
   let resultadoId:string;
   if(c.tipo==="CRIAR"){
    const nova=await tx.intencaoMensagem.create({data:{numeroId,atendimentoId:c.atendimentoId,contatoId:inicial.contatoId,origem:"HUMANO",tipo:"TEXTO",corpoRenderizado:c.texto,agendadaPara:quando,validaAte,autorId}});
@@ -122,7 +122,7 @@ export async function executarAgendadaInbox(db:BancoAgendadaInbox,autorId:string
    if(r.count!==1)throw semAlvo();resultadoId=m.id;
   }
   await registrarEvento(tx,{tipo:tipoEvento,agregadoTipo:"AtendimentoWhatsApp",agregadoId:c.atendimentoId,autorId,payload:{contexto:"inbox362",operacao:c.tipo,intencaoId:resultadoId,atendimentoId:c.atendimentoId,agendadaPara:quando.toISOString(),numeroId,...marca,...(c.tipo==="ENVIAR_AGORA"?{enviarAgora:true}:{})}});
-  await gate(tx,autorId,c.atendimentoId,numeroId,alvo,m??undefined);
+  await gate(tx,autorId,c.atendimentoId,numeroId,c.tipo,alvo,m??undefined);
   return {id:resultadoId};
  });
 }
