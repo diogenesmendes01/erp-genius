@@ -64,3 +64,9 @@ it("nome do anexo vem do Evento MensagemAgendada da própria intenção, sem exp
  expect(dto).toEqual([expect.objectContaining({id:"m",temAnexo:true,anexoNome:"Proposta anual.pdf"})]);expect(JSON.stringify(dto)).not.toContain("PRIVADO");
  expect(evento.findMany).toHaveBeenCalledWith(expect.objectContaining({where:expect.objectContaining({tipo:"MensagemAgendada",agregadoTipo:"AtendimentoWhatsApp",agregadoId:"a"})}));
 });
+it("conteúdo estruturado, template ou tipo incoerente marcam a agendada como não editável",async()=>{
+ const f=fixture();f.intencaoMensagem.findMany.mockResolvedValue([{...linha("t")},{...linha("d"),tipo:"DOCUMENTO",midiaPath:"/x.pdf"},{...linha("c"),tipo:"ENQUETE",conteudo:{tipo:"enquete"}},{...linha("tp"),templateId:"tpl"},{...linha("x"),tipo:"DOCUMENTO"}]);Object.assign(f.db,{evento:{findMany:vi.fn().mockResolvedValue([])}});
+ const dto=await lerAgendadasDoAtendimento(f.db,"u","a");
+ expect(dto.map(d=>[d.id,d.editavel])).toEqual([["t",undefined],["d",undefined],["c",false],["tp",false],["x",false]]);
+ expect(f.intencaoMensagem.findMany).toHaveBeenCalledWith(expect.objectContaining({select:expect.objectContaining({templateId:true})}));
+});

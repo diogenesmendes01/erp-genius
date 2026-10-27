@@ -137,3 +137,7 @@ it("com nome do anexo: mostra o nome, sem texto vazio, e oferece Editar para leg
  expect(botoes()).toEqual(["Editar","Enviar agora","Cancelar"]);
  await clicar("Editar");expect(editar).toHaveBeenCalledOnce();
 });
+it("agendada não editável (conteúdo estruturado) não oferece Editar",async()=>{
+ await render({agendada:{...base,tipo:"ENQUETE",temAnexo:true,editavel:false}});
+ expect(botoes()).toEqual(["Enviar agora","Cancelar"]);
+});

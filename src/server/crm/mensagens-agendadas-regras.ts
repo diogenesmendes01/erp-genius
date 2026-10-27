@@ -26,7 +26,10 @@ export const LegendaAgendadaSchema = z.string().trim().max(4096, "A mensagem dev
 export const MAX_NOME_ANEXO = 255;
 export function nomeAnexoCurto(nome: string | undefined): string | undefined {
   const t = nome?.trim();
-  return t ? [...t].slice(0, MAX_NOME_ANEXO).join("") : undefined;
+  if (!t) return undefined;
+  let curto = "";
+  for (const ch of t) { if (curto.length + ch.length > MAX_NOME_ANEXO) break; curto += ch; }
+  return curto;
 }
 export const AgendarSchema = z.object({
   numeroId: z.string().min(1, "Escolha o número de envio."),

@@ -63,7 +63,7 @@ export function CartaoAgendada({agendada,atendimentoId,nomeContato,fuso,agora,ao
    </div>}
    {pergunta&&!acoes&&<p className="border-t border-amber-200 bg-amber-50 px-3 py-2 text-[13px] text-amber-800 [overflow-wrap:anywhere]">{(nomeContato?.trim()||"O contato")+" respondeu depois do agendamento. A mensagem aguarda confirmação para ser enviada."}</p>}
    {acoes&&!pergunta&&<div className="flex flex-wrap items-center justify-end gap-1 border-t border-border-soft px-2 py-1.5">
-    {aoEditar&&<Botao variante="fantasma" tamanho="sm" disabled={ocupado} onClick={e=>aoEditar(e.currentTarget)}><IconPencil size={14} aria-hidden/>Editar</Botao>}
+    {aoEditar&&agendada.editavel!==false&&<Botao variante="fantasma" tamanho="sm" disabled={ocupado} onClick={e=>aoEditar(e.currentTarget)}><IconPencil size={14} aria-hidden/>Editar</Botao>}
     <Botao variante="fantasma" tamanho="sm" ocupado={envio.ocupado} disabled={confirmando} onClick={()=>void enviarAgora()}><IconSend size={14} aria-hidden/>Enviar agora</Botao>
     <Botao variante="fantasma" tamanho="sm" className="text-danger" disabled={ocupado} onClick={()=>{envio.limpar();setConfirmando(true);}}><IconX size={14} aria-hidden/>Cancelar</Botao>
    </div>}
