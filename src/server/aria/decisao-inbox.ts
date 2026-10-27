@@ -97,8 +97,8 @@ export async function aprovarSugestaoEditadaInboxTx(tx:Tx,autorId:string,input:E
  const opcoes=!precedente&&acao.acao==="CRIAR_TAREFA"?{fusoTarefa:await carregarFusoInstitucionalTx(tx)}:undefined;
  if(!precedente&&externa)await tx.configIA.upsert({where:{id:"ia"},create:{id:"ia"},update:{}});
  if(!precedente&&acao.acao==="AGENDAR_MENSAGEM")await tx.$queryRaw`SELECT id FROM "ConfiguracaoOperacional" WHERE id='escola' FOR SHARE`;
- const candidatas=!precedente&&externa?await tx.$queryRaw<{id:string}[]>`SELECT id FROM "IntencaoMensagem" WHERE "atendimentoId"=${atendimentoId} AND origem='IA' AND status IN ('PENDENTE','ADIADA') ORDER BY id FOR UPDATE`:[];
  await tx.$queryRaw`SELECT id FROM "AtendimentoWhatsApp" WHERE id=${atendimentoId} FOR NO KEY UPDATE`;
+ const candidatas=!precedente&&externa?await tx.$queryRaw<{id:string}[]>`SELECT id FROM "IntencaoMensagem" WHERE "atendimentoId"=${atendimentoId} AND origem='IA' AND status IN ('PENDENTE','ADIADA') ORDER BY id FOR UPDATE`:[];
  const inicial=await conferir(tx,autorId,atendimentoId,acao);
  await travarAlvos(tx,acao,acao.oportunidadeId??inicial.a.leadId,"aprovar",inicial.a.leadId);
  const {u}=await conferir(tx,autorId,atendimentoId,acao);
