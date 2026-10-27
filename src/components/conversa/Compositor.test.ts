@@ -21,6 +21,8 @@ import { Compositor, MOTIVO_SEM_ENVIO, AVISO_NOTA, CARREGANDO_ENVIO, FALHA_PERMI
 import { SeletorEmoji, buscarEmoji, type EntradaEmoji } from "./SeletorEmoji";
 import { AVISO_RECURSO_MOTOR, type RecursoMotor } from "./recursos-canal";
 import { criarChavesPorAlvo } from "@/lib/chave-idempotencia";
+import { FormEnquete } from "./anexos/FormEnquete";
+import { FormLocalizacao } from "./anexos/FormLocalizacao";
 import { MSG_RESULTADO_INCERTO } from "@/lib/mensagens";
 import { CampoTexto } from "@/components/CampoTexto";
 import { criarGanchos, clicarBotao, elementos } from "@/test/tela-sem-dom";
@@ -597,4 +599,87 @@ describe("Compositor: anexo de proposta (#366 E4.7)",()=>{
   p={...p,atendimentoId:"at2"};tela();tela();(retido.props.onClick as ()=>void)();await esvaziar();
   expect(enviarProposta).not.toHaveBeenCalled();expect(elementos(tela()).some(n=>n.props.role==="dialog")).toBe(false);
  });
+});
+
+const CAPACIDADES367: RecursoMotor[] = ["cartaoContato", "enquete", "localizacao"];
+function formsAbertos367(raiz: ReactNode) { return elementos(raiz).filter(n => n.type === FormEnquete || n.type === FormLocalizacao); }
+describe("Compositor: enquete e localização pelo motor (#367 E4.8)", () => {
+  it("Compositor com motor: Enquete e Localização abrem o formulário; sem motor seguem desabilitados com o aviso", () => {
+    m.g = criarGanchos();
+    const aoEnviarConteudo = vi.fn(async () => ({ ok: true as const }));
+    let p = props({ capacidades: CAPACIDADES367, aoEnviarConteudo });
+    const tela = () => m.g!.renderizar(Compositor, p);
+    abrirAnexos365(tela());
+    for (const r of ["Enquete", "Localização"]) {
+      const b = elementos(tela()).find(n => n.props.role === "menuitem" && n.props["aria-label"] === r)!;
+      expect(b.props.disabled).toBe(false);
+      expect(b.props["aria-describedby"]).toBeUndefined();
+      expect(typeof b.props.onClick).toBe("function");
+    }
+    esperarAnexoInativo365(tela(), "Contato", AVISO_ANEXO_EM_BREVE);
+    clicarBotao(tela(), "Enquete");
+    expect(elementos(tela()).some(n => n.props.role === "menu")).toBe(false);
+    expect(formsAbertos367(tela()).map(n => n.type)).toEqual([FormEnquete]);
+    (formsAbertos367(tela())[0].props.aoFechar as () => void)();
+    expect(formsAbertos367(tela())).toHaveLength(0);
+    abrirAnexos365(tela());
+    clicarBotao(tela(), "Localização");
+    expect(formsAbertos367(tela()).map(n => n.type)).toEqual([FormLocalizacao]);
+    expect(aoEnviarConteudo).not.toHaveBeenCalled();
+    expect(p.aoEnviarTexto).not.toHaveBeenCalled();
+
+    m.g = criarGanchos();
+    p = props({ capacidades: [], aoEnviarConteudo });
+    abrirAnexos365(tela());
+    for (const r of ["Contato", "Enquete", "Localização"]) esperarAnexoInativo365(tela(), r, AVISO_RECURSO_MOTOR);
+    expect(formsAbertos367(tela())).toHaveLength(0);
+  });
+
+  it("sem aoEnviarConteudo, mesmo com motor, Enquete e Localização seguem desabilitados", () => {
+    m.g = criarGanchos();
+    const p = props({ capacidades: CAPACIDADES367 });
+    const tela = () => m.g!.renderizar(Compositor, p);
+    abrirAnexos365(tela());
+    for (const r of ["Contato", "Enquete", "Localização"]) esperarAnexoInativo365(tela(), r, AVISO_ANEXO_EM_BREVE);
+  });
+
+  it("o formulário envia pelo aoEnviarConteudo e o erro do servidor volta para ele", async () => {
+    m.g = criarGanchos();
+    const aoEnviarConteudo = vi.fn<(c: unknown) => Promise<{ ok: true } | { ok: false; erro: string }>>(async () => ({ ok: false, erro: "Este canal não envia esse tipo de conteúdo." }));
+    const p = props({ capacidades: CAPACIDADES367, aoEnviarConteudo });
+    const tela = () => m.g!.renderizar(Compositor, p);
+    abrirAnexos365(tela());
+    clicarBotao(tela(), "Enquete");
+    const enquete = { tipo: "ENQUETE" as const, nome: "Qual turno?", opcoes: ["Manhã", "Noite"], maxEscolhas: 1 };
+    const r = await (formsAbertos367(tela())[0].props.aoEnviar as (c: unknown) => Promise<unknown>)(enquete);
+    expect(aoEnviarConteudo).toHaveBeenCalledExactlyOnceWith(enquete);
+    expect(r).toEqual({ ok: false, erro: "Este canal não envia esse tipo de conteúdo." });
+    expect(formsAbertos367(tela())).toHaveLength(1);
+    expect(p.aoEnviarTexto).not.toHaveBeenCalled();
+    expect(p.aoEnviarMidia).not.toHaveBeenCalled();
+  });
+
+  it("formulário de outra conversa não envia depois da troca e fecha", async () => {
+    m.g = criarGanchos();
+    const aoEnviarConteudo = vi.fn(async () => ({ ok: true as const }));
+    let p = props({ capacidades: CAPACIDADES367, aoEnviarConteudo });
+    const tela = () => m.g!.renderizar(Compositor, p);
+    abrirAnexos365(tela());
+    clicarBotao(tela(), "Localização");
+    const retido = formsAbertos367(tela())[0].props.aoEnviar as (c: unknown) => Promise<{ ok: boolean }>;
+    p = { ...p, atendimentoId: "at2" };
+    tela(); tela();
+    expect(formsAbertos367(tela())).toHaveLength(0);
+    const r = await retido({ tipo: "LOCALIZACAO", latitude: -23.5, longitude: -46.6 });
+    expect(r.ok).toBe(false);
+    expect(aoEnviarConteudo).not.toHaveBeenCalled();
+  });
+
+  it("modo Nota não abre os formulários", () => {
+    m.g = criarGanchos();
+    const p = props({ modo: "nota", capacidades: CAPACIDADES367, aoEnviarConteudo: vi.fn(async () => ({ ok: true as const })) });
+    const tela = () => m.g!.renderizar(Compositor, p);
+    expect(elementos(tela()).some(n => n.props["aria-label"] === "Anexar")).toBe(false);
+    expect(formsAbertos367(tela())).toHaveLength(0);
+  });
 });

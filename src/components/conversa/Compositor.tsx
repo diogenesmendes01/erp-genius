@@ -16,6 +16,9 @@ import { aplicarVariaveisResposta, respostasDoAtalho, type RespostaDoCompositor 
 import { AVISO_RECURSO_MOTOR, mimeVozAceito, type RecursoMotor } from "./recursos-canal";
 import { ITENS_ANEXO, type IdItemAnexo } from "./itens-anexo";
 import type { PropostaAnexavel } from "@/server/whatsapp/proposta-atendimento";
+import type { ConteudoEspecial } from "@/server/whatsapp/canal";
+import { FormEnquete } from "./anexos/FormEnquete";
+import { FormLocalizacao } from "./anexos/FormLocalizacao";
 import { formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
 
 import { useRevisoesRascunhos, type RevisoesRascunhos } from "./rascunhos-conversa";
@@ -51,8 +54,12 @@ export interface PropsCompositor {
   respostas?: readonly RespostaDoCompositor[];
   propostas?: { oportunidadeId: string | null; itens: readonly PropostaAnexavel[]; fuso?: string | null };
   aoEnviarProposta?(documentoId: string, chaveIdempotencia?: string): Promise<Resultado<unknown>>;
+  aoEnviarConteudo?(c: ConteudoEspecial): Promise<Resultado<unknown>>;
   variaveisResposta?: { nome?: string | null; responsavel?: string | null; curso?: string | null };
 }
+
+type FormConteudo = "enquete" | "localizacao";
+const ehFormConteudo = (id: IdItemAnexo): id is FormConteudo => id === "enquete" || id === "localizacao";
 
 const chaveRascunho = (id: string, modo: string) => `conversa-rascunho:${id}:${modo}`;
 function lerRascunho(id: string, modo: string): string {
@@ -69,7 +76,7 @@ function formatoDeVoz(): string | null {
   return ["audio/ogg;codecs=opus", "audio/mp4"].find((t) => mimeVozAceito(t) && MediaRecorder.isTypeSupported(t)) ?? null;
 }
 
-export function Compositor({ atendimentoId, pedidoFoco, aoCampoResponder, modo, bloqueioExterno = false, podeEnviar, falhaPermissao, capacidades, aoEnviarTexto, aoEnviarMidia, aoNota, buscarMencoes, respostas = [], propostas, aoEnviarProposta, variaveisResposta = {}, tentativasNota, revisoesRascunhos, aoAgendar, aoPortaRascunhoInsight, contido = false }: PropsCompositor) {
+export function Compositor({ atendimentoId, pedidoFoco, aoCampoResponder, modo, bloqueioExterno = false, podeEnviar, falhaPermissao, capacidades, aoEnviarTexto, aoEnviarMidia, aoNota, buscarMencoes, respostas = [], propostas, aoEnviarProposta, aoEnviarConteudo, variaveisResposta = {}, tentativasNota, revisoesRascunhos, aoAgendar, aoPortaRascunhoInsight, contido = false }: PropsCompositor) {
   const idAvisosAnexos = useId();
   const [texto, setTexto] = useState(() => lerRascunho(atendimentoId, modo));
   const [arquivo, setArquivo] = useState<File | null>(null);
@@ -78,6 +85,7 @@ export function Compositor({ atendimentoId, pedidoFoco, aoCampoResponder, modo, 
   const [emoji, setEmoji] = useState(false);
   const [anexos, setAnexos] = useState(false);
   const [listaPropostas, setListaPropostas] = useState(false);
+  const [formConteudo, setFormConteudo] = useState<FormConteudo | null>(null);
   const [gravando, setGravando] = useState(false);
   const entrada = useRef<HTMLTextAreaElement | null>(null);
   const focoAtendido=useRef<{atendimentoId:string;pedido:number}|null>(null);
@@ -122,6 +130,7 @@ export function Compositor({ atendimentoId, pedidoFoco, aoCampoResponder, modo, 
     setEmoji(false);
     setAnexos(false);
     setListaPropostas(false);
+    setFormConteudo(null);
     setGravando(false);
   }
   useLayoutEffect(() => {
@@ -396,6 +405,15 @@ export function Compositor({ atendimentoId, pedidoFoco, aoCampoResponder, modo, 
     }
   }
 
+  async function enviarConteudo(c: ConteudoEspecial): Promise<Resultado<unknown>> {
+    if (!contextoVigente() || !saidaPermitida() || nota || podeEnviar !== true || !aoEnviarConteudo) return { ok: false, erro: MOTIVO_SEM_ENVIO };
+    return aoEnviarConteudo(c);
+  }
+  const conteudoAtivo = (id: IdItemAnexo) => {
+    const item = ITENS_ANEXO.find((i) => i.id === id);
+    return ehFormConteudo(id) && !!item?.recurso && capacidades.includes(item.recurso) && typeof aoEnviarConteudo === "function";
+  };
+
   function selecionarAnexo(item: IdItemAnexo) {
     if (!contextoVigente() || !saidaPermitida() || nota || podeEnviar !== true) return;
     if (item === "documento") abrirSeletor("*/*");
@@ -409,6 +427,10 @@ export function Compositor({ atendimentoId, pedidoFoco, aoCampoResponder, modo, 
     } else if (item === "proposta" && propostaDisponivel) {
       setAnexos(false);
       setListaPropostas(true);
+    } else if (ehFormConteudo(item) && conteudoAtivo(item)) {
+      setAnexos(false);
+      setListaPropostas(false);
+      setFormConteudo(item);
     }
   }
   const vazio = !texto.trim() && !arquivo;
@@ -463,7 +485,7 @@ export function Compositor({ atendimentoId, pedidoFoco, aoCampoResponder, modo, 
         )}
         {!nota && (
           <>
-            <button type="button" aria-label="Anexar" aria-haspopup="menu" aria-expanded={anexos} onClick={() => { setListaPropostas(false); setAnexos(!anexos); }} className="grid h-11 w-11 shrink-0 place-items-center rounded-full text-gray-600 hover:bg-highlight">
+            <button type="button" aria-label="Anexar" aria-haspopup="menu" aria-expanded={anexos} onClick={() => { setListaPropostas(false); setFormConteudo(null); setAnexos(!anexos); }} className="grid h-11 w-11 shrink-0 place-items-center rounded-full text-gray-600 hover:bg-highlight">
               <IconPaperclip size={20} aria-hidden />
             </button>
             {anexos && (
@@ -472,18 +494,21 @@ export function Compositor({ atendimentoId, pedidoFoco, aoCampoResponder, modo, 
                   .filter(i => i.id !== "proposta" || propostaDisponivel)
                   .map(i => {
                     const Icone = i.icone;
-                    const aviso = i.recurso ? (capacidades.includes(i.recurso) ? AVISO_ANEXO_EM_BREVE : AVISO_RECURSO_MOTOR) : null;
+                    const inativo = !!i.recurso && !conteudoAtivo(i.id);
+                    const aviso = inativo && i.recurso ? (capacidades.includes(i.recurso) ? AVISO_ANEXO_EM_BREVE : AVISO_RECURSO_MOTOR) : null;
                     return <div key={i.id} className="min-w-0">
-                      <button type="button" role="menuitem" aria-label={i.rotulo} disabled={!!i.recurso}
-                        aria-describedby={i.recurso ? idAvisosAnexos + "-" + i.recurso : undefined}
-                        className={`${CLASSE_ITEM_MENU} flex-col justify-center text-gray-800`} onClick={i.recurso ? undefined : () => selecionarAnexo(i.id)}>
+                      <button type="button" role="menuitem" aria-label={i.rotulo} disabled={inativo}
+                        aria-describedby={inativo ? idAvisosAnexos + "-" + i.recurso : undefined}
+                        className={`${CLASSE_ITEM_MENU} flex-col justify-center text-gray-800`} onClick={inativo ? undefined : () => selecionarAnexo(i.id)}>
                         <span aria-hidden className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg ${i.classeIcone}`}><Icone size={20} /></span><span className="text-center">{i.rotulo}</span>
                       </button>
-                      {i.recurso && <small id={idAvisosAnexos + "-" + i.recurso} className="block px-2 pb-1 text-center text-xs text-gray-600">{aviso}</small>}
+                      {inativo && <small id={idAvisosAnexos + "-" + i.recurso} className="block px-2 pb-1 text-center text-xs text-gray-600">{aviso}</small>}
                     </div>;
                   })}
               </div>
             )}
+            {formConteudo === "enquete" && conteudoAtivo("enquete") && <FormEnquete aoEnviar={enviarConteudo} aoFechar={() => setFormConteudo(null)} />}
+            {formConteudo === "localizacao" && conteudoAtivo("localizacao") && <FormLocalizacao aoEnviar={enviarConteudo} aoFechar={() => setFormConteudo(null)} />}
             {listaPropostas && propostaDisponivel && propostas?.oportunidadeId && (
               <div role="dialog" aria-label="Enviar proposta" className={`absolute bottom-12 left-0 z-20 w-[340px] max-w-[calc(100vw-32px)] ${CLASSE_PAINEL_MENU}`}>
                 <div className="flex items-center gap-1 px-1 pb-1">
