@@ -1,3 +1,4 @@
+import type {PortaRascunhoAgendamento} from "./porta-rascunho-agendamento";
 import { act, createElement, StrictMode } from "react";
 import type { Root } from "react-dom/client";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
@@ -226,4 +227,22 @@ it("358 upload iniciado antes da trava não autoriza envio depois do await",asyn
  let resolver!:(r:Response)=>void;const fetcher=vi.fn(()=>new Promise<Response>(r=>resolver=r)),midia=vi.fn(async()=>({ok:true as const}));vi.stubGlobal("fetch",fetcher);
  const p=props({aoEnviarMidia:midia});await montar(p);await anexar("upload358.txt");await enviar();expect(fetcher).toHaveBeenCalledOnce();await montar({...p,bloqueioExterno:true} as PropsCompositor);
  await act(async()=>resolver(new Response(JSON.stringify({url:"/api/files/whatsapp-out/u/upload358.txt"}),{status:200})));expect(midia).not.toHaveBeenCalled();await montar(p);expect(host.textContent).toContain("upload358.txt");
+});
+
+it("363 Salvar rascunho pela porta CAS atualiza Responder sem enviar ou tocar Nota",async()=>{
+ let porta:PortaRascunhoAgendamento|null=null;const publicada=()=>{expect(porta).not.toBeNull();if(!porta)throw new Error("porta ausente");return porta;};
+ const enviar=vi.fn(async()=>({ok:true as const}));storage.set("conversa-rascunho:A:nota","Nota separada");
+ await montar(props({aoEnviarTexto:enviar,aoPortaRascunhoAgendamento:p=>{porta=p;}}));await digitar("fonte");const atual=publicada();expect(atual.textoAtual).toBe("fonte");
+ await act(async()=>{expect(atual.salvar({texto:"rascunho salvo363",revisaoEsperada:atual.revisao})).toEqual({ok:true});});
+ expect(storage.get("conversa-rascunho:A:responder")).toBe("rascunho salvo363");expect(ui.campo.value).toBe("rascunho salvo363");expect(storage.get("conversa-rascunho:A:nota")).toBe("Nota separada");expect(enviar).not.toHaveBeenCalled();
+});
+it("363 porta retida não sobrescreve edição posterior/outro alvo e Nota não publica porta",async()=>{
+ let porta:PortaRascunhoAgendamento|null=null;const publicada=()=>{expect(porta).not.toBeNull();if(!porta)throw new Error("porta ausente");return porta;};
+ const publicar=(p:PortaRascunhoAgendamento|null)=>{porta=p;};await montar(props({aoPortaRascunhoAgendamento:publicar}));await digitar("fonteA");const antiga=publicada();await digitar("nova intençãoA");
+ await act(async()=>{expect(antiga.salvar({texto:"velho",revisaoEsperada:antiga.revisao}).ok).toBe(false);});expect(storage.get("conversa-rascunho:A:responder")).toBe("nova intençãoA");
+ const atual=publicada();await montar(props({atendimentoId:"B",aoPortaRascunhoAgendamento:publicar}));await digitar("B preservado");await act(async()=>{expect(atual.salvar({texto:"retidoA",revisaoEsperada:atual.revisao}).ok).toBe(false);});expect(storage.get("conversa-rascunho:B:responder")).toBe("B preservado");
+ await montar(props({atendimentoId:"B",modo:"nota",aoPortaRascunhoAgendamento:publicar}));expect(porta).toBeNull();
+});
+it("363 relógio entrega botão real como âncora sem enviar o rascunho",async()=>{
+ const agendar=vi.fn(),enviar=vi.fn();await montar(props({aoAgendar:agendar,aoEnviarTexto:enviar}));await digitar("rascunho do relógio");const botao=host.querySelector('[aria-label="Agendar mensagem"]');expect(botao).not.toBeNull();await act(async()=>eventos(botao!).onClick({currentTarget:botao}));expect(agendar).toHaveBeenCalledExactlyOnceWith(botao);expect(enviar).not.toHaveBeenCalled();expect(storage.get("conversa-rascunho:A:responder")).toBe("rascunho do relógio");
 });
