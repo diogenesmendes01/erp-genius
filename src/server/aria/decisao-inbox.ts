@@ -14,8 +14,10 @@ import { prisma } from "@/lib/prisma";
 import { executarAcao, exigirSessao, ErroPermissao, ErroRegra, type UsuarioSessao } from "../_shared";
 import { carregarFusoInstitucionalTx } from "../operacao/relogio";
 import { escopoAtendimentos } from "../whatsapp/escopo";
+import { sugestaoVigente } from "../inbox/estado-aria";
 import { acoesDecidiveisNoInbox, pessoaDoPayloadValida, usaLeadAtualNaResposta } from "./escopo-decisao-inbox";
 import { aprovarAcaoAriaTx, rejeitarAcaoAriaTx, desfazerAcaoAriaTx } from "./historico";
+import { ordenarPorAplicacao, VERBO_ACAO_TURNO } from "./ordem-turno";
 
 type Tx=Prisma.TransactionClient;
 type Verbo="aprovar"|"rejeitar"|"desfazer";
@@ -147,4 +149,76 @@ export function aprovarSugestaoEditadaNoInbox(input:EdicaoSugestaoInboxInput){re
  const u=await exigirSessao();const entrada=EdicaoInboxSchema.parse(input);
  await prisma.$transaction(tx=>aprovarSugestaoEditadaInboxTx(tx,u.id,entrada));
  revalidatePath("/inbox");
+});}
+
+export type TurnoInboxInput={turnoId:string;atendimentoId:string;acaoIds:string[];chaveIdempotencia:string};
+type VerboTurno="aprovar"|"rejeitar";
+function citarAcao(e:unknown,acao:AcaoAgenteIA):unknown{
+ if(!(e instanceof ErroRegra)&&!(e instanceof ErroPermissao))return e;
+ const msg=`Não foi possível ${VERBO_ACAO_TURNO[acao.acao]}: ${e.message}`;
+ return e instanceof ErroPermissao?new ErroPermissao(msg):new ErroRegra(msg);
+}
+async function conferirTurno(tx:Tx,autorId:string,atendimentoId:string,acoes:readonly AcaoAgenteIA[]){
+ const u=await autorAtual(tx,autorId);
+ const a=await tx.atendimentoWhatsApp.findFirst({where:{AND:[{id:atendimentoId},await escopoAtendimentos(u,{db:tx})]},select:{id:true,finalidade:true,responsavelId:true,leadId:true}});
+ const permitidas=a?await acoesDecidiveisNoInbox(tx,u,a,acoes):new Set<string>();
+ const fora=acoes.find(x=>!permitidas.has(x.id));
+ if(!a||fora)throw new ErroPermissao(fora?`Não foi possível ${VERBO_ACAO_TURNO[fora.acao]}: esta ação está fora do seu escopo no atendimento.`:"Esta ação está fora do seu escopo no atendimento.");
+ return {u,a};
+}
+async function decidirTurnoTx(tx:Tx,autorId:string,input:TurnoInboxInput,verbo:VerboTurno,motivo:string|null):Promise<number>{
+ const {turnoId,atendimentoId,chaveIdempotencia}=input;
+ const ids=[...new Set(input.acaoIds)].sort();
+ if(!ids.length)throw new ErroRegra("Nenhuma sugestão pendente neste turno.");
+ const tipo=verbo==="aprovar"?"AcaoAriaAprovada":"AcaoAriaRejeitada";
+ const marca=marcaIdempotencia(chaveIdempotencia,{atendimentoId,turnoId,acaoIds:ids,...(verbo==="rejeitar"?{motivo}:{})})!;
+ await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended(${`idem:${tipo}:${autorId}:${chaveIdempotencia}`}, 0))`;
+ await tx.$queryRaw`SELECT id FROM "AcaoAgenteIA" WHERE id IN (${Prisma.join(ids)}) ORDER BY id FOR UPDATE`;
+ const acoes=await tx.acaoAgenteIA.findMany({where:{id:{in:ids}},orderBy:{id:"asc"}});
+ if(acoes.length!==ids.length)throw new ErroRegra("Ação da Aria não encontrada.");
+ if(acoes.some(x=>x.atendimentoId!==atendimentoId||x.turnoId!==turnoId))throw new ErroPermissao("A sugestão não pertence a este atendimento.");
+ const aprovar=verbo==="aprovar";
+ const opcoes=aprovar&&acoes.some(x=>x.acao==="CRIAR_TAREFA")?{fusoTarefa:await carregarFusoInstitucionalTx(tx)}:undefined;
+ if(aprovar&&acoes.some(x=>x.acao==="AGENDAR_MENSAGEM"))await tx.$queryRaw`SELECT id FROM "ConfiguracaoOperacional" WHERE id='escola' FOR SHARE`;
+ await tx.$queryRaw`SELECT id FROM "AtendimentoWhatsApp" WHERE id=${atendimentoId} FOR NO KEY UPDATE`;
+ const inicial=await conferirTurno(tx,autorId,atendimentoId,acoes);
+ const repetido=await repeticaoIdempotente(tx,{tipo,agregadoTipo:"AcaoAgenteIA",autorId,marca,mensagemConflito:"Esta tentativa já foi usada com outras sugestões."});
+ if(repetido){const n=(repetido.payload as Record<string,unknown>|null)?.decididasNoTurno;return typeof n==="number"?n:ids.length;}
+ const decidida=acoes.find(x=>x.status!=="SUGERIDA");
+ if(decidida)throw new ErroRegra(`Não foi possível ${VERBO_ACAO_TURNO[decidida.acao]}: esta sugestão já foi decidida.`);
+ const agora=new Date();
+ const vencida=acoes.find(x=>x.expiraEm&&x.expiraEm<=agora);
+ if(vencida)throw new ErroRegra(`Não foi possível ${VERBO_ACAO_TURNO[vencida.acao]}: esta sugestão expirou.`);
+ const pendentes=await tx.acaoAgenteIA.findMany({where:{AND:[{turnoId,atendimentoId},sugestaoVigente(agora)]},select:{id:true,acao:true,payload:true,oportunidadeId:true,atendimentoId:true}});
+ const decidiveis=await acoesDecidiveisNoInbox(tx,inicial.u,inicial.a,pendentes);
+ if(pendentes.some(p=>!decidiveis.has(p.id)))throw new ErroPermissao("Há ações deste turno fora do seu escopo. Decida as demais individualmente.");
+ if(pendentes.length!==ids.length||pendentes.some(p=>!ids.includes(p.id)))throw new ErroRegra("As sugestões deste turno mudaram. Reabra o painel antes de decidir.");
+ const ordenadas=ordenarPorAplicacao(acoes);
+ for(const acao of ordenadas){try{await travarAlvos(tx,acao,acao.oportunidadeId??inicial.a.leadId,verbo,inicial.a.leadId);}catch(e){throw citarAcao(e,acao);}}
+ const {u}=await conferirTurno(tx,autorId,atendimentoId,acoes);
+ const m=motivo?.trim()?motivo.trim().slice(0,500):null;
+ for(const [i,acao] of ordenadas.entries()){
+  const extra={turnoId,...(i===0?{...marca,decididasNoTurno:ordenadas.length}:{})};
+  try{
+   if(aprovar)await aprovarAcaoAriaTx(tx,acao,u,opcoes,extra);
+   else await rejeitarAcaoAriaTx(tx,acao,u,m,extra);
+  }catch(e){throw citarAcao(e,acao);}
+ }
+ await conferirTurno(tx,autorId,atendimentoId,acoes);
+ return ordenadas.length;
+}
+export const aprovarTurnoAriaTx=(tx:Tx,autorId:string,input:TurnoInboxInput)=>decidirTurnoTx(tx,autorId,input,"aprovar",null);
+export const rejeitarTurnoAriaTx=(tx:Tx,autorId:string,input:TurnoInboxInput&{motivo?:string|null})=>decidirTurnoTx(tx,autorId,input,"rejeitar",input.motivo?.trim()?input.motivo.trim().slice(0,500):null);
+const TurnoInboxSchema=z.object({turnoId:z.string().min(1),atendimentoId:z.string().min(1),acaoIds:z.array(z.string().min(1)).min(1).max(50),chaveIdempotencia:ChaveIdempotenciaSchema}).strict();
+export function aprovarTurnoAria(input:TurnoInboxInput){return executarAcao(async()=>{
+ const u=await exigirSessao();const entrada=TurnoInboxSchema.parse(input);
+ const aprovadas=await prisma.$transaction(tx=>aprovarTurnoAriaTx(tx,u.id,entrada));
+ revalidatePath("/inbox");
+ return {aprovadas};
+});}
+export function rejeitarTurnoAria(input:TurnoInboxInput&{motivo?:string}){return executarAcao(async()=>{
+ const u=await exigirSessao();const entrada=TurnoInboxSchema.extend({motivo:z.string().max(2000).optional()}).parse(input);
+ const rejeitadas=await prisma.$transaction(tx=>rejeitarTurnoAriaTx(tx,u.id,entrada));
+ revalidatePath("/inbox");
+ return {rejeitadas};
 });}
