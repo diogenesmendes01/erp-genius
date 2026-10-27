@@ -40,11 +40,9 @@ async function autorAtual(tx:Tx,id:string){const u=await tx.usuario.findUnique({
 export function enfileirarSaidaInbox(db:Pick<PrismaClient,"$transaction">,autorId:string,id:string,payload:SaidaInbox){return db.$transaction(async tx=>{
  await tx.configIA.upsert({where:{id:"ia"},create:{id:"ia"},update:{}});
  await tx.$queryRaw`SELECT id FROM "AtendimentoWhatsApp" WHERE id=${id} FOR NO KEY UPDATE`;
- const u=await autorAtual(tx,autorId);
- const conversa=await atendimentoVisivel(u,id,true,tx);
- if(!conversa||(payload.tipo==="especial"&&conversa.encerradoEm))throw new ErroRegra("Conversa não encontrada ou fora do seu escopo.");
- if(!conversa.numero.ativo)throw new ErroRegra("Este número está inativo.");
- if(conversa.contato.optOutEm)throw new ErroRegra("O contato pediu para não receber mensagens (opt-out). Reative-o antes de enviar.");
+ const {u,conversa}=await lerDestinoHumanoAutorizadoTx(tx,autorId,id);
+ if(payload.tipo==="especial"&&conversa.encerradoEm)throw new ErroRegra("Conversa não encontrada ou fora do seu escopo.");
+ exigirEstadoDestinoHumano(conversa);
  let tipo:"TEXTO"|ReturnType<typeof tipoPorMime>="TEXTO";
  if(payload.tipo==="midia"){
   if(!midiaSaidaDoAutor(payload.url,u.id))throw new ErroRegra("Anexo inválido: envie o arquivo pelo uploader da inbox.");
@@ -57,3 +55,16 @@ export function enfileirarSaidaInbox(db:Pick<PrismaClient,"$transaction">,autorI
  if(estado==="ia"||estado==="aprovacao"||estado==="handoff")throw new ErroRegra("Assuma a conversa para responder.");
  return tx.intencaoMensagem.create({data:{numeroId:conversa.numeroId,atendimentoId:conversa.id,contatoId:conversa.contatoId,origem:"HUMANO",...detalhes,autorId:u.id},select:{id:true}});
  });}
+
+async function lerDestinoHumanoAutorizadoTx(tx:Tx,autorId:string,id:string){
+ const u=await autorAtual(tx,autorId);
+ const conversa=await atendimentoVisivel(u,id,true,tx);
+ if(!conversa)throw new ErroRegra("Conversa não encontrada ou fora do seu escopo.");
+ return {u,conversa};
+}
+
+function exigirEstadoDestinoHumano(conversa:Awaited<ReturnType<typeof lerDestinoHumanoAutorizadoTx>>["conversa"]){
+ if(!conversa.numero.ativo)throw new ErroRegra("Este número está inativo.");
+ if(conversa.contato.optOutEm)throw new ErroRegra("O contato pediu para não receber mensagens (opt-out). Reative-o antes de enviar.");
+}
+export async function validarDestinoSaidaHumanaInboxTx(tx:Tx,autorId:string,id:string){const r=await lerDestinoHumanoAutorizadoTx(tx,autorId,id);exigirEstadoDestinoHumano(r.conversa);return r;}
