@@ -10,6 +10,7 @@ import { ConfirmarAcao } from "@/components/ConfirmarAcao";
 import { EstadoVazio } from "@/components/EstadoVazio";
 import { recontarNaoLidasInbox } from "@/components/SeloNaoLidasInbox";
 import { FeedbackAcao } from "@/components/FeedbackAcao";
+import {validarQuando as validarQuandoAgendar} from "./fluxos/agendar/validar-quando";
 import { Modal } from "@/components/Modal";
 import { MensagemStatus } from "@/components/MensagemStatus";
 import { useSugestaoAgendamento } from "./insights/useSugestaoAgendamento";
@@ -20,7 +21,7 @@ import { podeExecutar } from "@/server/inbox/permissoes";
 import { PRAZO_MAXIMO_CONVITE_DIAS } from "@/server/whatsapp/participantes";
 import { assumirAtendimento, assumirConversaDaAria, atribuirAtendimento, convidarParticipante, devolverParaFila, revogarParticipante, transferirAtendimento } from "@/server/whatsapp/acoes-atendimento";
 import { agendarMensagemNoAtendimentoLocal, cancelarAgendamentoDoAtendimento, registrarNotaAtendimento } from "@/server/whatsapp/acoes-conversa";
-import { fusoDoCampoLocal, instanteDoCampoLocal } from "@/server/operacao/fuso-entrada";
+import { fusoDoCampoLocal } from "@/server/operacao/fuso-entrada";
 import { CampoDataHoraLocal } from "@/components/CampoDataHoraLocal";
 import { listarConvitesEAgendamentos, listarPessoasParaAtendimento, type AgendamentoAtivo, type ConviteAtivo } from "@/server/whatsapp/consultas-acoes-atendimento";
 import { encerrarAtendimentoWhatsApp } from "@/server/whatsapp/operacoes-atendimento";
@@ -39,6 +40,7 @@ export interface PropsAcoesAtendimento {
   podeAssumirAria?: boolean;
   grupo?: boolean;
   aoCriarTarefa?: () => void;
+  aoAgendar?: (ancora?:HTMLElement) => void;
   atendimento: { id: string; finalidade: Setor; responsavelId: string | null; status: StatusAtendimentoWhatsApp };
   usuario: { id: string; papeis: Papel[] };
   setoresDoNumero: Setor[];
@@ -54,12 +56,9 @@ export interface PropsAcoesAtendimento {
 const SILENCIO_HORAS = 8;
 const CLASSE_CONTROLE = "w-full rounded-md border border-gray-300 px-2 py-1.5 text-sm";
 
-export function validarQuando(quando: string, fuso: string, agora: Date = new Date()): string | null {
-  if (!quando) return "Escolha o dia e a hora do envio.";
-  const r = instanteDoCampoLocal(quando, fuso);
-  if (!r.ok) return r.erro;
-  if (r.instante.getTime() <= agora.getTime()) return "Escolha um horário no futuro.";
-  return null;
+export function validarQuando(quando:string,fuso:string,agora:Date=new Date()):string|null {
+  const erro=validarQuandoAgendar(quando,fuso,agora);
+  return erro==="Esse horário já passou. Escolha uma data e hora no futuro."?"Escolha um horário no futuro.":erro;
 }
 
 export function setoresParaTransferir(setoresDoNumero: Setor[], atual: Setor): Setor[] {
@@ -68,7 +67,7 @@ export function setoresParaTransferir(setoresDoNumero: Setor[], atual: Setor): S
 
 type Dialogo = null | "atribuir" | "transferir" | "convidar" | "nota" | "agendar" | "pendentes" | "encerrar";
 
-export function useAcoesAtendimento({ versaoInsights=0, podeUsarInsights=false, contextoAria = false, podeAssumirAria = false, atendimento, usuario, setoresDoNumero, fixada, silenciada, linhaComercial = false, donoLinhaId = null, destinos = [], aoMudar, fuso, grupo = false, aoBuscar, aoCriarTarefa }: PropsAcoesAtendimento & { aoBuscar(): void }): AcoesCabecalho {
+export function useAcoesAtendimento({ versaoInsights=0, podeUsarInsights=false, contextoAria = false, podeAssumirAria = false, atendimento, usuario, setoresDoNumero, fixada, silenciada, linhaComercial = false, donoLinhaId = null, destinos = [], aoMudar, fuso, grupo = false, aoBuscar, aoCriarTarefa, aoAgendar }: PropsAcoesAtendimento & { aoBuscar(): void }): AcoesCabecalho {
   const [dialogo, setDialogo] = useState<Dialogo>(null);
   const [aviso, setAviso] = useState<string | null>(null);
   const direta = useAcaoCliente({ idempotente: false });
@@ -87,7 +86,7 @@ export function useAcoesAtendimento({ versaoInsights=0, podeUsarInsights=false, 
   const avisar = (qual: "convite" | "agendamento") => { setAviso(qual === "convite" ? "Convite revogado." : "Agendamento cancelado."); aoMudar?.(); };
 
   const ocupado = direta.ocupado || responsavel.ocupado;
-  const abrirAgendar = pode("agendar") ? () => setDialogo("agendar") : null;
+  const abrirAgendar = pode("agendar") ? (aoAgendar??(()=>setDialogo("agendar"))) : null;
   const chaveAssumir = JSON.stringify([atendimento.id, atendimento.responsavelId, usuario.id, usuario.papeis, contextoAria, podeAssumirAria, grupo, aberto, linhaComercial, donoLinhaId]);
   const [ofertaAssumir, setOfertaAssumir] = useState(() => ({ chave: chaveAssumir, token: Symbol("assumir") }));
   if (ofertaAssumir.chave !== chaveAssumir) setOfertaAssumir({ chave: chaveAssumir, token: Symbol("assumir") });
@@ -115,7 +114,7 @@ export function useAcoesAtendimento({ versaoInsights=0, podeUsarInsights=false, 
     fixar: () => void rodar(() => alternarFixada(atendimento.id), fixada ? "Conversa desafixada." : "Conversa fixada."),
     silenciar: () => void rodar(() => silenciarConversa(atendimento.id, silenciada ? null : new Date(Date.now() + SILENCIO_HORAS * 3_600_000).toISOString()), silenciada ? "Notificações reativadas." : "Silenciada por " + SILENCIO_HORAS + " horas."),
     ...(!grupo && aoCriarTarefa ? { criarTarefa: aoCriarTarefa } : {}),
-    nota: () => setDialogo("nota"), agendar: () => setDialogo("agendar"), pendentes: () => setDialogo("pendentes"), buscar: aoBuscar,
+    nota: () => setDialogo("nota"), agendar: () => abrirAgendar?.(), pendentes: () => setDialogo("pendentes"), buscar: aoBuscar,
     atribuir: () => setDialogo("atribuir"), devolver: () => void rodar(() => devolverParaFila(atendimento.id), "Devolvido para a fila.", responsavel),
     convidar: () => setDialogo("convidar"), encerrar: () => setDialogo("encerrar"), bloquear: () => {},
   }}).map(item => ({ ...item, desabilitado: item.desabilitado || ocupado }));
@@ -127,7 +126,7 @@ export function useAcoesAtendimento({ versaoInsights=0, podeUsarInsights=false, 
       {dialogo === "convidar" && <DialogoPessoa atendimentoId={atendimento.id} modo="convidar" aoFechar={() => setDialogo(null)} aoConcluir={() => concluir("Convite enviado.")} />}
       {dialogo === "transferir" && <DialogoTransferir atendimentoId={atendimento.id} finalidade={atendimento.finalidade} setoresDoNumero={setoresDoNumero} destinos={destinos} aoFechar={() => setDialogo(null)} aoConcluir={() => concluir("Atendimento transferido.")} />}
       {dialogo === "nota" && <DialogoNota atendimentoId={atendimento.id} aoFechar={() => setDialogo(null)} aoConcluir={() => concluir("Nota registrada.")} />}
-      {dialogo === "agendar" && <DialogoAgendar atendimentoId={atendimento.id} versaoInsights={versaoInsights} insightsAplicaveis={podeUsarInsights && atendimento.finalidade === "COMERCIAL" && !grupo} fuso={fusoDoCampoLocal(fuso, null)} aoFechar={() => setDialogo(null)} aoConcluir={() => concluir("Mensagem agendada.")} />}
+      {dialogo === "agendar" && !aoAgendar && <DialogoAgendar atendimentoId={atendimento.id} versaoInsights={versaoInsights} insightsAplicaveis={podeUsarInsights && atendimento.finalidade === "COMERCIAL" && !grupo} fuso={fusoDoCampoLocal(fuso, null)} aoFechar={() => setDialogo(null)} aoConcluir={() => concluir("Mensagem agendada.")} />}
       {dialogo === "pendentes" && <DialogoPendentes atendimentoId={atendimento.id} fuso={fuso} aoFechar={() => setDialogo(null)} aoConcluir={avisar} />}
       {dialogo === "encerrar" && (
         <ConfirmarAcao
