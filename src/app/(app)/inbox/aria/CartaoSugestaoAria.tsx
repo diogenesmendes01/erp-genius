@@ -105,7 +105,7 @@ function SessaoPacote({atendimentoId,pacote,usuarioId,fuso,aoDecidir,bloqueado=f
  const [editandoId,setEditandoId]=useState<string|null>(null);
  useLayoutEffect(()=>{const atual={ativa:!bloqueado};ciclo.current=atual;return()=>{atual.ativa=false;};},[bloqueado]);
  const v=visualPacote(pacote,{usuarioId,fuso});
- const podeDecidirTudo=pacote.every(s=>s.podeDecidir!==false),travado=bloqueado||acao.ocupado;
+ const podeDecidirTudo=pacote.every(s=>s.podeDecidir!==false&&(s.pendentesNoTurno??pacote.length)<=pacote.length),travado=bloqueado||acao.ocupado;
  const turnoId=pacote[0]?.turnoId??"",acaoIds=pacote.map(s=>s.id).sort();
  const primeiro=pacote.reduce<string|null>((a,s)=>a===null||Date.parse(s.criadoEm)<Date.parse(a)?s.criadoEm:a,null);
  async function executar(atual:{ativa:boolean},f:()=>Promise<Resultado<unknown>>,chave?:ChaveTentativa){
@@ -146,7 +146,7 @@ function SessaoPacote({atendimentoId,pacote,usuarioId,fuso,aoDecidir,bloqueado=f
     <Botao disabled={bloqueado||!podeDecidirTudo} ocupado={acao.ocupado} className="flex-1" onClick={()=>decidirTudo(true)}>{v.rotuloAprovar}</Botao>
     <Botao variante="perigoContorno" disabled={bloqueado||!podeDecidirTudo} ocupado={acao.ocupado} onClick={()=>decidirTudo(false)}>{v.rotuloRejeitar}</Botao>
    </div>}
-   {editandoId===null&&!podeDecidirTudo&&<p className="text-xs text-gray-600">Há ações fora do seu escopo neste pacote. Decida as demais individualmente.</p>}
+   {editandoId===null&&!podeDecidirTudo&&<p className="text-xs text-gray-600">Este turno tem sugestões que não aparecem aqui. Decida as visíveis individualmente.</p>}
    <FeedbackAcao erro={acao.erro}/>
   </div>
  </article>;

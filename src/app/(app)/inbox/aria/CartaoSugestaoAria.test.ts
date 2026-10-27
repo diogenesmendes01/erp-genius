@@ -4,6 +4,7 @@ import { expect,it,vi } from "vitest";
 import type { SugestaoAriaThread } from "@/server/aria/sugestoes-thread";
 vi.mock("@/server/aria/acoes",()=>({aprovarSugestaoNoInbox:vi.fn(),rejeitarSugestaoNoInbox:vi.fn()}));
 import { CartaoPacoteAria, CartaoSugestaoAria } from "./CartaoSugestaoAria";
+import { intercalarSugestoes } from "./intercalar";
 import { botaoClasses } from "@/components/Botao";
 const s=(o:Partial<SugestaoAriaThread>={}):SugestaoAriaThread=>({id:"s",turnoId:"t",acao:"RESPONDER",status:"SUGERIDA",criadoEm:"2026-10-23T13:42Z",expiraEm:"2026-10-23T14:42Z",justificativa:"Motivo contextual",texto:"Olá!\nComo vai?",detalhe:{tipo:"enviar",documento:false},decididaPorId:null,decididaPorNome:null,decididaEm:null,...o});
 const montar=(x=s())=>renderToStaticMarkup(createElement(CartaoSugestaoAria,{atendimentoId:"thread",s:x,usuarioId:"u",fuso:"America/Sao_Paulo",aoDecidir(){}}));
@@ -39,10 +40,18 @@ it("pacote do turno mostra um cartão com três linhas, decisão individual e de
  for(const texto of ["Aria sugere 3 ações · aguardando aprovação","Como vai?","Criar tarefa: Ligar","Enviar a mensagem acima",">Aprovar tudo e enviar</button>",">Rejeitar tudo</button>",">Editar tarefa</button>",">Aprovar e enviar</button>","Isso será enviado agora no WhatsApp e não poderá ser desfeito."])expect(h).toContain(texto);
  expect(h.indexOf("Criar tarefa: Ligar")).toBeLessThan(h.indexOf("Enviar a mensagem acima"));
 });
-it("pacote com ação fora do escopo desabilita só a decisão em bloco",()=>{
- const pacote=[s(),s({id:"t3",acao:"MOVER_ETAPA",texto:null,podeDecidir:false,detalhe:{tipo:"etapa",para:"NOVO"} as SugestaoAriaThread["detalhe"]})];
- const h=renderToStaticMarkup(createElement(CartaoPacoteAria,{atendimentoId:"thread",pacote,usuarioId:"u",fuso:"UTC",aoDecidir(){}}));
+it("turno com pendente fora do fio desabilita só a decisão em bloco",()=>{
+ const cartoes=[s({podeDecidir:true,pendentesNoTurno:3}),s({id:"t3",acao:"MOVER_ETAPA",texto:null,podeDecidir:true,pendentesNoTurno:3,detalhe:{tipo:"etapa",para:"NOVO"} as SugestaoAriaThread["detalhe"]})];
+ const item=intercalarSugestoes<never>([],()=>null,cartoes,{inicioJanela:null})[0];
+ const pacote=item&&"pacote" in item?item.pacote:undefined;
+ expect(pacote).toHaveLength(2);
+ const montarPacote=(p:SugestaoAriaThread[])=>renderToStaticMarkup(createElement(CartaoPacoteAria,{atendimentoId:"thread",pacote:p,usuarioId:"u",fuso:"UTC",aoDecidir(){}}));
+ const h=montarPacote(pacote!);
  expect(h).toMatch(/<button[^>]*disabled=""[^>]*>Aprovar tudo e enviar<\/button>/);
+ expect(h).toMatch(/<button[^>]*disabled=""[^>]*>Rejeitar tudo<\/button>/);
  expect(h).toMatch(/<button(?![^>]*disabled="")[^>]*>Aprovar e enviar<\/button>/);
- expect(h).toContain("Há ações fora do seu escopo neste pacote.");
+ expect(h).toContain("Este turno tem sugestões que não aparecem aqui. Decida as visíveis individualmente.");
+ const completo=montarPacote(pacote!.map(x=>({...x,pendentesNoTurno:2})));
+ expect(completo).toMatch(/<button(?![^>]*disabled="")[^>]*>Aprovar tudo e enviar<\/button>/);
+ expect(completo).not.toContain("não aparecem aqui");
 });

@@ -106,6 +106,21 @@ describe("pacote da Aria por turno (D2)", () => {
   expect(await aprovarTurnoAria(entrada(p.map(x=>x.id)))).toEqual({ok:false,erro:"As sugestões deste turno mudaram. Reabra o painel antes de decidir."});
   expect(await prisma.acaoAgenteIA.count({where:{status:"SUGERIDA"}})).toBe(4);
  });
+ it("tag com pessoa divergente fora do fio recusa o bloco das visíveis com mensagem de escopo",async()=>{
+  const visiveis=[await sugerir("CRIAR_TAREFA"),await sugerir("MOVER_ETAPA")];
+  const outra=await prisma.pessoa.create({data:{nome:"Outra pessoa"}});
+  await sugerir("TAG",{payload:{pessoaId:outra.id,tagId:c.tag.id,nome:c.tag.nome}});
+  expect(await aprovarTurnoAria(entrada(visiveis.map(x=>x.id)))).toEqual({ok:false,erro:"Há ações deste turno fora do seu escopo. Decida as demais individualmente."});
+  expect(await prisma.acaoAgenteIA.count({where:{turnoId:c.turno.id,status:"SUGERIDA"}})).toBe(3);
+  expect(await prisma.tarefa.count({where:{atendimentoId:c.at.id}})).toBe(0);
+ });
+ it("sugestão vencida e ainda não varrida não trava o bloco das vigentes",async()=>{
+  const p=[await sugerir("CRIAR_TAREFA"),await sugerir("MOVER_ETAPA")];
+  const vencida=await sugerir("TAG");
+  await prisma.acaoAgenteIA.update({where:{id:vencida.id},data:{expiraEm:new Date(Date.now()-60_000)}});
+  expect(await aprovarTurnoAria(entrada(p.map(x=>x.id)))).toEqual({ok:true,dado:{aprovadas:2}});
+  expect((await prisma.acaoAgenteIA.findUniqueOrThrow({where:{id:vencida.id}})).status).toBe("SUGERIDA");
+ });
  it("rejeitar o turno inteiro grava o motivo em todas e repete com a mesma chave",async()=>{
   const p=await pacote();const ids=p.map(x=>x.id);
   expect(await rejeitarTurnoAria({...entrada(ids),motivo:"Agora não"})).toEqual({ok:true,dado:{rejeitadas:3}});

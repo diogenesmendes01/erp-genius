@@ -18,11 +18,11 @@ import { aprovarTurnoAriaTx, rejeitarTurnoAriaTx } from "./decisao-inbox";
 
 const u={id:"u",ativo:true,papeis:["VENDEDOR"],nome:"v",permissoes:[]};
 const a={id:"at",finalidade:"COMERCIAL",responsavelId:"u",leadId:"lead"};
-type Acao={id:string;acao:string;status:string;turnoId:string;atendimentoId:string;oportunidadeId:string|null;payload:unknown;expiraEm:null};
+type Acao={id:string;acao:string;status:string;turnoId:string;atendimentoId:string;oportunidadeId:string|null;payload:unknown;expiraEm:Date|null};
 const acao=(id:string,tipo:string,o:Partial<Acao>={}):Acao=>({id,acao:tipo,status:"SUGERIDA",turnoId:"t",atendimentoId:"at",oportunidadeId:"lead",payload:{},expiraEm:null,...o});
 function fixture(acoes:Acao[],pendentes=acoes.filter(x=>x.status==="SUGERIDA")){
  return {$queryRaw:vi.fn(async()=>[]),$executeRaw:vi.fn(async()=>0),usuario:{findUnique:vi.fn(async()=>u)},
-  acaoAgenteIA:{findMany:vi.fn(async(q:{where:{status?:string}})=>q.where.status?pendentes.map(x=>({id:x.id})):acoes)},
+  acaoAgenteIA:{findMany:vi.fn(async(q:{where:{AND?:unknown}})=>q.where.AND?pendentes:acoes)},
   atendimentoWhatsApp:{findFirst:vi.fn(async()=>a)},oportunidade:{findUnique:vi.fn(async()=>({pessoaId:null}))}};
 }
 const tx=(p:ReturnType<typeof fixture>)=>p as unknown as Prisma.TransactionClient;
@@ -97,5 +97,23 @@ it("rejeitar o turno rejeita todas com o mesmo motivo",async()=>{
  expect(await rejeitarTurnoAriaTx(tx(p),"u",{...input,motivo:"  Não agora  "})).toBe(3);
  expect(h.rejeitar.mock.calls.map(c=>[c[1].id,c[3]])).toEqual([["e","Não agora"],["c","Não agora"],["r","Não agora"]]);
  expect(h.rejeitar.mock.calls[0][4]).toMatchObject({chaveIdempotencia:"chave-turno-1"});
+ expect(h.aprovar).not.toHaveBeenCalled();
+});
+it("turno com pendente que o usuário não pode decidir recusa com mensagem de escopo, não pede para reabrir",async()=>{
+ const p=fixture(turno,[...turno,acao("g","TAG",{payload:{pessoaId:"antiga"}})]);
+ h.alvos.mockImplementation(async(_tx:unknown,_u:unknown,_a:unknown,xs:Acao[])=>new Set(xs.filter(x=>x.id!=="g").map(x=>x.id)));
+ const r=aprovarTurnoAriaTx(tx(p),"u",input);
+ await expect(r).rejects.toBeInstanceOf(ErroPermissao);
+ await expect(r).rejects.toThrow("Há ações deste turno fora do seu escopo. Decida as demais individualmente.");
+ expect(h.aprovar).not.toHaveBeenCalled();
+});
+it("pendentes do turno só contam se vigentes e a ação vencida no pacote diz que expirou",async()=>{
+ const p=fixture(turno);
+ expect(await aprovarTurnoAriaTx(tx(p),"u",input)).toBe(3);
+ const where=p.acaoAgenteIA.findMany.mock.calls.map(c=>c[0].where).find(w=>w.AND) as {AND:unknown[]};
+ expect(where.AND).toContainEqual({status:"SUGERIDA",OR:[{expiraEm:null},{expiraEm:{gt:expect.any(Date)}}]});
+ h.aprovar.mockReset();
+ const vencida=fixture([turno[0],{...turno[1],expiraEm:new Date(Date.now()-60_000)},turno[2]],[turno[0],turno[2]]);
+ await expect(aprovarTurnoAriaTx(tx(vencida),"u",input)).rejects.toThrow("Não foi possível mover de etapa: esta sugestão expirou.");
  expect(h.aprovar).not.toHaveBeenCalled();
 });

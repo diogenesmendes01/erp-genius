@@ -14,6 +14,7 @@ import { prisma } from "@/lib/prisma";
 import { executarAcao, exigirSessao, ErroPermissao, ErroRegra, type UsuarioSessao } from "../_shared";
 import { carregarFusoInstitucionalTx } from "../operacao/relogio";
 import { escopoAtendimentos } from "../whatsapp/escopo";
+import { sugestaoVigente } from "../inbox/estado-aria";
 import { acoesDecidiveisNoInbox, pessoaDoPayloadValida, usaLeadAtualNaResposta } from "./escopo-decisao-inbox";
 import { aprovarAcaoAriaTx, rejeitarAcaoAriaTx, desfazerAcaoAriaTx } from "./historico";
 import { ordenarPorAplicacao, VERBO_ACAO_TURNO } from "./ordem-turno";
@@ -185,7 +186,12 @@ async function decidirTurnoTx(tx:Tx,autorId:string,input:TurnoInboxInput,verbo:V
  if(repetido){const n=(repetido.payload as Record<string,unknown>|null)?.decididasNoTurno;return typeof n==="number"?n:ids.length;}
  const decidida=acoes.find(x=>x.status!=="SUGERIDA");
  if(decidida)throw new ErroRegra(`Não foi possível ${VERBO_ACAO_TURNO[decidida.acao]}: esta sugestão já foi decidida.`);
- const pendentes=await tx.acaoAgenteIA.findMany({where:{turnoId,atendimentoId,status:"SUGERIDA"},select:{id:true}});
+ const agora=new Date();
+ const vencida=acoes.find(x=>x.expiraEm&&x.expiraEm<=agora);
+ if(vencida)throw new ErroRegra(`Não foi possível ${VERBO_ACAO_TURNO[vencida.acao]}: esta sugestão expirou.`);
+ const pendentes=await tx.acaoAgenteIA.findMany({where:{AND:[{turnoId,atendimentoId},sugestaoVigente(agora)]},select:{id:true,acao:true,payload:true,oportunidadeId:true,atendimentoId:true}});
+ const decidiveis=await acoesDecidiveisNoInbox(tx,inicial.u,inicial.a,pendentes);
+ if(pendentes.some(p=>!decidiveis.has(p.id)))throw new ErroPermissao("Há ações deste turno fora do seu escopo. Decida as demais individualmente.");
  if(pendentes.length!==ids.length||pendentes.some(p=>!ids.includes(p.id)))throw new ErroRegra("As sugestões deste turno mudaram. Reabra o painel antes de decidir.");
  const ordenadas=ordenarPorAplicacao(acoes);
  for(const acao of ordenadas){try{await travarAlvos(tx,acao,acao.oportunidadeId??inicial.a.leadId,verbo,inicial.a.leadId);}catch(e){throw citarAcao(e,acao);}}
