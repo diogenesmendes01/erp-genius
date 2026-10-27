@@ -4,10 +4,11 @@ import { IconMail, IconPin, IconBellOff, IconBell, IconNote, IconClock, IconCale
 import { Menu } from "@/components/Menu";
 import { AVISO_RECURSO_MOTOR } from "@/components/conversa/recursos-canal";
 import type { AcaoInbox } from "@/server/inbox/permissoes";
+import type { AgendadaNoFio } from "@/server/inbox/agendadas-leitura";
 
 export type ItemMenuConversa = { id: string; rotulo: string; icone: ReactNode; dica?: string; perigo?: boolean; desabilitado?: boolean; divisorDepois?: boolean; aoEscolher(): void };
 export type AcaoConversa = { gatilhoRef?: RefCallback<HTMLButtonElement>; rotulo: string; aoEscolher(): void; ocupado?: boolean };
-export type AcoesCabecalho = { assumir: AcaoConversa | null; transferir: AcaoConversa | null; menu: ItemMenuConversa[]; dialogos: ReactNode; feedback: ReactNode; abrirAgendar: ((ancora?:HTMLElement) => void) | null; refDoMenu?: Ref<HTMLButtonElement> };
+export type AcoesCabecalho = { assumir: AcaoConversa | null; transferir: AcaoConversa | null; menu: ItemMenuConversa[]; dialogos: ReactNode; feedback: ReactNode; abrirAgendar: ((ancora?:HTMLElement) => void) | null; abrirEditarAgendada?: (agendada:AgendadaNoFio, ancora?:HTMLElement) => void; refDoMenu?: Ref<HTMLButtonElement> };
 
 export function itensDoMenuConversa(o: { pode(a: AcaoInbox): boolean; fixada: boolean; silenciada: boolean; acoes: Record<string, () => void> }): ItemMenuConversa[] {
  const item = (id: string, rotulo: string, Icone: typeof IconMail, extra: Partial<ItemMenuConversa> = {}): ItemMenuConversa => ({ id, rotulo, icone: <Icone size={16} />, aoEscolher: o.acoes[id], ...extra });
