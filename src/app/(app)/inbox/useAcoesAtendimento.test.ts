@@ -54,3 +54,7 @@ it("C2 grupo encerrado permanece sem Nota e sem ações de negócio",()=>{
  const a=tela({...p,grupo:true,atendimento:{...p.atendimento,status:"ENCERRADO"}});
  expect(a.menu.map(i=>i.id)).toEqual(["naoLida","fixar","silenciar","buscar"]);expect(a.abrirAgendar).toBeNull();expect(a.assumir).toBeNull();expect(a.transferir).toBeNull();
 });
+
+it("363 override opt-in une relógio/menu e não monta o diálogo legado",()=>{
+ const abrir=vi.fn();let a=tela({...p,aoAgendar:abrir});a.abrirAgendar!();a.menu.find(i=>i.id==="agendar")!.aoEscolher();expect(abrir).toHaveBeenCalledTimes(2);a=tela({...p,aoAgendar:abrir});expect(elementos(a.dialogos).some(n=>typeof n.type==="function"&&n.type.name==="DialogoAgendar")).toBe(false);
+});

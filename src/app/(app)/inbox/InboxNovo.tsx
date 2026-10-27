@@ -6,6 +6,7 @@ import type { Papel } from "@prisma/client";
 import { useRouter, useSearchParams } from "next/navigation";
 import { PopoverNovaConversa } from "./fluxos/nova-conversa/PopoverNovaConversa";
 import { criarIntencaoNovaConversa } from "./fluxos/nova-conversa/intencao-nova-conversa";
+import {criarIntencoesAgendamento} from "./fluxos/agendar/intencao-agendamento";
 import { PainelContato, abasDoPainel, type IdAbaPainel } from "./PainelContato";
 import { LinhaCampo } from "./LinhaCampo";
 import { TagsContato } from "./abas/TagsContato";
@@ -64,6 +65,7 @@ export interface PropsInboxNovo {
   inicial: { itens: ItemListaInbox[]; proximo: string | null };
   filtros: FiltrosInbox;
   selecionado: string | null;
+  agendarAoAbrir?:boolean;
   usuario: { id: string; nome?: string; papeis: Papel[] };
   podeAbrirFunil?: boolean;
   podeCriarOportunidade?: boolean;
@@ -148,7 +150,7 @@ const ouNulo = <T,>(l: T[] | null): T[] | null => (l?.length ? l : null);
 const COLUNA_LISTA = "min-[960px]:flex min-[960px]:w-[300px] min-[960px]:shrink-0 min-[1100px]:w-[372px]";
 const COLUNA_CONVERSA = "min-[960px]:flex min-[960px]:min-w-0 min-[960px]:flex-1";
 
-export function InboxNovo({ inicial, filtros, selecionado: selecionadoInicial, usuario, fuso, fusoEscola, destinos, triagem: triagemBruta = null, revisoes: revisoesBrutas = null, opcoesFiltro, contagens: contagensIniciais, resumo: resumoInicial, abrirPainelPadrao, opcoesNovaConversa, sino, agoraInicial, podeAbrirFunil = false, podeCriarOportunidade = false }: PropsInboxNovo) {
+export function InboxNovo({ inicial, filtros, selecionado: selecionadoInicial, usuario, fuso, fusoEscola, destinos, triagem: triagemBruta = null, revisoes: revisoesBrutas = null, opcoesFiltro, contagens: contagensIniciais, resumo: resumoInicial, abrirPainelPadrao, opcoesNovaConversa, sino, agoraInicial, podeAbrirFunil = false, podeCriarOportunidade = false,agendarAoAbrir=false }: PropsInboxNovo) {
   const parametrosDaRota = useSearchParams();
   const router = useRouter();
   const selecionadoDaRota = parametrosDaRota === null ? selecionadoInicial : (parametrosDaRota.get("c") || null);
@@ -162,6 +164,12 @@ export function InboxNovo({ inicial, filtros, selecionado: selecionadoInicial, u
   const [intencaoPorAtor, setIntencaoPorAtor] = useState(() => ({ atorId: usuario.id, controle: criarIntencaoNovaConversa() }));
   if (intencaoPorAtor.atorId !== usuario.id) setIntencaoPorAtor({ atorId: usuario.id, controle: criarIntencaoNovaConversa() });
   const intencaoNovaConversa = intencaoPorAtor.controle;
+  const [agendamentosPorAtor,setAgendamentosPorAtor]=useState(()=>({atorId:usuario.id,controle:criarIntencoesAgendamento()}));
+  if(agendamentosPorAtor.atorId!==usuario.id)setAgendamentosPorAtor({atorId:usuario.id,controle:criarIntencoesAgendamento()});
+  const agendarNaRota=parametrosDaRota===null?agendarAoAbrir:parametrosDaRota.get("agendar")==="1";
+  const chavePedidoAgendar=JSON.stringify([selecionadoDaRota,agendarNaRota]);
+  const [pedidoAgendar,setPedidoAgendar]=useState(()=>({chave:chavePedidoAgendar,ativo:agendarNaRota&&!!selecionadoDaRota}));
+  if(pedidoAgendar.chave!==chavePedidoAgendar)setPedidoAgendar({chave:chavePedidoAgendar,ativo:agendarNaRota&&!!selecionadoDaRota});
   const possuiContagensRef = useRef(contagensIniciais !== undefined || resumoInicial !== undefined);
   const [proximo, setProximo] = useState(inicial.proximo);
   const interagirPresenca = usePresencaInbox(usuario.id);
@@ -371,6 +379,13 @@ export function InboxNovo({ inicial, filtros, selecionado: selecionadoInicial, u
 
   const painelDoAberto = painelSetor && painelSetor.id === selecionado ? painelSetor : null;
   const podeEnviar = painelDoAberto?.dado ? painelDoAberto.dado.podeEnviar === true : null;
+  const consumirPedidoAgendamento=()=>{
+    if(selecionadoRef.current!==selecionadoDaRota)return;
+    setPedidoAgendar(p=>p.chave===chavePedidoAgendar?{...p,ativo:false}:p);
+    if(typeof window==="undefined")return;const url=new URL(window.location.href);
+    if(url.searchParams.get("c")!==selecionadoDaRota)return;url.searchParams.delete("agendar");
+    router.replace(url.pathname+(url.search?url.search:"")+url.hash,{scroll:false});
+  };
   const tentarPainelDeNovo = useCallback(() => { setPainelSetor((ant) => ant?.acessoRevogado ? ant : null); setVersaoPainel((v) => v + 1); }, []);
   const falhaPermissao = painelDoAberto && !painelDoAberto.dado ? tentarPainelDeNovo : undefined;
 
@@ -566,6 +581,10 @@ export function InboxNovo({ inicial, filtros, selecionado: selecionadoInicial, u
         ) : (
           <ConversaAberta
             item={atual}
+            intencoesAgendamento={agendamentosPorAtor.controle}
+            pedidoAgendamento={pedidoAgendar.chave===chavePedidoAgendar&&pedidoAgendar.ativo&&selecionado===selecionadoDaRota?pedidoAgendar.chave:null}
+            aoPedidoAgendamentoConsumido={consumirPedidoAgendamento}
+            podeLerAgendamento={!!painelDoAberto?.dado&&!painelDoAberto.acessoRevogado}
             tarefasNoFio={painelDoAberto?.acessoRevogado?undefined:painelDoAberto?.dado?.tarefasNoFio}
             aoCriarTarefa={podeTarefas?()=>abrirTarefa({tipo:"nova"},"fio"):undefined}
             aoEditarTarefa={podeTarefas?t=>abrirTarefa({tipo:"editar",tarefa:{id:t.id,versao:t.versao}},"fio"):undefined}
