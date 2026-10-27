@@ -1,6 +1,7 @@
 import type { SugestaoAriaThread } from "@/server/aria/sugestoes-thread";
 import { ACAO_AGENTE_IA_LABEL, ETAPA_LABEL } from "@/lib/labels";
 import { formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
+import { ordenarPorAplicacao } from "@/server/aria/ordem-turno";
 
 export interface VisualSugestao {
  cabecalho:string; titulo:string;
@@ -36,4 +37,21 @@ export function visualSugestao(s:SugestaoAriaThread,o:{usuarioId:string;fuso:str
   textoProposto:d.tipo==="enviar"||d.tipo==="agendar"||d.tipo==="nota"?s.texto:null,
   avisoEnvio:pendente&&d.tipo==="enviar",rotuloAprovar:d.tipo==="enviar"?"Aprovar e enviar":d.tipo==="agendar"?"Agendar":"Aprovar",
   rotuloRejeitar:d.tipo==="agendar"?"Ignorar":"Rejeitar",pendente,decidido,expira:pendente&&s.expiraEm?"Expira às "+hora(s.expiraEm):null};
+}
+
+export interface VisualPacote {
+ cabecalho:string; titulo:string; justificativa:string|null;
+ itens:{s:SugestaoAriaThread;v:VisualSugestao;linha:VisualSugestao["linhas"][number]}[];
+ avisoEnvio:boolean; rotuloAprovar:string; rotuloRejeitar:string; expira:string|null;
+}
+export function visualPacote(pacote:readonly SugestaoAriaThread[],o:{usuarioId:string;fuso:string|null}):VisualPacote {
+ const itens=ordenarPorAplicacao(pacote).map(s=>{const v=visualSugestao(s,o);return {s,v,linha:v.linhas[0]??{icone:"nota" as const,texto:v.titulo}};});
+ const titulos=itens.map((x,i)=>i===0?x.v.titulo:x.v.titulo.charAt(0).toLocaleLowerCase("pt-BR")+x.v.titulo.slice(1));
+ const titulo=titulos.length>1?titulos.slice(0,-1).join(", ")+" e "+titulos.at(-1):titulos[0]??"";
+ const expiracoes=pacote.flatMap(s=>s.expiraEm&&Number.isFinite(Date.parse(s.expiraEm))?[s.expiraEm]:[]).sort((a,b)=>Date.parse(a)-Date.parse(b));
+ const envia=itens.some(x=>x.v.avisoEnvio);
+ return {cabecalho:"Aria sugere "+pacote.length+" ações · aguardando aprovação",titulo,
+  justificativa:pacote.find(s=>s.justificativa?.trim())?.justificativa??null,itens,avisoEnvio:envia,
+  rotuloAprovar:envia?"Aprovar tudo e enviar":"Aprovar tudo",rotuloRejeitar:"Rejeitar tudo",
+  expira:expiracoes[0]?"Expira às "+formatarInstanteExibicao(expiracoes[0],o.fuso,"UTC","hora").texto:null};
 }

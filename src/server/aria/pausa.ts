@@ -28,6 +28,10 @@ export async function pausarAriaNoAtendimento(
   opcoes: { preservarIntencaoId?: string | null } = {},
 ): Promise<boolean> {
   await cancelarIntencoesDaAria(tx, atendimentoId, opcoes.preservarIntencaoId ?? null);
+  return registrarPausaNoAtendimento(tx, atendimentoId, motivo, autorId);
+}
+
+async function registrarPausaNoAtendimento(tx: Tx, atendimentoId: string, motivo: MotivoPausaAtendimentoIA, autorId: string | null): Promise<boolean> {
   const r = await tx.atendimentoWhatsApp.updateMany({
     where: { id: atendimentoId, iaPausadaEm: null },
     data: { iaPausadaEm: new Date(), iaPausaMotivo: motivo },
@@ -76,4 +80,16 @@ export async function devolverParaAria(atendimentoId: string): Promise<Resultado
       });
     });
   });
+}
+
+export async function pausarAriaComIntencoesTravadasTx(tx: Tx, atendimentoId: string, autorId: string, ids: readonly string[]): Promise<boolean> {
+ const qualificados = [...new Set(ids)].sort();
+ const atuais = await tx.intencaoMensagem.findMany({where:{atendimentoId,origem:"IA",status:{in:["PENDENTE","ADIADA"]}},select:{id:true},orderBy:{id:"asc"}});
+ const mudou = () => new ErroRegra("O conjunto de mensagens da Aria mudou. Atualize a conversa antes de aprovar.");
+ if (atuais.length !== qualificados.length || atuais.map(i=>i.id).sort().some((id,i)=>id!==qualificados[i])) throw mudou();
+ if (qualificados.length) {
+  const r = await tx.intencaoMensagem.updateMany({where:{id:{in:qualificados},atendimentoId,origem:"IA",status:{in:["PENDENTE","ADIADA"]}},data:{status:"CANCELADA",motivoFalha:MOTIVO_ARIA_PAUSADA,despacharAposEm:null}});
+  if(r.count!==qualificados.length)throw mudou();
+ }
+ return registrarPausaNoAtendimento(tx, atendimentoId, "HUMANO_RESPONDEU", autorId);
 }

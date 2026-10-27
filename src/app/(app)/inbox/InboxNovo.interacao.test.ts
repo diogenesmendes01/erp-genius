@@ -9,6 +9,7 @@ const m = vi.hoisted(() => ({
   posEfeito: 0,
   parametros313: null as string | null,
   navegar361: vi.fn(),
+  substituir363: vi.fn(),
   modo: null as null | "uma" | "duas" | "tres",
   contagens: undefined as unknown,
   avisoThread: null as unknown,
@@ -53,8 +54,10 @@ vi.mock("./useEventosInbox", () => ({ useEventosInbox: (f: typeof m.aoAviso) => 
 vi.mock("@/components/conversa/useConversa", () => ({ useConversa: (_id: unknown, aviso: unknown) => { m.avisoThread = aviso; return { mensagens: [] }; } }));
 vi.mock("@/server/whatsapp/acoes", () => ({ enviarTextoInbox: vi.fn(), enviarMidiaInbox: vi.fn(), registrarOptOutContato: vi.fn(), removerOptOutContato: vi.fn() }));
 vi.mock("@/server/whatsapp/preferencias", () => ({ marcarAtendimentoLidoAutomatico: marcar, alternarFixada: vi.fn(), silenciarConversa: vi.fn() }));
-vi.mock("next/navigation", () => ({ useRouter: () => ({ replace: vi.fn(), push: m.navegar361, refresh: vi.fn() }), usePathname: () => "/inbox", useSearchParams: () => m.parametros313 === null ? null : new URLSearchParams(m.parametros313) }));
+vi.mock("next/navigation", () => ({ useRouter: () => ({ replace: m.substituir363, push: m.navegar361, refresh: vi.fn() }), usePathname: () => "/inbox", useSearchParams: () => m.parametros313 === null ? null : new URLSearchParams(m.parametros313) }));
 vi.mock("@/server/whatsapp/acoes-conversa", () => ({ registrarNotaAtendimento: vi.fn() }));
+const agendadas364=vi.hoisted(()=>vi.fn<(id:string)=>Promise<unknown[]>>(async()=>[]));
+vi.mock("@/server/whatsapp/consultas-acoes-atendimento",async original=>({...await original<typeof import("@/server/whatsapp/consultas-acoes-atendimento")>(),agendadasDoAtendimento:agendadas364}));
 
 import { criarGanchos, elementos } from "@/test/tela-sem-dom";
 import { ConversaAberta } from "./ConversaAberta";
@@ -74,6 +77,7 @@ import { InboxNovo, type PropsInboxNovo } from "./InboxNovo";
 import { TagsContato } from "./abas/TagsContato";
 import { ContatoSemNome } from "./abas/ContatoSemNome";
 import { GavetaContato } from "./abas/GavetaContato";
+import { CartaoAgendada } from "./fluxos/agendar/CartaoAgendada";
 
 const item = (id: string) => ({
   id, numeroId: "n1", numeroRotulo: "Escola", finalidade: "COMERCIAL", driver: DriverWhatsApp.META_CLOUD, contatoId: `c-${id}`, contatoNome: id,
@@ -1222,4 +1226,48 @@ it("361 R1B1 ACK fora dos itens navega pela rota canônica e abre item autorizad
 });
 it("361 R1B1 ACK retido depois de outra seleção não navega nem troca atendimento",()=>{
  habilitarRota313("c=a1");const p={...props,opcoesNovaConversa:{destinos:[],numeros:[],comercial:true}} as PropsInboxNovo;const antigo=(elementos(tela(p)).find(n=>n.type===ColunaConversas)!.props.novaConversa as ReactElement<{aoSelecionar(id:string):void}>).props.aoSelecionar;lista(tela(p)).aoSelecionar("a2");tela(p);antigo("novo-retido");expect(m.navegar361).not.toHaveBeenCalled();expect(coluna313(tela(p)).selecionado).toBe("a2");
+});
+it("363 dono de intenções fica acima da conversa e conserva comando incerto A→B→A",async()=>{
+ tela();await esvaziar();const dono=cabecalho(tela()).intencoesAgendamento;expect(dono).toBeDefined();const i=dono!.para({tipo:"CRIAR",atendimentoId:"a1"});const action=vi.fn().mockRejectedValue(new Error("rede"));await i.enviar({tipo:"CRIAR",atendimentoId:"a1",texto:"A",quandoLocal:"2035-01-01T09:00",fuso:"UTC"},action);const comando=i.ler().comando;
+ lista(tela()).aoSelecionar("a2");await esvaziar();expect(cabecalho(tela()).intencoesAgendamento).toBe(dono);lista(tela()).aoSelecionar("a1");await esvaziar();expect(cabecalho(tela()).intencoesAgendamento!.pendente("a1")?.intencao.ler().comando).toBe(comando);expect(action).toHaveBeenCalledOnce();
+});
+it("363 deep link consome só agendar preservando c/filtros/hash e não reabre no rerender",async()=>{
+ habilitarRota313("c=a1&agendar=1&busca=Ana");vi.stubGlobal("window",{...window,location:{...window.location,href:window.location.href+"#painel"}});m.substituir363.mockClear();const p={...props,agendarAoAbrir:true};tela(p);await esvaziar();const c=cabecalho(tela(p));expect(c.pedidoAgendamento).toEqual(expect.any(String));expect(c.aoPedidoAgendamentoConsumido).toEqual(expect.any(Function));c.aoPedidoAgendamentoConsumido!();expect(m.substituir363).toHaveBeenCalledWith("/inbox?c=a1&busca=Ana#painel",{scroll:false});expect(cabecalho(tela(p)).pedidoAgendamento).toBeNull();
+});
+const agendada364=(id:string,agendadaPara:string)=>({id,texto:"Texto "+id,agendadaPara,status:"PENDENTE",tipo:"TEXTO",temAnexo:false,autor:"voce",autorNome:null,podeAlterar:true});
+const cartoes364=(t:ReactNode,aoEditar?:(a:unknown,o?:unknown)=>void)=>{const f=(elementos(t).find(n=>n.type===ConversaAberta)!.props as {cartoesNoFio?(c:{agora:Date;aoEditar?:typeof aoEditar}):ReactNode}).cartoesNoFio;return f?(f({agora:new Date("2026-10-22T13:30:00Z"),aoEditar}) as ReactElement<{agendada:{id:string};atendimentoId:string;aoEditar?(o?:unknown):void;aoMudar(m:string):void}>[]):[];};
+const chamadas364=(id:string)=>agendadas364.mock.calls.filter(([a])=>a===id).length;
+describe("364 cartões de agendadas no fio",()=>{
+ beforeEach(()=>{agendadas364.mockReset();agendadas364.mockResolvedValue([]);});
+ it("aviso do SSE do atendimento aberto recarrega os cartões; de outro atendimento, não",async()=>{
+  tela();await esvaziar();tela();expect(chamadas364("a1")).toBe(1);
+  m.aoAviso!({tipo:"mensagem.status",atendimentoId:"a2",mensagemId:"x",conversaId:"cv2"});tela();await esvaziar();tela();
+  expect(chamadas364("a1")).toBe(1);expect(chamadas364("a2")).toBe(0);
+  m.aoAviso!({tipo:"atendimento.atualizado",atendimentoId:"a1",mensagemId:null,conversaId:"cv1"});tela();await esvaziar();tela();
+  expect(chamadas364("a1")).toBe(2);
+  m.aoAviso!({tipo:"mensagem.nova",atendimentoId:"a1",mensagemId:"m1",conversaId:"cv1"});tela();await esvaziar();tela();
+  expect(chamadas364("a1")).toBe(3);
+  m.aoAviso!({tipo:"resync",atendimentoId:null,mensagemId:null,conversaId:""});tela();await esvaziar();tela();
+  expect(chamadas364("a1")).toBe(4);
+ });
+ it("cartões ficam em ordem de agendadaPara no slot cartoesNoFio",async()=>{
+  agendadas364.mockResolvedValue([agendada364("tarde","2026-10-24T12:00:00.000Z"),agendada364("cedo","2026-10-23T12:00:00.000Z")]);
+  tela();await esvaziar();const c=cartoes364(tela());
+  expect(c.map(e=>e.type)).toEqual([CartaoAgendada,CartaoAgendada]);
+  expect(c.map(e=>e.props.agendada.id)).toEqual(["cedo","tarde"]);
+  expect(c.every(e=>e.props.atendimentoId==="a1")).toBe(true);
+ });
+ it("sem agendadas o slot não é montado e outro atendimento não herda os cartões",async()=>{
+  agendadas364.mockImplementation(async id=>id==="a1"?[agendada364("so-a1","2026-10-23T12:00:00.000Z")]:[]);
+  tela();await esvaziar();expect(cartoes364(tela())).toHaveLength(1);
+  lista(tela()).aoSelecionar("a2");const t=tela();expect(cartoes364(t)).toHaveLength(0);await esvaziar();expect(cartoes364(tela())).toHaveLength(0);
+ });
+ it("Editar delega ao controlador com o DTO e a âncora; ação concluída avisa e recarrega",async()=>{
+  agendadas364.mockResolvedValue([agendada364("i1","2026-10-23T12:00:00.000Z")]);
+  tela();await esvaziar();const editar=vi.fn();const [c]=cartoes364(tela(),editar);
+  c.props.aoEditar!("ancora");expect(editar).toHaveBeenCalledExactlyOnceWith(expect.objectContaining({id:"i1"}),"ancora");
+  expect(cartoes364(tela())[0].props.aoEditar).toBeUndefined();
+  const antes=chamadas364("a1");c.props.aoMudar("Mensagem enviada.");tela();await esvaziar();
+  expect(chamadas364("a1")).toBe(antes+1);expect(JSON.stringify(elementos(tela()).map(n=>n.props.texto))).toContain("Mensagem enviada.");
+ });
 });

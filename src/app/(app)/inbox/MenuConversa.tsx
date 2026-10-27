@@ -1,13 +1,14 @@
 "use client";
-import type { ReactNode, RefCallback } from "react";
+import type { ReactNode, RefCallback, Ref } from "react";
 import { IconMail, IconPin, IconBellOff, IconBell, IconNote, IconClock, IconCalendarEvent, IconSearch, IconUserCheck, IconArrowBackUp, IconUserPlus, IconDoorExit, IconBan, IconDotsVertical, IconListCheck } from "@tabler/icons-react";
 import { Menu } from "@/components/Menu";
 import { AVISO_RECURSO_MOTOR } from "@/components/conversa/recursos-canal";
 import type { AcaoInbox } from "@/server/inbox/permissoes";
+import type { AgendadaNoFio } from "@/server/inbox/agendadas-leitura";
 
 export type ItemMenuConversa = { id: string; rotulo: string; icone: ReactNode; dica?: string; perigo?: boolean; desabilitado?: boolean; divisorDepois?: boolean; aoEscolher(): void };
 export type AcaoConversa = { gatilhoRef?: RefCallback<HTMLButtonElement>; rotulo: string; aoEscolher(): void; ocupado?: boolean };
-export type AcoesCabecalho = { assumir: AcaoConversa | null; transferir: AcaoConversa | null; menu: ItemMenuConversa[]; dialogos: ReactNode; feedback: ReactNode; abrirAgendar: (() => void) | null };
+export type AcoesCabecalho = { assumir: AcaoConversa | null; transferir: AcaoConversa | null; menu: ItemMenuConversa[]; dialogos: ReactNode; feedback: ReactNode; abrirAgendar: ((ancora?:HTMLElement) => void) | null; abrirEditarAgendada?: (agendada:AgendadaNoFio, ancora?:HTMLElement) => void; refDoMenu?: Ref<HTMLButtonElement> };
 
 export function itensDoMenuConversa(o: { pode(a: AcaoInbox): boolean; fixada: boolean; silenciada: boolean; acoes: Record<string, () => void> }): ItemMenuConversa[] {
  const item = (id: string, rotulo: string, Icone: typeof IconMail, extra: Partial<ItemMenuConversa> = {}): ItemMenuConversa => ({ id, rotulo, icone: <Icone size={16} />, aoEscolher: o.acoes[id], ...extra });
@@ -27,6 +28,6 @@ export function itensDoMenuConversa(o: { pode(a: AcaoInbox): boolean; fixada: bo
   ...(o.pode("bloquear") ? [item("bloquear", "Bloquear contato", IconBan, { perigo: true, desabilitado: true, dica: AVISO_RECURSO_MOTOR })] : []),
  ];
 }
-export function MenuConversa({ itens }: { itens: ItemMenuConversa[] }) {
- return <Menu rotulo="Mais ações da conversa" gatilho={<IconDotsVertical size={17} />} itens={itens} densidade="compacta" folhaNoCelular classeGatilho="h-9 w-9 shrink-0 rounded-full text-gray-600 aria-expanded:bg-gray-100" />;
+export function MenuConversa({ itens,refDoGatilho }: { itens: ItemMenuConversa[];refDoGatilho?:Ref<HTMLButtonElement> }) {
+ return <Menu refDoGatilho={refDoGatilho} rotulo="Mais ações da conversa" gatilho={<IconDotsVertical size={17} />} itens={itens} densidade="compacta" folhaNoCelular classeGatilho="h-9 w-9 shrink-0 rounded-full text-gray-600 aria-expanded:bg-gray-100" />;
 }
