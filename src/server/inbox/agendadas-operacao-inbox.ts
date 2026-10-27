@@ -47,6 +47,17 @@ async function gate(tx:Tx,autorId:string,id:string,numeroId:string,alvo?:string,
  }
  return a;
 }
+/** Recibo confirma leitura atual; não reautoriza o envio que já foi confirmado. */
+async function conferirLeituraRecibo(tx:Tx,autorId:string,atendimentoId:string){
+ const u=await tx.usuario.findUnique({where:{id:autorId},select:selecionarAtor});
+ if(!u?.ativo||apenasPortal(u))throw new ErroRegra("Sua sessão não está mais ativa.");
+ const perfil=(x:typeof u)=>JSON.stringify([x.id,[...x.papeis].sort(),[...x.permissoes].sort(),x.gerenteComercialId]);
+ const antes=perfil(u);
+ if(!await atendimentoVisivel(u,atendimentoId,false,tx))throw new ErroRegra("Atendimento não encontrado.");
+ const usuarios=await tx.usuario.findMany({where:{id:autorId},select:selecionarAtor});
+ const ultimo=usuarios.find(x=>x.id===autorId);
+ if(!ultimo?.ativo||apenasPortal(ultimo)||perfil(ultimo)!==antes)throw new ErroRegra("Sua sessão ou acesso mudou. Atualize o atendimento.");
+}
 /** Um núcleo para criação/alteração. Confirma últimas leituras READ COMMITTED, sem linearização global de ACL. */
 export async function executarAgendadaInbox(db:BancoAgendadaInbox,autorId:string,comando:ComandoAgendadaInbox):Promise<{id:string}>{
  z.string().min(1).parse(autorId);z.string().min(1).parse(comando.atendimentoId);
@@ -64,15 +75,29 @@ export async function executarAgendadaInbox(db:BancoAgendadaInbox,autorId:string
    {contexto:"inbox362",operacao:c.tipo,atendimentoId:c.atendimentoId,intencaoId:c.intencaoId,...(c.tipo==="REAGENDAR"?{agendadaPara:new Date(c.agendadaPara).toISOString()}:{})};
   const marca=marcaIdempotencia(c.chaveIdempotencia,entrada);
   const replay=marca?await repeticaoIdempotente(tx,{tipo:tipoEvento,agregadoTipo:"AtendimentoWhatsApp",autorId,marca,mensagemConflito:"Esta tentativa já foi usada com outra mensagem, operação ou horário."}):null;
+  if(replay){
+   const recibo=(replay.payload??{}) as Record<string,unknown>;
+   if(replay.tipo!==tipoEvento||replay.agregadoTipo!=="AtendimentoWhatsApp"||replay.agregadoId!==c.atendimentoId||replay.autorId!==autorId||typeof recibo.intencaoId!=="string")throw semAlvo();
+   if(recibo.atendimentoId!==undefined&&recibo.atendimentoId!==c.atendimentoId)throw semAlvo();
+   if(c.tipo!=="CRIAR"&&(recibo.contexto!=="inbox362"||recibo.operacao!==c.tipo||recibo.intencaoId!==c.intencaoId))throw semAlvo();
+   // Recibos CRIAR legados não tinham contexto/operacao. Tipo+hash continuam os originais.
+   if(c.tipo==="CRIAR"&&((recibo.contexto!==undefined&&recibo.contexto!=="inbox362")||(recibo.operacao!==undefined&&recibo.operacao!=="CRIAR")))throw semAlvo();
+   await tx.$queryRaw`SELECT id FROM "AtendimentoWhatsApp" WHERE id=${c.atendimentoId} FOR SHARE`;
+   const id=recibo.intencaoId;
+   await tx.$queryRaw`SELECT id FROM "IntencaoMensagem" WHERE id=${id} AND "atendimentoId"=${c.atendimentoId} FOR UPDATE`;
+   const confirmada=await tx.intencaoMensagem.findFirst({where:{id,atendimentoId:c.atendimentoId}});
+   if(!confirmada||confirmada.id!==id||confirmada.atendimentoId!==c.atendimentoId||confirmada.origem!=="HUMANO"||confirmada.passo!==null||confirmada.passoComercial!==null)throw semAlvo();
+   if(recibo.numeroId!==undefined&&recibo.numeroId!==confirmada.numeroId)throw semAlvo();
+   // Depois das esperas, ACL canônica DE LEITURA + ator fresco. Nenhum write/clock/gate de envio.
+   await conferirLeituraRecibo(tx,autorId,c.atendimentoId);
+   return {id:confirmada.id};
+  }
   await tx.configIA.upsert({where:{id:"ia"},create:{id:"ia"},update:{}});
   await tx.$queryRaw`SELECT id FROM "AtendimentoWhatsApp" WHERE id=${c.atendimentoId} FOR SHARE`;
   const inicial=await gate(tx,autorId,c.atendimentoId,numeroId);
   if(c.tipo==="CRIAR"&&c.numeroEsperado!==undefined&&c.numeroEsperado!==numeroId)throw new ErroRegra("Número de envio indisponível.");
   const alvo=binding(inicial);
-  const recibo=(replay?.payload??{}) as Record<string,unknown>;
-  if(replay&&(replay.agregadoId!==c.atendimentoId||replay.autorId!==autorId||typeof recibo.intencaoId!=="string"))throw semAlvo();
-  if(replay&&c.tipo!=="CRIAR"&&(recibo.contexto!=="inbox362"||recibo.operacao!==c.tipo||recibo.intencaoId!==c.intencaoId))throw semAlvo();
-  const id=c.tipo==="CRIAR"?(replay?String(recibo.intencaoId):null):c.intencaoId;
+  const id=c.tipo==="CRIAR"?null:c.intencaoId;
   let m:Alvo|null=null;
   if(id){
    await tx.$queryRaw`SELECT id FROM "IntencaoMensagem" WHERE id=${id} AND "atendimentoId"=${c.atendimentoId}
@@ -81,7 +106,6 @@ export async function executarAgendadaInbox(db:BancoAgendadaInbox,autorId:string
    if(!m||(m.status!=="PENDENTE"&&m.status!=="ADIADA")||(c.tipo==="CRIAR"&&m.autorId!==autorId))throw semAlvo();
   }
   await gate(tx,autorId,c.atendimentoId,numeroId,alvo,m??undefined);
-  if(replay){if(!m)throw semAlvo();return {id:m.id};}
   const quando=c.tipo==="ENVIAR_AGORA"?new Date():futuro(c.agendadaPara);
   const validaAte=c.tipo==="CRIAR"?(c.validaAte?new Date(c.validaAte):null):m?.validaAte??null;
   if(c.tipo==="CRIAR"){if(validaAte&&validaAte.getTime()<=quando.getTime())throw new ErroRegra("A validade deve ser depois do horário agendado.");}
