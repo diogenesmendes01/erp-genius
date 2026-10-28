@@ -16,6 +16,7 @@ vi.mock("react", async (original) => {
 vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh: m.refresh, push: vi.fn() }) }));
 vi.mock("@/server/contratos/aditivo-cobertura", () => ({ prepararImpactosCoberturaAditivo: m.preparar }));
 
+import { DatePicker } from "@/components/ui/date-picker";
 import { ImpactosCoberturaFormulario } from "./ImpactosCoberturaFormulario";
 import { CampoTexto } from "@/components/CampoTexto";
 import { MSG_RESULTADO_INCERTO } from "@/lib/mensagens";
@@ -33,7 +34,7 @@ const tela = () => m.ganchos!.renderizar(ImpactosCoberturaFormulario, props);
 type AoMudar = (e: { target: { value: string } }) => void;
 
 function preencher() {
-  const datas = () => elementos(tela()).filter((n) => n.type === "input" && n.props.type === "date");
+  const datas = () => elementos(tela()).filter((n) => n.type === DatePicker);
   (datas()[0].props.onChange as AoMudar)({ target: { value: "2026-11-01" } });
   (datas()[1].props.onChange as AoMudar)({ target: { value: "2026-11-30" } });
   const textos = () => elementos(tela()).filter((n) => n.type === CampoTexto);

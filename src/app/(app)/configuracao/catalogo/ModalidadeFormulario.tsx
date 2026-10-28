@@ -1,6 +1,6 @@
 "use client";
 
-import { useForm } from "react-hook-form";
+import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
 import { Segmento } from "@prisma/client";
@@ -11,9 +11,10 @@ import { useAcaoCliente } from "@/lib/acao-cliente";
 import { useChaveIdempotencia } from "@/lib/chave-idempotencia";
 import { botaoClasses } from "@/components/Botao";
 import { SEGMENTO_LABEL } from "@/lib/labels";
+import { CampoSelect } from "@/components/ui/select";
 
 const inputCls =
-  "w-full rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:border-brand-500";
+  "w-full rounded-md border border-gray-200 px-3 py-2 text-sm outline-none focus:border-brand-500";
 
 const SEGMENTOS: { value: Segmento; label: string }[] = Object.values(Segmento).map((value) => ({ value, label: SEGMENTO_LABEL[value] }));
 
@@ -41,6 +42,7 @@ export function ModalidadeFormulario({
 
   const {
     register,
+    control,
     handleSubmit,
     formState: { errors },
   } = useForm<ModalidadeInput>({
@@ -80,13 +82,9 @@ export function ModalidadeFormulario({
         </div>
         <div>
           <label className="mb-1 block text-xs text-gray-600" htmlFor="modalidade-segmento">Segmento</label>
-          <select id="modalidade-segmento" {...register("segmento")} className={inputCls}>
-            {SEGMENTOS.map((s) => (
-              <option key={s.value} value={s.value}>
-                {s.label}
-              </option>
-            ))}
-          </select>
+          <Controller control={control} name="segmento" render={({ field }) => (
+            <CampoSelect id="modalidade-segmento" value={field.value} onValueChange={field.onChange} className={inputCls} opcoes={SEGMENTOS.map((s) => ({ valor: s.value, rotulo: s.label }))} />
+          )} />
         </div>
         <div>
           <label className="mb-1 block text-xs text-gray-600" htmlFor="modalidade-frequencia">Frequência</label>

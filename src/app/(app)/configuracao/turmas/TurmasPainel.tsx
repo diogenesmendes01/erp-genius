@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import { IconPlus } from "@tabler/icons-react";
 import type { StatusTurma } from "@prisma/client";
@@ -12,11 +12,12 @@ import {
   type ModalidadeOpcao,
 } from "./TurmaFormulario";
 import { ImportarTurmasModal } from "./ImportarTurmasModal";
-import { useDialogo } from "@/lib/dialogo";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { botaoClasses } from "@/components/Botao";
 import { EstadoVazio } from "@/components/EstadoVazio";
 import { formatarDataCivil } from "@/lib/data-civil";
 
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
 export interface TurmaRow {
   id: string;
   codigo: string | null;
@@ -42,7 +43,7 @@ export interface TurmaRow {
 
 function situacao(status: StatusTurma): { label: string; cls: string } {
   const porStatus: Record<StatusTurma, { label: string; cls: string }> = {
-    PLANEJADA: { label: "Planejada", cls: "bg-gray-100 text-gray-700" },
+    PLANEJADA: { label: "Planejada", cls: "bg-surface-muted text-gray-700" },
     ABERTA: { label: "Aberta", cls: "bg-green-100 text-green-700" },
     EM_ANDAMENTO: { label: "Em andamento", cls: "bg-blue-100 text-blue-700" },
     CONCLUIDA: { label: "Concluída", cls: "bg-gray-200 text-gray-600" },
@@ -56,25 +57,20 @@ function DialogoFormularioTurma({ titulo, aoFechar, bloquearFechamento, children
   bloquearFechamento: boolean;
   children: React.ReactNode;
 }) {
-  const ref = useRef<HTMLDivElement>(null);
-  useDialogo(ref, { aberto: true, aoFechar, bloquearFechamento });
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/60 p-4"
-      onClick={() => { if (!bloquearFechamento) aoFechar(); }}
-    >
-      <div
-        ref={ref}
-        role="dialog"
-        aria-modal="true"
+    <Dialog open onOpenChange={(aberto) => { if (!aberto && !bloquearFechamento) aoFechar(); }}>
+      <DialogContent
         aria-label={titulo}
-        tabIndex={-1}
-        className="my-8 w-full max-w-3xl rounded-dialog shadow-dialog"
-        onClick={(e) => e.stopPropagation()}
+        className="max-h-[calc(100vh-4rem)] w-full max-w-3xl overflow-y-auto sm:w-full"
+        onPointerDownOutside={(evento) => { if (bloquearFechamento) evento.preventDefault(); }}
+        onEscapeKeyDown={(evento) => { if (bloquearFechamento) evento.preventDefault(); }}
       >
+        <DialogHeader>
+          <DialogTitle>{titulo}</DialogTitle>
+        </DialogHeader>
         {children}
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 }
 
@@ -145,25 +141,25 @@ export function TurmasPainel({
         <EstadoVazio bloco>Nenhuma turma cadastrada.</EstadoVazio>
       ) : (
         <div className="overflow-x-auto rounded-lg border border-gray-200">
-          <table className="w-full min-w-[640px] text-sm">
-            <thead className="bg-gray-100 text-left text-xs text-gray-500">
-              <tr>
-                <th className="px-4 py-2 font-medium">Turma</th>
-                <th className="px-4 py-2 font-medium">Dias/horário</th>
-                <th className="px-4 py-2 font-medium">Período</th>
-                <th className="px-4 py-2 font-medium">Professor</th>
-                <th className="px-4 py-2 font-medium">Ocupação</th>
-                <th className="px-4 py-2 font-medium">Status</th>
-                <th className="px-4 py-2 font-medium text-right">Ações</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-100">
+          <Table className="w-full min-w-[640px] text-sm">
+            <TableHeader className="bg-surface-muted text-left text-xs text-gray-500">
+              <TableRow>
+                <TableHead className="px-4 py-2 font-medium">Turma</TableHead>
+                <TableHead className="px-4 py-2 font-medium">Dias/horário</TableHead>
+                <TableHead className="px-4 py-2 font-medium">Período</TableHead>
+                <TableHead className="px-4 py-2 font-medium">Professor</TableHead>
+                <TableHead className="px-4 py-2 font-medium">Ocupação</TableHead>
+                <TableHead className="px-4 py-2 font-medium">Status</TableHead>
+                <TableHead className="px-4 py-2 font-medium text-right">Ações</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody className="divide-y divide-gray-100">
               {turmas.map((t) => {
                 const vagas = Math.max(0, t.capacidade - t._count.alocacoes - t._count.reservasMatricula);
                 const sit = situacao(t.status);
                 return (
-                  <tr key={t.id} className="hover:bg-gray-50">
-                    <td className="px-4 py-3">
+                  <TableRow key={t.id} className="hover:bg-highlight">
+                    <TableCell className="px-4 py-3">
                       <Link href={`/academico/regras/turmas/${t.id}`} className="text-xs text-gray-600 underline">{t.regraAvaliacao ? `Avaliações: versão ${t.regraAvaliacao.versao}` : "Regras de avaliação pendentes de vinculação"}</Link>
                       <div className="font-medium text-gray-800">
                         {t.nome ? t.nome : `${t.modalidade.nome} · ${t.nivel.idioma.nome} ${t.nivel.codigo}`}
@@ -180,27 +176,27 @@ export function TurmasPainel({
                         {t.nome ? `${t.modalidade.nome} · ${t.nivel.idioma.nome} ${t.nivel.codigo} · ` : ""}
                         {t.codigo}
                       </span>
-                    </td>
-                    <td className="px-4 py-3 text-gray-600">
+                    </TableCell>
+                    <TableCell className="px-4 py-3 text-gray-600">
                       {t.diasHorario ?? <span className="text-gray-400 italic">a definir</span>}
-                    </td>
-                    <td className="px-4 py-3 text-gray-600">
+                    </TableCell>
+                    <TableCell className="px-4 py-3 text-gray-600">
                       {t.dataInicio ? formatarDataCivil(t.dataInicio.slice(0, 10)) : "—"}
                       {t.dataFim ? ` → ${formatarDataCivil(t.dataFim.slice(0, 10))}` : ""}
                       {t.status === "PLANEJADA" && !t.dataFim && (
                         <span className="block text-xs text-gray-500">Previsão de término pendente da grade.</span>
                       )}
-                    </td>
-                    <td className="px-4 py-3 text-gray-600">{t.professor?.nome ?? "—"}</td>
-                    <td className="px-4 py-3 text-gray-600">
+                    </TableCell>
+                    <TableCell className="px-4 py-3 text-gray-600">{t.professor?.nome ?? "—"}</TableCell>
+                    <TableCell className="px-4 py-3 text-gray-600">
                       {t._count.alocacoes} matriculados · {t._count.reservasMatricula} reservas · {vagas} vagas
-                    </td>
-                    <td className="px-4 py-3">
+                    </TableCell>
+                    <TableCell className="px-4 py-3">
                       <span className={"whitespace-nowrap rounded-full px-2 py-0.5 text-xs font-medium " + sit.cls}>
                         {sit.label}
                       </span>
-                    </td>
-                    <td className="px-4 py-3">
+                    </TableCell>
+                    <TableCell className="px-4 py-3">
                       <div className="flex items-center justify-end gap-2">
                         {t.status === "PLANEJADA" && (
                           <Link href={destinoPrepararGrade(t.id)} className="text-xs text-brand-700 hover:text-brand-800">
@@ -231,12 +227,12 @@ export function TurmasPainel({
                           Editar
                         </button>
                       </div>
-                    </td>
-                  </tr>
+                    </TableCell>
+                  </TableRow>
                 );
               })}
-            </tbody>
-          </table>
+            </TableBody>
+          </Table>
         </div>
       )}
     </div>

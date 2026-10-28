@@ -8,6 +8,7 @@ import { useAcaoCliente } from "@/lib/acao-cliente";
 import { useChaveIdempotencia } from "@/lib/chave-idempotencia";
 import { CampoTexto } from "@/components/CampoTexto";
 
+import { CampoSelect } from "@/components/ui/select";
 type Props = { modo: "preparar" | "decidir" | "aplicar"; propostaId?: string; matriculaId?: string; versaoCondicoesId?: string; revisaoHash?: string };
 
 export function MoedaFormulario(props: Props) {
@@ -43,7 +44,7 @@ export function MoedaFormulario(props: Props) {
  <fieldset disabled={acao.ocupado || temTentativa} className="space-y-2">
  {props.modo !== "aplicar" && <label className="block">Motivo<CampoTexto name="motivo" minLength={5} maxLength={2000} required className="block w-full rounded border p-2" /></label>}
  {props.modo === "preparar" && <label className="block">Evidência conferida<CampoTexto name="evidencia" minLength={5} maxLength={4000} required className="block w-full rounded border p-2" /></label>}
- {props.modo === "decidir" && <label className="block">Decisão<select name="decisao" className="ml-2 rounded border p-2"><option value="aprovar">Aprovar</option><option value="rejeitar">Rejeitar</option></select></label>}
+ {props.modo === "decidir" && <label className="block">Decisão<CampoSelect name="decisao" className="ml-2 rounded border p-2" defaultValue="aprovar" opcoes={[{ valor: "aprovar", rotulo: "Aprovar" }, { valor: "rejeitar", rotulo: "Rejeitar" }]} /></label>}
  </fieldset>
  <button disabled={acao.ocupado || concluido} className={botaoClasses({ variante: "secundario", tamanho: "lg" })} type="submit">{concluido ? "Registrado" : acao.ocupado ? "Processando…" : temTentativa ? "Repetir mesma tentativa" : props.modo === "preparar" ? "Preparar troca de moeda" : props.modo === "decidir" ? "Registrar decisão" : "Aplicar troca de moeda aprovada"}</button>
  <FeedbackAcao erro={acao.erro} sucesso={acao.sucesso} />

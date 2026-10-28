@@ -11,8 +11,9 @@ import type { IdiomaRow } from "./IdiomasPainel";
 import { botaoClasses } from "@/components/Botao";
 import { EstadoVazio } from "@/components/EstadoVazio";
 
+import { CampoCombobox } from "@/components/ui/combobox";
 const inputCls =
-  "rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:border-brand-500";
+  "rounded-md border border-gray-200 px-3 py-2 text-sm outline-none focus:border-brand-500";
 
 export function NiveisPainel({ idiomas }: { idiomas: IdiomaRow[] }) {
   const router = useRouter();
@@ -47,7 +48,7 @@ export function NiveisPainel({ idiomas }: { idiomas: IdiomaRow[] }) {
                 {i.niveis.map((n) => (
                   <span
                     key={n.id}
-                    className="rounded-md bg-gray-100 px-2.5 py-1 text-xs text-gray-700"
+                    className="rounded-md bg-surface-muted px-2.5 py-1 text-xs text-gray-700"
                     title={`ordem ${n.ordem}`}
                   >
                     {n.codigo}
@@ -60,13 +61,7 @@ export function NiveisPainel({ idiomas }: { idiomas: IdiomaRow[] }) {
       </div>
 
       <div className="mt-3 flex flex-wrap items-center gap-2">
-        <select aria-label="Idioma do novo nível" value={idiomaId} onChange={(e) => setIdiomaId(e.target.value)} className={inputCls}>
-          {idiomas.map((i) => (
-            <option key={i.id} value={i.id}>
-              {i.nome}
-            </option>
-          ))}
-        </select>
+        <CampoCombobox value={idiomaId} onChange={(e) => setIdiomaId(e.target.value)} className={inputCls} aria-label="Idioma do novo nível" opcoes={idiomas.map((i) => ({ valor: String(i.id), rotulo: i.nome }))} />
         <input
           value={codigo}
           onChange={(e) => setCodigo(e.target.value)}

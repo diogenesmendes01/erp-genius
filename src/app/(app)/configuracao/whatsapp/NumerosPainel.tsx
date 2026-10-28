@@ -28,16 +28,19 @@ import { useAvisoAoSair } from "@/lib/aviso-ao-sair";
 import { numeroAlterado, setoresAlterados } from "./alteracoes-pendentes";
 import { DRIVER_WHATSAPP_LABEL, FINALIDADE_NUMERO_LABEL, SETOR_ATENDIMENTO_LABEL, rotular } from "@/lib/labels";
 
+import { Switch } from "@/components/ui/switch";
+import { CampoSelect } from "@/components/ui/select";
+import { CampoCombobox } from "@/components/ui/combobox";
 const btnPri = botaoClasses({ tamanho: "md" });
 const btnSec = botaoClasses({ variante: "secundario", tamanho: "sm" });
 const btnPerigo = botaoClasses({ variante: "perigo", tamanho: "sm" });
-const inputCls = "w-full rounded-md border border-gray-300 px-3 py-1.5 text-sm outline-none focus:border-brand-500";
+const inputCls = "w-full rounded-md border border-gray-200 px-3 py-1.5 text-sm outline-none focus:border-brand-500";
 
 const SESSAO_BADGE: Record<string, { label: string; cls: string }> = {
   CONECTADO: { label: "conectado", cls: "bg-green-100 text-green-700" },
   AGUARDANDO_QR: { label: "aguardando QR", cls: "bg-amber-100 text-amber-700" },
   CAIU: { label: "sessão caiu", cls: "bg-red-100 text-red-700" },
-  DESCONECTADO: { label: "desconectado", cls: "bg-gray-100 text-gray-600" },
+  DESCONECTADO: { label: "desconectado", cls: "bg-surface-muted text-gray-600" },
 };
 
 interface FormNumero {
@@ -124,11 +127,11 @@ export function NumerosPainel({
                   <div className="flex items-center gap-2">
                     <span className="text-sm font-medium text-gray-800">{n.rotulo}</span>
                     <span className="text-xs text-gray-500">{n.telefoneE164}</span>
-                    {!n.ativo && <span className="rounded-full bg-gray-100 px-2 py-0.5 text-[11px] text-gray-500">inativo</span>}
+                    {!n.ativo && <span className="rounded-full bg-surface-muted px-2 py-0.5 text-[11px] text-gray-500">inativo</span>}
                   </div>
                   <div className="mt-0.5 flex flex-wrap items-center gap-1.5 text-[11px]">
                     {n.driver !== "MOTOR" && (
-                      <span className="rounded-full bg-gray-100 px-1.5 py-0.5 text-gray-600">
+                      <span className="rounded-full bg-surface-muted px-1.5 py-0.5 text-gray-600">
                         {rotular(DRIVER_WHATSAPP_LABEL, n.driver)}
                       </span>
                     )}
@@ -237,30 +240,11 @@ export function NumerosPainel({
             </label>
             <label className="text-xs text-gray-600">
               Finalidade
-              <select
-                className={inputCls + " mt-1"}
-                value={form.finalidade}
-                onChange={(e) => setForm({ ...form, finalidade: e.target.value as FormNumero["finalidade"] })}
-              >
-                <option value="COBRANCA">Cobrança</option>
-                <option value="VENDAS">Vendas</option>
-                <option value="AGENDA">Agenda institucional</option>
-              </select>
+              <CampoSelect value={form.finalidade} onChange={(e) => setForm({ ...form, finalidade: e.target.value as FormNumero["finalidade"] })} className={inputCls + " mt-1"} opcoes={[{ valor: "COBRANCA", rotulo: "Cobrança" }, { valor: "VENDAS", rotulo: "Vendas" }, { valor: "AGENDA", rotulo: "Agenda institucional" }]} />
             </label>
             <label className="text-xs text-gray-600">
               Dono da conversa (vendas)
-              <select
-                className={inputCls + " mt-1"}
-                value={form.donoId}
-                onChange={(e) => setForm({ ...form, donoId: e.target.value })}
-              >
-                <option value="">— sem dono —</option>
-                {vendedores.map((v) => (
-                  <option key={v.id} value={v.id}>
-                    {v.nome}
-                  </option>
-                ))}
-              </select>
+              <CampoCombobox value={form.donoId} onChange={(e) => setForm({ ...form, donoId: e.target.value })} className={inputCls + " mt-1"} vazio={"— sem dono —"} opcoes={vendedores.map((v) => ({ valor: String(v.id), rotulo: v.nome }))} />
             </label>
           </div>
           <div className="mt-3 flex items-center justify-end gap-3">
@@ -368,12 +352,7 @@ export function SetoresNumeroEditor({
       <div className="mt-2 flex flex-wrap gap-4">
         {SETORES.map((s) => (
           <label key={s} className="flex items-center gap-2 text-sm text-gray-600">
-            <input
-              type="checkbox"
-              className="h-3.5 w-3.5 accent-brand-600"
-              checked={setores.includes(s)}
-              onChange={() => alternar(s)}
-            />
+            <Switch checked={setores.includes(s)} onCheckedChange={() => alternar(s)} />
             {SETOR_ATENDIMENTO_LABEL[s]}
           </label>
         ))}
@@ -381,14 +360,7 @@ export function SetoresNumeroEditor({
       {setores.length >= 2 && (
         <label className="mt-3 block text-xs text-gray-600">
           Responsável pela triagem
-          <select className={inputCls + " mt-1 sm:max-w-xs"} value={triagemValida} onChange={(e) => setTriagem(e.target.value)}>
-            <option value="">— Administrador —</option>
-            {elegiveis.map((u) => (
-              <option key={u.id} value={u.id}>
-                {u.nome}
-              </option>
-            ))}
-          </select>
+          <CampoCombobox value={triagemValida} onChange={(e) => setTriagem(e.target.value)} className={inputCls + " mt-1 sm:max-w-xs"} vazio={"— Administrador —"} opcoes={elegiveis.map((u) => ({ valor: String(u.id), rotulo: u.nome }))} />
         </label>
       )}
       <div className="mt-3 flex items-center justify-end gap-3">

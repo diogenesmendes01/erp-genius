@@ -14,9 +14,10 @@ import { EstadoVazio } from "@/components/EstadoVazio";
 import { useAvisoAoSair } from "@/lib/aviso-ao-sair";
 import { templateAlterado } from "./template-alterado";
 
+import { CampoSelect } from "@/components/ui/select";
 const btnPri = botaoClasses({ tamanho: "md" });
 const btnSec = botaoClasses({ variante: "secundario", tamanho: "sm" });
-const inputCls = "w-full rounded-md border border-gray-300 px-3 py-1.5 text-sm outline-none focus:border-brand-500";
+const inputCls = "w-full rounded-md border border-gray-200 px-3 py-1.5 text-sm outline-none focus:border-brand-500";
 
 interface FormTemplate {
   id?: string;
@@ -141,14 +142,7 @@ export function TemplatesPainel({ templates }: { templates: TemplateConfig[] }) 
             </label>
             <label className="text-xs text-gray-600">
               Categoria
-              <select
-                className={inputCls + " mt-1"}
-                value={form.categoria}
-                onChange={(e) => setForm({ ...form, categoria: e.target.value as FormTemplate["categoria"] })}
-              >
-                <option value="utility">utility (cobrança/transacional)</option>
-                <option value="marketing">marketing</option>
-              </select>
+              <CampoSelect value={form.categoria} onChange={(e) => setForm({ ...form, categoria: e.target.value as FormTemplate["categoria"] })} className={inputCls + " mt-1"} opcoes={[{ valor: "utility", rotulo: "utility (cobrança/transacional)" }, { valor: "marketing", rotulo: "marketing" }]} />
             </label>
           </div>
           <label className="mt-3 block text-xs text-gray-600">

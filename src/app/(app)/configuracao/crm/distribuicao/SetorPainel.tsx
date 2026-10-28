@@ -9,6 +9,10 @@ import { EstadoVazio } from "@/components/EstadoVazio";
 import { botaoClasses } from "@/components/Botao";
 import type { HorarioAtendimento } from "@/server/crm-config/horario-atendimento";
 
+import { CampoCombobox } from "@/components/ui/combobox";
+import { CampoSelect } from "@/components/ui/select";
+import { TimePicker } from "@/components/ui/time-picker";
+import { Switch } from "@/components/ui/switch";
 export interface SetorPainelProps {
   finalidade: "COMERCIAL" | "FINANCEIRO" | "SECRETARIA" | "PEDAGOGICO";
   rotulo: string;
@@ -67,7 +71,7 @@ const REGRAS = [
   { v: "RODIZIO", t: "Rodízio" },
   { v: "MENOR_CARGA", t: "Menor carga" },
 ] as const;
-const input = "mt-1 w-full rounded-md border border-gray-300 px-3 py-1.5 text-sm";
+const input = "mt-1 w-full rounded-md border border-gray-200 px-3 py-1.5 text-sm";
 
 export function SetorPainel(p: SetorPainelProps) {
   const router = useRouter();
@@ -103,14 +107,10 @@ export function SetorPainel(p: SetorPainelProps) {
     <h3 className="text-base font-medium">{p.rotulo}</h3>
     <div className="mt-3 grid gap-3 sm:grid-cols-2">
       <label className="text-xs text-gray-600">Distribuição
-        <select className={input} value={regra} onChange={(e) => setRegra(e.target.value as typeof regra)}>
-          {REGRAS.map((r) => <option key={r.v} value={r.v}>{r.t}</option>)}
-        </select>
+        <CampoSelect value={regra} onChange={(e) => setRegra(e.target.value as typeof regra)} className={input} opcoes={REGRAS.map((r) => ({ valor: String(r.v), rotulo: r.t }))} />
       </label>
       <label className="text-xs text-gray-600">Prazo da primeira resposta
-        <select className={input} value={prazo} onChange={(e) => setPrazo(Number(e.target.value))}>
-          {opcoesPrazo.map((m) => <option key={m} value={m}>{rotuloPrazo(m)}</option>)}
-        </select>
+        <CampoSelect value={String(prazo)} onChange={(e) => setPrazo(Number(e.target.value))} className={input} opcoes={opcoesPrazo.map((m) => ({ valor: String(m), rotulo: rotuloPrazo(m) }))} />
       </label>
     </div>
     <fieldset className="mt-3">
@@ -119,7 +119,7 @@ export function SetorPainel(p: SetorPainelProps) {
         {p.candidatos.length === 0 && <EstadoVazio>Nenhum usuário ativo neste setor.</EstadoVazio>}
         {p.candidatos.map((c) => (
           <label key={c.id} className="flex items-center gap-1">
-            <input type="checkbox" checked={ids.includes(c.id)} onChange={() => alternar(c.id)} />
+            <Switch checked={ids.includes(c.id)} onCheckedChange={() => alternar(c.id)} />
             {c.nome}
             {c.coberturaAtiva && (
               <span title={`Até ${c.coberturaAtiva.ate}`} className="rounded bg-amber-100 px-1.5 py-0.5 text-xs text-amber-800">
@@ -131,9 +131,9 @@ export function SetorPainel(p: SetorPainelProps) {
       </div>
     </fieldset>
     <div className="mt-3 flex flex-wrap gap-4 text-sm">
-      <label className="flex items-center gap-1"><input type="checkbox" checked={alResp} onChange={(e) => setAlResp(e.target.checked)} />Alertar o responsável</label>
-      <label className="flex items-center gap-1"><input type="checkbox" checked={alGer} onChange={(e) => setAlGer(e.target.checked)} />Alertar o gerente</label>
-      <label className="flex items-center gap-1"><input type="checkbox" checked={contar} onChange={(e) => setContar(e.target.checked)} />Contar só no horário de atendimento</label>
+      <label className="flex items-center gap-1"><Switch checked={alResp} onCheckedChange={(marcado) => setAlResp((marcado === true))} />Alertar o responsável</label>
+      <label className="flex items-center gap-1"><Switch checked={alGer} onCheckedChange={(marcado) => setAlGer((marcado === true))} />Alertar o gerente</label>
+      <label className="flex items-center gap-1"><Switch checked={contar} onCheckedChange={(marcado) => setContar((marcado === true))} />Contar só no horário de atendimento</label>
     </div>
     <p className="mt-1 text-xs text-gray-500">O alerta aparece no sino e na lista do Inbox uma vez por atendimento. Sem responsável, vai ao gerente do setor.</p>
     <fieldset className="mt-3">
@@ -141,10 +141,10 @@ export function SetorPainel(p: SetorPainelProps) {
       <div className="mt-1 grid gap-1 text-sm">
         {linhas.map((l) => (
           <div key={l.dia} className="flex flex-wrap items-center gap-2">
-            <label className="flex w-28 items-center gap-1"><input type="checkbox" checked={l.atende} onChange={(e) => mudarLinha(l.dia, { atende: e.target.checked })} />{DIAS[l.dia]}</label>
-            <input type="time" aria-label={`${DIAS[l.dia]}: início`} className="rounded-md border border-gray-300 px-2 py-1 text-sm" value={l.inicio} disabled={!l.atende} onChange={(e) => mudarLinha(l.dia, { inicio: e.target.value })} />
+            <label className="flex w-28 items-center gap-1"><Switch checked={l.atende} onCheckedChange={(marcado) => mudarLinha(l.dia, { atende: (marcado === true) })} />{DIAS[l.dia]}</label>
+            <TimePicker aria-label={`${DIAS[l.dia]}: início`} className="rounded-md border border-gray-200 px-2 py-1 text-sm" value={l.inicio} disabled={!l.atende} onChange={(e) => mudarLinha(l.dia, { inicio: e.target.value })} />
             <span className="text-xs text-gray-500">às</span>
-            <input type="time" aria-label={`${DIAS[l.dia]}: fim`} className="rounded-md border border-gray-300 px-2 py-1 text-sm" value={l.fim} disabled={!l.atende} onChange={(e) => mudarLinha(l.dia, { fim: e.target.value })} />
+            <TimePicker aria-label={`${DIAS[l.dia]}: fim`} className="rounded-md border border-gray-200 px-2 py-1 text-sm" value={l.fim} disabled={!l.atende} onChange={(e) => mudarLinha(l.dia, { fim: e.target.value })} />
             {l.originais && <span className="text-xs text-gray-500">{l.originais.length} intervalos gravados; editar este dia deixa um só.</span>}
           </div>
         ))}
@@ -152,9 +152,7 @@ export function SetorPainel(p: SetorPainelProps) {
       {p.outrosHorarios.length > 0 && (
         <div className="mt-2 flex flex-wrap items-center gap-2 text-sm">
           <label className="text-xs text-gray-600">Copiar de outro setor
-            <select className="ml-2 rounded-md border border-gray-300 px-2 py-1 text-sm" value={copiarDe} onChange={(e) => setCopiarDe(e.target.value)}>
-              {p.outrosHorarios.map((o) => <option key={o.finalidade} value={o.finalidade}>{o.rotulo}</option>)}
-            </select>
+            <CampoCombobox value={copiarDe} onChange={(e) => setCopiarDe(e.target.value)} className="ml-2 rounded-md border border-gray-200 px-2 py-1 text-sm" opcoes={p.outrosHorarios.map((o) => ({ valor: String(o.finalidade), rotulo: o.rotulo }))} />
           </label>
           <button type="button" className={botaoClasses({ variante: "secundario", tamanho: "sm" })} onClick={copiar}>Copiar horário</button>
         </div>

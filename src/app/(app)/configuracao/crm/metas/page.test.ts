@@ -82,11 +82,12 @@ describe("/configuracao/crm/metas", () => {
       return [{ id: "g1", nome: "G" }, { id: "v1", nome: "Vera" }];
     });
     const html = renderToStaticMarkup(await Page());
-    expect(html).toContain('<td class="py-1">G</td>');
-    expect(html).toContain('<td class="py-1">Vera</td>');
+    expect(html).toMatch(/>G<\/td>/);
+    expect(html).toMatch(/>Vera<\/td>/);
     expect(html).not.toContain(">Vendedor<");
-    expect(html).toContain('<option value="g1" selected="">Eu</option>');
-    expect(html).not.toContain('<option value="g1">G</option>');
+    expect(html).toContain('name="usuarioId"');
+    expect(html).toContain('value="g1"');
+    expect(html).toContain(">Eu<");
     expect(html).not.toContain("Equipe (geral)");
   });
 

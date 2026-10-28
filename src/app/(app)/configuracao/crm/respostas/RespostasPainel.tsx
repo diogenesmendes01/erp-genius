@@ -11,12 +11,14 @@ import { EstadoVazio } from "@/components/EstadoVazio";
 import { botaoClasses } from "@/components/Botao";
 import { CampoTexto } from "@/components/CampoTexto";
 
+import { CampoCombobox } from "@/components/ui/combobox";
+import { Switch } from "@/components/ui/switch";
 type Setor = "COMERCIAL" | "FINANCEIRO" | "SECRETARIA" | "PEDAGOGICO";
 export interface RespostaLinha { id: string; atalho: string; titulo: string; corpo: string; setor: Setor | null; ariaPodeUsar: boolean }
 const SETORES: { v: Setor; t: string }[] = [
   { v: "COMERCIAL", t: "Comercial" }, { v: "FINANCEIRO", t: "Financeiro" }, { v: "SECRETARIA", t: "Secretaria" }, { v: "PEDAGOGICO", t: "Pedagógico" },
 ];
-const input = "mt-1 w-full rounded-md border border-gray-300 px-3 py-1.5 text-sm";
+const input = "mt-1 w-full rounded-md border border-gray-200 px-3 py-1.5 text-sm";
 export const AVISO_ARIA =
   "A Aria usa as respostas marcadas como referência, inclusive os preços citados no texto. Hoje a Aria só atua no Comercial: valem as respostas do Comercial e as gerais; respostas de outros setores marcadas ainda não têm efeito.";
 const VARIAVEIS = ["{nome}", "{responsavel}", "{curso}"];
@@ -57,16 +59,13 @@ export function RespostasPainel({ respostas, setoresPermitidos }: { respostas: R
         <label className="text-xs text-gray-600">Atalho<input className={input} value={atalho} onChange={(e) => setAtalho(e.target.value)} /></label>
         <label className="text-xs text-gray-600">Título<input className={input} value={titulo} onChange={(e) => setTitulo(e.target.value)} /></label>
         <label className="text-xs text-gray-600">Setor
-          <select className={input} value={setor} onChange={(e) => setSetor(e.target.value as Setor | "")}>
-            <option value="">Geral (todos os setores)</option>
-            {SETORES.filter((s) => setoresPermitidos.includes(s.v)).map((s) => <option key={s.v} value={s.v}>{s.t}</option>)}
-          </select>
+          <CampoCombobox value={setor} onChange={(e) => setSetor(e.target.value as Setor | "")} className={input} vazio={"Geral (todos os setores)"} opcoes={SETORES.filter((s) => setoresPermitidos.includes(s.v)).map((s) => ({ valor: String(s.v), rotulo: s.t }))} />
         </label>
       </div>
       <label className="mt-3 block text-xs text-gray-600">Texto (variáveis: {VARIAVEIS.join(", ")})
         <CampoTexto className={input} rows={4} value={corpo} onChange={(e) => setCorpo(e.target.value)} />
       </label>
-      <label className="mt-3 flex items-center gap-1 text-sm"><input type="checkbox" checked={aria} onChange={(e) => setAria(e.target.checked)} />A Aria pode usar esta resposta</label>
+      <label className="mt-3 flex items-center gap-1 text-sm"><Switch checked={aria} onCheckedChange={(marcado) => setAria((marcado === true))} />A Aria pode usar esta resposta</label>
       <p className="mt-1 text-xs text-gray-500">{AVISO_ARIA}</p>
       <button className={`${botaoClasses({ tamanho: "md" })} mt-3`} disabled={acao.ocupado} onClick={() => rodar(() => salvarRespostaRapidaDaTela({ id, atalho, titulo, corpo, setor: setor || null, ariaPodeUsar: aria, ...(id ? {} : { chaveIdempotencia: tentativa.atual }) }), limpar, !id)}>{acao.ocupado ? "Salvando…" : id ? "Salvar resposta" : "Criar resposta"}</button>
     </section>

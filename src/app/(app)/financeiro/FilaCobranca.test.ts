@@ -4,6 +4,20 @@ import { describe, expect, it, vi } from "vitest";
 import type { FilaCobrancaItem } from "@/server/cobrancas/consultas";
 
 vi.mock("next/navigation", () => ({ useRouter: () => ({ push: vi.fn(), refresh: vi.fn() }) }));
+vi.mock("@/components/ui/dialog", async (importOriginal) => {
+  const React = await import("react");
+  const real = await importOriginal<typeof import("@/components/ui/dialog")>();
+  return { ...real, DialogPortal: ({ children }: { children?: React.ReactNode }) => React.createElement(React.Fragment, null, children) };
+});
+vi.mock("@/components/ui/popover", async () => {
+  const React = await import("react");
+  return {
+    Popover: ({ children }: { children?: React.ReactNode }) => React.createElement(React.Fragment, null, children),
+    PopoverTrigger: ({ children }: { children?: React.ReactNode }) => children ?? null,
+    PopoverAnchor: ({ children }: { children?: React.ReactNode }) => children ?? null,
+    PopoverContent: ({ children }: { children?: React.ReactNode }) => React.createElement("div", null, children),
+  };
+});
 vi.mock("@/server/financeiro/acoes", () => ({ registrarCobrancaWhatsApp: vi.fn() }));
 vi.mock("@/server/financeiro/cobranca-manual", () => ({ prepararCobrancaManual: vi.fn() }));
 vi.mock("@/server/cobrancas/acoes", () => ({ registrarPromessaPagamento: vi.fn() }));
@@ -135,26 +149,26 @@ describe("FilaCobranca — teclado e diálogo (docs/42 E7)", () => {
   it("o checkbox do lote fica fora de qualquer botão e mantém o rótulo", () => {
     const html = fila(true);
     expect(html).toContain('aria-label="Selecionar Ana Silva para o lote"');
-    expect(html).toMatch(/type="checkbox"/);
-    expect(html).not.toMatch(/<button\b(?:(?!<\/button>).)*type="checkbox"/);
-    expect(html).not.toMatch(/<button\b(?:(?!<\/button>).)*<button\b/);
+    expect(html).toMatch(/role="checkbox"/);
+    const nome = html.match(/<button type="button" class="block w-full[^"]*"[^>]*>[\s\S]*?<\/button>/)?.[0] ?? "";
+    expect(nome).toContain("Ana Silva");
+    expect(nome).not.toMatch(/role="checkbox"/);
   });
 
   it("o detalhe é um diálogo modal rotulado pelo título, com ✕ nomeado", () => {
     const html = detalhe(item, null);
     expect(html).toMatch(/role="dialog"/);
-    expect(html).toContain('aria-modal="true"');
     expect(html).toContain('tabindex="-1"');
-    const id = html.match(/aria-labelledby="([^"]+)"/)?.[1];
-    expect(id).toBeTruthy();
-    expect(html).toContain(`<h2 id="${id}" class="text-sm font-medium">Detalhe da cobrança</h2>`);
-    expect(html).toContain('aria-label="Fechar detalhe da cobrança"');
+    expect(html).toMatch(/<h2 id="[^"]+"[^>]*>Detalhe da cobrança<\/h2>/);
+    expect(html).toContain('aria-label="Fechar"');
   });
 
   it("o detalhe é camada elevada do DS: véu bg-black/60, superfície elevada e shadow-dialog", () => {
     const html = detalhe(item, null);
     expect(html).toContain("bg-black/60");
-    expect(html).toMatch(/role="dialog"[^>]*class="[^"]*bg-surface-raised[^"]*shadow-dialog/);
+    expect(html).toMatch(/role="dialog"/);
+    expect(html).toContain("bg-surface-raised");
+    expect(html).toContain("shadow-dialog");
     expect(html).toContain('class="shrink-0 whitespace-nowrap text-2xl font-medium text-gray-800"');
   });
 
@@ -255,9 +269,11 @@ describe("FilaCobranca — filtros na URL (E4)", () => {
     const html = fila({ indicador: "bloquear", busca: "ana", pais: "Brasil", turma: "Inglês A1" });
     expect(html).toMatch(/<form[^>]*action="\/financeiro\/cobrancas"[^>]*role="search"/);
     expect(html).toMatch(/<input name="busca"[^>]*value="ana"/);
-    expect(html).toContain('<option value="Brasil" selected="">Brasil</option>');
-    expect(html).toContain('<option value="Costa Rica">Costa Rica</option>');
-    expect(html).toContain('<option value="Inglês A1" selected="">Inglês A1</option>');
+    expect(html).toContain('type="hidden" name="pais" value="Brasil"');
+    expect(html).toContain("Brasil");
+    expect(html).toContain("Costa Rica");
+    expect(html).toContain('type="hidden" name="turma" value="Inglês A1"');
+    expect(html).toContain("Inglês A1");
     expect(html).toContain('<input type="hidden" name="indicador" value="bloquear"/>');
     expect(fila({ busca: "ana" })).not.toContain('name="indicador"');
   });

@@ -11,6 +11,7 @@ import { STATUS_COMISSAO_LABEL } from "@/lib/labels";
 import { faixaDaPagina, hrefLista, lerOpcao, lerPagina, paginaAlemDoFim, type ParametrosUrl } from "@/lib/pagina-url";
 import { contextoDaAba } from "../../contexto";
 
+import { CampoCombobox } from "@/components/ui/combobox";
 const ROTA = "/financeiro/comissoes";
 
 export default async function ComissoesFinanceiroPage({ searchParams }: { searchParams: Promise<ParametrosUrl> }) {
@@ -33,10 +34,7 @@ export default async function ComissoesFinanceiroPage({ searchParams }: { search
   return (
     <div className="space-y-3">
       <form method="get" action={ROTA} aria-label="Filtrar comissões" className="flex flex-wrap items-center gap-2">
-        <select name="status" defaultValue={status ?? ""} aria-label="Filtrar por situação" className="rounded-md border border-gray-300 px-2 py-1.5 text-sm outline-none focus:border-brand-500">
-          <option value="">Todas as situações</option>
-          {Object.values(StatusComissao).map((s) => <option key={s} value={s}>{STATUS_COMISSAO_LABEL[s]}</option>)}
-        </select>
+        <CampoCombobox name="status" defaultValue={status ?? ""} className="rounded-md border border-gray-200 px-2 py-1.5 text-sm outline-none focus:border-brand-500" aria-label="Filtrar por situação" vazio={"Todas as situações"} opcoes={Object.values(StatusComissao).map((s) => ({ valor: String(s), rotulo: STATUS_COMISSAO_LABEL[s] }))} />
         {naUrl.ordem && naUrl.dir && <><input type="hidden" name="ordem" value={naUrl.ordem} /><input type="hidden" name="dir" value={naUrl.dir} /></>}
         <button type="submit" className={botaoClasses({ variante: "secundario" })}>Filtrar</button>
         {status && <Link href={todas} className="text-sm text-brand-700 hover:underline">Limpar filtro</Link>}

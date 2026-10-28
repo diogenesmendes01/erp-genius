@@ -19,6 +19,7 @@ vi.mock("react", async (original) => {
 vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh: m.refresh }) }));
 vi.mock("@/server/financeiro/permuta-servico", () => ({ decidirCompensacaoPermuta: m.decidir, prepararAcordoPermuta: vi.fn(), confirmarServicoPermuta: vi.fn(), proporCompensacaoPermuta: vi.fn() }));
 
+import { CampoSelect } from "@/components/ui/select";
 import { DecidirCompensacao } from "./PermutaOperacional";
 import { ConfirmarAcao } from "@/components/ConfirmarAcao";
 import { MSG_DECISAO_INCERTA } from "@/lib/mensagens";
@@ -31,7 +32,7 @@ const MOTIVO = "Serviço conferido no diário";
 const tela = (): ReactNode => m.ganchos!.renderizar(DecidirCompensacao, { proposta, moeda: "BRL", cobrancas });
 const confirmacoes = (t: ReactNode): No[] => elementos(t).filter((n: No) => n.type === ConfirmarAcao);
 const usar = (g: Ganchos): Ganchos => { const anterior = m.ganchos!; m.ganchos = g; return anterior; };
-const select = (t: ReactNode) => elementos(t).find((n: No) => n.type === "select")!;
+const select = (t: ReactNode) => elementos(t).find((n: No) => n.type === CampoSelect)!;
 const escolher = (valor: string) => (select(tela()).props.onChange as (e: { target: { value: string } }) => void)({ target: { value: valor } });
 const preencherMotivo = (valor = MOTIVO) => {
   const campo = elementos(tela()).find((n: No) => n.type === "input" && n.props.name === "motivo")!;
@@ -53,8 +54,8 @@ describe("PermutaOperacional — decidir a compensação", () => {
     let t = tela();
     expect(select(t).props.value).toBe("");
     expect(select(t).props.required).toBe(true);
-    const opcoes = elementos(select(t).props.children as ReactNode).filter((n: No) => n.type === "option");
-    expect(opcoes.map((o: No) => [o.props.value, texto(o.props.children), !!o.props.disabled])).toEqual([["", "Escolha a decisão", true], ["APROVAR", "Aprovar e compensar", false], ["REJEITAR", "Rejeitar", false]]);
+    expect(select(t).props.placeholder).toBe("Escolha a decisão");
+    expect(select(t).props.opcoes).toEqual([{ valor: "APROVAR", rotulo: "Aprovar e compensar" }, { valor: "REJEITAR", rotulo: "Rejeitar" }]);
     expect(texto(botaoDecidir(t).props.children)).toBe("Decidir");
     expect(botaoDecidir(t).props.disabled).toBe(true);
     escolher("APROVAR");

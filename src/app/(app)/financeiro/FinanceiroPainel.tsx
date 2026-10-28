@@ -28,6 +28,9 @@ import { ColunaOrdenavel } from "@/components/ColunaOrdenavel";
 import type { Ordenacao } from "@/lib/ordenacao";
 import type { OrdemComissoes } from "@/server/financeiro/ordem-comissoes";
 
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
 export type RelatorioDados = Awaited<ReturnType<typeof relatorioDescontosComissoes>>;
 const MOEDA_CONS_KEY = "erpgenius:moedaConsolidacao";
 
@@ -230,20 +233,14 @@ export function Comissoes({
 }) {
   const coluna = ordenacao ? { ordenacao: ordenacao.atual, rota: ordenacao.rota, parametros: ordenacao.parametros } : null;
   const cabecalho = (campo: OrdemComissoes, rotulo: string, direcaoInicial?: "asc" | "desc") =>
-    coluna ? <ColunaOrdenavel campo={campo} rotulo={rotulo} direcaoInicial={direcaoInicial} {...coluna} /> : <th className="px-4 py-2 font-medium">{rotulo}</th>;
+    coluna ? <ColunaOrdenavel campo={campo} rotulo={rotulo} direcaoInicial={direcaoInicial} {...coluna} /> : <TableHead className="px-4 py-2 font-medium">{rotulo}</TableHead>;
   return (
     <div>
       <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
         <p className="text-sm text-gray-500"><span className="font-mono tabular-nums">A pagar (aprovadas): <strong>{formatarValores(aPagar)}</strong></span></p>
         {podePagar && <span className="flex items-center gap-3">
           <label className="flex items-center gap-1.5 text-xs text-gray-600">
-            <input
-              type="checkbox"
-              className="h-4 w-4 accent-brand-600"
-              checked={fechamentoAutomatico}
-              disabled={isPending}
-              onChange={(e) => onToggleAutomatico(e.target.checked)}
-            />
+            <Switch checked={fechamentoAutomatico} disabled={isPending} onCheckedChange={(marcado) => onToggleAutomatico((marcado === true))} />
             Fechamento mensal automático
           </label>
           <button className={btnPri} disabled={isPending} onClick={onFechar}>
@@ -252,30 +249,30 @@ export function Comissoes({
         </span>}
       </div>
       <div className="overflow-x-auto rounded-lg border border-gray-200">
-        <table className="w-full text-sm">
-          <thead className={CABECALHO_TABELA}>
-            <tr>
+        <Table className="w-full text-sm">
+          <TableHeader className={CABECALHO_TABELA}>
+            <TableRow>
               {cabecalho("vendedor", "Vendedor")}
-              <th className="px-4 py-2 font-medium">%</th>
+              <TableHead className="px-4 py-2 font-medium">%</TableHead>
               {cabecalho("valor", "Valor", "desc")}
               {cabecalho("status", "Status")}
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-100">
+            </TableRow>
+          </TableHeader>
+          <TableBody className="divide-y divide-gray-100">
             {comissoes.length === 0 ? (
               <EstadoVazioLinha colSpan={4}>{vazio ?? "Sem comissões."}</EstadoVazioLinha>
             ) : (
               comissoes.map((c) => (
-                <tr key={c.id} className={LINHA_TABELA}>
-                  <td className="px-4 py-3 text-gray-800"><Pessoa nome={c.vendedor} /></td>
-                  <td className="px-4 py-3 font-mono tabular-nums text-gray-600">{c.tipo === "VALOR_FIXO" ? "Fixa" : `${c.percentual}%`}</td>
-                  <td className="px-4 py-3 font-mono tabular-nums text-gray-700">{formatarMoeda(c.valor, c.moeda)}</td>
-                  <td className="px-4 py-3"><SeloComissao status={c.status} /></td>
-                </tr>
+                <TableRow key={c.id} className={LINHA_TABELA}>
+                  <TableCell className="px-4 py-3 text-gray-800"><Pessoa nome={c.vendedor} /></TableCell>
+                  <TableCell className="px-4 py-3 font-mono tabular-nums text-gray-600">{c.tipo === "VALOR_FIXO" ? "Fixa" : `${c.percentual}%`}</TableCell>
+                  <TableCell className="px-4 py-3 font-mono tabular-nums text-gray-700">{formatarMoeda(c.valor, c.moeda)}</TableCell>
+                  <TableCell className="px-4 py-3"><SeloComissao status={c.status} /></TableCell>
+                </TableRow>
               ))
             )}
-          </tbody>
-        </table>
+          </TableBody>
+        </Table>
       </div>
     </div>
   );
@@ -423,14 +420,14 @@ export function VisaoGeral({
       <div className="mb-3 flex flex-wrap items-center gap-2">
         <span id="financeiro-consolidar-rotulo" className="text-sm text-gray-500">Consolidar em</span>
         <div className="w-28">
-          <select
-            aria-labelledby="financeiro-consolidar-rotulo"
-            value={moedaCons}
-            onChange={(e) => onMoeda(e.target.value)}
-            className={CONTROLE_CAMPO}
-          >
-            {opcoes.map((m) => <option key={m} value={m}>{m}</option>)}
-          </select>
+          <Select value={moedaCons} onValueChange={onMoeda}>
+            <SelectTrigger aria-labelledby="financeiro-consolidar-rotulo" className={CONTROLE_CAMPO}>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {opcoes.map((m) => <SelectItem key={m} value={m}>{m}</SelectItem>)}
+            </SelectContent>
+          </Select>
         </div>
         <span className="text-xs text-gray-400">câmbio de referência · só leitura</span>
       </div>
@@ -508,24 +505,24 @@ export function CambioPainel({
         gerencial — nunca na conta do aluno. Cada alteração grava uma nova cotação (mantém histórico).
       </p>
       <div className="overflow-x-auto rounded-lg border border-gray-200">
-        <table className="w-full text-sm">
-          <thead className={CABECALHO_TABELA}>
-            <tr>
-              <th className="px-4 py-2 font-medium">Moeda</th>
-              <th className="px-4 py-2 font-medium">1 US$ =</th>
-              <th className="px-4 py-2 font-medium">Atualizado</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-100">
-            <tr>
-              <td className="px-4 py-2 font-medium text-gray-700">USD <span className="text-xs text-gray-400">(pivô)</span></td>
-              <td className="px-4 py-2 font-mono tabular-nums text-gray-500">1</td>
-              <td className="px-4 py-2 text-xs text-gray-400">fixo</td>
-            </tr>
+        <Table className="w-full text-sm">
+          <TableHeader className={CABECALHO_TABELA}>
+            <TableRow>
+              <TableHead className="px-4 py-2 font-medium">Moeda</TableHead>
+              <TableHead className="px-4 py-2 font-medium">1 US$ =</TableHead>
+              <TableHead className="px-4 py-2 font-medium">Atualizado</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody className="divide-y divide-gray-100">
+            <TableRow>
+              <TableCell className="px-4 py-2 font-medium text-gray-700">USD <span className="text-xs text-gray-400">(pivô)</span></TableCell>
+              <TableCell className="px-4 py-2 font-mono tabular-nums text-gray-500">1</TableCell>
+              <TableCell className="px-4 py-2 text-xs text-gray-400">fixo</TableCell>
+            </TableRow>
             {editaveis.map((c) => (
-              <tr key={c.moeda}>
-                <td className="px-4 py-2 font-medium text-gray-700">{c.moeda}</td>
-                <td className="px-4 py-2">
+              <TableRow key={c.moeda}>
+                <TableCell className="px-4 py-2 font-medium text-gray-700">{c.moeda}</TableCell>
+                <TableCell className="px-4 py-2">
                   <div className="w-32">
                     <input
                       type="number"
@@ -538,14 +535,14 @@ export function CambioPainel({
                       className={CONTROLE_CAMPO}
                     />
                   </div>
-                </td>
-                <td className="px-4 py-2 font-mono text-xs tabular-nums text-gray-400">
+                </TableCell>
+                <TableCell className="px-4 py-2 font-mono text-xs tabular-nums text-gray-400">
                   {c.vigenteEm ? (() => { const exibicao = formatarInstanteExibicao(c.vigenteEm, preferenciaFusoExibicao, "UTC"); return `${exibicao.texto} (horário exibido em ${exibicao.fuso}; origem UTC)`; })() : "sem cotação"}
-                </td>
-              </tr>
+                </TableCell>
+              </TableRow>
             ))}
-          </tbody>
-        </table>
+          </TableBody>
+        </Table>
       </div>
       <div className="mt-3 flex flex-wrap items-center gap-2">
         <button className={btnPri} disabled={salvando || auto} onClick={salvar}>
@@ -576,24 +573,24 @@ export function Descontos({ relatorio }: { relatorio: RelatorioDados }) {
           <EstadoVazio>Sem descontos.</EstadoVazio>
         ) : (
           <div className="overflow-x-auto rounded-lg border border-gray-200">
-            <table className="w-full text-sm">
-              <thead className={CABECALHO_TABELA}>
-                <tr>
-                  <th className="px-4 py-2 font-medium">Moeda</th>
-                  <th className="px-4 py-2 font-medium">Total concedido</th>
-                  <th className="px-4 py-2 font-medium">Ajustes</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100">
+            <Table className="w-full text-sm">
+              <TableHeader className={CABECALHO_TABELA}>
+                <TableRow>
+                  <TableHead className="px-4 py-2 font-medium">Moeda</TableHead>
+                  <TableHead className="px-4 py-2 font-medium">Total concedido</TableHead>
+                  <TableHead className="px-4 py-2 font-medium">Ajustes</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody className="divide-y divide-gray-100">
                 {descontoPorMoeda.map((d) => (
-                  <tr key={d.moeda} className={LINHA_TABELA}>
-                    <td className="px-4 py-2 font-medium text-gray-700">{d.moeda}</td>
-                    <td className="px-4 py-2 font-mono tabular-nums text-gray-700">{formatarMoeda(d.total, d.moeda)}</td>
-                    <td className="px-4 py-2 font-mono tabular-nums text-gray-500">{d.qtd}</td>
-                  </tr>
+                  <TableRow key={d.moeda} className={LINHA_TABELA}>
+                    <TableCell className="px-4 py-2 font-medium text-gray-700">{d.moeda}</TableCell>
+                    <TableCell className="px-4 py-2 font-mono tabular-nums text-gray-700">{formatarMoeda(d.total, d.moeda)}</TableCell>
+                    <TableCell className="px-4 py-2 font-mono tabular-nums text-gray-500">{d.qtd}</TableCell>
+                  </TableRow>
                 ))}
-              </tbody>
-            </table>
+              </TableBody>
+            </Table>
           </div>
         )}
       </section>
@@ -604,28 +601,28 @@ export function Descontos({ relatorio }: { relatorio: RelatorioDados }) {
           <EstadoVazio>Sem comissões.</EstadoVazio>
         ) : (
           <div className="mb-6 overflow-x-auto rounded-lg border border-gray-200">
-            <table className="w-full min-w-[640px] text-sm">
-              <thead className={CABECALHO_TABELA}>
-                <tr>
-                  <th className="px-4 py-2 font-medium">Vendedor</th>
-                  <th className="px-4 py-2 font-medium">Moeda</th>
-                  <th className="px-4 py-2 font-medium">Status</th>
-                  <th className="px-4 py-2 font-medium">Total</th>
-                  <th className="px-4 py-2 font-medium">Qtd</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100">
+            <Table className="w-full min-w-[640px] text-sm">
+              <TableHeader className={CABECALHO_TABELA}>
+                <TableRow>
+                  <TableHead className="px-4 py-2 font-medium">Vendedor</TableHead>
+                  <TableHead className="px-4 py-2 font-medium">Moeda</TableHead>
+                  <TableHead className="px-4 py-2 font-medium">Status</TableHead>
+                  <TableHead className="px-4 py-2 font-medium">Total</TableHead>
+                  <TableHead className="px-4 py-2 font-medium">Qtd</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody className="divide-y divide-gray-100">
                 {comissoesPorVendedor.map((c, i) => (
-                  <tr key={i} className={LINHA_TABELA}>
-                    <td className="px-4 py-2 font-medium text-gray-700"><Pessoa nome={c.vendedor} /></td>
-                    <td className="px-4 py-2 text-gray-700">{c.moeda}</td>
-                    <td className="px-4 py-2"><SeloComissao status={c.status} /></td>
-                    <td className="px-4 py-2 font-mono tabular-nums text-gray-700">{formatarMoeda(c.total, c.moeda)}</td>
-                    <td className="px-4 py-2 font-mono tabular-nums text-gray-500">{c.qtd}</td>
-                  </tr>
+                  <TableRow key={i} className={LINHA_TABELA}>
+                    <TableCell className="px-4 py-2 font-medium text-gray-700"><Pessoa nome={c.vendedor} /></TableCell>
+                    <TableCell className="px-4 py-2 text-gray-700">{c.moeda}</TableCell>
+                    <TableCell className="px-4 py-2"><SeloComissao status={c.status} /></TableCell>
+                    <TableCell className="px-4 py-2 font-mono tabular-nums text-gray-700">{formatarMoeda(c.total, c.moeda)}</TableCell>
+                    <TableCell className="px-4 py-2 font-mono tabular-nums text-gray-500">{c.qtd}</TableCell>
+                  </TableRow>
                 ))}
-              </tbody>
-            </table>
+              </TableBody>
+            </Table>
           </div>
         )}
 
@@ -634,26 +631,26 @@ export function Descontos({ relatorio }: { relatorio: RelatorioDados }) {
           <EstadoVazio>Sem descontos por vendedor.</EstadoVazio>
         ) : (
           <div className="overflow-x-auto rounded-lg border border-gray-200">
-            <table className="w-full text-sm">
-              <thead className={CABECALHO_TABELA}>
-                <tr>
-                  <th className="px-4 py-2 font-medium">Vendedor</th>
-                  <th className="px-4 py-2 font-medium">Moeda</th>
-                  <th className="px-4 py-2 font-medium">Total concedido</th>
-                  <th className="px-4 py-2 font-medium">Ajustes</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100">
+            <Table className="w-full text-sm">
+              <TableHeader className={CABECALHO_TABELA}>
+                <TableRow>
+                  <TableHead className="px-4 py-2 font-medium">Vendedor</TableHead>
+                  <TableHead className="px-4 py-2 font-medium">Moeda</TableHead>
+                  <TableHead className="px-4 py-2 font-medium">Total concedido</TableHead>
+                  <TableHead className="px-4 py-2 font-medium">Ajustes</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody className="divide-y divide-gray-100">
                 {descontoPorVendedor.map((d, i) => (
-                  <tr key={`${d.vendedor}-${d.moeda}-${i}`} className={LINHA_TABELA}>
-                    <td className="px-4 py-2 text-gray-700"><Pessoa nome={d.vendedor} /></td>
-                    <td className="px-4 py-2 text-gray-600">{d.moeda}</td>
-                    <td className="px-4 py-2 font-mono tabular-nums text-gray-700">{formatarMoeda(d.total, d.moeda)}</td>
-                    <td className="px-4 py-2 font-mono tabular-nums text-gray-500">{d.qtd}</td>
-                  </tr>
+                  <TableRow key={`${d.vendedor}-${d.moeda}-${i}`} className={LINHA_TABELA}>
+                    <TableCell className="px-4 py-2 text-gray-700"><Pessoa nome={d.vendedor} /></TableCell>
+                    <TableCell className="px-4 py-2 text-gray-600">{d.moeda}</TableCell>
+                    <TableCell className="px-4 py-2 font-mono tabular-nums text-gray-700">{formatarMoeda(d.total, d.moeda)}</TableCell>
+                    <TableCell className="px-4 py-2 font-mono tabular-nums text-gray-500">{d.qtd}</TableCell>
+                  </TableRow>
                 ))}
-              </tbody>
-            </table>
+              </TableBody>
+            </Table>
           </div>
         )}
       </section>
@@ -664,26 +661,26 @@ export function Descontos({ relatorio }: { relatorio: RelatorioDados }) {
           <EstadoVazio>Sem comissões.</EstadoVazio>
         ) : (
           <div className="overflow-x-auto rounded-lg border border-gray-200">
-            <table className="w-full text-sm">
-              <thead className={CABECALHO_TABELA}>
-                <tr>
-                  <th className="px-4 py-2 font-medium">Moeda</th>
-                  <th className="px-4 py-2 font-medium">Status</th>
-                  <th className="px-4 py-2 font-medium">Total</th>
-                  <th className="px-4 py-2 font-medium">Qtde</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100">
+            <Table className="w-full text-sm">
+              <TableHeader className={CABECALHO_TABELA}>
+                <TableRow>
+                  <TableHead className="px-4 py-2 font-medium">Moeda</TableHead>
+                  <TableHead className="px-4 py-2 font-medium">Status</TableHead>
+                  <TableHead className="px-4 py-2 font-medium">Total</TableHead>
+                  <TableHead className="px-4 py-2 font-medium">Qtde</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody className="divide-y divide-gray-100">
                 {comissoesPorStatus.map((c, i) => (
-                  <tr key={`${c.moeda}-${c.status}-${i}`} className={LINHA_TABELA}>
-                    <td className="px-4 py-2 font-medium text-gray-700">{c.moeda}</td>
-                    <td className="px-4 py-2"><SeloComissao status={c.status} /></td>
-                    <td className="px-4 py-2 font-mono tabular-nums text-gray-700">{formatarMoeda(c.total, c.moeda)}</td>
-                    <td className="px-4 py-2 font-mono tabular-nums text-gray-500">{c.qtd}</td>
-                  </tr>
+                  <TableRow key={`${c.moeda}-${c.status}-${i}`} className={LINHA_TABELA}>
+                    <TableCell className="px-4 py-2 font-medium text-gray-700">{c.moeda}</TableCell>
+                    <TableCell className="px-4 py-2"><SeloComissao status={c.status} /></TableCell>
+                    <TableCell className="px-4 py-2 font-mono tabular-nums text-gray-700">{formatarMoeda(c.total, c.moeda)}</TableCell>
+                    <TableCell className="px-4 py-2 font-mono tabular-nums text-gray-500">{c.qtd}</TableCell>
+                  </TableRow>
                 ))}
-              </tbody>
-            </table>
+              </TableBody>
+            </Table>
           </div>
         )}
       </section>

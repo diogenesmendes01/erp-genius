@@ -13,6 +13,7 @@ import { useAcaoCliente } from "@/lib/acao-cliente";
 import { UsuarioFormulario, type UsuarioParaEditar } from "./UsuarioFormulario";
 import { botaoClasses } from "@/components/Botao";
 
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
 export interface UsuarioRow {
   id: string;
   nome: string;
@@ -83,42 +84,42 @@ export function UsuariosPainel({ usuarios, preferenciaFusoExibicao = null }: { u
       )}
 
       <div className="overflow-x-auto rounded-lg border border-gray-200">
-        <table className="w-full min-w-[640px] text-sm">
-          <thead className="bg-gray-100 text-left text-xs text-gray-500">
-            <tr>
-              <th className="px-4 py-2 font-medium">Usuário</th>
-              <th className="px-4 py-2 font-medium">Papéis</th>
-              <th className="px-4 py-2 font-medium">Taxa / mensalidade</th>
-              <th className="px-4 py-2 font-medium">Último acesso</th>
-              <th className="px-4 py-2 font-medium">Status</th>
-              <th className="px-4 py-2 font-medium text-right">Ações</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-100">
+        <Table className="w-full min-w-[640px] text-sm">
+          <TableHeader className="bg-surface-muted text-left text-xs text-gray-500">
+            <TableRow>
+              <TableHead className="px-4 py-2 font-medium">Usuário</TableHead>
+              <TableHead className="px-4 py-2 font-medium">Papéis</TableHead>
+              <TableHead className="px-4 py-2 font-medium">Taxa / mensalidade</TableHead>
+              <TableHead className="px-4 py-2 font-medium">Último acesso</TableHead>
+              <TableHead className="px-4 py-2 font-medium">Status</TableHead>
+              <TableHead className="px-4 py-2 font-medium text-right">Ações</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody className="divide-y divide-gray-100">
             {usuarios.map((u) => (
-              <tr key={u.id} className="hover:bg-gray-50">
-                <td className="px-4 py-3">
+              <TableRow key={u.id} className="hover:bg-highlight">
+                <TableCell className="px-4 py-3">
                   <div className="font-medium text-gray-800">{u.nome}</div>
                   <span className="text-xs text-gray-400">{u.email}</span>
-                </td>
-                <td className="px-4 py-3 text-gray-600">
+                </TableCell>
+                <TableCell className="px-4 py-3 text-gray-600">
                   {u.papeis.map((p) => PAPEL_LABEL[p]).join(", ")}
-                </td>
-                <td className="px-4 py-3 text-gray-600">
+                </TableCell>
+                <TableCell className="px-4 py-3 text-gray-600">
                   {u.limiteDescontoTaxaPct ?? 0}% / {u.limiteDescontoMensalidadePct ?? 0}%
-                </td>
-                <td className="px-4 py-3 text-gray-500">{formatarAcesso(u.ultimoAcesso, preferenciaFusoExibicao)}</td>
-                <td className="px-4 py-3">
+                </TableCell>
+                <TableCell className="px-4 py-3 text-gray-500">{formatarAcesso(u.ultimoAcesso, preferenciaFusoExibicao)}</TableCell>
+                <TableCell className="px-4 py-3">
                   <span
                     className={
                       "rounded-full px-2 py-0.5 text-xs font-medium " +
-                      (u.ativo ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-500")
+                      (u.ativo ? "bg-green-100 text-green-700" : "bg-surface-muted text-gray-500")
                     }
                   >
                     {u.ativo ? "Ativo" : "Inativo"}
                   </span>
-                </td>
-                <td className="px-4 py-3">
+                </TableCell>
+                <TableCell className="px-4 py-3">
                   <div className="flex items-center justify-end gap-2">
                     <button
                       onClick={() =>
@@ -149,11 +150,11 @@ export function UsuariosPainel({ usuarios, preferenciaFusoExibicao = null }: { u
                     </button>
                   </div>
                   <FeedbackAcao erro={alvo === u.id ? acao.erro : null} sucesso={alvo === u.id ? acao.sucesso : undefined} className="mt-2" />
-                </td>
-              </tr>
+                </TableCell>
+              </TableRow>
             ))}
-          </tbody>
-        </table>
+          </TableBody>
+        </Table>
       </div>
 
       {desativando && (

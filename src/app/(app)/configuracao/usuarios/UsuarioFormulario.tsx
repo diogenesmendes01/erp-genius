@@ -1,6 +1,6 @@
 "use client";
 
-import { useForm } from "react-hook-form";
+import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
 import { Papel } from "@prisma/client";
@@ -16,9 +16,11 @@ import { FeedbackAcao } from "@/components/FeedbackAcao";
 import { useAcaoCliente } from "@/lib/acao-cliente";
 import { useChaveIdempotencia } from "@/lib/chave-idempotencia";
 import { botaoClasses } from "@/components/Botao";
+import { CampoCombobox } from "@/components/ui/combobox";
+import { Checkbox } from "@/components/ui/checkbox";
 
 const inputCls =
-  "w-full rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:border-brand-500";
+  "w-full rounded-md border border-gray-200 px-3 py-2 text-sm outline-none focus:border-brand-500";
 
 export interface UsuarioParaEditar {
   id: string;
@@ -49,6 +51,7 @@ export function UsuarioFormulario({
 
   const {
     register,
+    control,
     handleSubmit,
     formState: { errors },
   } = useForm<FormValues>({
@@ -104,10 +107,9 @@ export function UsuarioFormulario({
           <label className="mb-1 block text-xs text-gray-600" htmlFor="usuario-gerente-comercial">
             Gerente comercial da equipe
           </label>
-          <select id="usuario-gerente-comercial" {...register("gerenteComercialId")} className={inputCls}>
-            <option value="">Sem equipe atribuída</option>
-            {gerentes.filter((g) => g.id !== usuario?.id).map((g) => <option key={g.id} value={g.id}>{g.nome}</option>)}
-          </select>
+          <Controller control={control} name="gerenteComercialId" render={({ field }) => (
+            <CampoCombobox id="usuario-gerente-comercial" value={field.value ?? ""} onChange={(evento) => field.onChange(evento.target.value || null)} className={inputCls} vazio="Sem equipe atribuída" opcoes={gerentes.filter((g) => g.id !== usuario?.id).map((g) => ({ valor: g.id, rotulo: g.nome }))} />
+          )} />
         </div>
         <div>
           <label className="mb-1 block text-xs text-gray-600" htmlFor="usuario-limite-desconto-taxa">Desconto máximo na taxa (%)</label>
@@ -127,14 +129,18 @@ export function UsuarioFormulario({
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 md:grid-cols-3">
           {Object.values(Papel).map((p) => (
             <label key={p} className="flex items-center gap-2 text-sm text-gray-700">
-              <input
-                type="checkbox"
-                value={p}
-                {...register("papeis")}
-                aria-invalid={errors.papeis ? true : undefined}
-                aria-describedby={errors.papeis ? "usuario-papeis-erro" : undefined}
-                className="rounded border-gray-300"
-              />
+              <Controller control={control} name="papeis" render={({ field }) => (
+                <Checkbox
+                  checked={field.value?.includes(p) ?? false}
+                  value={p}
+                  aria-invalid={errors.papeis ? true : undefined}
+                  aria-describedby={errors.papeis ? "usuario-papeis-erro" : undefined}
+                  onCheckedChange={(marcado) => {
+                    const atual = field.value ?? [];
+                    field.onChange(marcado === true ? [...atual, p] : atual.filter((item) => item !== p));
+                  }}
+                />
+              )} />
               {PAPEL_LABEL[p]}
             </label>
           ))}
@@ -145,7 +151,12 @@ export function UsuarioFormulario({
       <fieldset className="mt-4">
         <legend className="mb-2 text-xs text-gray-600">Permissões específicas</legend>
         <div className="grid gap-2 md:grid-cols-2">
-          {CAPACIDADES_LISTA.map((p) => <label key={p} className="flex items-center gap-2 text-sm"><input type="checkbox" value={p} {...register("permissoes")} />{CAPACIDADES_LABEL[p]}</label>)}
+          {CAPACIDADES_LISTA.map((p) => <label key={p} className="flex items-center gap-2 text-sm"><Controller control={control} name="permissoes" render={({ field }) => (
+            <Checkbox checked={field.value?.includes(p) ?? false} value={p} onCheckedChange={(marcado) => {
+              const atual = field.value ?? [];
+              field.onChange(marcado === true ? [...atual, p] : atual.filter((item) => item !== p));
+            }} />
+          )} />{CAPACIDADES_LABEL[p]}</label>)}
         </div>
       </fieldset>
 

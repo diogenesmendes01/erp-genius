@@ -12,6 +12,8 @@ import { botaoClasses } from "@/components/Botao";
 import { CampoTexto } from "@/components/CampoTexto";
 import { ConfirmarAcao } from "@/components/ConfirmarAcao";
 
+import { CampoSelect } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
 type Cor = "NEUTRA" | "MARCA" | "INFO" | "SUCESSO" | "ALERTA" | "PERIGO" | "IA";
 type Tipo = "TEXTO" | "NUMERO" | "DATA" | "SELECAO" | "BOOLEANO";
 type Alvo = "PESSOA" | "EMPRESA";
@@ -26,7 +28,7 @@ const TIPOS: { v: Tipo; t: string }[] = [
   { v: "TEXTO", t: "Texto" }, { v: "NUMERO", t: "Número" }, { v: "DATA", t: "Data" }, { v: "SELECAO", t: "Lista" }, { v: "BOOLEANO", t: "Sim/Não" },
 ];
 const ALVOS: { v: Alvo; t: string }[] = [{ v: "PESSOA", t: "Pessoa" }, { v: "EMPRESA", t: "Empresa" }];
-const input = "mt-1 w-full rounded-md border border-gray-300 px-3 py-1.5 text-sm";
+const input = "mt-1 w-full rounded-md border border-gray-200 px-3 py-1.5 text-sm";
 
 export function TagsCamposPainel({ tags, campos }: { tags: TagLinha[]; campos: CampoLinha[] }) {
   const router = useRouter();
@@ -71,7 +73,7 @@ export function TagsCamposPainel({ tags, campos }: { tags: TagLinha[]; campos: C
         <label className="text-xs text-gray-600">Nome<input className={input} value={tNome} onChange={(e) => setTNome(e.target.value)} /></label>
         <label className="text-xs text-gray-600">Grupo<input className={input} value={tGrupo} onChange={(e) => setTGrupo(e.target.value)} /></label>
         <label className="text-xs text-gray-600">Cor
-          <select className={input} value={tCor} onChange={(e) => setTCor(e.target.value as Cor)}>{CORES.map((c) => <option key={c.v} value={c.v}>{c.t}</option>)}</select>
+          <CampoSelect value={tCor} onChange={(e) => setTCor(e.target.value as Cor)} className={input} opcoes={CORES.map((c) => ({ valor: String(c.v), rotulo: c.t }))} />
         </label>
       </div>
       <button className={`${botaoClasses({ tamanho: "md" })} mt-3`} disabled={acao.ocupado} onClick={() => rodar(() => salvarTagDaTela({ id: tagId, nome: tNome, grupo: tGrupo, cor: tCor, ...(tagId ? {} : { chaveIdempotencia: tentativaTag.atual }) }), limparTag, tagId ? undefined : tentativaTag)}>{acao.ocupado ? "Salvando…" : tagId ? "Salvar tag" : "Criar tag"}</button>
@@ -92,16 +94,16 @@ export function TagsCamposPainel({ tags, campos }: { tags: TagLinha[]; campos: C
       <div className="mt-3 grid gap-3 sm:grid-cols-3">
         <label className="text-xs text-gray-600">Nome<input className={input} value={cNome} onChange={(e) => setCNome(e.target.value)} /></label>
         <label className="text-xs text-gray-600">Tipo
-          <select className={input} value={cTipo} onChange={(e) => setCTipo(e.target.value as Tipo)}>{TIPOS.map((t) => <option key={t.v} value={t.v}>{t.t}</option>)}</select>
+          <CampoSelect value={cTipo} onChange={(e) => setCTipo(e.target.value as Tipo)} className={input} opcoes={TIPOS.map((t) => ({ valor: String(t.v), rotulo: t.t }))} />
         </label>
         <label className="text-xs text-gray-600">Vale para
-          <select className={input} value={cAlvo} onChange={(e) => setCAlvo(e.target.value as Alvo)}>{ALVOS.map((a) => <option key={a.v} value={a.v}>{a.t}</option>)}</select>
+          <CampoSelect value={cAlvo} onChange={(e) => setCAlvo(e.target.value as Alvo)} className={input} opcoes={ALVOS.map((a) => ({ valor: String(a.v), rotulo: a.t }))} />
         </label>
       </div>
       {cTipo === "SELECAO" && <label className="mt-3 block text-xs text-gray-600">Opções (uma por linha)
         <CampoTexto className={input} rows={4} value={cOpcoes} onChange={(e) => setCOpcoes(e.target.value)} />
       </label>}
-      <label className="mt-3 flex items-center gap-1 text-sm"><input type="checkbox" checked={cObrig} onChange={(e) => setCObrig(e.target.checked)} />Obrigatório</label>
+      <label className="mt-3 flex items-center gap-1 text-sm"><Switch checked={cObrig} onCheckedChange={(marcado) => setCObrig((marcado === true))} />Obrigatório</label>
       <button className={`${botaoClasses({ tamanho: "md" })} mt-3`} disabled={acao.ocupado} onClick={() => rodar(() => salvarCampoDaTela({ id: campoId, nome: cNome, tipo: cTipo, alvo: cAlvo, opcoes: cTipo === "SELECAO" ? cOpcoes.split("\n").map((s) => s.trim()).filter(Boolean) : [], obrigatorio: cObrig, ...(campoId ? {} : { chaveIdempotencia: tentativaCampo.atual }) }), limparCampo, campoId ? undefined : tentativaCampo)}>{acao.ocupado ? "Salvando…" : campoId ? "Salvar campo" : "Criar campo"}</button>
     </section>
     <FeedbackAcao erro={acao.erro} />
