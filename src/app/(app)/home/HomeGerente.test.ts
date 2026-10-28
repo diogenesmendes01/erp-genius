@@ -48,6 +48,10 @@ describe("HomeGerente · KPI de matrículas", () => {
     expect(html).toContain('href="/inbox?prazo=estourado&amp;setor=COMERCIAL"');
     expect(html).toContain('href="/funil?modo=lista"');
     expect(html).toContain("2 paradas");
+    const classeSecao = '<section class="min-w-0 rounded-lg border border-gray-200 bg-surface p-4">';
+    expect(html.lastIndexOf(classeSecao, html.indexOf("Gargalos do funil"))).toBeGreaterThan(-1);
+    expect(html.lastIndexOf(classeSecao, html.indexOf("Indicadores da equipe"))).toBeGreaterThan(-1);
+    expect(html.split(classeSecao).length - 1).toBe(2);
     expect(html).toContain('href="/inbox?responsavel=v1"');
     expect(html).toContain('href="/funil?donoId=v1"');
     expect(html).toContain("4 → 1 (25%)");
@@ -77,6 +81,9 @@ describe("HomeGerente · KPI de matrículas", () => {
     expect(html).not.toContain("Requer atenção");
     expect(html).toContain("Nenhuma oportunidade no escopo.");
     expect(html).toContain("Sem vendedores ativos.");
+    const classeSecao = '<section class="min-w-0 rounded-lg border border-gray-200 bg-surface p-4">';
+    expect(html.lastIndexOf(classeSecao, html.indexOf("Gargalos do funil"))).toBeGreaterThan(-1);
+    expect(html.lastIndexOf(classeSecao, html.indexOf("Indicadores da equipe"))).toBeGreaterThan(-1);
     expect(html).toContain("Check-in vencido");
     expect(html).toContain('href="/financeiro/aprovacoes"');
     expect(html).not.toContain("border-gray-300");

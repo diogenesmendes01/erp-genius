@@ -40,6 +40,11 @@ describe("HomeVendedor", () => {
     expect(html).toContain("bg-brand-solid");
     expect(html).toContain("bg-surface-muted");
     expect(html).toContain("min-h-[52px]");
+    expect(html).toContain("min-w-0 rounded-lg border border-gray-200 bg-surface p-4");
+    expect(html).toContain("flex min-h-[52px] min-w-0 items-center justify-between gap-2.5");
+    expect(html).toContain('aria-label="Próximas ações" class="grid gap-6 lg:grid-cols-3"');
+    expect(html).toContain("max-w-[140px] truncate");
+    expect(html).toContain('<span class="truncate">Experimental hoje</span>');
     expect(html).toContain("hover:bg-surface-muted");
     expect(html).toContain("rounded-[6px]");
     expect(html).toContain("bg-brand-bg");
