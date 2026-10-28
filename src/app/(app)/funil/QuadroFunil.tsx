@@ -17,7 +17,9 @@ import {
   type KeyboardCoordinateGetter,
 } from "@dnd-kit/core";
 import { EtapaLead } from "@prisma/client";
+import { BadgeEstado } from "@/components/BadgeEstado";
 import { Botao } from "@/components/Botao";
+import { CONTROLE_CAMPO } from "@/components/Campo";
 import { FeedbackAcao } from "@/components/FeedbackAcao";
 import { executarAcaoCliente } from "@/lib/acao-cliente";
 import { ETAPA_LABEL } from "@/lib/labels";
@@ -75,10 +77,12 @@ function ColunaView({
     >
       <header className="flex items-start justify-between gap-2 px-1">
         <div className="min-w-0">
-          <h3 className="text-sm font-medium">{ETAPA_LABEL[coluna.etapa]}</h3>
-          <p className="text-xs text-gray-600">{coluna.total}</p>
+          <div className="flex items-center gap-2">
+            <h3 className="text-sm font-medium">{ETAPA_LABEL[coluna.etapa]}</h3>
+            <BadgeEstado tom="neutro" className="font-mono tabular-nums">{coluna.total}</BadgeEstado>
+          </div>
           {coluna.somaPorMoeda.map((s) => (
-            <p key={s.moeda} className="text-xs text-gray-600">{valorComMoeda(s.valor, s.moeda)}</p>
+            <p key={s.moeda} className="font-mono text-xs tabular-nums text-gray-600">{valorComMoeda(s.valor, s.moeda)}</p>
           ))}
         </div>
         {recolhida && (
@@ -152,7 +156,7 @@ export function QuadroFunil({ colunas, podeMover, aoAbrir, aoPedirAcao, agora, f
           aria-label="Etapa exibida"
           value={etapaMobile}
           onChange={(e) => setEtapaMobile(e.target.value as EtapaLead)}
-          className="min-h-11 w-full rounded-md border border-gray-300 bg-surface px-3 text-sm"
+          className={CONTROLE_CAMPO}
         >
           {colunas.map((c) => (
             <option key={c.etapa} value={c.etapa}>{`${ETAPA_LABEL[c.etapa]} (${c.total})`}</option>

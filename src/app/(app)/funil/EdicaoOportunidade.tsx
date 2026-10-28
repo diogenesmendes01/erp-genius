@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { CategoriaDocumento, Segmento } from "@prisma/client";
 import { Botao } from "@/components/Botao";
-import { Campo, CONTROLE_INVALIDO } from "@/components/Campo";
+import { Campo, CONTROLE_CAMPO } from "@/components/Campo";
 import { CampoMoeda } from "@/components/CampoMoeda";
 import { CampoTexto } from "@/components/CampoTexto";
 import { EstadoVazio } from "@/components/EstadoVazio";
@@ -27,8 +27,7 @@ import { FusoInstitucionalSchema, dataCivilInstitucional } from "@/server/operac
 import { fusoDoCampoLocal, valorCampoLocal } from "@/server/operacao/fuso-entrada";
 import { CampoDataHoraLocal } from "@/components/CampoDataHoraLocal";
 
-const CONTROLE = `w-full rounded-md border border-gray-300 px-2 py-1.5 text-sm max-sm:min-h-11 ${CONTROLE_INVALIDO}`;
-const SECAO = "grid gap-3 border-b border-gray-200 pb-4";
+const SECAO = "grid gap-3 rounded-item border border-gray-200 bg-surface-muted p-3.5";
 const TITULO = "text-sm font-medium text-gray-900";
 
 function useAcaoSecao(idempotente = false) {
@@ -88,7 +87,7 @@ export function ResumoOportunidade({ oportunidade: op, podeEditar }: { oportunid
           {CAMPOS_RESUMO.map(([k, rotulo]) => (
             <Campo key={k} id={`op-resumo-${k}`} rotulo={rotulo}>
               {(c) => (
-                <input {...c} type="text" maxLength={500} className={CONTROLE} value={f[k]} disabled={acao.ocupado} onChange={(e) => setF({ ...f, [k]: e.target.value })} />
+                <input {...c} type="text" maxLength={500} className={CONTROLE_CAMPO} value={f[k]} disabled={acao.ocupado} onChange={(e) => setF({ ...f, [k]: e.target.value })} />
               )}
             </Campo>
           ))}
@@ -143,17 +142,17 @@ export function DatasOportunidade({ oportunidade: op, podeEditar, fuso, preferen
       <h3 id="op-datas-titulo" className={TITULO}>Datas e follow-up</h3>
       <div className="grid gap-3 sm:grid-cols-3">
         <Campo id="op-datas-followup" rotulo="Próximo follow-up">
-          {(c) => <input {...c} type="date" className={CONTROLE} value={f.followUp} disabled={acao.ocupado} onChange={(e) => setF({ ...f, followUp: e.target.value })} />}
+          {(c) => <input {...c} type="date" className={CONTROLE_CAMPO} value={f.followUp} disabled={acao.ocupado} onChange={(e) => setF({ ...f, followUp: e.target.value })} />}
         </Campo>
         <Campo id="op-datas-experimental" rotulo="Experimental (data e hora)">
-          {(c) => <CampoDataHoraLocal {...c} fuso={fusoExperimental} className={CONTROLE} value={f.experimental} disabled={acao.ocupado} onChange={(e) => setF({ ...f, experimental: e.target.value })} />}
+          {(c) => <CampoDataHoraLocal {...c} fuso={fusoExperimental} className={CONTROLE_CAMPO} value={f.experimental} disabled={acao.ocupado} onChange={(e) => setF({ ...f, experimental: e.target.value })} />}
         </Campo>
         <Campo id="op-datas-proposta" rotulo="Data da proposta">
-          {(c) => <input {...c} type="date" className={CONTROLE} value={f.proposta} disabled={acao.ocupado} onChange={(e) => setF({ ...f, proposta: e.target.value })} />}
+          {(c) => <input {...c} type="date" className={CONTROLE_CAMPO} value={f.proposta} disabled={acao.ocupado} onChange={(e) => setF({ ...f, proposta: e.target.value })} />}
         </Campo>
         <Campo id="op-datas-professor" rotulo="Professor da experimental">
           {(c) => (
-            <select {...c} aria-label="Professor da experimental" className={CONTROLE} value={professorId} disabled={acao.ocupado} onChange={(e) => setProfessorId(e.target.value)}>
+            <select {...c} aria-label="Professor da experimental" className={CONTROLE_CAMPO} value={professorId} disabled={acao.ocupado} onChange={(e) => setProfessorId(e.target.value)}>
               <option value="">Sem professor</option>
               {professores.map((p) => <option key={p.id} value={p.id}>{p.nome}</option>)}
             </select>
@@ -222,7 +221,7 @@ export function DadosOportunidade({ oportunidade: op, podeEditar, paises }: { op
   }
   const texto = (k: "nome" | "telefoneE164" | "origemCampanha" | "origemAnuncio" | "planoPrevisto", rotulo: string, tipo = "text") => (
     <Campo id={`op-dados-${k}`} rotulo={rotulo} obrigatorio={k === "nome"} erro={k === "nome" ? erroNome : null}>
-      {(c) => <input {...c} type={tipo} className={CONTROLE} value={f[k]} disabled={acao.ocupado} onChange={(e) => setF({ ...f, [k]: e.target.value })} />}
+      {(c) => <input {...c} type={tipo} className={CONTROLE_CAMPO} value={f[k]} disabled={acao.ocupado} onChange={(e) => setF({ ...f, [k]: e.target.value })} />}
     </Campo>
   );
   return (
@@ -233,14 +232,14 @@ export function DadosOportunidade({ oportunidade: op, podeEditar, paises }: { op
         {texto("telefoneE164", "WhatsApp", "tel")}
         <Campo id="op-dados-paisId" rotulo="País">
           {(c) => (
-            <select {...c} className={CONTROLE} value={f.paisId} disabled={acao.ocupado} onChange={(e) => setF({ ...f, paisId: e.target.value })}>
+            <select {...c} className={CONTROLE_CAMPO} value={f.paisId} disabled={acao.ocupado} onChange={(e) => setF({ ...f, paisId: e.target.value })}>
               {[<option key="" value="">Não informado</option>, ...paises.map((p) => <option key={p.id} value={p.id}>{p.nome}</option>)]}
             </select>
           )}
         </Campo>
         <Campo id="op-dados-segmento" rotulo="Segmento">
           {(c) => (
-            <select {...c} className={CONTROLE} value={f.segmento} disabled={acao.ocupado} onChange={(e) => setF({ ...f, segmento: e.target.value as Segmento })}>
+            <select {...c} className={CONTROLE_CAMPO} value={f.segmento} disabled={acao.ocupado} onChange={(e) => setF({ ...f, segmento: e.target.value as Segmento })}>
               {Object.values(Segmento).map((s) => <option key={s} value={s}>{SEGMENTO_LABEL[s]}</option>)}
             </select>
           )}
@@ -248,15 +247,15 @@ export function DadosOportunidade({ oportunidade: op, podeEditar, paises }: { op
         {texto("origemCampanha", "Campanha (origem)")}
         {texto("origemAnuncio", "Anúncio (origem)")}
         <Campo id="op-dados-valorPrevisto" rotulo="Valor previsto">
-          {(c) => <CampoMoeda {...c} moeda={op.moeda ?? undefined} className={CONTROLE} value={f.valorPrevisto} disabled={acao.ocupado} onChange={(v) => setF({ ...f, valorPrevisto: v })} />}
+          {(c) => <CampoMoeda {...c} moeda={op.moeda ?? undefined} className={CONTROLE_CAMPO} value={f.valorPrevisto} disabled={acao.ocupado} onChange={(v) => setF({ ...f, valorPrevisto: v })} />}
         </Campo>
         {texto("planoPrevisto", "Plano previsto")}
         <Campo id="op-dados-comissaoPrevista" rotulo="Comissão prevista">
-          {(c) => <CampoMoeda {...c} moeda={op.moeda ?? undefined} className={CONTROLE} value={f.comissaoPrevista} disabled={acao.ocupado} onChange={(v) => setF({ ...f, comissaoPrevista: v })} />}
+          {(c) => <CampoMoeda {...c} moeda={op.moeda ?? undefined} className={CONTROLE_CAMPO} value={f.comissaoPrevista} disabled={acao.ocupado} onChange={(v) => setF({ ...f, comissaoPrevista: v })} />}
         </Campo>
         <Campo id="op-dados-b2b" rotulo="Oportunidade corporativa (B2B)">
           {(c) => (
-            <select {...c} className={CONTROLE} value={f.b2b ? "true" : "false"} disabled={acao.ocupado} onChange={(e) => setF({ ...f, b2b: e.target.value === "true" })}>
+            <select {...c} className={CONTROLE_CAMPO} value={f.b2b ? "true" : "false"} disabled={acao.ocupado} onChange={(e) => setF({ ...f, b2b: e.target.value === "true" })}>
               <option value="false">Não</option>
               <option value="true">Sim</option>
             </select>
@@ -298,7 +297,7 @@ export function DocumentosOportunidade({ oportunidade: op, podeEditar }: { oport
         <div className="flex flex-wrap items-end gap-2">
           <Campo id="op-documento-categoria" rotulo="Categoria do documento">
             {(c) => (
-              <select {...c} className={CONTROLE} value={categoria} disabled={acao.ocupado} onChange={(e) => setCategoria(e.target.value as CategoriaDocumento)}>
+              <select {...c} className={CONTROLE_CAMPO} value={categoria} disabled={acao.ocupado} onChange={(e) => setCategoria(e.target.value as CategoriaDocumento)}>
                 {Object.values(CategoriaDocumento).map((k) => <option key={k} value={k}>{CATEGORIA_DOCUMENTO_LABEL[k]}</option>)}
               </select>
             )}
@@ -343,13 +342,13 @@ export function InteracaoOportunidade({ oportunidadeId }: { oportunidadeId: stri
   const [nota, setNota] = useState("");
 
   return (
-    <section aria-labelledby="op-interacao-titulo" className="grid gap-2">
+    <section aria-labelledby="op-interacao-titulo" className={SECAO}>
       <h3 id="op-interacao-titulo" className={TITULO}>Interação com o contato</h3>
       <Campo id="op-interacao-canal" rotulo="Canal" dica="WhatsApp, ligação, e-mail, presencial…">
-        {(c) => <input {...c} type="text" maxLength={60} className={CONTROLE} value={canal} disabled={acao.ocupado} onChange={(e) => setCanal(e.target.value)} />}
+        {(c) => <input {...c} type="text" maxLength={60} className={CONTROLE_CAMPO} value={canal} disabled={acao.ocupado} onChange={(e) => setCanal(e.target.value)} />}
       </Campo>
       <Campo id="op-interacao-nota" rotulo="O que aconteceu">
-        {(c) => <CampoTexto {...c} rows={3} maxLength={2000} className={CONTROLE} value={nota} disabled={acao.ocupado} onChange={(e) => setNota(e.target.value)} />}
+        {(c) => <CampoTexto {...c} rows={3} maxLength={2000} className={CONTROLE_CAMPO} value={nota} disabled={acao.ocupado} onChange={(e) => setNota(e.target.value)} />}
       </Campo>
       <FeedbackAcao erro={acao.erro} sucesso={acao.sucesso} />
       <div>

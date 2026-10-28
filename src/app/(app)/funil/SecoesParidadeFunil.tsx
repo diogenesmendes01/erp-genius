@@ -2,7 +2,9 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { BadgeEstado, type TomEstado } from "@/components/BadgeEstado";
 import { Botao } from "@/components/Botao";
+import { CONTROLE_CAMPO } from "@/components/Campo";
 import { FeedbackAcao } from "@/components/FeedbackAcao";
 import { useAcaoCliente } from "@/lib/acao-cliente";
 import { formatarDataCivil } from "@/lib/data-civil";
@@ -15,6 +17,21 @@ import {
   definirPrevisaoOportunidade,
   reabrirTarefaOportunidade,
 } from "@/server/inbox/acoes-fechamento-painel";
+
+const CARTAO = "space-y-2 rounded-item border border-gray-200 bg-surface-muted p-3";
+
+function tomProbabilidade(pct: number | null): TomEstado {
+  if (pct === null) return "neutro";
+  if (pct >= 70) return "sucesso";
+  if (pct >= 40) return "aviso";
+  return "perigo";
+}
+
+function tomPrevisao(dia: string | null): TomEstado {
+  if (!dia) return "neutro";
+  const hoje = new Date().toISOString().slice(0, 10);
+  return dia < hoje ? "atraso" : "sucesso";
+}
 
 type Props = {
   oportunidade: DetalheOportunidade;
@@ -69,23 +86,23 @@ export function SecoesParidadeFunil({ oportunidade: op, podeEditarPrevisao, pode
     if (r?.tipo === "ok") atualizar();
   }
 
-  return <div className="space-y-4 border-t border-gray-200 pt-4">
-    <section aria-label="Probabilidade e previsão de fechamento" className="space-y-2">
-      <div className="flex flex-wrap items-center justify-between gap-2 text-sm"><span>Probabilidade</span><span>{op.probabilidadePct === null ? "Não informada" : `${op.probabilidadePct}%`}</span></div>
-      <div className="flex flex-wrap items-center justify-between gap-2 text-sm"><span>Previsão de fechamento</span><span>{op.previsaoFechamento ? formatarDataCivil(op.previsaoFechamento) : "Não informada"}</span></div>
+  return <div className="space-y-3">
+    <section aria-label="Probabilidade e previsão de fechamento" className={CARTAO}>
+      <div className="flex flex-wrap items-center justify-between gap-2 text-sm"><span>Probabilidade</span><BadgeEstado tom={tomProbabilidade(op.probabilidadePct)} ponto={false} className="font-mono tabular-nums">{op.probabilidadePct === null ? "Não informada" : `${op.probabilidadePct}%`}</BadgeEstado></div>
+      <div className="flex flex-wrap items-center justify-between gap-2 text-sm"><span>Previsão de fechamento</span><BadgeEstado tom={tomPrevisao(op.previsaoFechamento)} ponto={false} className="font-mono tabular-nums">{op.previsaoFechamento ? formatarDataCivil(op.previsaoFechamento) : "Não informada"}</BadgeEstado></div>
       {podeEditarPrevisao && !edicao && <Botao variante="fantasma" tamanho="sm" onClick={abrirPrevisao}>Editar previsão</Botao>}
       {podeEditarPrevisao && edicao && <form onSubmit={(e) => void salvarPrevisao(e)} className="space-y-3">
-        <label className="block text-sm">Probabilidade (%)<input aria-label="Probabilidade (%)" className="mt-1 w-full rounded-md border border-gray-300 px-2 py-1.5 text-sm" type="number" min={0} max={100} step={1} value={edicao.percentual} disabled={acao.ocupado} onChange={(e) => setEdicao({ ...edicao, percentual: e.target.value })} /></label>
-        <label className="block text-sm">Previsão de fechamento<input aria-label="Previsão de fechamento" className="mt-1 w-full rounded-md border border-gray-300 px-2 py-1.5 text-sm" type="date" value={edicao.dia} disabled={acao.ocupado} onChange={(e) => setEdicao({ ...edicao, dia: e.target.value })} /></label>
+        <label className="block text-sm">Probabilidade (%)<input aria-label="Probabilidade (%)" className={CONTROLE_CAMPO} type="number" min={0} max={100} step={1} value={edicao.percentual} disabled={acao.ocupado} onChange={(e) => setEdicao({ ...edicao, percentual: e.target.value })} /></label>
+        <label className="block text-sm">Previsão de fechamento<input aria-label="Previsão de fechamento" className={CONTROLE_CAMPO} type="date" value={edicao.dia} disabled={acao.ocupado} onChange={(e) => setEdicao({ ...edicao, dia: e.target.value })} /></label>
         <div className="flex flex-wrap gap-2"><Botao type="submit" variante="primario" tamanho="sm" disabled={acao.ocupado}>Salvar previsão</Botao><Botao variante="neutro" tamanho="sm" disabled={acao.ocupado} onClick={() => { setEdicao(null); acao.limpar(); }}>Cancelar</Botao></div>
       </form>}
     </section>
 
-    <section aria-label="Tarefas da oportunidade" className="space-y-2">
+    <section aria-label="Tarefas da oportunidade" className={CARTAO}>
       <h3 className="text-sm font-medium">Tarefas da oportunidade</h3>
       {podeTarefas && <form onSubmit={(e) => void criarTarefa(e)} className="flex flex-wrap items-end gap-2">
         <label className="grid min-w-0 flex-1 gap-1 text-sm">Nova tarefa
-          <input aria-label="Título da tarefa" className="w-full rounded-md border border-gray-300 px-2 py-1.5 text-sm" value={titulo} maxLength={200} disabled={acao.ocupado} onChange={(e) => setTitulo(e.target.value)} />
+          <input aria-label="Título da tarefa" className={CONTROLE_CAMPO} value={titulo} maxLength={200} disabled={acao.ocupado} onChange={(e) => setTitulo(e.target.value)} />
         </label>
         <Botao type="submit" variante="secundario" tamanho="sm" disabled={acao.ocupado || !titulo.trim()}>Criar tarefa</Botao>
       </form>}
@@ -98,7 +115,7 @@ export function SecoesParidadeFunil({ oportunidade: op, podeEditarPrevisao, pode
       })}</ul>}
     </section>
 
-    {op.b2bDetalhes && <BlocoB2B bloco={op.b2bDetalhes} verEmpresa={podeVerEmpresa} />}
+    {op.b2bDetalhes && <div className="rounded-item border border-gray-200 bg-surface-muted p-3"><BlocoB2B bloco={op.b2bDetalhes} verEmpresa={podeVerEmpresa} /></div>}
     <FeedbackAcao erro={acao.erro} sucesso={acao.sucesso} />
   </div>;
 }

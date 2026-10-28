@@ -1,6 +1,8 @@
+import { readFileSync } from "node:fs";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
+import { CONTROLE_CAMPO } from "@/components/Campo";
 import type { CapacidadeCrm } from "@/server/crm/permissoes";
 import type { DetalheOportunidade } from "@/server/crm/historico";
 
@@ -67,7 +69,7 @@ describe("PainelOportunidade", () => {
   it("vendedor não vê seletor de responsável; check-in da experimental não aparece", () => {
     const html = render(detalheEmExperimental, ["funil.ver", "funil.mover"]);
     expect(html).not.toContain('aria-label="Responsável"');
-    expect(html).not.toContain("Realizada");
+    expect(html).not.toMatch(/>Realizada</);
     expect(html).toContain("Confirmar presença");
     expect(html).toContain('aria-label="Professor da experimental"');
     expect(render(detalheEmExperimental)).toContain('aria-label="Responsável"');
@@ -134,6 +136,57 @@ it("335: Abrir contato usa a ficha existente /contatos?c= e codifica a pessoa se
   expect(t).toMatch(/href="\/contatos\?c=p%20%3F%2F335"[^>]*>Abrir contato<\/a>/);
   expect(t).not.toContain("/contatos/p");
   expect(render({ ...base, pessoaId: null }, GERENTE, { abaInicial: "detalhes" })).not.toContain("Abrir contato");
+});
+
+const FONTES_PAINEL = [
+  "src/app/(app)/funil/PainelOportunidade.tsx",
+  "src/app/(app)/funil/SecoesParidadeFunil.tsx",
+  "src/app/(app)/funil/EdicaoOportunidade.tsx",
+];
+const BADGES_AD_HOC = ["bg-amber-50", "bg-red-100", "bg-yellow-100", "bg-blue-100", "bg-green-100"];
+
+describe("PainelOportunidade: design system", () => {
+  it("cabeçalho rico, abas e barra de etapas usam os primitivos globais", () => {
+    const html = render(base);
+    expect(html).toContain("#L-000001");
+    expect(html).toContain("font-mono");
+    expect(html).toContain("tabular-nums");
+    expect(html).toContain(">MS<");
+    expect(html).toContain('aria-label="Temperatura: Morno"');
+    expect(html).toContain('aria-label="Etapas da oportunidade"');
+    expect(html).toContain("bg-surface-muted");
+    expect(html).toMatch(/role="tab"[^>]*border-brand-600[^>]*text-brand-700[^>]*>Oportunidade</);
+    expect(html).toMatch(/role="tab"[^>]*>Oportunidade</);
+  });
+
+  it("detalhes mantêm follow-up, contato, responsável e campanha com controle do sistema", () => {
+    const html = render(
+      { ...base, origemCampanha: "Outubro", proximoFollowUp: new Date("2026-10-21T15:00:00Z") },
+      GERENTE,
+      { abaInicial: "detalhes", fuso: "America/Sao_Paulo" },
+    );
+    expect(html).toMatch(/Próximo follow-up<\/dt><dd[^>]*font-mono tabular-nums[^>]*>/);
+    expect(html).toContain(">Abrir contato</a>");
+    expect(html).toContain("+50688887777");
+    expect(html).toContain("Ana Vendedora");
+    expect(html).toContain("Outubro");
+    expect(html).toContain(CONTROLE_CAMPO);
+  });
+
+  it("arquivos do painel importam CONTROLE_CAMPO e não usam borda nem badge ad-hoc", () => {
+    for (const arquivo of FONTES_PAINEL) {
+      const fonte = readFileSync(arquivo, "utf8");
+      expect(fonte, arquivo).toContain("CONTROLE_CAMPO");
+      expect(fonte, arquivo).not.toContain("border-gray-300");
+      for (const proibido of BADGES_AD_HOC) expect(fonte, `${arquivo} ${proibido}`).not.toContain(proibido);
+    }
+    const painel = readFileSync(FONTES_PAINEL[0]!, "utf8");
+    expect(painel).toContain("Avatar");
+    expect(painel).toContain("BadgeEstado");
+    expect(painel).toContain("BarraEtapas");
+    expect(painel).toContain("font-mono");
+    expect(painel).toContain("tabular-nums");
+  });
 });
 
 describe("entradas autorizadas da conversa (#336)", () => {

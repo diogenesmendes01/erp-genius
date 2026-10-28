@@ -1,7 +1,9 @@
+import { readFileSync } from "node:fs";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { EtapaLead } from "@prisma/client";
 import { describe, expect, it, vi } from "vitest";
+import { CONTROLE_CAMPO } from "@/components/Campo";
 import { COLUNAS_FUNIL } from "@/server/crm/etapas";
 import type { CartaoFunil, ColunaFunil } from "@/server/crm/funil";
 
@@ -85,7 +87,19 @@ describe("QuadroFunil", () => {
     expect(render({ colunas: colunasFixture, podeMover: false })).not.toContain("cartão arrastável");
   });
   it("celular: seletor de etapa exibida", () => {
-    expect(render({})).toContain('aria-label="Etapa exibida"');
+    const html = render({});
+    expect(html).toContain('aria-label="Etapa exibida"');
+    expect(html).toContain(CONTROLE_CAMPO);
+  });
+  it("cabeçalho da coluna, código e valor usam badge e mono", () => {
+    const html = render({ colunas: colunasFixture });
+    expect(html).toContain("#L-000001");
+    expect(html).toContain("font-mono");
+    expect(html).toContain("tabular-nums");
+    expect(html).toContain(">AV<");
+    expect(html).not.toContain("border-gray-300");
+    const b2b = colunasFixture.map((c) => c.etapa === EtapaLead.NOVO ? { ...c, cartoes: [{ ...cartao, b2b: true }] } : c);
+    expect(render({ colunas: b2b })).toContain(">Empresa<");
   });
 });
 
@@ -98,6 +112,33 @@ describe("ListaFunil", () => {
     expect(html).toContain('aria-label="Selecionar Maria Souza"');
     expect(html).toMatch(/aria-label="Selecionar Maria Souza"[^>]*checked/);
     expect(html).toContain('aria-label="Selecionar todas as oportunidades"');
-    expect(html).toContain("L-000001");
+    expect(html).toContain("#L-000001");
+    expect(html).toContain(">MS<");
+    expect(html).toContain(">AV<");
+    expect(html).toContain("Responsável");
+    expect(html).toContain(">Novo<");
+    expect(html).toContain("font-mono");
+    expect(html).toContain("tabular-nums");
+    expect(html).toContain("hover:bg-surface-muted");
+    expect(html).toContain("bg-surface-muted");
+    expect(html).toMatch(/class="[^"]*text-red-700[^"]*"[^>]*>Ligar · venceu/);
+  });
+});
+
+const FONTES_QUADRO = ["CartaoOportunidade.tsx", "ListaFunil.tsx", "QuadroFunil.tsx"];
+const BADGES_AD_HOC = ["bg-amber-50", "bg-red-100", "bg-yellow-100", "bg-blue-100", "bg-green-100"];
+
+describe("quadro e lista: higiene visual", () => {
+  it("não usa border-gray-300 nem badge ad-hoc e referencia os primitivos", () => {
+    for (const arquivo of FONTES_QUADRO) {
+      const fonte = readFileSync(`src/app/(app)/funil/${arquivo}`, "utf8");
+      expect(fonte, arquivo).not.toContain("border-gray-300");
+      for (const proibido of BADGES_AD_HOC) expect(fonte, `${arquivo} ${proibido}`).not.toContain(proibido);
+      expect(fonte, arquivo).toContain("BadgeEstado");
+    }
+    expect(readFileSync("src/app/(app)/funil/QuadroFunil.tsx", "utf8")).toContain("CONTROLE_CAMPO");
+    expect(readFileSync("src/app/(app)/funil/ListaFunil.tsx", "utf8")).toContain("Avatar");
+    expect(readFileSync("src/app/(app)/funil/CartaoOportunidade.tsx", "utf8")).toContain("font-mono");
+    expect(readFileSync("src/app/(app)/funil/CartaoOportunidade.tsx", "utf8")).toContain("tabular-nums");
   });
 });

@@ -1,5 +1,7 @@
 "use client";
 
+import { Avatar } from "@/components/Avatar";
+import { BadgeEstado } from "@/components/BadgeEstado";
 import { ColunaOrdenavel } from "@/components/ColunaOrdenavel";
 import { ETAPA_LABEL } from "@/lib/labels";
 import type { Ordenacao } from "@/lib/ordenacao";
@@ -33,7 +35,7 @@ export function ListaFunil({ colunas, aoAbrir, selecionados, aoSelecionar, ordem
   return (
     <div className="overflow-x-auto rounded-lg border border-border-soft">
       <table className="w-full text-left text-sm">
-        <thead className="bg-gray-100 text-xs text-gray-600">
+        <thead className="bg-surface-muted text-left text-xs text-gray-600">
           <tr>
             <th scope="col" className="w-11 px-1 py-0">
               <label className={CAIXA}>
@@ -48,7 +50,7 @@ export function ListaFunil({ colunas, aoAbrir, selecionados, aoSelecionar, ordem
             </th>
             <th scope="col" className={cab}>Oportunidade</th>
             <th scope="col" className={cab}>Etapa</th>
-            <th scope="col" className={cab}>Dono</th>
+            <th scope="col" className={cab}>Responsável</th>
             <th scope="col" className={cab}>Temperatura</th>
             {ord("valor", "Valor", "desc")}
             {ord("proxima", "Ação seguinte", "asc")}
@@ -59,7 +61,7 @@ export function ListaFunil({ colunas, aoAbrir, selecionados, aoSelecionar, ordem
           {cartoes.map((c) => {
             const proxima = proximaAcaoDoCartao(c, referencia, fuso);
             return (
-              <tr key={c.id} className="border-t border-border-soft">
+              <tr key={c.id} className="border-t border-border-soft transition-colors hover:bg-surface-muted">
                 <td className="px-1 py-0">
                   <label className={CAIXA}>
                     <input
@@ -72,15 +74,22 @@ export function ListaFunil({ colunas, aoAbrir, selecionados, aoSelecionar, ordem
                   </label>
                 </td>
                 <td className="px-4 py-2">
-                  <button type="button" onClick={() => aoAbrir(c.id)} className="text-left max-sm:min-h-11">
-                    <span className="block font-medium">{c.nome}</span>
-                    <span className="block text-xs text-gray-600">{c.codigo ?? "Sem código"}</span>
+                  <button type="button" onClick={() => aoAbrir(c.id)} className="flex items-center gap-2 text-left max-sm:min-h-11">
+                    <Avatar nome={c.nome} tamanho={32} />
+                    <span>
+                      <span className="block font-medium">{c.nome}</span>
+                      <span className="block font-mono text-xs tabular-nums text-gray-600">{c.codigo ? `#${c.codigo}` : "Sem código"}</span>
+                    </span>
                   </button>
                 </td>
-                <td className="px-4 py-2">{ETAPA_LABEL[c.etapa]}</td>
-                <td className="px-4 py-2">{c.dono?.nome ?? "Sem dono"}</td>
+                <td className="px-4 py-2"><BadgeEstado tom="brand" ponto>{ETAPA_LABEL[c.etapa]}</BadgeEstado></td>
+                <td className="px-4 py-2">
+                  {c.dono ? (
+                    <div className="flex items-center gap-2"><Avatar nome={c.dono.nome} tamanho={32} /><span>{c.dono.nome}</span></div>
+                  ) : "Sem responsável"}
+                </td>
                 <td className="px-4 py-2"><Temperatura temperatura={c.temperatura} /></td>
-                <td className="px-4 py-2">{c.valorPrevisto && c.moeda ? valorComMoeda(c.valorPrevisto, c.moeda) : "—"}</td>
+                <td className="px-4 py-2 font-mono tabular-nums">{c.valorPrevisto && c.moeda ? valorComMoeda(c.valorPrevisto, c.moeda) : "—"}</td>
                 <td className={"px-4 py-2 " + (proxima?.vencida ? "text-red-700" : "")}>{proxima?.texto ?? "—"}</td>
                 <td className="px-4 py-2">{textoDiasNaEtapa(c.etapaDesde, referencia, fuso)}</td>
               </tr>
