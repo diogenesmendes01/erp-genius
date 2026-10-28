@@ -17,10 +17,13 @@ import { exigirArquivoVinculavel } from "./autorizacao";
 const arquivosCriados = new Set<string>();
 const como = (u: { id: string; papeis: Papel[] }) => authMock.mockResolvedValue({ user: { id: u.id, papeis: u.papeis } });
 
-const PDF_FIXTURE = new Uint8Array([
-  0x25, 0x50, 0x44, 0x46, 0x2d,
-  ...new TextEncoder().encode("1.7\nCONTEUDO_PRIVADO_DO_ARQUIVO"),
-]);
+const PDF_FIXTURE = (() => {
+  const resto = new TextEncoder().encode("1.7\nCONTEUDO_PRIVADO_DO_ARQUIVO");
+  const bytes = new Uint8Array(5 + resto.byteLength);
+  bytes.set([0x25, 0x50, 0x44, 0x46, 0x2d]);
+  bytes.set(resto, 5);
+  return bytes;
+})();
 
 function requisicaoUpload(contexto: { leadId?: string; matriculaId?: string; categoriaDocumento?: CategoriaDocumento } = {}) {
   const form = new FormData();
