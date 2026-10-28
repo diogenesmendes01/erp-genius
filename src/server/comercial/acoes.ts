@@ -357,13 +357,17 @@ export async function atualizarDatas(id: string, input: DatasInput): Promise<Res
     if (typeof dados.professorExperimentalId === "string") await exigirProfessorValido(dados.professorExperimentalId);
     const professor = dados.professorExperimentalId !== undefined ? { professorExperimentalId: dados.professorExperimentalId } : {};
     await prisma.$transaction(async (tx) => {
+      const antes = await tx.oportunidade.findUnique({ where: { id }, select: { dataExperimental: true, professorExperimentalId: true } });
+      const novaExperimental = dados.dataExperimental ?? null;
+      const experimentalMudou = (antes?.dataExperimental?.getTime() ?? null) !== (novaExperimental?.getTime() ?? null);
       await tx.oportunidade.update({
         where: { id },
         data: {
           proximoFollowUp: dados.proximoFollowUp ?? null,
-          dataExperimental: dados.dataExperimental ?? null,
+          dataExperimental: novaExperimental,
           dataProposta: dados.dataProposta ?? null,
           ...professor,
+          ...(experimentalMudou ? { experimentalConfirmadaEm: null } : {}),
         },
       });
       await registrarEvento(tx, {
@@ -380,6 +384,15 @@ export async function atualizarDatas(id: string, input: DatasInput): Promise<Res
           ...professor,
         },
       });
+      if (dados.professorExperimentalId !== undefined && dados.professorExperimentalId !== (antes?.professorExperimentalId ?? null)) {
+        await registrarEvento(tx, {
+          tipo: EVENTO_EXPERIMENTAL_ATRIBUIDA,
+          agregadoTipo: "Lead",
+          agregadoId: id,
+          autorId: autor.id,
+          payload: { de: antes?.professorExperimentalId ?? null, professorId: dados.professorExperimentalId },
+        });
+      }
     });
     revalidarLead();
   });

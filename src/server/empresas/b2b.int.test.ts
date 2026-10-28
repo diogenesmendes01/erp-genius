@@ -45,10 +45,17 @@ describe("empresas e dados históricos após merge", () => {
     expect(r.ok).toBe(false);
     expect(await prisma.aluno.count()).toBe(0); expect(await prisma.matricula.count()).toBe(0); expect(await prisma.cobranca.count()).toBe(0);
   });
-  it("gerente comercial lê a ficha e não fecha fatura coletiva", async () => {
+  it("gerente comercial lê a ficha da equipe, sem faturas de outra carteira, e não fecha fatura coletiva", async () => {
     const id = await seedEmpresa();
+    const fora = await seedEmpresa();
+    const vendedor = await criarUsuario([Papel.VENDEDOR], "Vendedor equipe");
+    await prisma.usuario.update({ where: { id: vendedor.id }, data: { gerenteComercialId: gerente.id } });
+    await prisma.oportunidade.create({ data: { nome: "Lead da equipe", empresaId: id, vendedorDonoId: vendedor.id } });
     authMock.mockResolvedValue({ user: { id: gerente.id } });
-    expect((await obterEmpresa(id))?.empresa.id).toBe(id);
+    const ficha = await obterEmpresa(id);
+    expect(ficha?.empresa.id).toBe(id);
+    expect(ficha?.faturas).toEqual([]);
+    expect(await obterEmpresa(fora)).toBeNull();
     expect((await fecharFaturaB2B({ empresaId: id, competencia: "2030-01" })).ok).toBe(false);
   });
   it("baixa histórica grava recebimentos/destinações sem ativar matrícula", async () => {

@@ -181,9 +181,13 @@ export async function preverNotificadosTarefaNoInbox(atendimentoId:string,pedido
 }
 
 async function professorInformado(tx: Prisma.TransactionClient, professorId: string) {
-  const professor = await tx.usuario.findUnique({ where: { id: professorId }, select: { papeis: true } });
-  if (!professor) throw new ErroRegra("Professor não encontrado.");
+  const professor = await tx.usuario.findUnique({ where: { id: professorId }, select: { papeis: true, ativo: true } });
+  if (!professor || !professor.ativo) throw new ErroRegra("Professor não encontrado.");
   if (!professor.papeis.includes(Papel.PROFESSOR)) throw new ErroRegra("Usuário informado não é professor.");
+}
+
+function podeAgendarExperimental(etapa: EtapaLead) {
+  return etapa === EtapaLead.EXPERIMENTAL_AGENDADA || destinoDoArraste(etapa, EtapaLead.EXPERIMENTAL_AGENDADA).tipo === "acao";
 }
 
 export async function agendarExperimentalNoInbox(atendimentoId: string, oportunidadeIdEsperada: string, input: AgendarExperimentalInput): Promise<Resultado> {
@@ -197,6 +201,11 @@ export async function agendarExperimentalNoInbox(atendimentoId: string, oportuni
     const professorId = dados.professorId ?? null;
     await prisma.$transaction(async (tx) => {
       await comOportunidadeDoInboxTx(tx, sessao, id, esperada, async (autor, leadId) => {
+        const antes = await tx.oportunidade.findUniqueOrThrow({ where: { id: leadId }, select: { etapa: true } });
+        if (!podeAgendarExperimental(antes.etapa)) {
+          const destino = destinoDoArraste(antes.etapa, EtapaLead.EXPERIMENTAL_AGENDADA);
+          throw new ErroRegra(destino.tipo === "recusar" ? destino.motivo : "Não é possível agendar a experimental nesta etapa.");
+        }
         if (professorId) await professorInformado(tx, professorId);
         const anterior = await professorAtribuido(tx, leadId);
         await tx.oportunidade.update({

@@ -169,10 +169,9 @@ export async function decidirAprovacao(aprovacaoId: string, input: DecisaoInput)
       if (dados.aprovar) await aplicarAlvos(tx, autor, snapshot, aprovacao.motivo ?? "Aprovado", aprovacao.vigencia ?? Vigencia.ESTA_COBRANCA, aprovacao.id);
       await tx.aprovacao.update({ where: { id: aprovacao.id }, data: {
         status: dados.aprovar ? StatusAprovacao.APROVADA : StatusAprovacao.REJEITADA, aprovadorId: autor.id, decididoEm: new Date(),
-        ...(dados.aprovar ? {} : { motivo: dados.motivo }),
       } });
       await registrarEvento(tx, { tipo: "AprovacaoDecidida", agregadoTipo: aprovacao.alvoTipo === "Matricula" ? "Matricula" : "Cobranca", agregadoId: aprovacao.alvoId ?? aprovacao.id,
-        autorId: autor.id, payload: { status: dados.aprovar ? "APROVADA" : "REJEITADA", motivo: dados.motivo ?? null, aprovacaoId } });
+        autorId: autor.id, payload: { status: dados.aprovar ? "APROVADA" : "REJEITADA", motivo: dados.motivo ?? null, motivoRejeicao: dados.aprovar ? null : dados.motivo ?? null, aprovacaoId } });
     });
     revalidar();
   });

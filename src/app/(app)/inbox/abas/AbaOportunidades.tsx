@@ -74,7 +74,7 @@ function OportunidadeDoAtendimento({ dados, capacidades, atendimentoId, fuso, fu
       <p className="text-[17px] font-semibold">{o.valor === null ? "Sem valor" : formatarMoedaOuIndefinida(o.valor, o.moeda)}</p>
     </header>
     <BarraEtapas etapa={o.etapa} podeMover={capacidades.moverEtapa} ocupado={acao.ocupado} aoEscolher={escolher} />
-    <CartaoExperimental oportunidade={o} fuso={fuso} fusoEscola={fusoEscola ?? fuso ?? ""} podeAbrirFunil={podeAbrirFunil} />
+    <CartaoExperimental oportunidade={o} fuso={fuso} fusoEscola={fusoEscola ?? fuso ?? ""} podeAbrirFunil={podeAbrirFunil} podeMover={capacidades.moverEtapa} />
     <FeedbackAcao erro={erroLocal ?? acao.erro} sucesso={acao.sucesso} />
     {fluxo && <div role="status" className="space-y-1 text-sm text-gray-600"><p>{fluxo}</p>{podeAbrirFunil && <a href={"/funil?o=" + encodeURIComponent(o.id)} className="inline-flex min-h-11 items-center text-brand-700 underline">Abrir no funil</a>}</div>}
     <dl className="space-y-2 text-[13px]">

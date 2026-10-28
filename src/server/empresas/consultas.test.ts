@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const db = vi.hoisted(() => ({
-  empresa: { findMany: vi.fn(), count: vi.fn() },
+  empresa: { findMany: vi.fn(), findFirst: vi.fn(), count: vi.fn() },
   pais: { findMany: vi.fn() },
 }));
 const sessao = vi.hoisted(() => vi.fn(async () => ({ id: "u1", nome: "U", papeis: ["FINANCEIRO"] as string[] })));
@@ -10,7 +10,7 @@ vi.mock("@/lib/prisma", () => ({ prisma: db }));
 vi.mock("@/server/_shared", () => ({ exigirSessaoComPapel: sessao, numero: Number, numeroOuNull: (v: unknown) => (v == null ? null : Number(v)) }));
 vi.mock("@/server/_shared/escopo-comercial", () => ({ escopoComercialAtual: escopo }));
 
-import { listarEmpresasPagina } from "./consultas";
+import { listarEmpresasPagina, obterEmpresa } from "./consultas";
 import { EMPRESAS_POR_PAGINA, lerFiltrosEmpresas } from "./filtros";
 
 describe("lista de /empresas paginada (E4)", () => {
@@ -41,8 +41,8 @@ describe("lista de /empresas paginada (E4)", () => {
     expect(db.empresa.findMany.mock.calls[1][0].orderBy).toEqual([{ criadoEm: "desc" }, { id: "desc" }]);
   });
 
-  it("vendedor puro só vê empresas ligadas à carteira", async () => {
-    sessao.mockResolvedValue({ id: "u1", nome: "U", papeis: ["VENDEDOR"] });
+  it.each(["VENDEDOR", "GERENTE_COMERCIAL"])("%s só vê empresas ligadas à carteira ou à equipe", async (papel) => {
+    sessao.mockResolvedValue({ id: "u1", nome: "U", papeis: [papel] });
     await listarEmpresasPagina(lerFiltrosEmpresas({ situacao: "ativas" }));
     const escopoLead = { vendedorDonoId: { in: ["u1"] } };
     const vinculo = { OR: [
@@ -50,8 +50,43 @@ describe("lista de /empresas paginada (E4)", () => {
       { pessoas: { some: { oportunidades: { some: escopoLead } } } },
       { matriculas: { some: { lead: { is: escopoLead } } } },
     ] };
+    expect(escopo).toHaveBeenCalled();
     expect(db.empresa.findMany.mock.calls[0][0].where).toEqual({ AND: [{ AND: [{ ativo: true }] }, vinculo] });
     expect(db.empresa.count).toHaveBeenCalledWith({ where: vinculo });
+  });
+
+  it("financeiro com papel comercial continua vendo o catálogo inteiro", async () => {
+    sessao.mockResolvedValue({ id: "u1", nome: "U", papeis: ["FINANCEIRO", "GERENTE_COMERCIAL"] });
+    await listarEmpresasPagina(lerFiltrosEmpresas({ situacao: "ativas" }));
+    expect(db.empresa.findMany.mock.calls[0][0].where).toEqual({ AND: [{ ativo: true }] });
+    expect(escopo).not.toHaveBeenCalled();
+  });
+
+  it.each(["VENDEDOR", "GERENTE_COMERCIAL"])("ficha de %s filtra colaboradores e omite faturas de outras carteiras", async (papel) => {
+    sessao.mockResolvedValue({ id: "u1", nome: "U", papeis: [papel] });
+    db.empresa.findFirst.mockResolvedValue(null);
+    expect(await obterEmpresa("e1")).toBeNull();
+    const consulta = db.empresa.findFirst.mock.calls[0][0];
+    const escopoLead = { vendedorDonoId: { in: ["u1"] } };
+    expect(consulta.where).toEqual({
+      id: "e1",
+      OR: [
+        { oportunidades: { some: escopoLead } },
+        { pessoas: { some: { oportunidades: { some: escopoLead } } } },
+        { matriculas: { some: { lead: { is: escopoLead } } } },
+      ],
+    });
+    expect(consulta.include.matriculas.where).toEqual({ lead: { is: escopoLead } });
+    expect(consulta.include.faturas.where).toEqual({ id: { in: [] } });
+  });
+
+  it("ficha financeira carrega matrículas e faturas sem corte de carteira", async () => {
+    db.empresa.findFirst.mockResolvedValue(null);
+    expect(await obterEmpresa("e1")).toBeNull();
+    const consulta = db.empresa.findFirst.mock.calls[0][0];
+    expect(consulta.where).toEqual({ id: "e1" });
+    expect(consulta.include.matriculas.where).toBeUndefined();
+    expect(consulta.include.faturas.where).toBeUndefined();
   });
 
   it("nomes de país só dos países da página (não a tabela inteira)", async () => {

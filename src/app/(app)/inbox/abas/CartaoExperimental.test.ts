@@ -39,12 +39,22 @@ it("preferência pessoal prevalece; inválida usa escola e não timezone do proc
   expect(h({ fuso: "inválido", fusoEscola: "America/Costa_Rica" })).toContain("31/10/2026, 19:30");
   const antes = process.env.TZ; try { process.env.TZ = "Asia/Tokyo"; const a = h(); process.env.TZ = "Pacific/Honolulu"; expect(h()).toBe(a); } finally { if (antes === undefined) delete process.env.TZ; else process.env.TZ = antes; }
 });
-it("com atendimento mostra professor, remarcação e confirmar presença", () => {
-  const html = h({ oportunidade: { ...oportunidade, atendimentoId: "at1", professores: [{ id: "p1", nome: "Helena fictícia" }], professorExperimentalId: "p1" } });
+it("com atendimento e permissão de mover mostra professor, remarcação e confirmar presença", () => {
+  const html = h({ podeMover: true, oportunidade: { ...oportunidade, atendimentoId: "at1", professores: [{ id: "p1", nome: "Helena fictícia" }], professorExperimentalId: "p1" } });
   expect(html).toContain('aria-label="Professor da experimental"');
   expect(html).toContain("Remarcar experimental");
   expect(html).toContain("Confirmar presença");
   expect(h()).not.toContain("Confirmar presença");
+  expect(h({ oportunidade: { ...oportunidade, atendimentoId: "at1" } })).not.toContain("Remarcar experimental");
+});
+it("matrícula encerrada não reabre a agenda, mesmo com permissão de mover", () => {
+  const encerrada = { ...oportunidade, etapa: "MATRICULADO" as const, atendimentoId: "at1", professores: [{ id: "p1", nome: "Helena fictícia" }] };
+  const html = h({ podeMover: true, oportunidade: encerrada });
+  expect(html).not.toContain("Remarcar experimental");
+  expect(html).not.toContain("Agendar experimental");
+  expect(html).not.toContain("Confirmar presença");
+  expect(html).not.toContain('aria-label="Professor da experimental"');
+  expect(h({ podeMover: true, oportunidade: { ...encerrada, etapa: "PERDIDO", dataExperimental: null } })).toBe("");
 });
 it("instante atravessando DST usa o horário real do fuso sem inferir realização pelo passado", () => {
   const html = h({ fuso: "America/New_York", oportunidade: { ...oportunidade, dataExperimental: "2026-03-08T07:30:00.000Z" } });

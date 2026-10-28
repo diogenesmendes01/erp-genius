@@ -27,14 +27,24 @@ export async function listarEmpresas(): Promise<EmpresaResumo[]> {
   }));
 }
 
-function vendedorPuro(usuario: { papeis?: Papel[] }) {
-  const papeis = usuario.papeis ?? [];
-  if (papeis.includes(Papel.ADMINISTRADOR) || papeis.includes(Papel.FINANCEIRO) || papeis.includes(Papel.GERENTE_COMERCIAL)) return false;
-  return papeis.includes(Papel.VENDEDOR);
+function papeisDe(usuario: { papeis?: Papel[] }) {
+  return usuario.papeis ?? [];
+}
+
+function visaoIrrestrita(usuario: { papeis?: Papel[] }) {
+  const papeis = papeisDe(usuario);
+  return papeis.includes(Papel.ADMINISTRADOR) || papeis.includes(Papel.FINANCEIRO) || papeis.includes(Papel.SECRETARIA_ACADEMICA);
+}
+
+function podeVerFaturasB2B(usuario: { papeis?: Papel[] }) {
+  const papeis = papeisDe(usuario);
+  return papeis.includes(Papel.ADMINISTRADOR) || papeis.includes(Papel.FINANCEIRO);
 }
 
 async function whereEmpresasVisiveis(usuario: UsuarioSessao): Promise<Prisma.EmpresaWhereInput> {
-  if (!vendedorPuro(usuario)) return {};
+  if (visaoIrrestrita(usuario)) return {};
+  const papeis = papeisDe(usuario);
+  if (!papeis.includes(Papel.VENDEDOR) && !papeis.includes(Papel.GERENTE_COMERCIAL)) return { id: "__sem_acesso__" };
   const escopo = await escopoComercialAtual(usuario);
   return {
     OR: [
@@ -115,17 +125,24 @@ export interface FaturaResumo {
 export async function obterEmpresa(id: string) {
   const usuario = await exigirSessaoComPapel(Papel.FINANCEIRO, Papel.GERENTE_COMERCIAL, Papel.VENDEDOR);
   const escopo = await whereEmpresasVisiveis(usuario);
+  const comercial = !visaoIrrestrita(usuario);
+  const escopoLead = comercial ? await escopoComercialAtual(usuario) : null;
   const empresa = await prisma.empresa.findFirst({
     where: { id, ...escopo },
     include: {
       matriculas: {
+        ...(escopoLead ? { where: { lead: { is: escopoLead } } } : {}),
         include: {
           aluno: { select: { id: true, primeiroNome: true, sobrenome: true } },
           cobrancas: { where: { tipo: TipoCobranca.MENSALIDADE } },
         },
         orderBy: { criadoEm: "desc" },
       },
-      faturas: { orderBy: { competencia: "desc" }, include: { _count: { select: { cobrancas: true } } } },
+      faturas: {
+        ...(podeVerFaturasB2B(usuario) ? {} : { where: { id: { in: [] } } }),
+        orderBy: { competencia: "desc" },
+        include: { _count: { select: { cobrancas: true } } },
+      },
     },
   });
   if (!empresa) return null;
