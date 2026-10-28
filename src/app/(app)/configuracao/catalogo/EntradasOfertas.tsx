@@ -8,6 +8,7 @@ import { botaoClasses } from "@/components/Botao";
 import { MSG_RESULTADO_INCERTO_SEM_CHAVE } from "@/lib/mensagens";
 import { EstadoVazio } from "@/components/EstadoVazio";
 
+import { CampoCombobox } from "@/components/ui/combobox";
 type Oferta = Awaited<ReturnType<typeof consultarEntradasOfertas>>[number];
 function Formulario({ oferta }: { oferta: Oferta }) {
   const router = useRouter(), [pendente, setPendente] = useState(false), [erro, setErro] = useState("");
@@ -24,21 +25,14 @@ function Formulario({ oferta }: { oferta: Oferta }) {
     <h3 className="font-medium">{oferta.produto.idioma.nome} · {oferta.produto.modalidade.nome} · {oferta.pais.nome}</h3>
     <p>{oferta.moeda} · Versão {oferta.versaoEntrada} · {oferta.oferecido ? "Ofertada" : "Não ofertada"}</p>
     <label className="block">Forma de agenda da oferta
-      <select name="agenda" defaultValue={oferta.formaAgenda ?? ""} className="ml-2 rounded border p-2">
-        <option value="">Ainda não conferida</option><option value="TURMA">Turma</option>
-        <option value="PARTICULAR_GRADE_FIXA">Particular com grade fixa</option><option value="PARTICULAR_FLEXIVEL">Particular com agenda flexível</option>
-      </select>
+      <CampoCombobox name="agenda" defaultValue={oferta.formaAgenda ?? ""} className="ml-2 rounded border p-2" vazio={"Ainda não conferida"} opcoes={[{ valor: "TURMA", rotulo: "Turma" }, { valor: "PARTICULAR_GRADE_FIXA", rotulo: "Particular com grade fixa" }, { valor: "PARTICULAR_FLEXIVEL", rotulo: "Particular com agenda flexível" }]} />
     </label>
     <p className="text-sm">Grade fixa exige reservar os horários recorrentes acordados; flexível exige ao menos o primeiro encontro. A contratação dessas particulares aguarda o fluxo de reserva individual.</p>
     <label className="block">Exigir taxa confirmada antes de liberar assinatura
-      <select name="taxa" required defaultValue={inicial(oferta.taxaPreviaAssinatura)} className="ml-2 rounded border p-2">
-        <option value="">Selecione</option><option value="sim">Exigir</option><option value="nao">Dispensar pagamento prévio à assinatura</option>
-      </select>
+      <CampoCombobox name="taxa" defaultValue={inicial(oferta.taxaPreviaAssinatura)} className="ml-2 rounded border p-2" required vazio={"Selecione"} opcoes={[{ valor: "sim", rotulo: "Exigir" }, { valor: "nao", rotulo: "Dispensar pagamento prévio à assinatura" }]} />
     </label>
     <label className="block">Adiantamento para ativar particulares por hora
-      <select name="hora" defaultValue={inicial(oferta.adiantamentoHoraExigido)} className="ml-2 rounded border p-2">
-        <option value="">Ainda não definido</option><option value="sim">Exigir</option><option value="nao">Dispensar</option>
-      </select>
+      <CampoCombobox name="hora" defaultValue={inicial(oferta.adiantamentoHoraExigido)} className="ml-2 rounded border p-2" vazio={"Ainda não definido"} opcoes={[{ valor: "sim", rotulo: "Exigir" }, { valor: "nao", rotulo: "Dispensar" }]} />
     </label>
     <label className="block">Motivo da configuração <input name="motivo" required minLength={5} maxLength={2000} className="rounded border p-2" /></label>
     {erro && <p role="alert">{erro}</p>}

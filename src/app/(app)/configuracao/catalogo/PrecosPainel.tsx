@@ -15,6 +15,8 @@ import { botaoClasses } from "@/components/Botao";
 import { EstadoVazioLinha } from "@/components/EstadoVazio";
 import { TIPO_COBRANCA_LABEL } from "@/lib/labels";
 
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
+import { CampoSelect } from "@/components/ui/select";
 export interface PrecoRow {
   id: string;
   valor: number;
@@ -32,7 +34,7 @@ export interface ProdutoOpcao {
 }
 
 const inputCls =
-  "rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:border-brand-500";
+  "rounded-md border border-gray-200 px-3 py-2 text-sm outline-none focus:border-brand-500";
 
 export function PrecosPainel({
   precos,
@@ -124,38 +126,15 @@ export function PrecosPainel({
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:grid-cols-3">
             <div>
               <label htmlFor="precos-pais" className="mb-1 block text-xs text-gray-600">País</label>
-              <select id="precos-pais" value={paisId} onChange={(e) => setPaisId(e.target.value)} className={inputCls + " w-full"}>
-                {paises.map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {p.nome}
-                  </option>
-                ))}
-              </select>
+              <CampoSelect id="precos-pais" value={paisId} onChange={(e) => setPaisId(e.target.value)} className={inputCls + " w-full"} opcoes={paises.map((p) => ({ valor: String(p.id), rotulo: p.nome }))} />
             </div>
             <div>
               <label htmlFor="precos-produto" className="mb-1 block text-xs text-gray-600">Produto</label>
-              <select id="precos-produto" value={produtoId} onChange={(e) => setProdutoId(e.target.value)} className={inputCls + " w-full"}>
-                {produtos.map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {p.label}
-                  </option>
-                ))}
-              </select>
+              <CampoSelect id="precos-produto" value={produtoId} onChange={(e) => setProdutoId(e.target.value)} className={inputCls + " w-full"} opcoes={produtos.map((p) => ({ valor: String(p.id), rotulo: p.label }))} />
             </div>
             <div>
               <label htmlFor="precos-tipo-cobranca" className="mb-1 block text-xs text-gray-600">Tipo de cobrança</label>
-              <select
-                id="precos-tipo-cobranca"
-                value={tipoCobranca}
-                onChange={(e) => setTipo(e.target.value as TipoCobranca)}
-                className={inputCls + " w-full"}
-              >
-                {Object.values(TipoCobranca).filter(t => t !== TipoCobranca.MULTA_ENCERRAMENTO).map((t) => (
-                  <option key={t} value={t}>
-                    {TIPO_COBRANCA_LABEL[t]}
-                  </option>
-                ))}
-              </select>
+              <CampoSelect id="precos-tipo-cobranca" value={tipoCobranca} onChange={(e) => setTipo(e.target.value as TipoCobranca)} className={inputCls + " w-full"} opcoes={Object.values(TipoCobranca).filter(t => t !== TipoCobranca.MULTA_ENCERRAMENTO).map((t) => ({ valor: String(t), rotulo: TIPO_COBRANCA_LABEL[t] }))} />
             </div>
             <div>
               <label htmlFor="precos-valor" className="mb-1 block text-xs text-gray-600">Valor ({moedaPais || "moeda do país"})</label>
@@ -192,54 +171,54 @@ export function PrecosPainel({
       )}
 
       <div className="overflow-x-auto rounded-lg border border-gray-200">
-        <table className="w-full min-w-[640px] text-sm">
-          <thead className="bg-gray-100 text-left text-xs text-gray-500">
-            <tr>
-              <th className="px-4 py-2 font-medium">País</th>
-              <th className="px-4 py-2 font-medium">Produto</th>
-              <th className="px-4 py-2 font-medium">Tipo</th>
-              <th className="px-4 py-2 font-medium">Valor</th>
-              <th className="px-4 py-2 font-medium">Status</th>
-              <th className="px-4 py-2 font-medium text-right">Ações</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-100">
+        <Table className="w-full min-w-[640px] text-sm">
+          <TableHeader className="bg-surface-muted text-left text-xs text-gray-500">
+            <TableRow>
+              <TableHead className="px-4 py-2 font-medium">País</TableHead>
+              <TableHead className="px-4 py-2 font-medium">Produto</TableHead>
+              <TableHead className="px-4 py-2 font-medium">Tipo</TableHead>
+              <TableHead className="px-4 py-2 font-medium">Valor</TableHead>
+              <TableHead className="px-4 py-2 font-medium">Status</TableHead>
+              <TableHead className="px-4 py-2 font-medium text-right">Ações</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody className="divide-y divide-gray-100">
             {precos.length === 0 ? (
               <EstadoVazioLinha colSpan={6}>
                   Nenhum preço cadastrado.
                 </EstadoVazioLinha>
             ) : (
               precos.map((p) => (
-                <tr key={p.id} className={"hover:bg-gray-50 " + (p.ativo ? "" : "text-gray-400")}>
-                  <td className="px-4 py-3">{p.pais.nome}</td>
-                  <td className="px-4 py-3">
+                <TableRow key={p.id} className={"hover:bg-highlight " + (p.ativo ? "" : "text-gray-400")}>
+                  <TableCell className="px-4 py-3">{p.pais.nome}</TableCell>
+                  <TableCell className="px-4 py-3">
                     {p.produto.idioma.nome} · {p.produto.modalidade.nome}
-                  </td>
-                  <td className="px-4 py-3">{TIPO_COBRANCA_LABEL[p.tipoCobranca]}</td>
-                  <td className="px-4 py-3">
+                  </TableCell>
+                  <TableCell className="px-4 py-3">{TIPO_COBRANCA_LABEL[p.tipoCobranca]}</TableCell>
+                  <TableCell className="px-4 py-3">
                     {formatarMoeda(p.valor, p.moeda)}
-                  </td>
-                  <td className="px-4 py-3">
+                  </TableCell>
+                  <TableCell className="px-4 py-3">
                     <span
                       className={
                         "rounded-full px-2 py-0.5 text-xs font-medium " +
-                        (p.ativo ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-500")
+                        (p.ativo ? "bg-green-100 text-green-700" : "bg-surface-muted text-gray-500")
                       }
                     >
                       {p.ativo ? "Ativo" : "Histórico"}
                     </span>
-                  </td>
-                  <td className="px-4 py-3 text-right">
+                  </TableCell>
+                  <TableCell className="px-4 py-3 text-right">
                     <button onClick={() => (p.ativo ? pedirDesativacao(p) : reativar(p.id))} disabled={acao.ocupado || desativando !== null} className={botaoClasses({ variante: p.ativo ? "perigo" : "fantasma", tamanho: "sm" })}>
                       {p.ativo ? "Desativar" : "Reativar"}
                     </button>
                     <FeedbackAcao erro={origem === p.id ? acao.erro : null} sucesso={origem === p.id ? acao.sucesso : undefined} className="mt-1 text-left" />
-                  </td>
-                </tr>
+                  </TableCell>
+                </TableRow>
               ))
             )}
-          </tbody>
-        </table>
+          </TableBody>
+        </Table>
       </div>
 
       {desativando && (

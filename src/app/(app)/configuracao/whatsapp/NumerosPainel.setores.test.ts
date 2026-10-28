@@ -4,6 +4,15 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { Papel } from "@prisma/client";
 
 vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh: vi.fn() }) }));
+vi.mock("@/components/ui/popover", async () => {
+  const React = await import("react");
+  return {
+    Popover: ({ children }: { children?: React.ReactNode }) => React.createElement(React.Fragment, null, children),
+    PopoverTrigger: ({ children }: { children?: React.ReactNode }) => children ?? null,
+    PopoverAnchor: ({ children }: { children?: React.ReactNode }) => children ?? null,
+    PopoverContent: ({ children }: { children?: React.ReactNode }) => React.createElement("div", null, children),
+  };
+});
 vi.mock("@/server/whatsapp/acoes", () => ({ salvarNumeroWhatsApp: vi.fn(), conectarNumeroQr: vi.fn(), consultarSessaoNumero: vi.fn() }));
 vi.mock("@/server/whatsapp/acoes-numero", () => ({ salvarSetoresNumero: vi.fn() }));
 

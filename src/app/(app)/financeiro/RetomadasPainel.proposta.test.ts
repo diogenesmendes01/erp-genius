@@ -19,6 +19,7 @@ vi.mock("react", async (original) => {
 vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh: m.refresh }) }));
 vi.mock("@/server/retomada/acoes", () => ({ solicitarRetomada: m.solicitar, decidirRetomada: vi.fn() }));
 
+import { RadioGroup } from "@/components/ui/radio-group";
 import { RetomadasPainel } from "./RetomadasPainel";
 import { FeedbackAcao } from "@/components/FeedbackAcao";
 import { CampoTexto } from "@/components/CampoTexto";
@@ -37,8 +38,8 @@ const esvaziar = () => new Promise((r) => setTimeout(r, 0));
 const motivoDigitado = () => elementos(tela()).find((n: No) => n.type === CampoTexto)?.props.value;
 
 async function propor() {
-  const manter = elementos(tela()).find((n: No) => n.type === "input" && n.props.value === "MANTER_VENCIMENTOS")!;
-  (manter.props.onChange as () => void)();
+  const manter = elementos(tela()).find((n: No) => n.type === RadioGroup)!;
+  (manter.props.onValueChange as (valor: string) => void)("MANTER_VENCIMENTOS");
   const motivo = elementos(tela()).find((n: No) => n.type === CampoTexto)!;
   (motivo.props.onChange as (e: unknown) => void)({ target: { value: MOTIVO } });
   const [form] = formularios(tela());

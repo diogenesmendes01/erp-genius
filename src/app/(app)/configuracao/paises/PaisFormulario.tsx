@@ -12,6 +12,7 @@ import { useChaveIdempotencia } from "@/lib/chave-idempotencia";
 import { botaoClasses } from "@/components/Botao";
 import { EstadoVazio } from "@/components/EstadoVazio";
 import { CampoFuso } from "@/components/CampoFuso";
+import { CampoCombobox } from "@/components/ui/combobox";
 
 const VALIDADORES = ["cpf", "cedula_cr", "curp", "dni_ar", "dui_sv", "passaporte"];
 
@@ -27,7 +28,7 @@ export interface PaisParaEditar {
 }
 
 const inputCls =
-  "w-full rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:border-brand-500";
+  "w-full rounded-md border border-gray-200 px-3 py-2 text-sm outline-none focus:border-brand-500";
 
 export function PaisFormulario({
   pais,
@@ -143,17 +144,9 @@ export function PaisFormulario({
                 placeholder="Cédula"
                 className={inputCls + " flex-1"}
               />
-              <select
-                {...register(`tiposDocumento.${i}.validador`)}
-                aria-label={`Validador do tipo de documento ${i + 1}`}
-                className={inputCls + " w-40"}
-              >
-                {VALIDADORES.map((v) => (
-                  <option key={v} value={v}>
-                    {v}
-                  </option>
-                ))}
-              </select>
+              <Controller control={control} name={`tiposDocumento.${i}.validador`} render={({ field }) => (
+                <CampoCombobox value={field.value} onChange={(evento) => field.onChange(evento.target.value)} aria-label={`Validador do tipo de documento ${i + 1}`} className={inputCls + " w-40"} opcoes={VALIDADORES.map((v) => ({ valor: v, rotulo: v }))} />
+              )} />
               <button
                 type="button"
                 onClick={() => remove(i)}

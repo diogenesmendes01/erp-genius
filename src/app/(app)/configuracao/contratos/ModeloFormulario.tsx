@@ -6,6 +6,9 @@ import { z } from "zod";
 import { ConteudoModeloSchema } from "@/server/contratos/modelo-schema";
 import { prepararModeloContratual } from "@/server/contratos/modelos";
 
+import { Checkbox } from "@/components/ui/checkbox";
+import { CampoSelect } from "@/components/ui/select";
+import { CampoCombobox } from "@/components/ui/combobox";
 type Conteudo = z.infer<typeof ConteudoModeloSchema>;
 import { PAPEIS_MODELO, CONDICOES_MODELO } from "./labels";
 import { botaoClasses } from "@/components/Botao";
@@ -58,15 +61,15 @@ export function ModeloFormulario({ codigo, versaoEsperada, inicial }: { codigo?:
       <legend className="font-medium">Proposta de versão {versaoEsperada + 1}</legend>
       {codigo ? <p>Modelo: {codigo}</p> : <label className="block">Código do modelo<input name="codigo" required pattern="[A-Za-z][A-Za-z0-9_-]{1,59}" maxLength={60} className={campo} /><small>Identificação curta, com letras, números, hífen ou sublinhado.</small></label>}
       <label className="block">Título<input required maxLength={200} value={valor.titulo} onChange={(e) => setValor({ ...valor, titulo: e.target.value })} className={campo} /></label>
-      <label className="block">Finalidade<select className={campo} value={valor.finalidade} onChange={(e) => setValor({ ...valor, finalidade: e.target.value as Conteudo["finalidade"] })}><option value="CONTRATO">Contrato</option><option value="ADITIVO">Aditivo</option></select></label>
-      <fieldset><legend>Regimes atendidos</legend>{(["MENSALIDADE", "HORA_PARTICULAR"] as const).map((r) => <label key={r} className="mr-5"><input type="checkbox" checked={valor.regimes.includes(r)} onChange={(e) => setValor({ ...valor, regimes: e.target.checked ? [...valor.regimes, r] : valor.regimes.filter((v) => v !== r) })} /> {r === "MENSALIDADE" ? "Mensalidade" : "Particular por hora"}</label>)}</fieldset>
+      <label className="block">Finalidade<CampoSelect value={valor.finalidade} onChange={(e) => setValor({ ...valor, finalidade: e.target.value as Conteudo["finalidade"] })} className={campo} opcoes={[{ valor: "CONTRATO", rotulo: "Contrato" }, { valor: "ADITIVO", rotulo: "Aditivo" }]} /></label>
+      <fieldset><legend>Regimes atendidos</legend>{(["MENSALIDADE", "HORA_PARTICULAR"] as const).map((r) => <label key={r} className="mr-5"><Checkbox checked={valor.regimes.includes(r)} onCheckedChange={(marcado) => setValor({ ...valor, regimes: (marcado === true) ? [...valor.regimes, r] : valor.regimes.filter((v) => v !== r) })} /> {r === "MENSALIDADE" ? "Mensalidade" : "Particular por hora"}</label>)}</fieldset>
       <label className="block">Quando usar este modelo<CampoTexto required minLength={5} maxLength={4000} value={valor.aplicacao} onChange={(e) => setValor({ ...valor, aplicacao: e.target.value })} className={campo} /><small>Descreva as condições e os casos em que a equipe deve aplicar o modelo.</small></label>
       <fieldset className="space-y-3"><legend className="font-medium">Campos a preencher no documento</legend>
         <p>Declare os campos variáveis. Nas seções, use a chave entre duas chaves, por exemplo: {"{{aluno_nome}}"}.</p>
         {valor.campos.map((c, i) => <div className="grid gap-2 rounded border p-3 sm:grid-cols-3" key={i}>
           <label>Chave<input required pattern="[a-z][a-z0-9_]{0,59}" maxLength={60} value={c.chave} onChange={(e) => setValor({ ...valor, campos: valor.campos.map((v, j) => j === i ? { ...v, chave: e.target.value } : v) })} className={campo} /></label>
           <label>Descrição<input required maxLength={500} value={c.descricao} onChange={(e) => setValor({ ...valor, campos: valor.campos.map((v, j) => j === i ? { ...v, descricao: e.target.value } : v) })} className={campo} /></label>
-          <label>Origem do preenchimento<select value={c.origem ?? ""} onChange={(e) => setValor({ ...valor, campos: valor.campos.map((v, j) => j === i ? { ...v, origem: (e.target.value || undefined) as OrigemCampo | undefined } : v) })} className={campo}><option value="">Pendente de definição</option>{Object.entries(ROTULOS_ORIGEM).map(([v, nome]) => <option key={v} value={v}>{nome}</option>)}</select></label>
+          <label>Origem do preenchimento<CampoCombobox value={c.origem ?? ""} onChange={(e) => setValor({ ...valor, campos: valor.campos.map((v, j) => j === i ? { ...v, origem: (e.target.value || undefined) as OrigemCampo | undefined } : v) })} className={campo} vazio={"Pendente de definição"} opcoes={Object.entries(ROTULOS_ORIGEM).map(([v, nome]) => ({ valor: String(v), rotulo: nome }))} /></label>
           <button className={botaoClasses({ variante: "perigo", tamanho: "sm" })} type="button" onClick={() => setValor({ ...valor, campos: valor.campos.filter((_, j) => j !== i) })}>Remover campo {i + 1}</button>
         </div>)}
         <button type="button" disabled={valor.campos.length >= 100} className={botaoClasses({ variante: "secundario", tamanho: "sm" })} onClick={() => setValor({ ...valor, campos: [...valor.campos, { chave: "", descricao: "" }] })}>Adicionar campo</button>
@@ -81,8 +84,8 @@ export function ModeloFormulario({ codigo, versaoEsperada, inicial }: { codigo?:
       </fieldset>
       <fieldset className="space-y-3"><legend className="font-medium">Assinaturas exigidas</legend>
         {valor.assinaturas.map((a, i) => <div key={i} className="grid gap-2 rounded border p-3 sm:grid-cols-3">
-          <label>Papel<select className={campo} value={a.papel} onChange={(e) => setValor({ ...valor, assinaturas: valor.assinaturas.map((v, j) => j === i ? { ...v, papel: e.target.value as typeof a.papel } : v) })}>{Object.entries(PAPEIS_MODELO).map(([v, nome]) => <option key={v} value={v}>{nome}</option>)}</select></label>
-          <label>Quando exigir<select className={campo} value={a.condicao} onChange={(e) => setValor({ ...valor, assinaturas: valor.assinaturas.map((v, j) => j === i ? { ...v, condicao: e.target.value as typeof a.condicao } : v) })}>{Object.entries(CONDICOES_MODELO).map(([v, nome]) => <option key={v} value={v}>{nome}</option>)}</select></label>
+          <label>Papel<CampoSelect value={a.papel} onChange={(e) => setValor({ ...valor, assinaturas: valor.assinaturas.map((v, j) => j === i ? { ...v, papel: e.target.value as typeof a.papel } : v) })} className={campo} opcoes={Object.entries(PAPEIS_MODELO).map(([v, nome]) => ({ valor: String(v), rotulo: nome }))} /></label>
+          <label>Quando exigir<CampoSelect value={a.condicao} onChange={(e) => setValor({ ...valor, assinaturas: valor.assinaturas.map((v, j) => j === i ? { ...v, condicao: e.target.value as typeof a.condicao } : v) })} className={campo} opcoes={Object.entries(CONDICOES_MODELO).map(([v, nome]) => ({ valor: String(v), rotulo: nome }))} /></label>
           <button className={botaoClasses({ variante: "perigo", tamanho: "sm" })} type="button" onClick={() => setValor({ ...valor, assinaturas: valor.assinaturas.filter((_, j) => j !== i) })}>Remover regra {i + 1}</button>
         </div>)}
         <button type="button" disabled={valor.assinaturas.length >= 20} className={botaoClasses({ variante: "secundario", tamanho: "sm" })} onClick={() => setValor({ ...valor, assinaturas: [...valor.assinaturas, { papel: "ALUNO", condicao: "SEMPRE" }] })}>Adicionar regra de assinatura</button>

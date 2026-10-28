@@ -12,6 +12,8 @@ import { PaisFormulario, type PaisParaEditar } from "./PaisFormulario";
 import { botaoClasses } from "@/components/Botao";
 import { EstadoVazio } from "@/components/EstadoVazio";
 
+import { Switch } from "@/components/ui/switch";
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
 export interface PaisRow {
   id: string;
   nome: string;
@@ -27,7 +29,7 @@ export interface PaisRow {
 }
 
 const STATUS_INFO: Record<StatusPais, { label: string; cls: string }> = {
-  RASCUNHO: { label: "Rascunho", cls: "bg-gray-100 text-gray-600" },
+  RASCUNHO: { label: "Rascunho", cls: "bg-surface-muted text-gray-600" },
   ATIVO: { label: "Ativo", cls: "bg-green-100 text-green-700" },
   PAUSADO: { label: "Pausado", cls: "bg-amber-100 text-amber-700" },
   ENCERRADO: { label: "Encerrado", cls: "bg-red-100 text-red-700" },
@@ -126,36 +128,36 @@ export function PaisesPainel({
         <EstadoVazio bloco>Nenhum país cadastrado ainda.</EstadoVazio>
       ) : (
         <div className="overflow-x-auto rounded-lg border border-gray-200">
-          <table className="w-full min-w-[640px] text-sm">
-            <thead className="bg-gray-100 text-left text-xs text-gray-500">
-              <tr>
-                <th className="px-4 py-2 font-medium">País</th>
-                <th className="px-4 py-2 font-medium">Moeda</th>
-                <th className="px-4 py-2 font-medium">DDI</th>
-                <th className="px-4 py-2 font-medium">Documentos</th>
-                <th className="px-4 py-2 font-medium">Produtos</th>
-                <th className="px-4 py-2 font-medium">Preços</th>
-                <th className="px-4 py-2 font-medium">Alunos</th>
-                <th className="px-4 py-2 font-medium">Status</th>
-                <th className="px-4 py-2 font-medium text-right">Ações</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-100">
+          <Table className="w-full min-w-[640px] text-sm">
+            <TableHeader className="bg-surface-muted text-left text-xs text-gray-500">
+              <TableRow>
+                <TableHead className="px-4 py-2 font-medium">País</TableHead>
+                <TableHead className="px-4 py-2 font-medium">Moeda</TableHead>
+                <TableHead className="px-4 py-2 font-medium">DDI</TableHead>
+                <TableHead className="px-4 py-2 font-medium">Documentos</TableHead>
+                <TableHead className="px-4 py-2 font-medium">Produtos</TableHead>
+                <TableHead className="px-4 py-2 font-medium">Preços</TableHead>
+                <TableHead className="px-4 py-2 font-medium">Alunos</TableHead>
+                <TableHead className="px-4 py-2 font-medium">Status</TableHead>
+                <TableHead className="px-4 py-2 font-medium text-right">Ações</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody className="divide-y divide-gray-100">
               {paises.flatMap((p) => [
-                <tr key={p.id} className="hover:bg-gray-50">
-                  <td className="px-4 py-3">
+                <TableRow key={p.id} className="hover:bg-highlight">
+                  <TableCell className="px-4 py-3">
                     <span className="font-medium text-gray-800">{p.nome}</span>
                     <span className="ml-2 text-xs text-gray-400">{p.codigoISO}</span>
-                  </td>
-                  <td className="px-4 py-3 text-gray-600">{p.moedaLocal}</td>
-                  <td className="px-4 py-3 text-gray-600">{p.ddi}</td>
-                  <td className="px-4 py-3 text-gray-600">
+                  </TableCell>
+                  <TableCell className="px-4 py-3 text-gray-600">{p.moedaLocal}</TableCell>
+                  <TableCell className="px-4 py-3 text-gray-600">{p.ddi}</TableCell>
+                  <TableCell className="px-4 py-3 text-gray-600">
                     {p.tiposDocumento.map((d) => d.nome).join(", ") || "—"}
-                  </td>
-                  <td className="px-4 py-3 text-gray-600">{p.produtosOferecidos.length}</td>
-                  <td className="px-4 py-3 text-gray-600">{p._count.precos}</td>
-                  <td className="px-4 py-3 text-gray-600">{p._count.alunos}</td>
-                  <td className="px-4 py-3">
+                  </TableCell>
+                  <TableCell className="px-4 py-3 text-gray-600">{p.produtosOferecidos.length}</TableCell>
+                  <TableCell className="px-4 py-3 text-gray-600">{p._count.precos}</TableCell>
+                  <TableCell className="px-4 py-3 text-gray-600">{p._count.alunos}</TableCell>
+                  <TableCell className="px-4 py-3">
                     <span
                       className={
                         "rounded-full px-2 py-0.5 text-xs font-medium " + STATUS_INFO[p.status].cls
@@ -163,8 +165,8 @@ export function PaisesPainel({
                     >
                       {STATUS_INFO[p.status].label}
                     </span>
-                  </td>
-                  <td className="px-4 py-3">
+                  </TableCell>
+                  <TableCell className="px-4 py-3">
                     <div className="flex items-center justify-end gap-2">
                       <button
                         onClick={() =>
@@ -207,34 +209,28 @@ export function PaisesPainel({
                       </button>
                     </div>
                     <FeedbackAcao erro={origem === "status:" + p.id ? acao.erro : null} sucesso={origem === "status:" + p.id ? acao.sucesso : undefined} className="mt-1" />
-                  </td>
-                </tr>,
+                  </TableCell>
+                </TableRow>,
                 catalogo === p.id ? (
-                  <tr key={p.id + "-cat"} className="bg-gray-100">
-                    <td colSpan={9} className="px-4 py-3">
+                  <TableRow key={p.id + "-cat"} className="bg-surface-muted">
+                    <TableCell colSpan={9} className="px-4 py-3">
                       <div className="text-xs font-medium text-gray-600">Idiomas/modalidades habilitados neste país</div>
                       <div className="mt-2 grid grid-cols-1 sm:grid-cols-2 gap-2 md:grid-cols-3">
                         {produtos.map((prod) => (
                           <label key={prod.id} className="flex items-center gap-2 text-sm text-gray-700">
-                            <input
-                              type="checkbox"
-                              checked={p.produtosOferecidos.includes(prod.id)}
-                              onChange={() => toggleProduto(p.id, prod.id)}
-                              disabled={acao.ocupado}
-                              className="rounded border-gray-300"
-                            />
+                            <Switch checked={p.produtosOferecidos.includes(prod.id)} disabled={acao.ocupado} onCheckedChange={() => toggleProduto(p.id, prod.id)} />
                             {prod.label}
                           </label>
                         ))}
                         {produtos.length === 0 && <span className="text-xs text-gray-400">Cadastre produtos no Catálogo.</span>}
                       </div>
                       <FeedbackAcao erro={origem === "catalogo:" + p.id ? acao.erro : null} sucesso={origem === "catalogo:" + p.id ? acao.sucesso : undefined} className="mt-2" />
-                    </td>
-                  </tr>
+                    </TableCell>
+                  </TableRow>
                 ) : null,
               ].filter(Boolean))}
-            </tbody>
-          </table>
+            </TableBody>
+          </Table>
         </div>
       )}
 

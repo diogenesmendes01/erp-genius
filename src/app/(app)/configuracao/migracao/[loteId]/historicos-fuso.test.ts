@@ -3,6 +3,15 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
 
 vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh: vi.fn() }) }));
+vi.mock("@/components/ui/popover", async () => {
+  const React = await import("react");
+  return {
+    Popover: ({ children }: { children?: React.ReactNode }) => React.createElement(React.Fragment, null, children),
+    PopoverTrigger: ({ children }: { children?: React.ReactNode }) => children ?? null,
+    PopoverAnchor: ({ children }: { children?: React.ReactNode }) => children ?? null,
+    PopoverContent: ({ children }: { children?: React.ReactNode }) => React.createElement("div", null, children),
+  };
+});
 vi.mock("@/server/migracao/ensaio-vinculo", () => ({ ensaiarVinculoMigracao: vi.fn(), revisarCorrespondenciaProdutoMigracao: vi.fn(), revisarCorrespondenciaStatusMatriculaMigracao: vi.fn(), revisarCorrespondenciaTurmaMigracao: vi.fn() }));
 vi.mock("@/server/migracao/aplicar-vinculo", () => ({ aplicarVinculoMigracao: vi.fn() }));
 
@@ -25,8 +34,9 @@ describe("históricos administrativos da migração", () => {
       expect(html).toContain("America/Adak");
       expect(html).toContain("origem UTC");
     }
-    expect(aplicarHtml).toContain('type="date"');
+    expect(aplicarHtml).toContain('type="hidden"');
     expect(aplicarHtml).toContain('value=""');
+    expect(aplicarHtml).not.toContain('type="datetime-local"');
   });
 
   it("usa UTC quando não há preferência", () => {

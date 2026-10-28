@@ -18,6 +18,10 @@ import { ConfirmarAcao } from "@/components/ConfirmarAcao";
 import { MSG_DECISAO_INCERTA, MSG_RESULTADO_INCERTO } from "@/lib/mensagens";
 import { UNIDADE_PERMUTA_SERVICO_LABEL, rotular } from "@/lib/labels";
 
+import { CampoSelect } from "@/components/ui/select";
+import { DatePicker } from "@/components/ui/date-picker";
+import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "@/components/ui/collapsible";
+import { CampoCombobox } from "@/components/ui/combobox";
 type Opcao = { id: string; codigo: string; matriculaId: string; matricula: string; aluno: string; moeda: string; saldo: string; vencimento: string };
 type Destino = { cobrancaId: string; valor: string };
 type Proposta = { id: string; valor: string; destinos: Destino[]; decisao: { aprovada: boolean; efetivada?: boolean; motivo: string; aplicacoes?: { id: string; cobrancaId: string; valor: string; aplicadaEm: string }[] } | null };
@@ -111,7 +115,7 @@ function Acao({ onSubmit, children, legenda }: { onSubmit: (form: HTMLFormElemen
 
 function CamposPeriodo({ nomeInicio, nomeFim }: { nomeInicio: string; nomeFim: string }) {
   const periodo = useInicioDoPeriodo();
-  return <><label>Início <input required type="date" name={nomeInicio} {...periodo.propsInicio} /></label><label>Fim <input required type="date" name={nomeFim} min={periodo.min} /></label></>;
+  return <><label>Início <DatePicker required  name={nomeInicio} {...periodo.propsInicio} /></label><label>Fim <DatePicker required  name={nomeFim} min={periodo.min} /></label></>;
 }
 
 function dados(formulario: HTMLFormElement) {
@@ -144,7 +148,7 @@ export function DecidirCompensacao({ proposta, moeda, cobrancas }: { proposta: P
   }}>
     <fieldset disabled={ocupado || confirmando} className="space-y-2">
       <legend className="font-medium">Decidir proposta</legend>
-      <label>Decisão <select name="aprovar" required value={decisao} onChange={e => { setErro(null); setDecisao(e.target.value === "APROVAR" || e.target.value === "REJEITAR" ? e.target.value : ""); }}><option value="" disabled>Escolha a decisão</option><option value="APROVAR">Aprovar e compensar</option><option value="REJEITAR">Rejeitar</option></select></label>
+      <label>Decisão <CampoSelect name="aprovar" value={decisao} onChange={e => { setErro(null); setDecisao(e.target.value === "APROVAR" || e.target.value === "REJEITAR" ? e.target.value : ""); }} required placeholder={"Escolha a decisão"} opcoes={[{ valor: "APROVAR", rotulo: "Aprovar e compensar" }, { valor: "REJEITAR", rotulo: "Rejeitar" }]} /></label>
       <label>Motivo <input required name="motivo" value={motivo} onChange={e => { setErro(null); setMotivo(e.target.value); }} /></label>
       <button type="submit" disabled={!decisao} className={botaoClasses({ variante: rejeitar ? "perigo" : "secundario", tamanho: "sm" })}>{ocupado ? "Enviando…" : rejeitar ? "Rejeitar" : aprovar ? "Aprovar e compensar" : "Decidir"}</button>
     </fieldset>
@@ -172,8 +176,8 @@ export function PermutaOperacional({ acordos, podeFinanceiro, podePedagogico, po
       unidade: campo(formulario, "unidade"), quantidadePactuada: campo(formulario, "quantidadePactuada"), valorPorUnidade: campo(formulario, "valorPorUnidade"), contrapartida: campo(formulario, "contrapartida"), formulaDescricao: campo(formulario, "formulaDescricao"),
       cobrancas: elegiveis.filter(c => campo(formulario, `limite:${c.id}`)).map(c => ({ cobrancaId: c.id, valorMaximo: campo(formulario, `limite:${c.id}`) })), chaveIdempotencia: campo(formulario, "chaveIdempotencia"),
     })}>
-      <label>Matrícula <select required name="matriculaId" value={matriculaSelecionada} onChange={e => selecionarMatricula(e.target.value)}><option value="">Selecione</option>{matriculas.map(c => <option key={c.matriculaId} value={c.matriculaId}>{c.aluno} · {c.matricula}</option>)}</select></label><CamposPeriodo nomeInicio="vigenciaInicio" nomeFim="vigenciaFim" /><label>Moeda <input required name="moeda" readOnly value={elegiveis[0]?.moeda ?? ""} /></label>
-      <label>Unidade <select name="unidade"><option value="HORA">Hora</option><option value="AULA">Aula</option><option value="UNIDADE">Unidade</option></select></label><label>Quantidade <input required name="quantidadePactuada" inputMode="decimal" /></label><label>Valor por unidade <input required name="valorPorUnidade" inputMode="decimal" /></label>
+      <label>Matrícula <CampoCombobox name="matriculaId" value={matriculaSelecionada} onChange={e => selecionarMatricula(e.target.value)} required vazio={"Selecione"} opcoes={matriculas.map(c => ({ valor: String(c.matriculaId), rotulo: `${c.aluno} · ${c.matricula}` }))} /></label><CamposPeriodo nomeInicio="vigenciaInicio" nomeFim="vigenciaFim" /><label>Moeda <input required name="moeda" readOnly value={elegiveis[0]?.moeda ?? ""} /></label>
+      <label>Unidade <CampoSelect name="unidade" defaultValue="HORA" opcoes={[{ valor: "HORA", rotulo: "Hora" }, { valor: "AULA", rotulo: "Aula" }, { valor: "UNIDADE", rotulo: "Unidade" }]} /></label><label>Quantidade <input required name="quantidadePactuada" inputMode="decimal" /></label><label>Valor por unidade <input required name="valorPorUnidade" inputMode="decimal" /></label>
       <label>Contrapartida <input required name="contrapartida" /></label><label>Fórmula objetiva <input required name="formulaDescricao" placeholder="2 horas x R$ 50,00" /></label><fieldset key={matriculaSelecionada}><legend>Mensalidades elegíveis: informe o limite apenas nas escolhidas</legend>{elegiveis.map(c => <label key={c.id} className="block">{c.codigo} · {formatarDataCivil(c.vencimento)} · saldo {formatarMoeda(c.saldo, c.moeda)}<input name={`limite:${c.id}`} inputMode="decimal" aria-label={`Limite ${c.codigo} ${formatarDataCivil(c.vencimento)}`} /></label>)}</fieldset>
     </Acao>}
     {acordos.map(acordo => <article key={acordo.id} className="space-y-3 rounded border p-3">
@@ -194,12 +198,11 @@ export function PermutaOperacional({ acordos, podeFinanceiro, podePedagogico, po
         {confirmacao.propostas.map(proposta => <div key={proposta.id} className="rounded border p-2">
           <p>Proposta de {formatarMoedaOuIndefinida(proposta.valor, acordo.moeda)}: {proposta.decisao ? (proposta.decisao.aprovada ? (proposta.decisao.efetivada ? "compensação aplicada" : "aprovada, aguardando conferência de aplicação") : "rejeitada") : "aguarda decisão independente"}</p>
           {proposta.decisao && <p className="text-sm">Motivo da decisão: {proposta.decisao.motivo}</p>}
-          {!!proposta.decisao?.aplicacoes?.length && <details>
-            <summary>Compensações aplicadas</summary>
+          {!!proposta.decisao?.aplicacoes?.length && <Collapsible><CollapsibleTrigger>Compensações aplicadas</CollapsibleTrigger><CollapsibleContent forceMount>
             <ul>{proposta.decisao.aplicacoes.map(aplicacao => <li key={aplicacao.id}>
               {(() => { const exibicao = formatarInstanteExibicao(aplicacao.aplicadaEm, preferenciaFusoExibicao, "UTC"); return <>{acordo.cobrancas.find(c => c.id === aplicacao.cobrancaId)?.codigo ?? "Mensalidade"}: {formatarMoedaOuIndefinida(aplicacao.valor, acordo.moeda)} · {exibicao.texto} (horário exibido em {exibicao.fuso}; origem UTC) · serviço compensado</>; })()}
             </li>)}</ul>
-          </details>}
+          </CollapsibleContent></Collapsible>}
           {podeAprovar && !proposta.decisao && <DecidirCompensacao proposta={proposta} moeda={acordo.moeda} cobrancas={acordo.cobrancas} />}
         </div>)}
       </section>)}

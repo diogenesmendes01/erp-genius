@@ -14,8 +14,13 @@ import { useAcaoCliente } from "@/lib/acao-cliente";
 import { useChaveIdempotencia } from "@/lib/chave-idempotencia";
 import { botaoClasses } from "@/components/Botao";
 
+import { DatePicker } from "@/components/ui/date-picker";
+import { TimePicker } from "@/components/ui/time-picker";
+import { Switch } from "@/components/ui/switch";
+import { CampoCombobox } from "@/components/ui/combobox";
+import { CampoSelect } from "@/components/ui/select";
 const inputCls =
-  "w-full rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:border-brand-500";
+  "w-full rounded-md border border-gray-200 px-3 py-2 text-sm outline-none focus:border-brand-500";
 
 const DIAS = [
   { n: 1, label: "Seg" },
@@ -197,36 +202,15 @@ export function TurmaFormulario({
         </div>
         <div>
           <label className="mb-1 block text-xs text-gray-600" htmlFor="turma-modalidade">Modalidade</label>
-          <select id="turma-modalidade" className={inputCls} value={modalidadeId} onChange={(e) => setModalidadeId(e.target.value)}>
-            <option value="">Selecione…</option>
-            {modalidades.map((m) => (
-              <option key={m.id} value={m.id}>
-                {m.label} ({m.frequencia})
-              </option>
-            ))}
-          </select>
+          <CampoSelect id="turma-modalidade" value={modalidadeId} onChange={(e) => setModalidadeId(e.target.value)} className={inputCls} placeholder="Selecione…" opcoes={modalidades.map((m) => ({ valor: String(m.id), rotulo: `${m.label} (${m.frequencia})` }))} />
         </div>
         <div>
           <label className="mb-1 block text-xs text-gray-600" htmlFor="turma-nivel">Nível</label>
-          <select id="turma-nivel" className={inputCls} value={nivelId} onChange={(e) => setNivelId(e.target.value)}>
-            <option value="">Selecione…</option>
-            {niveis.map((n) => (
-              <option key={n.id} value={n.id}>
-                {n.label}
-              </option>
-            ))}
-          </select>
+          <CampoSelect id="turma-nivel" value={nivelId} onChange={(e) => setNivelId(e.target.value)} className={inputCls} placeholder="Selecione…" opcoes={niveis.map((n) => ({ valor: String(n.id), rotulo: n.label }))} />
         </div>
         <div>
           <label className="mb-1 block text-xs text-gray-600" htmlFor="turma-professor">Professor (opcional)</label>
-          <select id="turma-professor" className={inputCls} value={professorId} onChange={(e) => setProfessorId(e.target.value)}>
-            <option value="">—</option>
-            {professores.map((p) => (
-              <option key={p.id} value={p.id}>
-                {p.label}
-              </option>
-            ))}
-          </select>
+          <CampoCombobox id="turma-professor" value={professorId} onChange={(e) => setProfessorId(e.target.value)} className={inputCls} vazio={"—"} opcoes={professores.map((p) => ({ valor: String(p.id), rotulo: p.label }))} />
         </div>
       </div>
 
@@ -268,21 +252,19 @@ export function TurmaFormulario({
       <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4 md:grid-cols-5">
         <div>
           <label className="mb-1 block text-xs text-gray-600" htmlFor="turma-horario-inicio">Horário de início</label>
-          <input id="turma-horario-inicio" type="time" className={inputCls} value={horarioInicio} onChange={(e) => setHorarioInicio(e.target.value)} />
+          <TimePicker id="turma-horario-inicio"  className={inputCls} value={horarioInicio} onChange={(e) => setHorarioInicio(e.target.value)} />
         </div>
         <div>
           <label className="mb-1 block text-xs text-gray-600" htmlFor="turma-horario-fim">
             Horário de fim {turma ? "" : "derivado"}
           </label>
-          <input
-            id="turma-horario-fim"
-            type="time"
+          <TimePicker id="turma-horario-fim"
+            
             className={inputCls}
             value={horarioFimEfetivo}
             onChange={(e) => setHorarioFim(e.target.value)}
             readOnly={!turma}
-            aria-describedby={turma ? undefined : "fim-derivado"}
-          />
+            aria-describedby={turma ? undefined : "fim-derivado"} />
           {!turma && (
             <p id="fim-derivado" className="mt-1 text-xs text-gray-500">
               {horarioFimDerivado
@@ -293,12 +275,12 @@ export function TurmaFormulario({
         </div>
         <div>
           <label className="mb-1 block text-xs text-gray-600" htmlFor="turma-data-inicio">Data de início</label>
-          <input id="turma-data-inicio" type="date" className={inputCls} value={dataInicio} onChange={(e) => setDataInicio(e.target.value)} />
+          <DatePicker id="turma-data-inicio"  className={inputCls} value={dataInicio} onChange={(e) => setDataInicio(e.target.value)} />
         </div>
         {turma ? (
           <div>
             <label className="mb-1 block text-xs text-gray-600" htmlFor="turma-data-fim">Data final de referência (legado)</label>
-            <input id="turma-data-fim" type="date" className={inputCls} value={dataFim} readOnly />
+            <DatePicker id="turma-data-fim"  className={inputCls} value={dataFim} readOnly disabled />
             <p className="mt-1 text-xs text-gray-500">A referência histórica é preservada nesta edição.</p>
           </div>
         ) : (
@@ -319,7 +301,7 @@ export function TurmaFormulario({
       </div>
 
       <label className="mt-4 flex items-center gap-2 text-sm text-gray-600">
-        <input type="checkbox" checked={rolling} onChange={(e) => setRolling(e.target.checked)} className="rounded border-gray-300" />
+        <Switch checked={rolling} onCheckedChange={(marcado) => setRolling((marcado === true))} />
         Turma rolling (porta de entrada Pré A1)
       </label>
 

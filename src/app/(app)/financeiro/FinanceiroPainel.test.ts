@@ -32,7 +32,7 @@ describe("Comissoes — botão de fechamento não permite duplo clique", () => {
       comissoes, aPagar: [], podePagar: true, onFechar: () => {}, fechamentoAutomatico: false, onToggleAutomatico: () => {}, isPending: true,
     }));
     expect(html).toMatch(/<button[^>]*\sdisabled=""[^>]*>Fechar mês e marcar pagas<\/button>/);
-    expect(html).toMatch(/<input[^>]*type="checkbox"[^>]*\sdisabled=""/);
+    expect(html).toMatch(/role="switch"[^>]*disabled=""|disabled=""[^>]*role="switch"/);
   });
 });
 
@@ -47,7 +47,7 @@ describe("Comissoes — cabeçalhos ordenáveis (E1)", () => {
     expect(html).toMatch(/aria-sort="descending"[^>]*><a [^>]*href="\/financeiro\/comissoes\?status=APROVADA&amp;ordem=valor&amp;dir=asc"[^>]*>Valor</);
     expect(html).toMatch(/<th scope="col"(?! aria-sort)[^>]*><a [^>]*href="\/financeiro\/comissoes\?status=APROVADA&amp;ordem=vendedor&amp;dir=asc"[^>]*>Vendedor</);
     expect(html).toMatch(/<th scope="col"(?! aria-sort)[^>]*><a [^>]*href="\/financeiro\/comissoes\?status=APROVADA&amp;ordem=status&amp;dir=asc"[^>]*>Status</);
-    expect(html).toContain('<th class="px-4 py-2 font-medium">%</th>');
+    expect(html).toMatch(/<th class="[^"]*px-4[^"]*py-2[^"]*font-medium[^"]*">%<\/th>/);
   });
 
   it("sem coluna de valor ordenada: o 1º clique em Valor ordena do maior para o menor (R1 da #136, B6)", () => {
@@ -61,7 +61,7 @@ describe("Comissoes — cabeçalhos ordenáveis (E1)", () => {
   it("sem ordem (outro uso do componente): cabeçalhos simples, sem aria-sort", () => {
     const html = renderToStaticMarkup(createElement(Comissoes, base));
     expect(html).not.toContain("aria-sort");
-    expect(html).toContain('<th class="px-4 py-2 font-medium">Vendedor</th>');
+    expect(html).toMatch(/<th class="[^"]*px-4[^"]*py-2[^"]*font-medium[^"]*">Vendedor<\/th>/);
   });
 });
 
@@ -146,8 +146,8 @@ describe("FinanceiroPainel · design system", () => {
     expect(html).toContain("tabular-nums");
     expect(html).toContain("bg-surface-muted");
     expect(html).toContain("hover:bg-surface-muted");
-    expect(html).toContain('<th class="px-4 py-2 font-medium">Vendedor</th>');
-    expect(html).toContain('<th class="px-4 py-2 font-medium">%</th>');
+    expect(html).toMatch(/<th class="[^"]*px-4[^"]*py-2[^"]*font-medium[^"]*">Vendedor<\/th>/);
+    expect(html).toMatch(/<th class="[^"]*px-4[^"]*py-2[^"]*font-medium[^"]*">%<\/th>/);
     expect(html).not.toContain("border-gray-300");
     expect(html).not.toContain("bg-green-100");
     expect(html).not.toContain("bg-amber-100");

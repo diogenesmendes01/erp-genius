@@ -25,6 +25,8 @@ vi.mock("@/server/whatsapp/acoes", () => ({
 vi.mock("@/server/whatsapp/acoes-numero", () => ({ salvarSetoresNumero: vi.fn() }));
 vi.mock("@/lib/aviso-ao-sair", () => ({ useAvisoAoSair: m.aviso }));
 
+import { CampoCombobox } from "@/components/ui/combobox";
+import { Switch } from "@/components/ui/switch";
 import { AvisosAgendaPainel } from "./AvisosAgendaPainel";
 import { NumerosPainel, SetoresNumeroEditor } from "./NumerosPainel";
 import { PoliticaPainel } from "./PoliticaPainel";
@@ -49,7 +51,7 @@ describe("AvisosAgendaPainel", () => {
     tela();
     expect(sujo()).toBe(false);
     expect(marca(tela())).toEqual([false]);
-    mudar(elementos(tela()).filter((n: No) => n.type === "select")[0], "n1");
+    mudar(elementos(tela()).filter((n: No) => n.type === CampoCombobox)[0], "n1");
     const t = tela();
     expect(sujo()).toBe(true);
     expect(marca(t)).toEqual([true]);
@@ -83,8 +85,8 @@ describe("NumerosPainel e SetoresNumeroEditor", () => {
     const tela = () => m.ganchos!.renderizar(SetoresNumeroEditor, { numero: numero(), responsaveis: [] });
     tela();
     expect(sujo()).toBe(false);
-    const caixa = elementos(tela()).find((n: No) => n.type === "input" && n.props.type === "checkbox")!;
-    (caixa.props.onChange as () => void)();
+    const caixa = elementos(tela()).find((n: No) => n.type === Switch)!;
+    (caixa.props.onCheckedChange as () => void)();
     expect(marca(tela())).toEqual([true]);
     expect(sujo()).toBe(true);
   });

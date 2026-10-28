@@ -10,6 +10,7 @@ import { useAcaoCliente } from "@/lib/acao-cliente";
 import { formatarDataCivil } from "@/lib/data-civil";
 import { DICA_PONTO_DECIMAL, formatarMoeda, parseMoeda } from "@/lib/dinheiro";
 
+import { CampoSelect } from "@/components/ui/select";
 type Origem = { id: string; tipo: string; valor: string };
 type Props =
  | { modo: "preparar"; matriculaId: string; cobrancaId: string; moeda: string; origens: Origem[] }
@@ -81,12 +82,12 @@ export function ExcedenteFormulario(props: Props) {
   <label className="block">Evidência (texto; anexo opcional pelo prontuário)<CampoTexto name="evidencia" minLength={5} maxLength={4000} required className="block w-full rounded border p-2" /></label>
  </>}
  {props.modo === "usar" && <>
-  <label className="block">Cobrança a abater<select name="cobrancaId" required defaultValue="" className="ml-2 rounded border p-2"><option value="" disabled>Escolha a cobrança</option>{props.cobrancas.map(c => <option key={c.id} value={c.id}>{c.rotulo} · vence {formatarDataCivil(c.vencimento)} · saldo {formatarMoeda(c.saldo, props.moeda)}</option>)}</select></label>
+  <label className="block">Cobrança a abater<CampoSelect name="cobrancaId" defaultValue="" className="ml-2 rounded border p-2" required placeholder={"Escolha a cobrança"} opcoes={props.cobrancas.map(c => ({ valor: String(c.id), rotulo: `${c.rotulo} · vence ${formatarDataCivil(c.vencimento)} · saldo ${formatarMoeda(c.saldo, props.moeda)}` }))} /></label>
   <label className="block">Valor a abater (disponível {formatarMoeda(props.disponivel, props.moeda)})<input name="valor" required inputMode="decimal" className="ml-2 rounded border p-2" /></label>
   <p className="text-sm">{DICA_PONTO_DECIMAL}</p>
  </>}
  {props.modo !== "concordar" && <label className="block">Motivo<CampoTexto name="motivo" minLength={5} maxLength={2000} required className="block w-full rounded border p-2" /></label>}
- {(props.modo === "decidir" || props.modo === "decidir-uso") && <label className="block">Decisão<select name="decisao" required defaultValue="" className="ml-2 rounded border p-2"><option value="" disabled>Escolha a decisão</option><option value="aprovar">Aprovar</option><option value="rejeitar">Rejeitar</option></select></label>}
+ {(props.modo === "decidir" || props.modo === "decidir-uso") && <label className="block">Decisão<CampoSelect name="decisao" defaultValue="" className="ml-2 rounded border p-2" required placeholder={"Escolha a decisão"} opcoes={[{ valor: "aprovar", rotulo: "Aprovar" }, { valor: "rejeitar", rotulo: "Rejeitar" }]} /></label>}
  </fieldset>
  <button disabled={acao.ocupado || concluido} className={botaoClasses({ variante: "secundario", tamanho: "lg" })} type="submit">{concluido ? "Registrado" : acao.ocupado ? "Processando…" : temTentativa ? "Repetir mesma tentativa" : props.modo === "preparar" ? "Propor destinação" : props.modo === "usar" ? "Propor uso do saldo" : props.modo === "concordar" ? (props.parte === "ESCOLA" ? "Registrar concordância da escola" : "Registrar concordância do aluno/responsável") : "Registrar decisão"}</button>
  <FeedbackAcao erro={acao.erro} sucesso={acao.sucesso} />

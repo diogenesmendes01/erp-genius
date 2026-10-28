@@ -11,6 +11,10 @@ import { progressoMetas } from "@/server/metas/metas";
 import { lerTexto, type ParametrosUrl } from "@/lib/pagina-url";
 import { copiarMetasAnteriores, definirMeta } from "./acoes";
 
+import { CampoCombobox } from "@/components/ui/combobox";
+import { CampoSelect } from "@/components/ui/select";
+import { MonthPicker } from "@/components/ui/month-picker";
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
 const COMPETENCIA = /^\d{4}-(0[1-9]|1[0-2])$/;
 
 function competenciaAtual(fuso: string): string {
@@ -58,7 +62,7 @@ export default async function MetasPage({ searchParams }: { searchParams?: Promi
           <form method="get" action="/configuracao/crm/metas" className="flex items-end gap-2">
             <label className="flex flex-col text-xs text-gray-500">
               Competência
-              <input type="month" name="competencia" defaultValue={competencia} required className="rounded border border-gray-300 px-2 py-1 text-sm text-gray-800" />
+              <MonthPicker name="competencia" defaultValue={competencia} required className="rounded border border-gray-200 px-2 py-1 text-sm text-gray-800" />
             </label>
             <button type="submit" className={botaoClasses({ variante: "secundario", tamanho: "sm" })}>Ver mês</button>
           </form>
@@ -67,28 +71,28 @@ export default async function MetasPage({ searchParams }: { searchParams?: Promi
         {progresso.length === 0 ? (
           <EstadoVazio className="mt-2">Nenhuma meta definida para este mês.</EstadoVazio>
         ) : (
-          <table className="mt-2 w-full text-sm">
-            <thead>
-              <tr className="text-left text-gray-500">
-                <th className="py-1">Quem</th>
-                <th>Métrica</th>
-                <th>Meta</th>
-                <th>Realizado</th>
-                <th>%</th>
-              </tr>
-            </thead>
-            <tbody>
+          <Table className="mt-2 w-full text-sm">
+            <TableHeader>
+              <TableRow className="text-left text-gray-500">
+                <TableHead className="py-1">Quem</TableHead>
+                <TableHead>Métrica</TableHead>
+                <TableHead>Meta</TableHead>
+                <TableHead>Realizado</TableHead>
+                <TableHead>%</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
               {progresso.map((p) => (
-                <tr key={`${p.usuarioId}-${p.metrica}-${p.moeda}`} className="border-t border-gray-200">
-                  <td className="py-1">{p.usuarioId ? (nomes.get(p.usuarioId) ?? "Pessoa inativa") : "Equipe"}</td>
-                  <td>{METRICA_META_LABEL[p.metrica]}{p.moeda ? ` (${p.moeda})` : ""}</td>
-                  <td>{p.meta}</td>
-                  <td>{p.realizado}</td>
-                  <td>{p.pct === null ? "—" : `${Math.round(p.pct * 100)}%`}</td>
-                </tr>
+                <TableRow key={`${p.usuarioId}-${p.metrica}-${p.moeda}`} className="border-t border-gray-200">
+                  <TableCell className="py-1">{p.usuarioId ? (nomes.get(p.usuarioId) ?? "Pessoa inativa") : "Equipe"}</TableCell>
+                  <TableCell>{METRICA_META_LABEL[p.metrica]}{p.moeda ? ` (${p.moeda})` : ""}</TableCell>
+                  <TableCell>{p.meta}</TableCell>
+                  <TableCell>{p.realizado}</TableCell>
+                  <TableCell>{p.pct === null ? "—" : `${Math.round(p.pct * 100)}%`}</TableCell>
+                </TableRow>
               ))}
-            </tbody>
-          </table>
+            </TableBody>
+          </Table>
         )}
       </section>
 
@@ -103,29 +107,23 @@ export default async function MetasPage({ searchParams }: { searchParams?: Promi
       <form action={definirMeta} className="flex flex-wrap items-end gap-3 rounded-lg border border-gray-200 bg-surface p-4">
         <label className="flex flex-col text-xs text-gray-500">
           Mês
-          <input name="competencia" defaultValue={competencia} pattern="\d{4}-\d{2}" required className="rounded border border-gray-300 px-2 py-1 text-sm text-gray-800" />
+          <input name="competencia" defaultValue={competencia} pattern="\d{4}-\d{2}" required className="rounded border border-gray-200 px-2 py-1 text-sm text-gray-800" />
         </label>
         <label className="flex flex-col text-xs text-gray-500">
           Quem
-          <select name="usuarioId" defaultValue={ehAdmin ? "" : usuario.id} className="rounded border border-gray-300 px-2 py-1 text-sm text-gray-800">
-            {ehAdmin && <option value="">Equipe (geral)</option>}
-            {!ehAdmin && <option value={usuario.id}>Eu</option>}
-            {vendedores.filter((v) => v.id !== usuario.id).map((v) => <option key={v.id} value={v.id}>{v.nome}</option>)}
-          </select>
+          <CampoCombobox name="usuarioId" defaultValue={ehAdmin ? "" : usuario.id} className="rounded border border-gray-200 px-2 py-1 text-sm text-gray-800" vazio={ehAdmin ? "Equipe (geral)" : undefined} opcoes={[...(!ehAdmin ? [{ valor: usuario.id, rotulo: "Eu" }] : []), ...vendedores.filter((v) => v.id !== usuario.id).map((v) => ({ valor: v.id, rotulo: v.nome }))]} />
         </label>
         <label className="flex flex-col text-xs text-gray-500">
           Métrica
-          <select name="metrica" className="rounded border border-gray-300 px-2 py-1 text-sm text-gray-800">
-            {Object.values(MetricaMeta).map((m) => <option key={m} value={m}>{METRICA_META_LABEL[m]}</option>)}
-          </select>
+          <CampoSelect name="metrica" className="rounded border border-gray-200 px-2 py-1 text-sm text-gray-800" defaultValue={Object.values(MetricaMeta)[0] ?? ""} opcoes={Object.values(MetricaMeta).map((m) => ({ valor: String(m), rotulo: METRICA_META_LABEL[m] }))} />
         </label>
         <label className="flex flex-col text-xs text-gray-500">
           Valor
-          <input name="valor" inputMode="decimal" required className="w-28 rounded border border-gray-300 px-2 py-1 text-sm text-gray-800" />
+          <input name="valor" inputMode="decimal" required className="w-28 rounded border border-gray-200 px-2 py-1 text-sm text-gray-800" />
         </label>
         <label className="flex flex-col text-xs text-gray-500">
           Moeda (valor ganho)
-          <input name="moeda" maxLength={3} className="w-20 rounded border border-gray-300 px-2 py-1 text-sm uppercase text-gray-800" />
+          <input name="moeda" maxLength={3} className="w-20 rounded border border-gray-200 px-2 py-1 text-sm uppercase text-gray-800" />
         </label>
         <Botao type="submit">Salvar meta</Botao>
       </form>

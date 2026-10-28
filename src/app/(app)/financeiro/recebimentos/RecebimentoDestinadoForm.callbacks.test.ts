@@ -5,6 +5,7 @@ vi.mock("react", async (importOriginal) => ({ ...(await importOriginal<typeof im
 vi.mock("@/server/financeiro/acoes", () => ({ registrarRecebimentoDestinado: mocks.registrar }));
 vi.mock("@/components/UploadArquivo", () => ({ UploadArquivo: () => null }));
 import { FormaPagamento } from "@prisma/client";
+import { CampoCombobox } from "@/components/ui/combobox";
 import { RecebimentoDestinadoForm } from "./RecebimentoDestinadoForm";
 
 type No = { type?: unknown; props?: Record<string, unknown> };
@@ -13,7 +14,15 @@ const contextos = [
   { matriculaId: "mat-2", identificacaoMatricula: "MAT-002", status: "ATIVA", aluno: "Bia", moeda: "USD", cobrancas: [{ id: "c-fev", codigo: "FEV", tipo: "MENSALIDADE", vencimento: { estado: "A_CONFERIR" as const, motivo: "Origem legada sem fuso." }, saldo: 80 }], pagadores: [{ id: "pag-2", rotulo: "Outra responsável" }] },
 ];
 function nos(no: unknown): No[] { if (Array.isArray(no)) return no.flatMap(nos); if (!no || typeof no !== "object") return []; const atual = no as No; return [atual, ...nos(atual.props?.children)]; }
-function textos(no: unknown): string[] { if (typeof no === "string") return [no]; if (Array.isArray(no)) return no.flatMap(textos); if (!no || typeof no !== "object") return []; return textos((no as No).props?.children); }
+function textos(no: unknown): string[] {
+  if (typeof no === "string") return [no];
+  if (Array.isArray(no)) return no.flatMap(textos);
+  if (!no || typeof no !== "object") return [];
+  const atual = no as No;
+  const opcoes = atual.props?.opcoes;
+  const rotulos = Array.isArray(opcoes) ? opcoes.flatMap((opcao) => opcao && typeof opcao === "object" && "rotulo" in opcao ? textos((opcao as { rotulo: unknown }).rotulo) : []) : [];
+  return [...rotulos, ...textos(atual.props?.children)];
+}
 function encontrar(no: unknown, predicado: (no: No) => boolean) { const encontrado = nos(no).find(predicado); if (!encontrado) throw new Error("Elemento não encontrado"); return encontrado; }
 function montar(estados: unknown[], contextosEntrada = contextos) {
   const setters = estados.map(() => vi.fn());
@@ -31,7 +40,7 @@ afterEach(() => { vi.restoreAllMocks(); vi.clearAllMocks(); });
 
 it("exige seleção explícita e limpa destinos e pagador ao trocar de contrato", () => {
   const c = montar(["mat-1", [{ cobrancaId: "c-jan", valor: "100", evidencia: "boleto" }], "0", "100", "pag-1", FormaPagamento.DINHEIRO, "2026-01-05", "", "", "/api/files/contrato-1", "contrato-1.pdf", false, null, null, false]);
-  const seletor = encontrar(c.arvore, (no) => no.type === "select" && no.props?.["aria-label"] === "Contrato");
+  const seletor = encontrar(c.arvore, (no) => no.type === CampoCombobox && no.props?.["aria-label"] === "Contrato");
   (seletor.props!.onChange as (event: { target: { value: string } }) => void)({ target: { value: "mat-2" } });
   expect(c.setters[0]).toHaveBeenCalledWith("mat-2");
   expect(c.setters[1]).toHaveBeenCalledWith([]);

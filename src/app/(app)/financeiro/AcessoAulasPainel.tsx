@@ -13,7 +13,7 @@ import { CampoTexto } from "@/components/CampoTexto";
 import { EstadoVazio } from "@/components/EstadoVazio";
 import { ESTADO_PROPOSTA_DECIDIDA_LABEL, rotular } from "@/lib/labels";
 
-const campo = "w-full rounded-md border border-gray-300 px-3 py-2 text-sm";
+const campo = "w-full rounded-md border border-gray-200 px-3 py-2 text-sm";
 const botao = botaoClasses({ variante: "secundario" });
 
 type SolicitacaoAcesso = GestaoAcessoAulas["matriculas"][number]["solicitacoes"][number];
@@ -92,7 +92,7 @@ export function AcessoAulasPainel({ matriculaId, alunoId, preferenciaFusoExibica
         <div className="flex gap-2"><button className={botao} disabled={acao.ocupado || motivo.trim().length < 5} onClick={solicitar}>Enviar solicitação</button><button className={botao} disabled={acao.ocupado} onClick={() => setForm(null)}>Cancelar</button></div>
       </div>}
       <FeedbackAcao erro={alvo === `form:${m.id}` ? acao.erro : null} sucesso={alvo === `form:${m.id}` ? acao.sucesso : undefined} />
-      {m.solicitacoes.map((p) => <div key={p.id} className="space-y-2 rounded-md bg-gray-50 p-3 text-sm">
+      {m.solicitacoes.map((p) => <div key={p.id} className="space-y-2 rounded-md bg-surface-muted p-3 text-sm">
         <p className="font-medium">{p.bloquear ? "Restrição manual" : "Liberação manual"} · {rotular(ESTADO_PROPOSTA_DECIDIDA_LABEL, p.status)}</p>
         <p>{p.motivo}</p>
         <HistoricoSolicitacaoAcessoAulas solicitacao={p} preferenciaFusoExibicao={preferenciaFusoExibicao} />
