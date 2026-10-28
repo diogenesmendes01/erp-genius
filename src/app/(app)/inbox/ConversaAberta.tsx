@@ -34,8 +34,9 @@ import type { MensagemThread } from "@/server/whatsapp/consultas-inbox";
 import { enviarMidiaInbox, enviarTextoInbox } from "@/server/whatsapp/acoes";
 import { enviarConteudoInbox } from "@/server/whatsapp/motor/acoes-mensagem";
 import { respostasRapidasDoCompositor } from "@/server/crm-config/acoes-respostas";
-import { enviarPropostaNoAtendimento, registrarNotaAtendimento } from "@/server/whatsapp/acoes-conversa";
-import { contatosParaCartao, origemVisivelDaTransferencia, propostasDoAtendimento } from "@/server/whatsapp/consultas-acoes-atendimento";
+import { enviarMaterialDoCatalogo, enviarPropostaNoAtendimento, registrarNotaAtendimento } from "@/server/whatsapp/acoes-conversa";
+import { catalogoDoAtendimento, contatosParaCartao, origemVisivelDaTransferencia, propostasDoAtendimento } from "@/server/whatsapp/consultas-acoes-atendimento";
+import type { MaterialCatalogo } from "@/server/whatsapp/catalogo-atendimento";
 import type { PropostaAnexavel } from "@/server/whatsapp/proposta-atendimento";
 import type { Setor } from "@/server/whatsapp/setor";
 import { useAcoesAtendimento, type DestinoTransferencia } from "./AcoesAtendimento";
@@ -163,6 +164,14 @@ export function ConversaAberta({ item, tarefasNoFio=TAREFAS_FIO_VAZIAS, cartoesN
     return () => { ativo = false; };
   }, [propostasId, vinculoAtual]);
   const propostasDaConversa = propostasId && propostas?.de === propostasId ? { oportunidadeId: propostas.oportunidadeId, itens: propostas.itens, fuso } : undefined;
+  const [catalogo, setCatalogo] = useState<{ de: string; itens: MaterialCatalogo[] } | null>(null);
+  useEffect(() => {
+    if (!propostasId) return;
+    let ativo = true;
+    void catalogoDoAtendimento(propostasId).then((itens) => { if (ativo) setCatalogo({ de: propostasId, itens }); }).catch(() => undefined);
+    return () => { ativo = false; };
+  }, [propostasId]);
+  const catalogoDaConversa = propostasId && catalogo?.de === propostasId && catalogo.itens.length ? catalogo.itens : undefined;
   const capacidades = item?.capacidades ?? [];
   const envioLiberado = item ? podeEnviarNaConversa(item, podeEnviar) : false;
   const ocupada = conversa.carregando || conversa.carregandoAntigas || conversa.carregandoNovas;
@@ -259,6 +268,8 @@ export function ConversaAberta({ item, tarefasNoFio=TAREFAS_FIO_VAZIAS, cartoesN
           respostas={respostas}
           propostas={propostasDaConversa}
           aoEnviarProposta={propostasDaConversa ? (documentoId, chaveIdempotencia) => enviarPropostaNoAtendimento({ atendimentoId: item.id, documentoId, chaveIdempotencia }) : undefined}
+          catalogo={catalogoDaConversa}
+          aoEnviarCatalogo={catalogoDaConversa ? (fonteId, chaveIdempotencia) => enviarMaterialDoCatalogo({ atendimentoId: item.id, fonteId, chaveIdempotencia }) : undefined}
           aoEnviarConteudo={(conteudo) => enviarConteudoInbox({ atendimentoId: item.id, conteudo })}
           aoListarContatosCartao={() => contatosParaCartao(item.id)}
           variaveisResposta={{ nome: item.contatoNome, responsavel: item.responsavelNome }}

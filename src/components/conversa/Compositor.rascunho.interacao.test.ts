@@ -9,7 +9,7 @@ import type { PropsCompositor } from "./Compositor";
 const ui = vi.hoisted(() => ({ campo: {} as Record<string, unknown>, botoes: [] as Record<string, unknown>[] }));
 vi.mock("@/components/CampoTexto", async () => { const { forwardRef } = await import("react"); return { CampoTexto: forwardRef((_p) => { ui.campo = _p as Record<string, unknown>; return null; }) }; });
 vi.mock("@/components/Botao", () => ({ Botao: (p: Record<string, unknown>) => { ui.botoes.push(p); return null; } }));
-vi.mock("@tabler/icons-react", () => Object.fromEntries(["IconCalendarEvent", "IconMicrophone", "IconMoodSmile", "IconPaperclip", "IconPlayerStop", "IconSend", "IconTrash", "IconBolt", "IconCamera", "IconFileCheck", "IconFileText", "IconListCheck", "IconMapPin", "IconPhoto", "IconUser"].map(k => [k, () => null])));
+vi.mock("@tabler/icons-react", () => Object.fromEntries(["IconCalendarEvent", "IconMicrophone", "IconMoodSmile", "IconPaperclip", "IconPlayerStop", "IconSend", "IconTrash", "IconBolt", "IconCamera", "IconFileCheck","IconBook", "IconFileText", "IconListCheck", "IconMapPin", "IconPhoto", "IconUser"].map(k => [k, () => null])));
 vi.mock("@/components/Menu", () => ({ CLASSE_ITEM_MENU: "", CLASSE_PAINEL_MENU: "" }));
 let root: Root;
 let host: Elemento;
