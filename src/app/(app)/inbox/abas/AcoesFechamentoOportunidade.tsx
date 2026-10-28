@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { CategoriaDocumento } from "@prisma/client";
 import { Botao } from "@/components/Botao";
+import { MensagemStatus } from "@/components/MensagemStatus";
 import { CampoDataHoraLocal } from "@/components/CampoDataHoraLocal";
 import { FeedbackAcao } from "@/components/FeedbackAcao";
 import { UploadArquivo } from "@/components/UploadArquivo";
@@ -146,7 +147,7 @@ export function AcoesFechamentoOportunidade({ atendimentoId, oportunidade: o, fu
         {taxa.linkPagamento && <div className="space-y-1">
           <p className="break-all text-xs text-gray-600">{taxa.linkPagamento}</p>
           <Botao variante="fantasma" tamanho="sm" onClick={() => void copiarLink()}>Copiar link</Botao>
-          {copiado && <p role="status">Link copiado!</p>}
+          <MensagemStatus texto={copiado ? "Link copiado!" : null} className="text-xs text-gray-600" />
         </div>}
       </div>}
     </section>}
