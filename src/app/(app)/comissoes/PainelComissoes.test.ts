@@ -1,6 +1,9 @@
+import { readFileSync } from "node:fs";
 import { renderToStaticMarkup } from "react-dom/server";
 import { createElement } from "react";
 import { describe, expect, it, vi } from "vitest";
+import { CLASSES_TOM } from "@/components/BadgeEstado";
+import { CONTROLE_CAMPO } from "@/components/Campo";
 
 vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh: vi.fn() }) }));
 vi.mock("@/server/crm/comissoes-estorno-acao", () => ({ estornarComissaoDoPainel: vi.fn() }));
@@ -47,5 +50,58 @@ describe("PainelComissoes · aluno clicável", () => {
       podeFecharMes: false, fuso: "UTC", hrefPagina: () => "/comissoes",
     }));
     expect(html).toContain('href="/funil?o=o9"');
+  });
+});
+
+describe("PainelComissoes · design system", () => {
+  const fonte = readFileSync("src/app/(app)/comissoes/PainelComissoes.tsx", "utf8");
+
+  it("a fonte usa os primitivos e não traz borda cinza nem badge ad-hoc", () => {
+    expect(fonte).toContain("Avatar");
+    expect(fonte).toContain("BadgeEstado");
+    expect(fonte).toContain("CONTROLE_CAMPO");
+    expect(fonte).toContain("LinhaCampo");
+    expect(fonte).toContain("font-mono");
+    expect(fonte).toContain("tabular-nums");
+    expect(fonte).not.toContain("border-gray-300");
+    for (const cor of ["bg-green-100", "bg-amber-100", "bg-blue-100", "bg-red-100", "bg-yellow-100"]) {
+      expect(fonte).not.toContain(cor);
+    }
+  });
+
+  it("filtros, totais, resumo por vendedor e lançamentos renderizam avatar, badge, mono e controle", () => {
+    const html = renderToStaticMarkup(createElement(PainelComissoes, {
+      painel: {
+        ...painel,
+        totais: [
+          { moeda: "CRC", status: "PENDENTE", valor: "10.00" },
+          { moeda: "CRC", status: "APROVADA", valor: "20.00" },
+          { moeda: "CRC", status: "PAGA", valor: "1600.00" },
+          { moeda: "CRC", status: "ESTORNADA", valor: "5.00" },
+        ],
+        porVendedor: [{ vendedorId: "v1", nome: "Vera Lima", moeda: "CRC", valor: "1600.00", quantidade: 2 }],
+      },
+      periodo: "mes", pagina: 1, vendedorId: "", vendedores: [{ id: "v1", nome: "Vera Lima" }], veTodos: true,
+      podeFecharMes: false, fuso: "UTC", hrefPagina: (n) => `/comissoes?pagina=${n}`,
+    }));
+    expect(html).toContain(CONTROLE_CAMPO);
+    expect(html).toContain("font-mono");
+    expect(html).toContain("tabular-nums");
+    expect(html).toContain(">AS<");
+    expect(html).toContain(">VL<");
+    expect(html).toContain(CLASSES_TOM.sucesso);
+    expect(html).toContain(CLASSES_TOM.perigo);
+    expect(html).toContain("Pendente");
+    expect(html).toContain("Aprovada");
+    expect(html).toContain("Paga");
+    expect(html).toContain("Estornada");
+    expect(html).toContain("bg-surface-muted");
+    expect(html).toContain("hover:bg-surface-muted");
+    expect(html).toContain("Cálculo");
+    expect(html).toContain('href="/matriculas/m1/preparacao"');
+    expect(html).not.toContain("border-gray-300");
+    expect(html).not.toContain("bg-green-100");
+    expect(html).not.toContain("bg-amber-100");
+    expect(html).not.toContain("bg-blue-100");
   });
 });

@@ -4,13 +4,18 @@ import { useEffect, useMemo, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { StatusComissao, TipoAprovacao, Vigencia } from "@prisma/client";
-import { STATUS_COMISSAO_LABEL, rotular, TIPO_APROVACAO_LABEL, VIGENCIA_LABEL } from "@/lib/labels";
+import { IconUser } from "@tabler/icons-react";
+import { STATUS_COMISSAO_LABEL, TIPO_APROVACAO_LABEL, VIGENCIA_LABEL } from "@/lib/labels";
 import { formatarMoeda, formatarValores, somarPorMoeda, consolidar, type ValorMoeda } from "@/lib/dinheiro";
 import type { CotacaoVigente, relatorioDescontosComissoes } from "@/server/financeiro/consultas";
 import { fecharMesComissoes, salvarConfigFinanceiro, salvarTaxasCambio, atualizarCotacoesAutomatico } from "@/server/financeiro/acoes";
 import { decidirAprovacao } from "@/server/ajustes/acoes";
 import { decidirPrecoPreparacao } from "@/server/matricula/preparacao-preco";
+import { Avatar } from "@/components/Avatar";
+import { BadgeEstado, type TomEstado } from "@/components/BadgeEstado";
+import { CONTROLE_CAMPO } from "@/components/Campo";
 import { CampoTexto } from "@/components/CampoTexto";
+import { LinhaCampo } from "@/components/LinhaCampo";
 import { formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
 import { FeedbackAcao } from "@/components/FeedbackAcao";
 import { ConfirmarAcao } from "@/components/ConfirmarAcao";
@@ -68,6 +73,22 @@ export interface AprovacaoRow {
 
 const btnPri = botaoClasses();
 const btnSec = botaoClasses({ variante: "secundario", tamanho: "sm" });
+const TOM_STATUS: Record<StatusComissao, TomEstado> = {
+  PENDENTE: "aviso",
+  APROVADA: "aprovacao",
+  PAGA: "sucesso",
+  ESTORNADA: "perigo",
+};
+const CABECALHO_TABELA = "bg-surface-muted text-left text-xs text-gray-600";
+const LINHA_TABELA = "transition-colors hover:bg-surface-muted";
+
+function SeloComissao({ status }: { status: StatusComissao }) {
+  return <BadgeEstado tom={TOM_STATUS[status]} ponto>{STATUS_COMISSAO_LABEL[status]}</BadgeEstado>;
+}
+
+function Pessoa({ nome }: { nome: string }) {
+  return <span className="inline-flex items-center gap-2"><Avatar nome={nome} tamanho={32} />{nome}</span>;
+}
 
 function useExecutorFinanceiro() {
   const router = useRouter();
@@ -213,7 +234,7 @@ export function Comissoes({
   return (
     <div>
       <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-        <p className="text-sm text-gray-500">A pagar (aprovadas): <strong>{formatarValores(aPagar)}</strong></p>
+        <p className="text-sm text-gray-500"><span className="font-mono tabular-nums">A pagar (aprovadas): <strong>{formatarValores(aPagar)}</strong></span></p>
         {podePagar && <span className="flex items-center gap-3">
           <label className="flex items-center gap-1.5 text-xs text-gray-600">
             <input
@@ -232,7 +253,7 @@ export function Comissoes({
       </div>
       <div className="overflow-x-auto rounded-lg border border-gray-200">
         <table className="w-full text-sm">
-          <thead className="bg-gray-100 text-left text-xs text-gray-500">
+          <thead className={CABECALHO_TABELA}>
             <tr>
               {cabecalho("vendedor", "Vendedor")}
               <th className="px-4 py-2 font-medium">%</th>
@@ -245,11 +266,11 @@ export function Comissoes({
               <EstadoVazioLinha colSpan={4}>{vazio ?? "Sem comissões."}</EstadoVazioLinha>
             ) : (
               comissoes.map((c) => (
-                <tr key={c.id} className="hover:bg-gray-50">
-                  <td className="px-4 py-3 text-gray-800">{c.vendedor}</td>
-                  <td className="px-4 py-3 text-gray-600">{c.tipo === "VALOR_FIXO" ? "Fixa" : `${c.percentual}%`}</td>
-                  <td className="px-4 py-3 text-gray-700">{formatarMoeda(c.valor, c.moeda)}</td>
-                  <td className="px-4 py-3 text-gray-600">{STATUS_COMISSAO_LABEL[c.status]}</td>
+                <tr key={c.id} className={LINHA_TABELA}>
+                  <td className="px-4 py-3 text-gray-800"><Pessoa nome={c.vendedor} /></td>
+                  <td className="px-4 py-3 font-mono tabular-nums text-gray-600">{c.tipo === "VALOR_FIXO" ? "Fixa" : `${c.percentual}%`}</td>
+                  <td className="px-4 py-3 font-mono tabular-nums text-gray-700">{formatarMoeda(c.valor, c.moeda)}</td>
+                  <td className="px-4 py-3"><SeloComissao status={c.status} /></td>
                 </tr>
               ))
             )}
@@ -284,9 +305,9 @@ export function Aprovacoes({
   return (
     <div>
       <div className="mb-3 flex flex-wrap gap-4 text-sm text-gray-600">
-        <span>Pendentes: <strong>{aprovacoes.length}</strong></span>
-        <span>Impacto mensal: <strong>{formatarValores(impactoMensal)}</strong></span>
-        <span>Impacto anual: <strong>{formatarValores(impactoAnual)}</strong></span>
+        <span className="font-mono tabular-nums">Pendentes: <strong>{aprovacoes.length}</strong></span>
+        <span className="font-mono tabular-nums">Impacto mensal: <strong>{formatarValores(impactoMensal)}</strong></span>
+        <span className="font-mono tabular-nums">Impacto anual: <strong>{formatarValores(impactoAnual)}</strong></span>
       </div>
       {aprovacoes.length === 0 ? (
         <EstadoVazio bloco>Nenhum pedido pendente.</EstadoVazio>
@@ -295,27 +316,36 @@ export function Aprovacoes({
           {aprovacoes.map((a) => (
             <li key={a.id} className="rounded-lg border border-gray-200 bg-surface p-4">
               <div className="flex items-start justify-between gap-4">
-                <div className="text-sm">
-                  <div className="font-medium text-gray-800">
-                    {a.alunoNome} — {a.origem === "PREPARACAO_MATRICULA" ? "Exceção de preço" : TIPO_APROVACAO_LABEL[a.tipo]}
-                  </div>
-                  {a.origem === "PREPARACAO_MATRICULA" && a.matriculaId && (
-                    <div className="mt-1">
-                      <Link href={`/matriculas/${a.matriculaId}/preparacao`} className="text-brand-700 underline">Ver preparação</Link>
+                <div className="flex min-w-0 items-start gap-3 text-sm">
+                  <Avatar nome={a.alunoNome} tamanho={40} />
+                  <div className="min-w-0">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <div className="font-medium text-gray-800">
+                        {a.alunoNome} — {a.origem === "PREPARACAO_MATRICULA" ? "Exceção de preço" : TIPO_APROVACAO_LABEL[a.tipo]}
+                      </div>
+                      <BadgeEstado tom="aprovacao" ponto>Pendente</BadgeEstado>
                     </div>
-                  )}
-                  <div className="text-gray-600">
-                    {formatarMoeda(a.valorDe, a.moeda)} → {formatarMoeda(a.valorPara, a.moeda)}{" "}
-                    <span className="text-gray-500">(desconto {formatarMoeda(a.descontoValor, a.moeda)})</span>
-                  </div>
-                  <div className="text-xs text-gray-500">
-                    {a.vigencia ? VIGENCIA_LABEL[a.vigencia] + " · " : ""}solicitante: {a.solicitante}
-                    {a.motivo ? ` · ${a.motivo}` : ""}
+                    <div className="font-mono tabular-nums text-xs text-gray-600">{a.matriculaId ?? "—"}</div>
+                    {a.origem === "PREPARACAO_MATRICULA" && a.matriculaId && (
+                      <div className="mt-1">
+                        <Link href={`/matriculas/${a.matriculaId}/preparacao`} className="text-brand-700 underline">Ver preparação</Link>
+                      </div>
+                    )}
+                    <div className="font-mono tabular-nums text-gray-600">
+                      {formatarMoeda(a.valorDe, a.moeda)} → {formatarMoeda(a.valorPara, a.moeda)}{" "}
+                      <span className="text-gray-500">(desconto {formatarMoeda(a.descontoValor, a.moeda)})</span>
+                    </div>
+                    <LinhaCampo
+                      icone={<IconUser size={18} />}
+                      valor={<>{a.vigencia ? `${VIGENCIA_LABEL[a.vigencia]} · ` : ""}solicitante: {a.solicitante}{a.motivo ? ` · ${a.motivo}` : ""}</>}
+                      rotulo="Solicitação"
+                    />
                   </div>
                 </div>
                 <div className="flex shrink-0 gap-2">
                   {a.podeAprovarDireto !== false && (
                     <button
+                      type="button"
                       onClick={() => pedir(a, true)}
                       disabled={isPending}
                       className={botaoClasses({ tamanho: "sm" })}
@@ -324,6 +354,7 @@ export function Aprovacoes({
                     </button>
                   )}
                   <button
+                    type="button"
                     onClick={() => pedir(a, false)}
                     disabled={isPending}
                     className={botaoClasses({ variante: "perigo", tamanho: "sm" })}
@@ -336,7 +367,7 @@ export function Aprovacoes({
                 <div className="mt-3 grid gap-2">
                   <label className="grid gap-1 text-sm text-gray-700">
                     <span>{aberta.aprovar ? "Motivo da aprovação" : "Motivo da rejeição"}</span>
-                    <CampoTexto minLength={5} maxLength={2000} rows={2} value={motivo} onChange={(e) => setMotivo(e.target.value)} />
+                    <CampoTexto className={CONTROLE_CAMPO} minLength={5} maxLength={2000} rows={2} value={motivo} onChange={(e) => setMotivo(e.target.value)} />
                   </label>
                   <div className="flex gap-2">
                     <button
@@ -358,11 +389,11 @@ export function Aprovacoes({
 }
 
 function ValoresEmpilhados({ valores }: { valores: ValorMoeda[] }) {
-  if (valores.length === 0) return <div className="text-2xl font-medium text-gray-300">—</div>;
+  if (valores.length === 0) return <div className="font-mono text-2xl font-medium tabular-nums text-gray-300">—</div>;
   return (
     <div className="flex flex-col leading-tight">
       {valores.map((v) => (
-        <span key={v.moeda} className="text-xl font-medium text-gray-800">{formatarMoeda(v.valor, v.moeda)}</span>
+        <span key={v.moeda} className="font-mono text-xl font-medium tabular-nums text-gray-800">{formatarMoeda(v.valor, v.moeda)}</span>
       ))}
     </div>
   );
@@ -391,14 +422,16 @@ export function VisaoGeral({
     <div>
       <div className="mb-3 flex flex-wrap items-center gap-2">
         <span id="financeiro-consolidar-rotulo" className="text-sm text-gray-500">Consolidar em</span>
-        <select
-          aria-labelledby="financeiro-consolidar-rotulo"
-          value={moedaCons}
-          onChange={(e) => onMoeda(e.target.value)}
-          className="rounded-md border border-gray-300 px-2 py-1 text-sm outline-none focus:border-brand-500"
-        >
-          {opcoes.map((m) => <option key={m} value={m}>{m}</option>)}
-        </select>
+        <div className="w-28">
+          <select
+            aria-labelledby="financeiro-consolidar-rotulo"
+            value={moedaCons}
+            onChange={(e) => onMoeda(e.target.value)}
+            className={CONTROLE_CAMPO}
+          >
+            {opcoes.map((m) => <option key={m} value={m}>{m}</option>)}
+          </select>
+        </div>
         <span className="text-xs text-gray-400">câmbio de referência · só leitura</span>
       </div>
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
@@ -408,7 +441,7 @@ export function VisaoGeral({
             <div key={t} className="rounded-lg border border-gray-200 bg-surface p-4">
               <ValoresEmpilhados valores={valores} />
               {valores.length > 0 && (
-                <div className="mt-0.5 text-xs text-gray-500">
+                <div className="mt-0.5 font-mono text-xs tabular-nums text-gray-500">
                   ≈ {formatarMoeda(c.valor, moedaCons)}
                   {c.faltando.length > 0 && (
                     <span className="text-amber-600"> · faltam taxas: {c.faltando.join(", ")}</span>
@@ -420,7 +453,7 @@ export function VisaoGeral({
           );
         })}
       </div>
-      <p className="mt-4 text-sm text-gray-500">Novas matrículas no mês: <strong>{kpis.novasMatriculas}</strong></p>
+      <p className="mt-4 text-sm text-gray-500">Novas matrículas no mês: <strong className="font-mono tabular-nums">{kpis.novasMatriculas}</strong></p>
       <p className="mt-1 text-xs text-gray-400">
         Os valores por moeda são exatos. O consolidado &ldquo;≈&rdquo; é conversão de referência (câmbio manual), só para leitura — nunca entra na conta do aluno.
       </p>
@@ -476,7 +509,7 @@ export function CambioPainel({
       </p>
       <div className="overflow-x-auto rounded-lg border border-gray-200">
         <table className="w-full text-sm">
-          <thead className="bg-gray-100 text-left text-xs text-gray-500">
+          <thead className={CABECALHO_TABELA}>
             <tr>
               <th className="px-4 py-2 font-medium">Moeda</th>
               <th className="px-4 py-2 font-medium">1 US$ =</th>
@@ -486,25 +519,27 @@ export function CambioPainel({
           <tbody className="divide-y divide-gray-100">
             <tr>
               <td className="px-4 py-2 font-medium text-gray-700">USD <span className="text-xs text-gray-400">(pivô)</span></td>
-              <td className="px-4 py-2 text-gray-500">1</td>
+              <td className="px-4 py-2 font-mono tabular-nums text-gray-500">1</td>
               <td className="px-4 py-2 text-xs text-gray-400">fixo</td>
             </tr>
             {editaveis.map((c) => (
               <tr key={c.moeda}>
                 <td className="px-4 py-2 font-medium text-gray-700">{c.moeda}</td>
                 <td className="px-4 py-2">
-                  <input
-                    type="number"
-                    step="0.0001"
-                    min="0"
-                    aria-label={`Cotação: 1 US$ em ${c.moeda}`}
-                    value={vals[c.moeda] ?? ""}
-                    onChange={(e) => setVals((v) => ({ ...v, [c.moeda]: e.target.value }))}
-                    placeholder="ex.: 512"
-                    className="w-32 rounded-md border border-gray-300 px-2 py-1 text-sm outline-none focus:border-brand-500"
-                  />
+                  <div className="w-32">
+                    <input
+                      type="number"
+                      step="0.0001"
+                      min="0"
+                      aria-label={`Cotação: 1 US$ em ${c.moeda}`}
+                      value={vals[c.moeda] ?? ""}
+                      onChange={(e) => setVals((v) => ({ ...v, [c.moeda]: e.target.value }))}
+                      placeholder="ex.: 512"
+                      className={CONTROLE_CAMPO}
+                    />
+                  </div>
                 </td>
-                <td className="px-4 py-2 text-xs text-gray-400">
+                <td className="px-4 py-2 font-mono text-xs tabular-nums text-gray-400">
                   {c.vigenteEm ? (() => { const exibicao = formatarInstanteExibicao(c.vigenteEm, preferenciaFusoExibicao, "UTC"); return `${exibicao.texto} (horário exibido em ${exibicao.fuso}; origem UTC)`; })() : "sem cotação"}
                 </td>
               </tr>
@@ -542,7 +577,7 @@ export function Descontos({ relatorio }: { relatorio: RelatorioDados }) {
         ) : (
           <div className="overflow-x-auto rounded-lg border border-gray-200">
             <table className="w-full text-sm">
-              <thead className="bg-gray-100 text-left text-xs text-gray-500">
+              <thead className={CABECALHO_TABELA}>
                 <tr>
                   <th className="px-4 py-2 font-medium">Moeda</th>
                   <th className="px-4 py-2 font-medium">Total concedido</th>
@@ -551,10 +586,10 @@ export function Descontos({ relatorio }: { relatorio: RelatorioDados }) {
               </thead>
               <tbody className="divide-y divide-gray-100">
                 {descontoPorMoeda.map((d) => (
-                  <tr key={d.moeda}>
+                  <tr key={d.moeda} className={LINHA_TABELA}>
                     <td className="px-4 py-2 font-medium text-gray-700">{d.moeda}</td>
-                    <td className="px-4 py-2 text-gray-700">{formatarMoeda(d.total, d.moeda)}</td>
-                    <td className="px-4 py-2 text-gray-500">{d.qtd}</td>
+                    <td className="px-4 py-2 font-mono tabular-nums text-gray-700">{formatarMoeda(d.total, d.moeda)}</td>
+                    <td className="px-4 py-2 font-mono tabular-nums text-gray-500">{d.qtd}</td>
                   </tr>
                 ))}
               </tbody>
@@ -570,7 +605,7 @@ export function Descontos({ relatorio }: { relatorio: RelatorioDados }) {
         ) : (
           <div className="mb-6 overflow-x-auto rounded-lg border border-gray-200">
             <table className="w-full min-w-[640px] text-sm">
-              <thead className="bg-gray-100 text-left text-xs text-gray-500">
+              <thead className={CABECALHO_TABELA}>
                 <tr>
                   <th className="px-4 py-2 font-medium">Vendedor</th>
                   <th className="px-4 py-2 font-medium">Moeda</th>
@@ -581,12 +616,12 @@ export function Descontos({ relatorio }: { relatorio: RelatorioDados }) {
               </thead>
               <tbody className="divide-y divide-gray-100">
                 {comissoesPorVendedor.map((c, i) => (
-                  <tr key={i}>
-                    <td className="px-4 py-2 font-medium text-gray-700">{c.vendedor}</td>
+                  <tr key={i} className={LINHA_TABELA}>
+                    <td className="px-4 py-2 font-medium text-gray-700"><Pessoa nome={c.vendedor} /></td>
                     <td className="px-4 py-2 text-gray-700">{c.moeda}</td>
-                    <td className="px-4 py-2 text-gray-500">{rotular(STATUS_COMISSAO_LABEL, c.status)}</td>
-                    <td className="px-4 py-2 text-gray-700">{formatarMoeda(c.total, c.moeda)}</td>
-                    <td className="px-4 py-2 text-gray-500">{c.qtd}</td>
+                    <td className="px-4 py-2"><SeloComissao status={c.status} /></td>
+                    <td className="px-4 py-2 font-mono tabular-nums text-gray-700">{formatarMoeda(c.total, c.moeda)}</td>
+                    <td className="px-4 py-2 font-mono tabular-nums text-gray-500">{c.qtd}</td>
                   </tr>
                 ))}
               </tbody>
@@ -600,7 +635,7 @@ export function Descontos({ relatorio }: { relatorio: RelatorioDados }) {
         ) : (
           <div className="overflow-x-auto rounded-lg border border-gray-200">
             <table className="w-full text-sm">
-              <thead className="bg-gray-100 text-left text-xs text-gray-500">
+              <thead className={CABECALHO_TABELA}>
                 <tr>
                   <th className="px-4 py-2 font-medium">Vendedor</th>
                   <th className="px-4 py-2 font-medium">Moeda</th>
@@ -610,11 +645,11 @@ export function Descontos({ relatorio }: { relatorio: RelatorioDados }) {
               </thead>
               <tbody className="divide-y divide-gray-100">
                 {descontoPorVendedor.map((d, i) => (
-                  <tr key={`${d.vendedor}-${d.moeda}-${i}`}>
-                    <td className="px-4 py-2 text-gray-700">{d.vendedor}</td>
+                  <tr key={`${d.vendedor}-${d.moeda}-${i}`} className={LINHA_TABELA}>
+                    <td className="px-4 py-2 text-gray-700"><Pessoa nome={d.vendedor} /></td>
                     <td className="px-4 py-2 text-gray-600">{d.moeda}</td>
-                    <td className="px-4 py-2 text-gray-700">{formatarMoeda(d.total, d.moeda)}</td>
-                    <td className="px-4 py-2 text-gray-500">{d.qtd}</td>
+                    <td className="px-4 py-2 font-mono tabular-nums text-gray-700">{formatarMoeda(d.total, d.moeda)}</td>
+                    <td className="px-4 py-2 font-mono tabular-nums text-gray-500">{d.qtd}</td>
                   </tr>
                 ))}
               </tbody>
@@ -630,7 +665,7 @@ export function Descontos({ relatorio }: { relatorio: RelatorioDados }) {
         ) : (
           <div className="overflow-x-auto rounded-lg border border-gray-200">
             <table className="w-full text-sm">
-              <thead className="bg-gray-100 text-left text-xs text-gray-500">
+              <thead className={CABECALHO_TABELA}>
                 <tr>
                   <th className="px-4 py-2 font-medium">Moeda</th>
                   <th className="px-4 py-2 font-medium">Status</th>
@@ -640,11 +675,11 @@ export function Descontos({ relatorio }: { relatorio: RelatorioDados }) {
               </thead>
               <tbody className="divide-y divide-gray-100">
                 {comissoesPorStatus.map((c, i) => (
-                  <tr key={`${c.moeda}-${c.status}-${i}`}>
+                  <tr key={`${c.moeda}-${c.status}-${i}`} className={LINHA_TABELA}>
                     <td className="px-4 py-2 font-medium text-gray-700">{c.moeda}</td>
-                    <td className="px-4 py-2 text-gray-600">{STATUS_COMISSAO_LABEL[c.status]}</td>
-                    <td className="px-4 py-2 text-gray-700">{formatarMoeda(c.total, c.moeda)}</td>
-                    <td className="px-4 py-2 text-gray-500">{c.qtd}</td>
+                    <td className="px-4 py-2"><SeloComissao status={c.status} /></td>
+                    <td className="px-4 py-2 font-mono tabular-nums text-gray-700">{formatarMoeda(c.total, c.moeda)}</td>
+                    <td className="px-4 py-2 font-mono tabular-nums text-gray-500">{c.qtd}</td>
                   </tr>
                 ))}
               </tbody>
