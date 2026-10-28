@@ -21,7 +21,7 @@ export function contentTypePorExtensao(nome: string): string | null {
 }
 
 export function resolverCaminhoUpload(segmentos: string[]): string | null {
-  const alvo = path.normalize(path.join(UPLOAD_DIR, ...segmentos));
+  const alvo = path.normalize(path.join(/* turbopackIgnore: true */ UPLOAD_DIR, ...segmentos));
   const base = path.normalize(UPLOAD_DIR + path.sep);
   if (alvo !== UPLOAD_DIR && !alvo.startsWith(base)) return null;
   return alvo;

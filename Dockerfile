@@ -16,7 +16,7 @@ RUN npx prisma generate
 RUN DATABASE_URL="postgresql://check:check@127.0.0.1:1/check" npx prisma migrate status 2>&1 | grep -q P1001 \
   || (echo "ERRO: schema engine do Prisma não carregou (o serviço migrate quebraria)" && exit 1)
 ENV NEXT_TELEMETRY_DISABLED=1
-ENV NODE_OPTIONS=--max-old-space-size=4608
+ENV NODE_OPTIONS=--max-old-space-size=5120
 RUN DATABASE_URL="postgresql://build:build@localhost:5432/build" npm run build
 
 FROM base AS runner

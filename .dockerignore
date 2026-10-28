@@ -11,3 +11,11 @@ docs
 .vscode
 scripts/test-db.mjs
 coverage
+**/*.test.ts
+**/*.test.tsx
+**/*.spec.ts
+src/test
+e2e
+vitest.config.ts
+vitest.integration.config.ts
+playwright.config.ts
