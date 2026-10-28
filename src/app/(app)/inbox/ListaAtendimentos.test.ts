@@ -49,7 +49,12 @@ describe("ListaAtendimentos", () => {
     expect(html({ naoLidas: 3 })).toMatch(/<span class="[^"]*bg-brand-solid[^"]*text-on-brand[^"]*">3<\/span>/);
   });
   it("lista vazia mostra estado vazio", () => {
-    expect(renderToStaticMarkup(createElement(ListaAtendimentos, { itens: [], proximo: null, selecionado: null, aoSelecionar: vi.fn(), aoCarregarMais: vi.fn() } as never))).toContain("Nenhuma conversa");
+    expect(renderToStaticMarkup(createElement(ListaAtendimentos, { itens: [], proximo: null, selecionado: null, aoSelecionar: vi.fn(), aoCarregarMais: vi.fn() } as never))).toContain("Nenhuma conversa neste filtro.");
+  });
+  it("vendedor desconectado vê o aviso ao gerente no lugar do filtro vazio", () => {
+    const h = renderToStaticMarkup(createElement(ListaAtendimentos, { itens: [], proximo: null, selecionado: null, aoSelecionar: vi.fn(), aoCarregarMais: vi.fn(), whatsappDesconectado: true } as never));
+    expect(h).toContain("WhatsApp desconectado, entre em contato com seu gerente!");
+    expect(h).not.toContain("Nenhuma conversa neste filtro.");
   });
 });
 

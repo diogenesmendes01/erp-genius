@@ -162,6 +162,14 @@ it("319: sem seleção tem área central livre, ícone e nenhum painel de contat
  const h=html();expect(h).toContain("Escolha uma conversa");expect(h).toContain("As mensagens aparecem aqui.");expect(h).toContain("text-[15px]");expect(h).toContain("text-[13px]");expect(h).toContain("items-center justify-center");expect(h).not.toContain('id="painel-contato"');
 });
 
+it("vendedor com WhatsApp desconectado vê o aviso no centro e na lista", () => {
+  const h = html({ extra: { whatsappDesconectado: true, inicial: { itens: [], proximo: null } } });
+  expect(h).toContain("WhatsApp desconectado, entre em contato com seu gerente!");
+  expect(h).not.toContain("Escolha uma conversa");
+  expect(h).not.toContain("As mensagens aparecem aqui.");
+  expect(h).not.toContain("Nenhuma conversa neste filtro.");
+});
+
 
 it("avisoRecarregaPainel distingue global/resync, selecionado e mensagem", () => {
   const a = (
