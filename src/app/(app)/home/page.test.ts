@@ -1,12 +1,13 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const mocks = vi.hoisted(() => ({ sessao: vi.fn(), gerente: vi.fn(), professor: vi.fn(), preferencia: vi.fn() }));
+const mocks = vi.hoisted(() => ({ sessao: vi.fn(), gerente: vi.fn(), professor: vi.fn(), vendedor: vi.fn(), preferencia: vi.fn() }));
 vi.mock("@/server/_shared", () => ({ exigirSessaoPagina: mocks.sessao }));
-vi.mock("@/server/home/consultas", () => ({ dadosHomeGerente: mocks.gerente, dadosHomeProfessor: mocks.professor }));
+vi.mock("@/server/home/consultas", () => ({ dadosHomeGerente: mocks.gerente, dadosHomeProfessor: mocks.professor, dadosHomeVendedor: mocks.vendedor }));
 vi.mock("@/server/preferencias/fuso-exibicao", () => ({ consultarPreferenciaFusoEquipe: mocks.preferencia }));
 vi.mock("./HomeProfessor", () => ({ HomeProfessor: (p: { preferenciaFusoExibicao: string | null; proximaExperimental: unknown }) => `professor:${p.preferenciaFusoExibicao}:${p.proximaExperimental ? "com-proxima" : "sem-proxima"}` }));
 vi.mock("./HomeGerente", () => ({ HomeGerente: () => "gerente" }));
+vi.mock("./HomeVendedor", () => ({ HomeVendedor: () => "vendedor" }));
 
 import Page from "./page";
 
@@ -23,16 +24,21 @@ describe("HomePage", () => {
     expect(mocks.sessao.mock.invocationCallOrder[0]).toBeLessThan(mocks.preferencia.mock.invocationCallOrder[0]!);
   });
 
-  it("vendedor cai na home genérica de atalhos, sem consulta comercial; sem guarda, nada é consultado", async () => {
+  it("vendedor vê a home enxuta, sem painel de gerente nem de professor", async () => {
     mocks.sessao.mockResolvedValue({ id: "vend", nome: "Vend Silva", papeis: ["VENDEDOR"] });
-    const html = renderToStaticMarkup(await Page());
-    expect(html).toContain("Olá, Vend");
-    expect(html).toContain('href="/funil"');
+    mocks.vendedor.mockResolvedValue({ competencia: "2026-10" });
+    expect(renderToStaticMarkup(await Page())).toBe("vendedor");
+    expect(mocks.vendedor).toHaveBeenCalled();
     expect(mocks.gerente).not.toHaveBeenCalled();
+    expect(mocks.professor).not.toHaveBeenCalled();
     expect(mocks.preferencia).not.toHaveBeenCalled();
-    vi.clearAllMocks();
+  });
+
+  it("sem guarda, nada é consultado", async () => {
     mocks.sessao.mockRejectedValue(new Error("Sem sessão"));
     await expect(Page()).rejects.toThrow("Sem sessão");
     expect(mocks.professor).not.toHaveBeenCalled();
+    expect(mocks.vendedor).not.toHaveBeenCalled();
+    expect(mocks.gerente).not.toHaveBeenCalled();
   });
 });

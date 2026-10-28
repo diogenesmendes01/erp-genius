@@ -95,18 +95,38 @@ export async function atribuirAutomaticamente(tx: Prisma.TransactionClient, aten
   const travada = await tx.$queryRaw<{ ok: number }[]>`SELECT 1 AS ok FROM "PrazoRespostaSetor" WHERE "finalidade" = ${a.finalidade}::"FinalidadeAtendimentoWhatsApp" FOR UPDATE`;
   if (!travada.length) return null;
   const cfg = await tx.prazoRespostaSetor.findUniqueOrThrow({ where: { finalidade: a.finalidade } });
+  const agora = new Date();
+  const coberturasAtivas = a.finalidade === "COMERCIAL"
+    ? await tx.coberturaCarteira.findMany({
+        where: { inicio: { lte: agora }, fim: { gt: agora }, revogadaEm: null },
+        orderBy: [{ criadoEm: "desc" }],
+        select: { titularId: true, substitutoId: true, substituto: { select: { ativo: true } } },
+      })
+    : [];
+  const substitutoPorTitular = new Map<string, string>();
+  for (const c of coberturasAtivas) {
+    if (c.substituto.ativo && !substitutoPorTitular.has(c.titularId)) substitutoPorTitular.set(c.titularId, c.substitutoId);
+  }
+  const titularesEmCobertura = new Set(coberturasAtivas.map((c) => c.titularId));
   let donoCarteira: string | null = null;
+  let titularCobertoId: string | null = null;
   const leadId = a.leadId ?? a.conversa.contato?.leadId ?? null;
   if (a.finalidade === "COMERCIAL" && leadId) {
     const lead = await tx.oportunidade.findUnique({ where: { id: leadId }, select: { vendedorDonoId: true } });
     if (lead?.vendedorDonoId) {
-      const dono = await tx.usuario.findFirst({ where: { id: lead.vendedorDonoId, ativo: true }, select: { id: true } });
-      donoCarteira = dono?.id ?? null;
+      const substituto = substitutoPorTitular.get(lead.vendedorDonoId);
+      if (substituto) {
+        donoCarteira = substituto;
+        titularCobertoId = lead.vendedorDonoId;
+      } else if (!titularesEmCobertura.has(lead.vendedorDonoId)) {
+        const dono = await tx.usuario.findFirst({ where: { id: lead.vendedorDonoId, ativo: true }, select: { id: true } });
+        donoCarteira = dono?.id ?? null;
+      }
     }
   }
   const ativos = donoCarteira || cfg.regraDistribuicao === "MANUAL" ? [] : await tx.usuario.findMany({ where: { id: { in: cfg.participantesIds }, ativo: true }, select: { id: true } });
   const ativosSet = new Set(ativos.map((u) => u.id));
-  const participantes = cfg.participantesIds.filter((id) => ativosSet.has(id));
+  const participantes = cfg.participantesIds.filter((id) => ativosSet.has(id) && !titularesEmCobertura.has(id));
   if (!donoCarteira && !participantes.length) return null;
   const grupos = donoCarteira ? [] : await tx.atendimentoWhatsApp.groupBy({
     by: ["responsavelId"], _count: { _all: true },
@@ -123,7 +143,9 @@ export async function atribuirAutomaticamente(tx: Prisma.TransactionClient, aten
   if (!donoCarteira) await tx.prazoRespostaSetor.update({ where: { finalidade: a.finalidade }, data: { ultimoAtribuidoId: escolhido } });
   await registrarEvento(tx, {
     tipo: "AtendimentoAtribuido", agregadoTipo: "ConfigSetorAtendimento", agregadoId: a.finalidade, autorId: null,
-    payload: { atendimentoId, responsavelId: escolhido, motivo },
+    payload: titularCobertoId
+      ? { atendimentoId, responsavelId: escolhido, motivo, titularId: titularCobertoId, cobertura: true }
+      : { atendimentoId, responsavelId: escolhido, motivo },
   });
   return escolhido;
 }

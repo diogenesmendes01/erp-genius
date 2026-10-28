@@ -40,9 +40,7 @@ export async function salvarMeta(i: EntradaMeta): Promise<Resultado> {
       if (!/^[A-Z]{3}$/.test(moeda)) throw new ErroRegra("Informe a moeda da meta de valor ganho.");
     }
     const ehAdmin = autor.papeis.includes(Papel.ADMINISTRADOR);
-    if (i.usuarioId === null) {
-      if (!ehAdmin) throw new ErroRegra("Só o administrador define a meta geral.");
-    } else {
+    if (i.usuarioId !== null) {
       const alvo = await prisma.usuario.findUnique({ where: { id: i.usuarioId }, select: { id: true, ativo: true, gerenteComercialId: true } });
       if (!alvo?.ativo) throw new ErroRegra("Vendedor não encontrado.");
       if (!ehAdmin && alvo.id !== autor.id && alvo.gerenteComercialId !== autor.id) throw new ErroRegra("Você só define metas da sua equipe.");
@@ -64,6 +62,58 @@ export async function salvarMeta(i: EntradaMeta): Promise<Resultado> {
       if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === "P2002") throw new ErroRegra("Esta meta acabou de ser salva por outra pessoa. Confira a tabela e salve de novo se quiser mudar o valor.");
       throw e;
     });
+  });
+}
+
+export function competenciaAnterior(competencia: string): string {
+  const [ano, mes] = competencia.split("-").map(Number);
+  const data = new Date(Date.UTC(ano, mes - 2, 1));
+  return `${data.getUTCFullYear()}-${String(data.getUTCMonth() + 1).padStart(2, "0")}`;
+}
+
+export async function copiarMetasMesAnterior(competenciaDestino: string): Promise<Resultado<{ copiadas: number }>> {
+  return executarAcao(async () => {
+    const autor = await exigirSessaoComPapel(Papel.ADMINISTRADOR, Papel.GERENTE_COMERCIAL);
+    if (typeof competenciaDestino !== "string" || !COMPETENCIA.test(competenciaDestino)) throw new ErroRegra("Competência inválida: use AAAA-MM.");
+    const competenciaOrigem = competenciaAnterior(competenciaDestino);
+    const ehAdmin = autor.papeis.includes(Papel.ADMINISTRADOR);
+    const whereOrigem: Prisma.MetaComercialWhereInput = { competencia: competenciaOrigem };
+    if (ehAdmin) {
+      whereOrigem.OR = [
+        { usuarioId: null },
+        { usuario: { ativo: true, papeis: { hasSome: [Papel.VENDEDOR, Papel.GERENTE_COMERCIAL] } } },
+      ];
+    } else {
+      const equipe = await prisma.usuario.findMany({
+        where: { ativo: true, gerenteComercialId: autor.id, papeis: { has: Papel.VENDEDOR } },
+        select: { id: true },
+      });
+      whereOrigem.OR = [{ usuarioId: null }, { usuarioId: { in: [autor.id, ...equipe.map((e) => e.id)] } }];
+    }
+    const origem = await prisma.metaComercial.findMany({ where: whereOrigem });
+    let copiadas = 0;
+    await prisma.$transaction(async (tx) => {
+      for (const m of origem) {
+        const chave = { competencia: competenciaDestino, usuarioId: m.usuarioId, metrica: m.metrica, moeda: m.moeda };
+        const atual = await tx.metaComercial.findFirst({ where: chave });
+        const valor = numero(m.valor);
+        const meta = atual
+          ? await tx.metaComercial.update({ where: { id: atual.id }, data: { valor } })
+          : await tx.metaComercial.create({ data: { ...chave, valor, criadaPorId: autor.id } });
+        await registrarEvento(tx, {
+          tipo: "MetaDefinida",
+          agregadoTipo: "MetaComercial",
+          agregadoId: meta.id,
+          autorId: autor.id,
+          payload: { ...chave, de: atual ? numero(atual.valor) : null, para: valor, origem: competenciaOrigem },
+        });
+        copiadas += 1;
+      }
+    }).catch((e: unknown) => {
+      if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === "P2002") throw new ErroRegra("Esta meta acabou de ser salva por outra pessoa. Confira a tabela e salve de novo se quiser mudar o valor.");
+      throw e;
+    });
+    return { copiadas };
   });
 }
 

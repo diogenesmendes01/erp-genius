@@ -14,7 +14,7 @@ export interface SetorPainelProps {
   rotulo: string;
   regra: "RODIZIO" | "MENOR_CARGA" | "MANUAL";
   participantesIds: string[];
-  candidatos: { id: string; nome: string }[];
+  candidatos: { id: string; nome: string; coberturaAtiva?: { substitutoNome: string; ate: string } | null }[];
   prazo: number;
   alertarResponsavel: boolean;
   alertarGerente: boolean;
@@ -117,7 +117,17 @@ export function SetorPainel(p: SetorPainelProps) {
       <legend className="text-xs text-gray-600">Participantes (a ordem do rodízio é a da lista)</legend>
       <div className="mt-1 flex flex-wrap gap-3 text-sm">
         {p.candidatos.length === 0 && <EstadoVazio>Nenhum usuário ativo neste setor.</EstadoVazio>}
-        {p.candidatos.map((c) => <label key={c.id} className="flex items-center gap-1"><input type="checkbox" checked={ids.includes(c.id)} onChange={() => alternar(c.id)} />{c.nome}</label>)}
+        {p.candidatos.map((c) => (
+          <label key={c.id} className="flex items-center gap-1">
+            <input type="checkbox" checked={ids.includes(c.id)} onChange={() => alternar(c.id)} />
+            {c.nome}
+            {c.coberturaAtiva && (
+              <span title={`Até ${c.coberturaAtiva.ate}`} className="rounded bg-amber-100 px-1.5 py-0.5 text-xs text-amber-800">
+                Em cobertura por {c.coberturaAtiva.substitutoNome} (pausado na roleta)
+              </span>
+            )}
+          </label>
+        ))}
       </div>
     </fieldset>
     <div className="mt-3 flex flex-wrap gap-4 text-sm">

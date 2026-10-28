@@ -26,7 +26,7 @@ vi.mock("@/server/_shared/sessao", async (importOriginal) => {
 import { prisma } from "@/lib/prisma";
 import { criarUsuario, truncarBanco } from "@/test/integracao";
 import type { EscopoRelatorio } from "@/server/relatorios/escopo";
-import { progressoMetas, salvarMeta } from "./metas";
+import { copiarMetasMesAnterior, progressoMetas, salvarMeta } from "./metas";
 import { checkinExperimental } from "@/server/comercial/acoes";
 import { fusoDaEscola } from "@/server/relatorios/atendimento";
 
@@ -65,11 +65,11 @@ describe("salvarMeta", () => {
     expect((await salvarMeta(m())).ok).toBe(true);
     expect((await salvarMeta({ ...m(), usuarioId: null, metrica: "EXPERIMENTAIS_REALIZADAS" })).ok).toBe(true);
   });
-  it("gerente_so_equipe", async () => {
+  it("gerente_so_equipe_e_pode_definir_a_meta_geral", async () => {
     logado(gerente);
     expect((await salvarMeta({ ...m(), usuarioId: vendOutraEquipe.id })).ok).toBe(false);
     expect((await salvarMeta(m())).ok).toBe(true);
-    expect((await salvarMeta({ ...m(), usuarioId: null })).ok).toBe(false);
+    expect((await salvarMeta({ ...m(), usuarioId: null })).ok).toBe(true);
   });
   it("vendedor_nao_define", async () => {
     logado(vend1);
@@ -103,6 +103,46 @@ describe("salvarMeta", () => {
     await salvarMeta({ ...m(), usuarioId: null });
     await salvarMeta({ ...m(), usuarioId: null, valor: 30 });
     expect(await prisma.metaComercial.count()).toBe(1);
+  });
+});
+
+describe("copiarMetasMesAnterior", () => {
+  it("gerente_copia_a_equipe_e_a_geral_e_deixa_a_outra_equipe", async () => {
+    await prisma.metaComercial.create({ data: { competencia: "2026-10", usuarioId: vend1.id, metrica: "MATRICULAS", valor: 8, criadaPorId: admin.id } });
+    await prisma.metaComercial.create({ data: { competencia: "2026-10", usuarioId: null, metrica: "MATRICULAS", valor: 20, criadaPorId: admin.id } });
+    await prisma.metaComercial.create({ data: { competencia: "2026-10", usuarioId: vendOutraEquipe.id, metrica: "MATRICULAS", valor: 99, criadaPorId: admin.id } });
+    await prisma.metaComercial.create({ data: { competencia: "2026-10", usuarioId: gerente.id, metrica: "EXPERIMENTAIS_REALIZADAS", valor: 3, criadaPorId: admin.id } });
+    logado(gerente);
+    const r = await copiarMetasMesAnterior("2026-11");
+    expect(r.ok && r.dado).toMatchObject({ copiadas: 3 });
+    const copiadas = await prisma.metaComercial.findMany({ where: { competencia: "2026-11" }, orderBy: [{ usuarioId: "asc" }, { metrica: "asc" }] });
+    expect(copiadas.map((c) => c.usuarioId).sort()).toEqual([null, gerente.id, vend1.id].sort());
+    expect(copiadas.some((c) => c.usuarioId === vendOutraEquipe.id)).toBe(false);
+    expect((await ultimoEvento("MetaDefinida")).payload).toMatchObject({ origem: "2026-10" });
+  });
+
+  it("admin_copia_vendedores_ativos_e_janeiro_volta_dezembro", async () => {
+    const inativo = await criarUsuario([Papel.VENDEDOR], "Inativo");
+    await prisma.usuario.update({ where: { id: inativo.id }, data: { ativo: false } });
+    await prisma.metaComercial.create({ data: { competencia: "2025-12", usuarioId: vendOutraEquipe.id, metrica: "MATRICULAS", valor: 4, criadaPorId: admin.id } });
+    await prisma.metaComercial.create({ data: { competencia: "2025-12", usuarioId: inativo.id, metrica: "MATRICULAS", valor: 7, criadaPorId: admin.id } });
+    logado(admin);
+    expect((await copiarMetasMesAnterior("2026-01")).ok).toBe(true);
+    const copiadas = await prisma.metaComercial.findMany({ where: { competencia: "2026-01" } });
+    expect(copiadas.map((c) => c.usuarioId)).toEqual([vendOutraEquipe.id]);
+    expect((await copiarMetasMesAnterior("2026-13")).ok).toBe(false);
+    logado(vend1);
+    expect((await copiarMetasMesAnterior("2026-11")).ok).toBe(false);
+  });
+
+  it("regravar_o_destino_nao_duplica", async () => {
+    await prisma.metaComercial.create({ data: { competencia: "2026-10", usuarioId: vend1.id, metrica: "MATRICULAS", valor: 8, criadaPorId: admin.id } });
+    await prisma.metaComercial.create({ data: { competencia: "2026-11", usuarioId: vend1.id, metrica: "MATRICULAS", valor: 1, criadaPorId: admin.id } });
+    logado(admin);
+    expect((await copiarMetasMesAnterior("2026-11")).ok).toBe(true);
+    const linha = await prisma.metaComercial.findMany({ where: { competencia: "2026-11", usuarioId: vend1.id, metrica: "MATRICULAS" } });
+    expect(linha).toHaveLength(1);
+    expect(linha[0].valor.toFixed(2)).toBe("8.00");
   });
 });
 

@@ -1,9 +1,10 @@
 import Link from "next/link";
 import { Papel } from "@prisma/client";
 import { navParaPapeis } from "@/lib/nav";
-import { dadosHomeGerente, dadosHomeProfessor } from "@/server/home/consultas";
+import { dadosHomeGerente, dadosHomeProfessor, dadosHomeVendedor } from "@/server/home/consultas";
 import { HomeGerente } from "./HomeGerente";
 import { HomeProfessor } from "./HomeProfessor";
+import { HomeVendedor } from "./HomeVendedor";
 import { exigirSessaoPagina } from "@/server/_shared";
 import { consultarPreferenciaFusoEquipe } from "@/server/preferencias/fuso-exibicao";
 
@@ -17,6 +18,10 @@ export default async function HomePage() {
   if (ehGerente) {
     const dados = await dadosHomeGerente(usuario);
     return <HomeGerente nome={usuario.nome} dados={dados} />;
+  }
+  if (usuario.papeis.includes(Papel.VENDEDOR)) {
+    const dados = await dadosHomeVendedor(usuario);
+    return <HomeVendedor nome={usuario.nome} dados={dados} />;
   }
   if (usuario.papeis.includes(Papel.PROFESSOR)) {
     const [dados, preferencia] = await Promise.all([dadosHomeProfessor(usuario), consultarPreferenciaFusoEquipe()]);

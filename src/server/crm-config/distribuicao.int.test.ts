@@ -106,6 +106,35 @@ describe("Distribuição e SLA por setor", () => {
     expect((await ultimoEvento("AtendimentoAtribuido")).payload).toMatchObject({ motivo: "CARTEIRA" });
   });
 
+  it("cobertura_ativa_redireciona_ao_substituto_e_pausa_o_titular_na_roleta", async () => {
+    await config("COMERCIAL", "RODIZIO", [v1.id, v2.id]);
+    await prisma.coberturaCarteira.create({
+      data: {
+        titularId: v1.id, substitutoId: v2.id, concedenteId: admin.id,
+        inicio: new Date(Date.now() - 60_000), fim: new Date(Date.now() + 86_400_000), motivo: "Férias",
+      },
+    });
+    const lead = await prisma.oportunidade.create({ data: { nome: "Coberto", vendedorDonoId: v1.id, etapa: "NOVO" } });
+    const daCarteira = await novoInboundComercial(lead.id);
+    expect(daCarteira.responsavelId).toBe(v2.id);
+    expect((await ultimoEvento("AtendimentoAtribuido")).payload).toMatchObject({
+      motivo: "CARTEIRA", responsavelId: v2.id, titularId: v1.id, cobertura: true,
+    });
+    expect((await novoInboundComercial()).responsavelId).toBe(v2.id);
+  });
+
+  it("cobertura_revogada_devolve_o_titular_a_roleta", async () => {
+    await config("COMERCIAL", "RODIZIO", [v1.id, v2.id]);
+    await prisma.coberturaCarteira.create({
+      data: {
+        titularId: v1.id, substitutoId: v2.id, concedenteId: admin.id,
+        inicio: new Date(Date.now() - 60_000), fim: new Date(Date.now() + 86_400_000),
+        revogadaEm: new Date(), motivo: "Voltou",
+      },
+    });
+    expect((await novoInboundComercial()).responsavelId).toBe(v1.id);
+  });
+
   it("carteira_vale_mesmo_em_setor_manual", async () => {
     await config("COMERCIAL", "MANUAL", []);
     const lead = await prisma.oportunidade.create({ data: { nome: "Lead", vendedorDonoId: v2.id, etapa: "NOVO" } });

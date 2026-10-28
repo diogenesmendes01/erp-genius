@@ -49,7 +49,7 @@ describe("/configuracao/crm/metas", () => {
   it("sucesso_revalida_e_avisa_salvo", async () => {
     mocks.salvarMeta.mockResolvedValue({ ok: true });
     const url = await destinoDe(definirMeta(form({ competencia: "2026-10", usuarioId: "v1", metrica: "MATRICULAS", valor: "12,5" })));
-    expect(url).toBe("/configuracao/crm/metas?salvo=1");
+    expect(url).toBe("/configuracao/crm/metas?competencia=2026-10&salvo=1");
     expect(mocks.salvarMeta).toHaveBeenCalledWith({ competencia: "2026-10", usuarioId: "v1", metrica: "MATRICULAS", valor: 12.5, moeda: undefined });
     expect(mocks.revalidatePath).toHaveBeenCalledWith("/configuracao/crm/metas");
   });
