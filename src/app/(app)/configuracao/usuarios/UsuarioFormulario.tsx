@@ -14,6 +14,7 @@ import {
 import { criarUsuario, editarUsuario } from "@/server/acesso/acoes";
 import { FeedbackAcao } from "@/components/FeedbackAcao";
 import { useAcaoCliente } from "@/lib/acao-cliente";
+import { useChaveIdempotencia } from "@/lib/chave-idempotencia";
 import { botaoClasses } from "@/components/Botao";
 
 const inputCls =
@@ -43,7 +44,8 @@ export function UsuarioFormulario({
   onClose: () => void;
 }) {
   const router = useRouter();
-  const acao = useAcaoCliente({ idempotente: false });
+  const acao = useAcaoCliente({ idempotente: !usuario });
+  const tentativa = useChaveIdempotencia();
 
   const {
     register,
@@ -67,7 +69,8 @@ export function UsuarioFormulario({
   });
 
   async function onSubmit(data: FormValues) {
-    const desfecho = await acao.executar<unknown>(() => (usuario ? editarUsuario(usuario.id, data) : criarUsuario(data)));
+    const desfecho = await acao.executar<unknown>(() => (usuario ? editarUsuario(usuario.id, data) : criarUsuario({ ...data, chaveIdempotencia: tentativa.atual })));
+    tentativa.depoisDo(desfecho);
     if (desfecho?.tipo !== "ok") return;
     router.refresh();
     onClose();

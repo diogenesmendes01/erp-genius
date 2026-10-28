@@ -18,7 +18,7 @@ vi.mock("@/server/matricula/condicoes-horas", () => ({ consultarCondicoesHoras: 
 
 import { CondicoesHoras } from "./CondicoesHoras";
 import { CampoMoeda } from "@/components/CampoMoeda";
-import { MSG_DECISAO_INCERTA, MSG_RESULTADO_INCERTO_SEM_CHAVE } from "@/lib/mensagens";
+import { MSG_DECISAO_INCERTA, MSG_RESULTADO_INCERTO } from "@/lib/mensagens";
 import { anuncios, contratoFeedbackSeparado } from "@/test/feedback-acao";
 import { FormDataFalso, criarGanchos, elementos, submeter, texto } from "@/test/tela-sem-dom";
 
@@ -40,7 +40,7 @@ describe("CondicoesHoras", () => {
   contratoFeedbackSeparado({
     nome: "preparar condições por hora", preparar: () => digitarPreco("100,00"), tela, action: m.preparar,
     acionar: () => submeter(tela(), valoresPreparo, 0),
-    sucesso: "Versão preparada para revisão independente.", incerto: MSG_RESULTADO_INCERTO_SEM_CHAVE,
+    sucesso: "Versão preparada para revisão independente.", incerto: MSG_RESULTADO_INCERTO,
     ocupado: () => fieldsets()[0].props.disabled === true && elementos(tela()).some((n) => n.type === "button" && texto(n.props.children) === "Registrando…"),
   });
 
@@ -72,5 +72,23 @@ describe("CondicoesHoras", () => {
     await submeter(tela(), valoresPreparo, 0);
     expect(m.preparar.mock.calls[0][0]).toMatchObject({ matriculaId: "m", documentoId: "d", motivo: "Transcrição conferida", regras: { valorHora: "100.50", antecedenciaCancelamentoMinutos: 60 } });
     expect(m.refresh).toHaveBeenCalledTimes(1);
+  });
+
+  it("reenvio depois de resultado incerto repete a chave; depois do sucesso, a chave é nova", async () => {
+    digitarPreco("100,00");
+    m.preparar.mockRejectedValueOnce(new TypeError("Failed to fetch"));
+    await submeter(tela(), valoresPreparo, 0);
+    m.preparar.mockResolvedValueOnce({ ok: false, erro: "Recusado" });
+    await submeter(tela(), valoresPreparo, 0);
+    m.preparar.mockResolvedValueOnce({ ok: true });
+    await submeter(tela(), valoresPreparo, 0);
+    m.preparar.mockResolvedValueOnce({ ok: true });
+    await submeter(tela(), valoresPreparo, 0);
+    const [primeira, erro, sucesso, nova] = m.preparar.mock.calls.map((c) => (c[0] as { chaveIdempotencia?: string }).chaveIdempotencia);
+    expect(primeira).toMatch(/^[0-9a-f-]{36}$/);
+    expect(erro).toBe(primeira);
+    expect(sucesso).toBe(primeira);
+    expect(nova).toMatch(/^[0-9a-f-]{36}$/);
+    expect(nova).not.toBe(primeira);
   });
 });

@@ -15,7 +15,7 @@ const tipos = [
 
 export function FormularioOcorrencia({ reservaId, fuso }: { reservaId: string; fuso: string }) {
   const router = useRouter();
-  const acao = useAcaoCliente({ idempotente: false });
+  const acao = useAcaoCliente({ idempotente: true });
 
   return <form className="space-y-3 rounded border p-3" onSubmit={async evento => {
     evento.preventDefault();

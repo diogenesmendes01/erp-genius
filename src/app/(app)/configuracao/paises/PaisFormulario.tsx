@@ -8,6 +8,7 @@ import { PaisSchema, type PaisInput } from "@/server/paises/schema";
 import { criarPais, editarPais } from "@/server/paises/acoes";
 import { FeedbackAcao } from "@/components/FeedbackAcao";
 import { useAcaoCliente } from "@/lib/acao-cliente";
+import { useChaveIdempotencia } from "@/lib/chave-idempotencia";
 import { botaoClasses } from "@/components/Botao";
 import { EstadoVazio } from "@/components/EstadoVazio";
 import { CampoFuso } from "@/components/CampoFuso";
@@ -36,7 +37,8 @@ export function PaisFormulario({
   onClose: () => void;
 }) {
   const router = useRouter();
-  const acao = useAcaoCliente({ idempotente: false });
+  const acao = useAcaoCliente({ idempotente: !pais });
+  const tentativa = useChaveIdempotencia();
 
   const {
     register,
@@ -59,7 +61,8 @@ export function PaisFormulario({
   const { fields, append, remove } = useFieldArray({ control, name: "tiposDocumento", keyName: "_formKey" });
 
   async function onSubmit(data: PaisInput) {
-    const d = await acao.executar<unknown>(() => pais ? editarPais(pais.id, data) : criarPais(data));
+    const d = await acao.executar<unknown>(() => pais ? editarPais(pais.id, data) : criarPais({ ...data, chaveIdempotencia: tentativa.atual }));
+    tentativa.depoisDo(d);
     if (d?.tipo !== "ok") return;
     router.refresh();
     onClose();

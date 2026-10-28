@@ -5,6 +5,8 @@ import { Papel, Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { executarAcao, exigirSessaoComPapel, ErroRegra, ErroPermissao, registrarEvento } from "@/server/_shared";
 import { bloquearMatriculas } from "@/server/financeiro/recebimentos";
+import { marcaIdempotencia, repeticaoIdempotente } from "@/server/_shared/idempotencia";
+import { ChaveIdempotenciaSchema } from "@/server/_shared/validacao";
 import { RegrasContinuidadeMensalSchema } from "./continuidade-mensal-schema";
 
 
@@ -53,20 +55,31 @@ async function exigirAutor(tx: Prisma.TransactionClient, id: string, papeis: Pap
   const u = await tx.usuario.findUnique({ where: { id }, select: { ativo: true, papeis: true } });
   if (!u?.ativo || !u.papeis.some((p) => papeis.includes(p))) throw new ErroPermissao();
 }
-const Preparar = z.object({ matriculaId: z.string().min(1), documentoId: z.string().min(1), regras: RegrasContinuidadeMensalSchema, motivo: z.string().trim().min(5).max(2000) }).strict();
+const Preparar = z.object({ matriculaId: z.string().min(1), documentoId: z.string().min(1), regras: RegrasContinuidadeMensalSchema, motivo: z.string().trim().min(5).max(2000), chaveIdempotencia: ChaveIdempotenciaSchema.optional() }).strict();
 export async function prepararCondicoesContinuidadeMensal(input: z.input<typeof Preparar>) {
   return executarAcao(async () => {
     const autor = await exigirSessaoComPapel(Papel.SECRETARIA_ACADEMICA);
-    const d = Preparar.parse(input);
+    const { chaveIdempotencia, ...d } = Preparar.parse(input);
+    const marca = marcaIdempotencia(chaveIdempotencia, d);
     return prisma.$transaction(async (tx) => {
       await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended('calendario-escola', 0))`;
       await bloquearMatriculas(tx, [d.matriculaId]);
       await exigirAutor(tx, autor.id, [Papel.SECRETARIA_ACADEMICA, Papel.ADMINISTRADOR]);
+      if (marca) {
+        const repetido = await repeticaoIdempotente(tx, {
+          tipo: "CondicoesContinuidadeMensalPreparadas", agregadoTipo: "Matricula", autorId: autor.id, marca,
+          mensagemConflito: "Esta tentativa já foi usada com outras condições. Recarregue a página e confira a versão preparada antes de repetir.",
+        });
+        if (repetido) {
+          const p = repetido.payload as { condicoesId: string; versao: number };
+          return { id: p.condicoesId, versao: p.versao };
+        }
+      }
       await exigirFonte(tx, d.matriculaId, d.documentoId, d.regras);
       if (await tx.condicoesContinuidadeMensalMatricula.count({ where: { matriculaId: d.matriculaId, status: "PENDENTE" } })) throw new ErroRegra("Já existe versão aguardando decisão.");
       const ultima = await tx.condicoesContinuidadeMensalMatricula.findFirst({ where: { matriculaId: d.matriculaId }, orderBy: { versao: "desc" }, select: { versao: true } });
       const c = await tx.condicoesContinuidadeMensalMatricula.create({ data: { ...d, versao: (ultima?.versao ?? 0) + 1, preparadorId: autor.id } });
-      await registrarEvento(tx, { tipo: "CondicoesContinuidadeMensalPreparadas", agregadoTipo: "Matricula", agregadoId: d.matriculaId, autorId: autor.id, payload: { condicoesId: c.id, versao: c.versao, documentoId: d.documentoId } });
+      await registrarEvento(tx, { tipo: "CondicoesContinuidadeMensalPreparadas", agregadoTipo: "Matricula", agregadoId: d.matriculaId, autorId: autor.id, payload: { condicoesId: c.id, versao: c.versao, documentoId: d.documentoId, ...marca } });
       return { id: c.id, versao: c.versao };
     });
   });

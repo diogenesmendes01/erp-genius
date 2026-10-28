@@ -21,7 +21,7 @@ vi.mock("@/server/avaliacoes/segunda-chamada-ocorrencia-local", () => ({ registr
 
 import { SegundaChamadaPainel } from "./SegundaChamadaPainel";
 import { FormularioOcorrencia } from "./FormularioOcorrencia";
-import { MSG_RESULTADO_INCERTO_SEM_CHAVE } from "@/lib/mensagens";
+import { MSG_RESULTADO_INCERTO, MSG_RESULTADO_INCERTO_SEM_CHAVE } from "@/lib/mensagens";
 import { anuncios, contratoFeedbackSeparado } from "@/test/feedback-acao";
 import { FormDataFalso, botao, criarGanchos, elementos, formularios, submeter, texto } from "@/test/tela-sem-dom";
 import type { ReactNode } from "react";
@@ -143,7 +143,7 @@ describe("FormularioOcorrencia", () => {
     nome: "registrar ocorrência", tela, action: m.ocorrencia,
     acionar: () => submeter(tela(), valores),
     respostaOk: { ok: true, dado: { id: "ocorrencia-1" } },
-    sucesso: "Ocorrência registrada.", incerto: MSG_RESULTADO_INCERTO_SEM_CHAVE,
+    sucesso: "Ocorrência registrada.", incerto: MSG_RESULTADO_INCERTO,
     ocupado: () => ocupadoEm(tela()),
   });
 
