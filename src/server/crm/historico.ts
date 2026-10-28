@@ -1,10 +1,14 @@
-import { Papel, type CategoriaDocumento, type EtapaLead, type MotivoPerda, type Prisma, type Segmento, type StatusCobranca, type Temperatura } from "@prisma/client";
+import { Papel, type CategoriaDocumento, type EtapaLead, type MotivoPerda, type Prisma, type Segmento, type StatusCobranca, type StatusTarefa, type Temperatura } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import type { UsuarioSessao } from "@/server/_shared/sessao";
 import { escopoComercialAtual } from "@/server/_shared/escopo-comercial";
 import { ETAPA_LABEL, MOTIVO_PERDA_LABEL, TEMPERATURA_LABEL } from "@/lib/labels";
+import { hrefConversa } from "@/lib/href-conversa";
+import type { BlocoB2BPainel } from "@/server/inbox/painel-detalhes";
+import { atendimentosParaPessoas } from "@/server/inbox/atalhos";
 import { capacidadesCrm } from "./permissoes";
 import { escopoPessoas } from "./pessoas";
+import { escopoTarefas } from "./tarefas";
 
 export type ItemHistorico = {
   id: string;
@@ -52,6 +56,8 @@ export type DetalheOportunidade = {
   comissaoPrevista: string | null;
   dataProposta: Date | null;
   documentos: { id: string; categoria: CategoriaDocumento; nome: string; url: string }[];
+  b2bDetalhes: BlocoB2BPainel | null;
+  tarefas: { id: string; versao: number; titulo: string; status: StatusTarefa; podeAgir: boolean }[];
   taxaMatricula: {
     cobrancaId: string;
     status: StatusCobranca;
@@ -157,6 +163,11 @@ export async function obterOportunidade(id: string, usuario: UsuarioSessao): Pro
       vendedor: { select: { id: true, nome: true } },
       professorExperimental: { select: { id: true, nome: true } },
       documentos: { where: { arquivado: false }, orderBy: { criadoEm: "desc" }, select: { id: true, categoria: true, nome: true, url: true } },
+      empresa: { select: { id: true, nome: true } },
+      participantes: {
+        orderBy: [{ criadoEm: "asc" }, { id: "asc" }],
+        select: { pessoaId: true, papel: true, pessoa: { select: { nome: true, cargo: true } } },
+      },
       matricula: {
         select: {
           secretariaAssumiuEm: true,
@@ -171,6 +182,13 @@ export async function obterOportunidade(id: string, usuario: UsuarioSessao): Pro
     },
   });
   if (!l) return null;
+  const conversas = l.b2b && l.empresa ? await atendimentosParaPessoas(usuario, l.participantes.map((p) => p.pessoaId)) : new Map();
+  const capacidades = capacidadesCrm(usuario.papeis);
+  const tarefas = capacidades.has("tarefas.ver") ? await prisma.tarefa.findMany({
+    where: { AND: [{ leadId: l.id }, await escopoTarefas(usuario, capacidades.has("tarefas.equipe"))] },
+    orderBy: [{ criadoEm: "asc" }, { id: "asc" }],
+    select: { id: true, versao: true, titulo: true, status: true },
+  }) : [];
   const taxa = l.matricula?.cobrancas[0] ?? null;
   const cadastroAdministrativo = usuario.papeis.some((p) => p === Papel.ADMINISTRADOR || p === Papel.SECRETARIA_ACADEMICA);
   const documentos = cadastroAdministrativo
@@ -213,6 +231,19 @@ export async function obterOportunidade(id: string, usuario: UsuarioSessao): Pro
     comissaoPrevista: l.comissaoPrevista ? l.comissaoPrevista.toFixed(2) : null,
     dataProposta: l.dataProposta,
     documentos,
+    b2bDetalhes: l.b2b && l.empresa ? {
+      empresa: l.empresa,
+      participantes: l.participantes.map((p) => ({
+        pessoaId: p.pessoaId,
+        nome: p.pessoa.nome,
+        papel: p.papel,
+        cargo: p.pessoa.cargo,
+        naConversa: false,
+        hrefConversa: conversas.has(p.pessoaId) ? hrefConversa(conversas.get(p.pessoaId)!.atendimentoId) : null,
+      })),
+      decisor: l.participantes.some((p) => p.papel === "DECISOR") ? true : l.participantes.length ? false : null,
+    } : null,
+    tarefas: tarefas.map((t) => ({ id: t.id, versao: t.versao, titulo: t.titulo, status: t.status, podeAgir: t.status === "ABERTA" })),
     taxaMatricula: taxa
       ? { cobrancaId: taxa.id, status: taxa.status, linkPagamento: taxa.linkPagamento, linkEnviadoEm: taxa.linkEnviadoEm }
       : null,

@@ -19,6 +19,7 @@ const oportunidade: DetalheOportunidade = {
   telefoneE164: "+5500000336", paisId: null, segmento: "ADULTO", origemCampanha: null, origemConjunto: null,
   origemAnuncio: null, origemPalavra: null, planoPrevisto: null, comissaoPrevista: null, dataProposta: null,
   professorExperimental: null, experimentalConfirmadaEm: null, documentos: [],
+  b2bDetalhes: null, tarefas: [],
 };
 it("#336 FunilCliente repassa conversa autorizada ao painel sem prop órfã", () => {
   const html = renderToStaticMarkup(createElement(FunilCliente, {
