@@ -39,7 +39,7 @@ export function avaliarPreparacaoNaFila(input: {
   if (conferencia.exigeDirecao) return { visivel: false, podeAprovarDireto: false };
   const limites = input.limites ?? { limiteDescontoTaxaPct: null, limiteDescontoMensalidadePct: null };
   const acima = conferencia.componentes.some((c) => {
-    if (c.referencia == null || c.resultado === "REFERENCIA_INSUFICIENTE") return false;
+    if (c.resultado !== "EXIGE_APROVACAO" || c.referencia == null) return false;
     return exigeAprovacaoComponente(limites, c.tipo as TipoCobranca, c.referencia, c.proposto);
   });
   if (acima) return { visivel: false, podeAprovarDireto: false };

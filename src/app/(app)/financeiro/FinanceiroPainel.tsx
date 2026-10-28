@@ -134,8 +134,9 @@ export function AprovacoesAba({ aprovacoes }: { aprovacoes: AprovacaoRow[] }) {
       <FeedbackAcao erro={acao.erro} sucesso={acao.sucesso} className="mb-4" />
       <Aprovacoes aprovacoes={aprovacoes} onDecidir={(id, ok, motivo) => {
         const row = aprovacoes.find((a) => a.id === id);
-        if (row?.origem === "PREPARACAO_MATRICULA" && row.preparacaoId) {
-          return run(() => decidirPrecoPreparacao({ preparacaoId: row.preparacaoId, aprovar: ok, motivo: (motivo ?? "").trim() }));
+        const preparacaoId = row?.preparacaoId;
+        if (row?.origem === "PREPARACAO_MATRICULA" && preparacaoId) {
+          return run(() => decidirPrecoPreparacao({ preparacaoId, aprovar: ok, motivo: (motivo ?? "").trim() }));
         }
         return run(() => decidirAprovacao(id, { aprovar: ok, ...(motivo ? { motivo } : {}) }));
       }} isPending={acao.ocupado} />

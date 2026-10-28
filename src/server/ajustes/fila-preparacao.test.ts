@@ -6,9 +6,10 @@ const criadaEm = new Date("2026-10-01T12:00:00Z");
 const componente = (resultado: "DENTRO_ALCADA" | "EXIGE_APROVACAO" | "REFERENCIA_INSUFICIENTE", extra: Record<string, unknown> = {}) => ({
   tipo: "MENSALIDADE", referencia: "100.00", proposto: "80.00", limitePct: "10", descontoPct: "20", resultado, ...extra,
 });
-const referencias = (parcial: Record<string, unknown>) => ({
+const referencias = (parcial: Record<string, unknown> = {}) => ({
   exigeDirecao: false,
-  alcada: { componentes: [componente("DENTRO_ALCADA", { tipo: "MATRICULA", referencia: "50.00", proposto: "50.00", descontoPct: "0" }), componente("EXIGE_APROVACAO")] , ...parcial },
+  ...parcial,
+  alcada: { componentes: [componente("DENTRO_ALCADA", { tipo: "MATRICULA", referencia: "50.00", proposto: "50.00", descontoPct: "0" }), componente("EXIGE_APROVACAO")] },
 });
 
 describe("avaliarPreparacaoNaFila", () => {
