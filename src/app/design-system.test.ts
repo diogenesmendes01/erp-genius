@@ -47,6 +47,12 @@ const TONS: TomEstado[] = [
   "perigo", "handoff", "atraso", "ia", "frio", "neutro",
 ];
 const CORES = (config.theme?.extend?.colors ?? {}) as Record<string, Record<string, string>>;
+const PARES_FAMILIA = {
+  brand: { bg: "bg-[var(--brand-soft)]", text: "text-[var(--brand-text)]", soft: "--brand-soft", tokenText: "--brand-text" },
+  warning: { bg: "bg-[var(--warning-soft)]", text: "text-[var(--warning-text)]", soft: "--warning-soft", tokenText: "--warning-text" },
+  danger: { bg: "bg-[var(--danger-soft)]", text: "text-[var(--danger-text)]", soft: "--danger-soft", tokenText: "--danger-text" },
+  info: { bg: "bg-[var(--info-soft)]", text: "text-[var(--info-text)]", soft: "--info-soft", tokenText: "--info-text" },
+} as const;
 
 describe("design system: primitivos da fundação", () => {
   it("EstadoVazio não emite border-gray-300 em nenhuma variante", () => {
@@ -71,11 +77,12 @@ describe("design system: primitivos da fundação", () => {
       expect(html, tom).toContain(CLASSES_TOM[tom]);
       const familia = familiaDe(tom);
       if (familia === "neutro") continue;
-      expect(CLASSES_TOM[tom], tom).toContain(`bg-[var(--${familia}-soft)]`);
-      expect(CLASSES_TOM[tom], tom).toContain(`text-[var(--${familia}-text)]`);
-      expect(CSS, `--${familia}-soft`).toContain(`--${familia}-soft`);
-      expect(CSS, `--${familia}-text`).toContain(`--${familia}-text`);
-      expect(CLASSES_TOM[tom], tom).not.toContain(`--${familia === "brand" ? "danger" : "brand"}-text`);
+      const par = PARES_FAMILIA[familia];
+      expect(CLASSES_TOM[tom], tom).toContain(par.bg);
+      expect(CLASSES_TOM[tom], tom).toContain(par.text);
+      expect(CSS, par.soft).toContain(par.soft);
+      expect(CSS, par.tokenText).toContain(par.tokenText);
+      expect(CLASSES_TOM[tom], tom).not.toContain(familia === "brand" ? "--danger-text" : "--brand-text");
     }
     expect(TEXTO_TOM.humano).toBe("text-brand-700");
     expect(CORES.brand["700"]).toBe("var(--brand-text)");
