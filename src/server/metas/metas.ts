@@ -40,6 +40,7 @@ export async function salvarMeta(i: EntradaMeta): Promise<Resultado> {
       if (!/^[A-Z]{3}$/.test(moeda)) throw new ErroRegra("Informe a moeda da meta de valor ganho.");
     }
     const ehAdmin = autor.papeis.includes(Papel.ADMINISTRADOR);
+    if (i.usuarioId === null && !ehAdmin) throw new ErroRegra("Só o administrador define a meta geral.");
     if (i.usuarioId !== null) {
       const alvo = await prisma.usuario.findUnique({ where: { id: i.usuarioId }, select: { id: true, ativo: true, gerenteComercialId: true } });
       if (!alvo?.ativo) throw new ErroRegra("Vendedor não encontrado.");
@@ -84,11 +85,7 @@ export async function copiarMetasMesAnterior(competenciaDestino: string): Promis
         { usuario: { ativo: true, papeis: { hasSome: [Papel.VENDEDOR, Papel.GERENTE_COMERCIAL] } } },
       ];
     } else {
-      const equipe = await prisma.usuario.findMany({
-        where: { ativo: true, gerenteComercialId: autor.id, papeis: { has: Papel.VENDEDOR } },
-        select: { id: true },
-      });
-      whereOrigem.OR = [{ usuarioId: null }, { usuarioId: { in: [autor.id, ...equipe.map((e) => e.id)] } }];
+      whereOrigem.usuario = { gerenteComercialId: autor.id, ativo: true };
     }
     const origem = await prisma.metaComercial.findMany({ where: whereOrigem });
     let copiadas = 0;

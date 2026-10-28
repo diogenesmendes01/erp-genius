@@ -30,6 +30,16 @@ describe("PainelComissoes · aluno clicável", () => {
     expect(html).toContain("Ana Souza");
   });
 
+  it("financeiro_sem_acesso_ve_o_nome_sem_link_de_preparacao", () => {
+    const html = renderToStaticMarkup(createElement(PainelComissoes, {
+      painel, periodo: "mes", pagina: 1, vendedorId: "", vendedores: [], veTodos: true,
+      podeFecharMes: true, podeAbrirPreparacao: false, fuso: "UTC", hrefPagina: () => "/comissoes",
+    }));
+    expect(html).toContain("Ana Souza");
+    expect(html).not.toContain("/matriculas/m1/preparacao");
+    expect(html).not.toContain("/funil?o=o1");
+  });
+
   it("sem_matricula_abre_a_oportunidade_no_funil", () => {
     const html = renderToStaticMarkup(createElement(PainelComissoes, {
       painel: { ...painel, linhas: [{ ...linha, matriculaId: "", oportunidadeId: "o9" }] },

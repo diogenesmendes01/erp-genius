@@ -108,7 +108,7 @@ export default async function MetasPage({ searchParams }: { searchParams?: Promi
         <label className="flex flex-col text-xs text-gray-500">
           Quem
           <select name="usuarioId" defaultValue={ehAdmin ? "" : usuario.id} className="rounded border border-gray-300 px-2 py-1 text-sm text-gray-800">
-            <option value="">Equipe (geral)</option>
+            {ehAdmin && <option value="">Equipe (geral)</option>}
             {!ehAdmin && <option value={usuario.id}>Eu</option>}
             {vendedores.filter((v) => v.id !== usuario.id).map((v) => <option key={v.id} value={v.id}>{v.nome}</option>)}
           </select>

@@ -40,7 +40,7 @@ export function HomeGerente({ nome, dados }: { nome: string; dados: Dados }) {
       </Link>
 
       {kpis.alertasSla > 0 && (
-        <Link href="/inbox?prazo=estourado&setor=COMERCIAL" className="flex items-center gap-2 rounded-md border border-amber-200 bg-amber-50 px-4 py-2 text-sm text-amber-800 hover:border-amber-300">
+        <Link href="/inbox?prazo=estourado&setor=COMERCIAL" className="flex items-center gap-2 rounded-md border border-amber-200 bg-amber-50 px-4 py-2 text-sm text-amber-800 hover:border-amber-600">
           <IconAlertTriangle className="h-4 w-4 shrink-0" />
           <span>SLA do inbox: <strong>{kpis.alertasSla}</strong> atendimento(s) comercial(is) com a primeira resposta além do prazo.</span>
         </Link>

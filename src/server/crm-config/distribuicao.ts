@@ -35,6 +35,19 @@ export function escolherResponsavel(i: EntradaEscolha): string | null {
   return escolhaDaRegra(i)?.id ?? null;
 }
 
+function substitutoLivre(titularId: string, substitutoPorTitular: Map<string, string>, titularesEmCobertura: Set<string>): string | null {
+  const vistos = new Set<string>();
+  let atual = titularId;
+  while (titularesEmCobertura.has(atual)) {
+    if (vistos.has(atual)) return null;
+    vistos.add(atual);
+    const proximo = substitutoPorTitular.get(atual);
+    if (!proximo) return null;
+    atual = proximo;
+  }
+  return vistos.size > 0 ? atual : null;
+}
+
 function escolhaDaRegra(i: EntradaEscolha): { id: string; motivo: MotivoAtribuicao } | null {
   if (i.regra === "RODIZIO") {
     const pos = i.ultimoAtribuidoId ? i.participantes.indexOf(i.ultimoAtribuidoId) : -1;
@@ -114,7 +127,7 @@ export async function atribuirAutomaticamente(tx: Prisma.TransactionClient, aten
   if (a.finalidade === "COMERCIAL" && leadId) {
     const lead = await tx.oportunidade.findUnique({ where: { id: leadId }, select: { vendedorDonoId: true } });
     if (lead?.vendedorDonoId) {
-      const substituto = substitutoPorTitular.get(lead.vendedorDonoId);
+      const substituto = substitutoLivre(lead.vendedorDonoId, substitutoPorTitular, titularesEmCobertura);
       if (substituto) {
         donoCarteira = substituto;
         titularCobertoId = lead.vendedorDonoId;

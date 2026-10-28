@@ -65,11 +65,13 @@ describe("salvarMeta", () => {
     expect((await salvarMeta(m())).ok).toBe(true);
     expect((await salvarMeta({ ...m(), usuarioId: null, metrica: "EXPERIMENTAIS_REALIZADAS" })).ok).toBe(true);
   });
-  it("gerente_so_equipe_e_pode_definir_a_meta_geral", async () => {
+  it("gerente_so_equipe_e_nao_define_a_meta_geral", async () => {
     logado(gerente);
     expect((await salvarMeta({ ...m(), usuarioId: vendOutraEquipe.id })).ok).toBe(false);
     expect((await salvarMeta(m())).ok).toBe(true);
-    expect((await salvarMeta({ ...m(), usuarioId: null })).ok).toBe(true);
+    const geral = await salvarMeta({ ...m(), usuarioId: null });
+    expect(geral).toMatchObject({ ok: false, erro: "Só o administrador define a meta geral." });
+    expect(await prisma.metaComercial.count({ where: { usuarioId: null } })).toBe(0);
   });
   it("vendedor_nao_define", async () => {
     logado(vend1);
@@ -107,29 +109,29 @@ describe("salvarMeta", () => {
 });
 
 describe("copiarMetasMesAnterior", () => {
-  it("gerente_copia_a_equipe_e_a_geral_e_deixa_a_outra_equipe", async () => {
+  it("gerente_copia_so_os_vendedores_da_equipe", async () => {
     await prisma.metaComercial.create({ data: { competencia: "2026-10", usuarioId: vend1.id, metrica: "MATRICULAS", valor: 8, criadaPorId: admin.id } });
     await prisma.metaComercial.create({ data: { competencia: "2026-10", usuarioId: null, metrica: "MATRICULAS", valor: 20, criadaPorId: admin.id } });
     await prisma.metaComercial.create({ data: { competencia: "2026-10", usuarioId: vendOutraEquipe.id, metrica: "MATRICULAS", valor: 99, criadaPorId: admin.id } });
     await prisma.metaComercial.create({ data: { competencia: "2026-10", usuarioId: gerente.id, metrica: "EXPERIMENTAIS_REALIZADAS", valor: 3, criadaPorId: admin.id } });
     logado(gerente);
     const r = await copiarMetasMesAnterior("2026-11");
-    expect(r.ok && r.dado).toMatchObject({ copiadas: 3 });
-    const copiadas = await prisma.metaComercial.findMany({ where: { competencia: "2026-11" }, orderBy: [{ usuarioId: "asc" }, { metrica: "asc" }] });
-    expect(copiadas.map((c) => c.usuarioId).sort()).toEqual([null, gerente.id, vend1.id].sort());
-    expect(copiadas.some((c) => c.usuarioId === vendOutraEquipe.id)).toBe(false);
-    expect((await ultimoEvento("MetaDefinida")).payload).toMatchObject({ origem: "2026-10" });
+    expect(r.ok && r.dado).toMatchObject({ copiadas: 1 });
+    const copiadas = await prisma.metaComercial.findMany({ where: { competencia: "2026-11" } });
+    expect(copiadas.map((c) => c.usuarioId)).toEqual([vend1.id]);
+    expect((await ultimoEvento("MetaDefinida")).payload).toMatchObject({ origem: "2026-10", usuarioId: vend1.id });
   });
 
   it("admin_copia_vendedores_ativos_e_janeiro_volta_dezembro", async () => {
     const inativo = await criarUsuario([Papel.VENDEDOR], "Inativo");
     await prisma.usuario.update({ where: { id: inativo.id }, data: { ativo: false } });
     await prisma.metaComercial.create({ data: { competencia: "2025-12", usuarioId: vendOutraEquipe.id, metrica: "MATRICULAS", valor: 4, criadaPorId: admin.id } });
+    await prisma.metaComercial.create({ data: { competencia: "2025-12", usuarioId: null, metrica: "MATRICULAS", valor: 12, criadaPorId: admin.id } });
     await prisma.metaComercial.create({ data: { competencia: "2025-12", usuarioId: inativo.id, metrica: "MATRICULAS", valor: 7, criadaPorId: admin.id } });
     logado(admin);
     expect((await copiarMetasMesAnterior("2026-01")).ok).toBe(true);
     const copiadas = await prisma.metaComercial.findMany({ where: { competencia: "2026-01" } });
-    expect(copiadas.map((c) => c.usuarioId)).toEqual([vendOutraEquipe.id]);
+    expect(copiadas.map((c) => c.usuarioId).sort()).toEqual([null, vendOutraEquipe.id].sort());
     expect((await copiarMetasMesAnterior("2026-13")).ok).toBe(false);
     logado(vend1);
     expect((await copiarMetasMesAnterior("2026-11")).ok).toBe(false);
