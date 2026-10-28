@@ -1,8 +1,13 @@
 import { readFileSync } from "node:fs";
+import { createElement } from "react";
+import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import config from "../../tailwind.config";
 import postcss from "postcss";
 import tailwind from "tailwindcss";
+import { BadgeEstado, CLASSES_TOM, PONTO_TOM, TEXTO_TOM, type PropsBadgeEstado, type TomEstado } from "@/components/BadgeEstado";
+import { CONTROLE_CAMPO } from "@/components/Campo";
+import { EstadoVazio, EstadoVazioLinha } from "@/components/EstadoVazio";
 import { paresTexto, reprovados, reprovadosSolidos } from "./contraste-nucleo";
 
 const CSS = readFileSync("src/app/globals.css", "utf-8").replace(/\r\n/g, "\n");
@@ -34,5 +39,59 @@ describe("design system: tokens nos dois temas", () => {
     expect(regras.get(".font-mono")?.get("font-family")).toContain("var(--font-mono)");
     expect(regras.get(".fundo-conversa")?.get("background-image")).toBe("radial-gradient(var(--chat-dot) 1px, transparent 1px)");
     expect(regras.get(".fundo-conversa")?.get("background-size")).toBe("18px 18px");
+  });
+});
+
+const TONS: TomEstado[] = [
+  "brand", "humano", "sucesso", "aviso", "aprovacao", "sem-resposta",
+  "perigo", "handoff", "atraso", "ia", "frio", "neutro",
+];
+const CORES = (config.theme?.extend?.colors ?? {}) as Record<string, Record<string, string>>;
+
+describe("design system: primitivos da fundação", () => {
+  it("EstadoVazio não emite border-gray-300 em nenhuma variante", () => {
+    const compacto = renderToStaticMarkup(EstadoVazio({ children: "Nada." }));
+    const bloco = renderToStaticMarkup(EstadoVazio({ bloco: true, children: "Nada." }));
+    const linha = renderToStaticMarkup(createElement("table", null, createElement("tbody", null, EstadoVazioLinha({ colSpan: 1, children: "Nada." }))));
+    for (const html of [compacto, bloco, linha]) expect(html).not.toContain("border-gray-300");
+    expect(compacto).not.toContain("border-dashed");
+    expect(bloco).toContain("border-gray-200");
+    expect(bloco).toContain("border-dashed");
+  });
+
+  it("BadgeEstado cobre os 12 tons com pares semânticos de globals.css", () => {
+    const familiaDe = (tom: TomEstado) =>
+      tom === "brand" || tom === "humano" || tom === "sucesso" ? "brand"
+      : tom === "aviso" || tom === "aprovacao" || tom === "sem-resposta" ? "warning"
+      : tom === "perigo" || tom === "handoff" || tom === "atraso" ? "danger"
+      : tom === "ia" || tom === "frio" ? "info" : "neutro";
+    expect(TONS).toHaveLength(12);
+    for (const tom of TONS) {
+      const html = renderToStaticMarkup(createElement(BadgeEstado, { tom } as PropsBadgeEstado, tom));
+      expect(html, tom).toContain(CLASSES_TOM[tom]);
+      const familia = familiaDe(tom);
+      if (familia === "neutro") continue;
+      expect(CLASSES_TOM[tom], tom).toContain(`bg-[var(--${familia}-soft)]`);
+      expect(CLASSES_TOM[tom], tom).toContain(`text-[var(--${familia}-text)]`);
+      expect(CSS, `--${familia}-soft`).toContain(`--${familia}-soft`);
+      expect(CSS, `--${familia}-text`).toContain(`--${familia}-text`);
+      expect(CLASSES_TOM[tom], tom).not.toContain(`--${familia === "brand" ? "danger" : "brand"}-text`);
+    }
+    expect(TEXTO_TOM.humano).toBe("text-brand-700");
+    expect(CORES.brand["700"]).toBe("var(--brand-text)");
+    expect(PONTO_TOM.atraso).toBe("bg-red-600");
+    expect(CORES.red["600"]).toBe("var(--danger-text)");
+    expect(CSS).toContain("--danger-solid");
+    expect(CSS).toContain("--brand-solid");
+    expect(PONTO_TOM["sem-resposta"]).toContain("bg-[var(--warning-solid)]");
+    expect(CORES.amber["600"]).toBe("var(--warning-text)");
+    expect(CSS).toContain("--warning-solid");
+    expect(CSS).toContain("--info-solid");
+  });
+
+  it("CONTROLE_CAMPO usa borda e superfície do sistema", () => {
+    expect(CONTROLE_CAMPO).toContain("border-gray-200");
+    expect(CONTROLE_CAMPO).toContain("bg-surface-muted");
+    expect(CONTROLE_CAMPO).not.toContain("border-gray-300");
   });
 });

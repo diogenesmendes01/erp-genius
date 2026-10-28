@@ -1,20 +1,13 @@
 import { iniciais, tomDoAvatar } from "@/components/Avatar";
+import type { TomEstado } from "@/components/BadgeEstado";
 import { SETOR_ATENDIMENTO_LABEL, STATUS_ATENDIMENTO_LABEL, rotular } from "@/lib/labels";
 import type { ItemListaInbox } from "@/server/inbox/consultas-pagina";
 import { prazoEstourado } from "./prazo-atendimento";
 
-export type TomEstado = "ia" | "aprovacao" | "handoff" | "humano" | "sem-resposta" | "atraso" | "neutro";
+export { CLASSES_TOM, PONTO_TOM, TEXTO_TOM } from "@/components/BadgeEstado";
+export type { TomEstado } from "@/components/BadgeEstado";
+
 export type BadgeVisual = { tom: TomEstado; texto: string; ponto?: boolean; tracejado?: boolean; icone?: "relogio" | "sem-nome" };
-export const CLASSES_TOM: Record<TomEstado, string> = {
-  ia: "bg-ai-50 text-ai-700", aprovacao: "bg-amber-50 text-amber-700", handoff: "bg-red-50 text-red-700",
-  humano: "bg-brand-bg text-brand-700", "sem-resposta": "bg-amber-50 text-amber-700", atraso: "bg-red-50 text-red-700", neutro: "bg-surface-muted text-gray-600",
-};
-export const PONTO_TOM: Record<TomEstado, string> = {
-  ia: "bg-ai-700", aprovacao: "bg-amber-600", handoff: "bg-red-600", humano: "bg-brand-solid", "sem-resposta": "bg-amber-600", atraso: "bg-red-600", neutro: "bg-gray-400",
-};
-export const TEXTO_TOM: Record<TomEstado, string> = {
-  ia: "text-ai-700", aprovacao: "text-amber-700", handoff: "text-red-700", humano: "text-brand-700", "sem-resposta": "text-amber-700", atraso: "text-red-700", neutro: "text-gray-600",
-};
 
 export function tempoDeEspera(min: number): string {
   const minutos = Math.max(1, Math.floor(min));

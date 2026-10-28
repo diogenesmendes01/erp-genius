@@ -51,10 +51,22 @@ describe("EstadoVazio — invariantes de design", () => {
     expect(new Set(Object.values(VARIANTES).map(cor)).size).toBe(1);
   });
 
-  it.each(["compacto", "bloco"] as const)("%s: borda tracejada em token de borda, cantos arredondados", (v) => {
-    const { classes } = raiz(VARIANTES[v]);
+  it("compacto: superfície suave, sem retângulo tracejado", () => {
+    const { classes } = raiz(VARIANTES.compacto);
+    expect(classes).toContain("bg-surface-muted");
+    expect(classes).toContain("rounded-item");
+    expect(classes).not.toContain("border-dashed");
+    expect(classes).not.toContain("border-gray-300");
+    expect(classes).not.toContain("border");
+  });
+
+  it("bloco: borda tracejada em token de borda, cantos arredondados, sem border-gray-300", () => {
+    const { classes } = raiz(VARIANTES.bloco);
     expect(classes).toContain("border");
     expect(classes).toContain("border-dashed");
+    expect(classes).toContain("border-gray-200");
+    expect(classes).toContain("bg-surface-muted");
+    expect(classes).not.toContain("border-gray-300");
     const bordas = classes.filter((c) => /^border-gray-\d+$/.test(c));
     expect(bordas).toHaveLength(1);
     expect(BORDA.has(tokenDe(bordas[0])!)).toBe(true);
