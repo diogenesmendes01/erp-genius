@@ -12,6 +12,9 @@ vi.mock("@/server/comercial/acoes", () => ({
   anexarDocumentoLead: vi.fn(), arquivarDocumentoLead: vi.fn(),
 }));
 vi.mock("@/server/matricula/acoes", () => ({ registrarLinkPagamento: vi.fn() }));
+vi.mock("@/server/inbox/acoes-fechamento-painel", () => ({
+  definirPrevisaoOportunidade: vi.fn(), criarTarefaOportunidade: vi.fn(), concluirTarefaOportunidade: vi.fn(), reabrirTarefaOportunidade: vi.fn(),
+}));
 
 import { PainelOportunidade } from "./PainelOportunidade";
 import { ModalPerda, validarPerda } from "./ModalPerda";
@@ -27,6 +30,7 @@ const base: DetalheOportunidade = {
   origemAnuncio: null, origemPalavra: null, planoPrevisto: null, comissaoPrevista: null, dataProposta: null,
   professorExperimental: null, experimentalConfirmadaEm: null,
   documentos: [{ id: "d1", categoria: "PROPOSTA", nome: "proposta.pdf", url: "/api/files/a.pdf" }],
+  b2bDetalhes: null, tarefas: [],
 };
 const detalheEmProposta: DetalheOportunidade = { ...base, etapa: "PROPOSTA" };
 const detalheEmExperimental: DetalheOportunidade = { ...base, etapa: "EXPERIMENTAL_AGENDADA", dataExperimental: new Date("2026-10-20T18:00:00Z") };

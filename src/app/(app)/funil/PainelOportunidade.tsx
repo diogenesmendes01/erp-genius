@@ -24,6 +24,7 @@ import { destinoDoArraste } from "@/server/crm/etapas";
 import type { CapacidadeCrm } from "@/server/crm/permissoes";
 import type { DetalheOportunidade, ItemHistorico } from "@/server/crm/historico";
 import { ModalPerda } from "./ModalPerda";
+import { SecoesParidadeFunil } from "./SecoesParidadeFunil";
 import { DadosOportunidade, DatasOportunidade, DocumentosOportunidade, InteracaoOportunidade, ResumoOportunidade } from "./EdicaoOportunidade";
 import { FUSO_PADRAO } from "./CartaoOportunidade";
 import { formatarDiaDaEscola, formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
@@ -302,6 +303,7 @@ export function PainelOportunidade({ oportunidade: op, historico, capacidades, v
                 <Botao variante="perigo" disabled={acao.ocupado} onClick={() => setPerda(true)}>Marcar como perdida</Botao>
               )}
             </div>
+            <SecoesParidadeFunil oportunidade={op} podeEditarPrevisao={podeMover && !encerrada} podeTarefas={pode("tarefas.ver")} podeVerEmpresa={pode("funil.ver") || pode("comissoes.estornar")} />
           </div>
         )}
 

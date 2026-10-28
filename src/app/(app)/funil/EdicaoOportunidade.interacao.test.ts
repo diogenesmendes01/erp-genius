@@ -51,6 +51,7 @@ const op: DetalheOportunidade = {
   planoPrevisto: "Regular A1", comissaoPrevista: "100.00", dataProposta: null,
   professorExperimental: null, experimentalConfirmadaEm: null,
   documentos: [{ id: "d1", categoria: "PROPOSTA", nome: "proposta.pdf", url: "/api/files/a.pdf" }],
+  b2bDetalhes: null, tarefas: [],
 };
 
 function montar<P>(componente: (p: P) => ReactNode, props: P) {

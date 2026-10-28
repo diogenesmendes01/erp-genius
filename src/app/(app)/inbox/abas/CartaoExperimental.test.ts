@@ -11,7 +11,7 @@ vi.mock("@/server/inbox/acoes-painel", () => ({
 }));
 
 import { CartaoExperimental, statusExperimental } from "./CartaoExperimental";
-const oportunidade: OportunidadeAtualPainel = { id: "op/328?A", titulo: "Curso fictício", produto: null, valor: null, moeda: null, etapa: "EXPERIMENTAL_AGENDADA", temperatura: "MORNO", responsavel: null, dataExperimental: "2026-11-01T01:30:00.000Z", experimentalConfirmada: false, professorExperimental: "Helena fictícia", probabilidadePct: null, previsaoFechamento: null, podeEditarPrevisao: false, motivoPerda: null };
+const oportunidade: OportunidadeAtualPainel = { id: "op/328?A", titulo: "Curso fictício", produto: null, valor: null, moeda: null, etapa: "EXPERIMENTAL_AGENDADA", temperatura: "MORNO", responsavel: null, dataExperimental: "2026-11-01T01:30:00.000Z", experimentalConfirmada: false, professorExperimental: "Helena fictícia", professorExperimentalId: null, probabilidadePct: null, previsaoFechamento: null, podeEditarPrevisao: false, motivoPerda: null, interesse: null, objetivo: null, urgencia: null, orcamento: null, objecao: null, proximaAcao: null, documentosProposta: [], contratacao: { matriculaId: null, statusAlcada: null, motivoDecisao: null, taxaMatricula: null } };
 type Props = Parameters<typeof CartaoExperimental>[0];
 const h = (extra: Partial<Props> = {}) => renderToStaticMarkup(createElement(CartaoExperimental, { oportunidade, fuso: null, fusoEscola: "America/Sao_Paulo", podeAbrirFunil: true, ...extra }));
 describe("status da ocorrência experimental", () => {
