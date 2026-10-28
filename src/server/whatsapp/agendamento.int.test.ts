@@ -8,12 +8,17 @@ import { prisma } from "@/lib/prisma";
 import { criarUsuario, truncarBanco } from "@/test/integracao";
 import { criarNumeroSetor } from "@/test/integracao-whatsapp";
 import { garantirAtendimento } from "./atendimentos";
+import { cancelarMensagemAgendada } from "@/server/crm/mensagens-agendadas";
 import { agendarMensagemNoAtendimento, agendarMensagemNoAtendimentoLocal, cancelarAgendamentoDoAtendimento, editarAgendamentoDoAtendimento, enviarAgendamentoAgoraDoAtendimento, manterAgendadaAposResposta } from "./acoes-conversa";
-import { agendadasDoAtendimento } from "./consultas-acoes-atendimento";
+import { agendadasDoAtendimento, tarefasAbertasParaVinculo } from "./consultas-acoes-atendimento";
 import { valorCampoLocal } from "@/server/operacao/fuso-entrada";
 import { transferirAtendimento } from "./acoes-atendimento";
 import { despacharFila, MOTIVO_AGUARDA_CONFIRMACAO } from "./despachante";
 import { diaUtilAs } from "@/test/janela-envio";
+import { mkdir, readFile, rm, writeFile } from "fs/promises";
+import path from "path";
+import { UPLOAD_DIR } from "@/lib/uploads";
+import { midiaSaidaDoAutor, salvarMidiaSaida } from "./midia";
 
 beforeEach(async () => { await truncarBanco(); authMock.mockReset(); enviarMock.mockReset().mockResolvedValue({ providerMessageId: "teste-sem-rede" }); });
 afterEach(() => { vi.unstubAllEnvs(); vi.restoreAllMocks(); });
@@ -307,5 +312,151 @@ describe("perguntar antes de enviar se o contato responder (D11)", () => {
     expect((await agendarMensagemNoAtendimento({ atendimentoId: c.a.id, texto: "x", quando, perguntarSeResponder: true, chaveIdempotencia: "agendar-373" })).ok).toBe(true);
     expect((await agendarMensagemNoAtendimento({ atendimentoId: c.a.id, texto: "x", quando, perguntarSeResponder: false, chaveIdempotencia: "agendar-373" })).ok).toBe(false);
     expect(await prisma.intencaoMensagem.count({ where: { atendimentoId: c.a.id } })).toBe(1);
+  });
+});
+
+describe("anexo e vínculo no agendamento", () => {
+  const criados: string[] = [];
+  afterEach(async () => { for (const f of criados.splice(0)) await rm(f, { recursive: true, force: true }); });
+  async function comOportunidade() {
+    const c = await cenario();
+    const lead = await prisma.oportunidade.create({ data: { nome: "Lead375", telefoneE164: c.contato.telefoneE164, vendedorDonoId: c.vend.id } });
+    await prisma.contatoWhatsApp.update({ where: { id: c.contato.id }, data: { leadId: lead.id } });
+    await prisma.atendimentoWhatsApp.update({ where: { id: c.a.id }, data: { leadId: lead.id } });
+    criados.push(path.join(UPLOAD_DIR, "whatsapp-out", c.vend.id));
+    return { ...c, lead };
+  }
+  async function proposta(leadId: string) {
+    const dir = path.join(UPLOAD_DIR, "documentos");
+    await mkdir(dir, { recursive: true });
+    const nome = `${Date.now()}-${Math.round(Math.random() * 1e6)}-proposta375.pdf`;
+    criados.push(path.join(dir, nome));
+    await writeFile(path.join(dir, nome), Buffer.from("pdf-proposta-375"));
+    return prisma.documento.create({ data: { leadId, categoria: "PROPOSTA", nome: "Proposta Lead375.pdf", url: `/api/files/documentos/${nome}` } });
+  }
+  const tarefa = (dados: { responsavelId: string; leadId?: string; pessoaId?: string; status?: "ABERTA" | "CONCLUIDA" }) =>
+    prisma.tarefa.create({ data: { titulo: "Ligar para o lead", tipo: "LIGACAO", setor: "COMERCIAL", fusoOrigem: "America/Sao_Paulo", ...dados } });
+
+  it("agenda com a proposta: intenção DOCUMENTO com midiaPath em whatsapp-out do autor; texto opcional", async () => {
+    const c = await comOportunidade();
+    comoUsuario(c.vend);
+    const doc = await proposta(c.lead.id);
+    const r = await agendarMensagemNoAtendimento({ atendimentoId: c.a.id, texto: "", quando: util(10).toISOString(), documentoPropostaId: doc.id, chaveIdempotencia: "agendar-375-prop" });
+    const i = await prisma.intencaoMensagem.findUniqueOrThrow({ where: { id: idDe(r) } });
+    expect(i).toMatchObject({ tipo: "DOCUMENTO", corpoRenderizado: "", origem: "HUMANO", autorId: c.vend.id });
+    expect(midiaSaidaDoAutor(i.midiaPath!, c.vend.id)).toBe(true);
+    expect((await readFile(path.join(UPLOAD_DIR, i.midiaPath!.slice("/api/files/".length)))).toString()).toBe("pdf-proposta-375");
+    expect(await prisma.evento.findFirst({ where: { tipo: "MensagemAgendada", agregadoId: c.a.id } })).toMatchObject({
+      agregadoTipo: "AtendimentoWhatsApp", payload: expect.objectContaining({ intencaoId: i.id, documentoPropostaId: doc.id, anexoNome: "Proposta Lead375.pdf", anexoTipo: "DOCUMENTO" }),
+    });
+    expect(await agendadasDoAtendimento(c.a.id)).toEqual([expect.objectContaining({ id: i.id, temAnexo: true, anexoNome: "Proposta Lead375.pdf" })]);
+    const repetida = await agendarMensagemNoAtendimento({ atendimentoId: c.a.id, texto: "", quando: util(10).toISOString(), documentoPropostaId: doc.id, chaveIdempotencia: "agendar-375-prop" });
+    expect(idDe(repetida)).toBe(i.id);
+    expect(await prisma.intencaoMensagem.count({ where: { atendimentoId: c.a.id } })).toBe(1);
+  });
+
+  it("proposta de outra oportunidade é recusada sem copiar", async () => {
+    const c = await comOportunidade();
+    comoUsuario(c.vend);
+    const outra = await prisma.oportunidade.create({ data: { nome: "Outra375", vendedorDonoId: c.vend.id } });
+    const doc = await proposta(outra.id);
+    expect(await agendarMensagemNoAtendimento({ atendimentoId: c.a.id, texto: "x", quando: util(10).toISOString(), documentoPropostaId: doc.id })).toEqual({ ok: false, erro: "Proposta não encontrada." });
+    expect(await prisma.intencaoMensagem.count()).toBe(0);
+  });
+
+  it("agenda com arquivo do uploader; arquivo de outro autor é recusado", async () => {
+    const c = await comOportunidade();
+    comoUsuario(c.vend);
+    const url = (await salvarMidiaSaida(c.vend.id, Buffer.from("png"), "image/png"))!;
+    const r = await agendarMensagemNoAtendimento({ atendimentoId: c.a.id, texto: "Foto da turma", quando: util(10).toISOString(), midiaUrl: url, anexoNome: "turma.png" });
+    expect(await prisma.intencaoMensagem.findUniqueOrThrow({ where: { id: idDe(r) } })).toMatchObject({ tipo: "IMAGEM", midiaPath: url, corpoRenderizado: "Foto da turma" });
+    criados.push(path.join(UPLOAD_DIR, "whatsapp-out", c.fora.id));
+    const alheio = (await salvarMidiaSaida(c.fora.id, Buffer.from("png"), "image/png"))!;
+    expect(await agendarMensagemNoAtendimento({ atendimentoId: c.a.id, texto: "x", quando: util(10).toISOString(), midiaUrl: alheio })).toEqual({ ok: false, erro: "Anexo inválido: envie o arquivo pelo uploader da inbox." });
+    expect(await prisma.intencaoMensagem.count({ where: { atendimentoId: c.a.id } })).toBe(1);
+  });
+
+  it("vínculo com a oportunidade da conversa grava leadId; de outra oportunidade é recusado", async () => {
+    const c = await comOportunidade();
+    comoUsuario(c.vend);
+    const r = await agendarMensagemNoAtendimento({ atendimentoId: c.a.id, texto: "Retorno", quando: util(10).toISOString(), leadId: c.lead.id });
+    expect(await prisma.intencaoMensagem.findUniqueOrThrow({ where: { id: idDe(r) } })).toMatchObject({ leadId: c.lead.id, tarefaId: null });
+    expect(await prisma.evento.findFirst({ where: { tipo: "MensagemAgendada", agregadoId: c.a.id } })).toMatchObject({ agregadoTipo: "AtendimentoWhatsApp", payload: expect.objectContaining({ leadId: c.lead.id }) });
+    const outra = await prisma.oportunidade.create({ data: { nome: "Outra375", vendedorDonoId: c.vend.id } });
+    expect(await agendarMensagemNoAtendimento({ atendimentoId: c.a.id, texto: "x", quando: util(10).toISOString(), leadId: outra.id })).toEqual({ ok: false, erro: "Oportunidade não é desta conversa." });
+    expect(await prisma.intencaoMensagem.count({ where: { atendimentoId: c.a.id } })).toBe(1);
+  });
+
+  it("vínculo com tarefa aberta da oportunidade grava tarefaId; tarefa concluída ou de outro contato é recusada", async () => {
+    const c = await comOportunidade();
+    comoUsuario(c.vend);
+    const aberta = await tarefa({ responsavelId: c.vend.id, leadId: c.lead.id });
+    const concluida = await tarefa({ responsavelId: c.vend.id, leadId: c.lead.id, status: "CONCLUIDA" });
+    const outraOp = await prisma.oportunidade.create({ data: { nome: "Outra375", vendedorDonoId: c.vend.id } });
+    const deOutro = await tarefa({ responsavelId: c.vend.id, leadId: outraOp.id });
+    expect(await tarefasAbertasParaVinculo(c.a.id)).toEqual([{ id: aberta.id, titulo: "Ligar para o lead" }]);
+    const r = await agendarMensagemNoAtendimento({ atendimentoId: c.a.id, texto: "Lembrete", quando: util(10).toISOString(), tarefaId: aberta.id });
+    expect(await prisma.intencaoMensagem.findUniqueOrThrow({ where: { id: idDe(r) } })).toMatchObject({ tarefaId: aberta.id });
+    expect(await prisma.evento.findFirst({ where: { tipo: "MensagemAgendada", agregadoId: c.a.id } })).toMatchObject({ agregadoTipo: "AtendimentoWhatsApp", payload: expect.objectContaining({ tarefaId: aberta.id }) });
+    for (const t of [concluida, deOutro]) {
+      expect(await agendarMensagemNoAtendimento({ atendimentoId: c.a.id, texto: "x", quando: util(10).toISOString(), tarefaId: t.id })).toEqual({ ok: false, erro: "Tarefa não encontrada ou já concluída." });
+    }
+    expect(await prisma.intencaoMensagem.count({ where: { atendimentoId: c.a.id } })).toBe(1);
+  });
+
+  it("sem ter assumido, anexo e vínculo não criam nada", async () => {
+    const c = await comOportunidade();
+    await prisma.atendimentoWhatsApp.update({ where: { id: c.a.id }, data: { responsavelId: null } });
+    comoUsuario(c.vend);
+    const doc = await proposta(c.lead.id);
+    const r = await agendarMensagemNoAtendimento({ atendimentoId: c.a.id, texto: "x", quando: util(10).toISOString(), documentoPropostaId: doc.id, leadId: c.lead.id });
+    expect(r.ok).toBe(false);
+    expect(await prisma.intencaoMensagem.count()).toBe(0);
+  });
+
+  it("edita legenda e horário de agendada com anexo sem trocar o arquivo; legenda vazia é aceita", async () => {
+    const c = await comOportunidade();
+    comoUsuario(c.vend);
+    const doc = await proposta(c.lead.id);
+    const id = idDe(await agendarMensagemNoAtendimento({ atendimentoId: c.a.id, texto: "Segue a proposta", quando: util(10).toISOString(), documentoPropostaId: doc.id }));
+    const antes = await prisma.intencaoMensagem.findUniqueOrThrow({ where: { id } });
+    const FUSO = "America/Sao_Paulo", quando = util(15);
+    expect(await editarAgendamentoDoAtendimento({ atendimentoId: c.a.id, intencaoId: id, texto: "Proposta revisada", quandoLocal: valorCampoLocal(quando, FUSO), fuso: FUSO })).toEqual({ ok: true, dado: { id } });
+    const depois = await prisma.intencaoMensagem.findUniqueOrThrow({ where: { id } });
+    expect(depois).toMatchObject({ corpoRenderizado: "Proposta revisada", tipo: "DOCUMENTO", midiaPath: antes.midiaPath, status: "PENDENTE" });
+    expect(depois.agendadaPara?.toISOString()).toBe(new Date(Math.floor(quando.getTime() / 60_000) * 60_000).toISOString());
+    expect(await editarAgendamentoDoAtendimento({ atendimentoId: c.a.id, intencaoId: id, texto: "  ", quandoLocal: valorCampoLocal(quando, FUSO), fuso: FUSO })).toEqual({ ok: true, dado: { id } });
+    expect(await prisma.intencaoMensagem.findUniqueOrThrow({ where: { id } })).toMatchObject({ corpoRenderizado: "", midiaPath: antes.midiaPath });
+    expect(await prisma.evento.count({ where: { tipo: "MensagemAgendadaEditada", agregadoTipo: "AtendimentoWhatsApp", agregadoId: c.a.id } })).toBe(2);
+    vi.stubEnv("WHATSAPP_LIVE", "1");
+    await despacharFila(new Date(quando.getTime() + 60_000));
+    expect(enviarMock).toHaveBeenCalledOnce();
+    expect(enviarMock.mock.calls[0]![2]).toMatchObject({ tipo: "DOCUMENTO", mime: "application/pdf" });
+  });
+
+  it("agendada com tarefa cancelada pelo Inbox: repetir o cancelamento pelo CRM é idempotente", async () => {
+    const c = await comOportunidade();
+    comoUsuario(c.vend);
+    const aberta = await tarefa({ responsavelId: c.vend.id, leadId: c.lead.id });
+    const id = idDe(await agendarMensagemNoAtendimento({ atendimentoId: c.a.id, texto: "Lembrete", quando: util(10).toISOString(), tarefaId: aberta.id }));
+    expect((await cancelarAgendamentoDoAtendimento({ atendimentoId: c.a.id, intencaoId: id })).ok).toBe(true);
+    expect(await cancelarMensagemAgendada(id)).toEqual({ ok: true });
+    expect(await prisma.evento.count({ where: { tipo: "MensagemAgendadaCancelada" } })).toBe(1);
+  });
+
+  it("agendada com anexo sai como mídia no horário", async () => {
+    const c = await comOportunidade();
+    comoUsuario(c.vend);
+    const doc = await proposta(c.lead.id);
+    const quando = util(10);
+    const r = await agendarMensagemNoAtendimento({ atendimentoId: c.a.id, texto: "Segue a proposta", quando: quando.toISOString(), documentoPropostaId: doc.id });
+    vi.stubEnv("WHATSAPP_LIVE", "1");
+    await despacharFila(new Date(quando.getTime() - 60_000));
+    expect(enviarMock).not.toHaveBeenCalled();
+    await despacharFila(new Date(quando.getTime() + 60_000));
+    expect(await status(r)).toBe("DESPACHADA");
+    expect(enviarMock).toHaveBeenCalledOnce();
+    expect(enviarMock.mock.calls[0]![2]).toMatchObject({ tipo: "DOCUMENTO", mime: "application/pdf", legenda: "Segue a proposta" });
+    expect(await prisma.mensagemWhatsApp.findFirst({ where: { atendimentoId: c.a.id, direcao: "SAIDA" } })).toMatchObject({ tipo: "DOCUMENTO", corpo: "Segue a proposta" });
   });
 });

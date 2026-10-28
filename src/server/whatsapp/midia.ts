@@ -1,4 +1,4 @@
-import { mkdir, readFile, rm, writeFile } from "fs/promises";
+import { mkdir, readFile, rm, stat, writeFile } from "fs/promises";
 import path from "path";
 import type { TipoMensagem } from "@prisma/client";
 import { UPLOAD_DIR, contentTypePorExtensao, resolverCaminhoUpload } from "@/lib/uploads";
@@ -87,6 +87,13 @@ export async function descartarMidiaSaida(autorId: string, url: string): Promise
   if (!midiaSaidaDoAutor(url, autorId)) return;
   const caminho = resolverCaminhoUpload(url.slice("/api/files/".length).split("/"));
   if (caminho) await rm(caminho, { force: true }).catch(() => undefined);
+}
+
+export async function midiaSaidaExiste(autorId: string, url: string): Promise<boolean> {
+  if (!midiaSaidaDoAutor(url, autorId)) return false;
+  const caminho = resolverCaminhoUpload(url.slice("/api/files/".length).split("/"));
+  if (!caminho) return false;
+  return stat(caminho).then((s) => s.isFile() && s.size > 0, () => false);
 }
 
 export async function copiarMidiaParaSaida(autorId: string, midiaPath: string): Promise<string | null> {

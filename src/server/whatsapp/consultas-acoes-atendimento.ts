@@ -4,6 +4,8 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { exigirSessao } from "@/server/_shared";
 import { apenasPortal } from "@/server/_shared/sessao";
+import { capacidadesCrm } from "@/server/crm/permissoes";
+import { escopoTarefas } from "@/server/crm/tarefas";
 import { podeExecutar } from "@/server/inbox/permissoes";
 import { atendimentoVisivel } from "./atendimentos";
 import { contextoPessoas } from "./pessoas-atendimento";
@@ -102,4 +104,16 @@ export async function temResumoDaAria(atendimentoId: string): Promise<boolean> {
   const a = await atendimentoVisivel(u, id);
   if (!a || a.encerradoEm || !podeExecutar(u, "transferir", { setor: a.finalidade, responsavelId: a.responsavelId })) return false;
   return (await resumoDaAriaParaNota(prisma, id)) !== null;
+}
+export async function tarefasAbertasParaVinculo(atendimentoId: string): Promise<{ id: string; titulo: string }[]> {
+  const u = await exigirSessao();
+  const a = await atendimentoVisivel(u, IdSchema.parse(atendimentoId));
+  if (!a || a.encerradoEm) return [];
+  const oportunidade = a.leadId ?? a.conversa.contato.leadId ?? null, pessoaId = a.conversa.contato.pessoaId ?? null;
+  const ligacoes = [...(oportunidade ? [{ leadId: oportunidade }] : []), ...(pessoaId ? [{ pessoaId }] : [])];
+  if (!ligacoes.length) return [];
+  return prisma.tarefa.findMany({
+    where: { AND: [{ status: "ABERTA" }, await escopoTarefas(u, capacidadesCrm(u.papeis).has("tarefas.equipe")), { OR: ligacoes }] },
+    select: { id: true, titulo: true }, orderBy: [{ inicioEm: { sort: "asc", nulls: "last" } }, { id: "asc" }], take: 50,
+  });
 }

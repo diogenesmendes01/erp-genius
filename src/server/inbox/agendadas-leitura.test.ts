@@ -57,3 +57,16 @@ it("sem entrada no atendimento usa a última entrada da conversa",async()=>{
  m.visivel.mockResolvedValue({...atendimento(),ultimoInboundEm:null,conversa:{...atendimento().conversa,ultimoInboundEm:new Date("2030-01-01T11:00:00Z")}});
  expect(await lerAgendadasDoAtendimento(f.db,"u","a")).toEqual([expect.objectContaining({perguntaPendente:true})]);
 });
+it("nome do anexo vem do Evento MensagemAgendada da própria intenção, sem expor o caminho",async()=>{
+ const f=fixture();f.intencaoMensagem.findMany.mockResolvedValue([{...linha(),tipo:"DOCUMENTO",midiaPath:"/api/files/whatsapp-out/u/PRIVADO.pdf"}]);
+ const evento={findMany:vi.fn().mockResolvedValue([{payload:{intencaoId:"m",anexoNome:"Proposta anual.pdf"}},{payload:{intencaoId:"outra",anexoNome:"Outro.pdf"}}])};Object.assign(f.db,{evento});
+ const dto=await lerAgendadasDoAtendimento(f.db,"u","a");
+ expect(dto).toEqual([expect.objectContaining({id:"m",temAnexo:true,anexoNome:"Proposta anual.pdf"})]);expect(JSON.stringify(dto)).not.toContain("PRIVADO");
+ expect(evento.findMany).toHaveBeenCalledWith(expect.objectContaining({where:expect.objectContaining({tipo:"MensagemAgendada",agregadoTipo:"AtendimentoWhatsApp",agregadoId:"a"})}));
+});
+it("conteúdo estruturado, template ou tipo incoerente marcam a agendada como não editável",async()=>{
+ const f=fixture();f.intencaoMensagem.findMany.mockResolvedValue([{...linha("t")},{...linha("d"),tipo:"DOCUMENTO",midiaPath:"/x.pdf"},{...linha("c"),tipo:"ENQUETE",conteudo:{tipo:"enquete"}},{...linha("tp"),templateId:"tpl"},{...linha("x"),tipo:"DOCUMENTO"}]);Object.assign(f.db,{evento:{findMany:vi.fn().mockResolvedValue([])}});
+ const dto=await lerAgendadasDoAtendimento(f.db,"u","a");
+ expect(dto.map(d=>[d.id,d.editavel])).toEqual([["t",undefined],["d",undefined],["c",false],["tp",false],["x",false]]);
+ expect(f.intencaoMensagem.findMany).toHaveBeenCalledWith(expect.objectContaining({select:expect.objectContaining({templateId:true})}));
+});

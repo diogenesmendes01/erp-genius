@@ -1,5 +1,5 @@
 import { executarAgendadaInbox } from "@/server/inbox/agendadas-operacao-inbox";
-import { AgendarSchema, InstanteSchema, futuro, dataFutura } from "./mensagens-agendadas-regras";
+import { AgendarSchema, InstanteSchema, TextoAgendadaSchema, futuro, dataFutura } from "./mensagens-agendadas-regras";
 import { revalidatePath } from "next/cache";
 import { Papel, type Prisma, type StatusIntencao } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
@@ -71,6 +71,7 @@ export async function agendarMensagem(i: AgendarMensagemInput): Promise<Resultad
       const r = await executarAgendadaInbox(prisma, autor.id, {
         tipo: "CRIAR", atendimentoId: d.atendimentoId, numeroEsperado: d.numeroId,
         texto: d.texto, agendadaPara: d.agendadaPara, validaAte: d.validaAte, perguntarSeResponder: d.perguntarSeResponder, chaveIdempotencia: d.chaveIdempotencia,
+        midiaUrl: d.midiaUrl, documentoPropostaId: d.documentoPropostaId, anexoNome: d.anexoNome, leadId: d.leadId, tarefaId: d.tarefaId,
       });
       revalidar();
       return r;
@@ -78,6 +79,7 @@ export async function agendarMensagem(i: AgendarMensagemInput): Promise<Resultad
     if (!d.atendimentoId) exigirCapacidadeCrm(autor, "tarefas.ver");
     if (d.chaveIdempotencia && !d.atendimentoId) throw new ErroRegra("Chave de idempotência só no agendamento pelo atendimento.");
     if (d.perguntarSeResponder) throw new ErroRegra("Perguntar se o contato responder só vale no agendamento pelo atendimento.");
+    if (d.midiaUrl || d.documentoPropostaId) throw new ErroRegra("Anexo só vale no agendamento pelo atendimento.");
     const quando = futuro(d.agendadaPara);
     const validaAte = d.validaAte ? new Date(d.validaAte) : null;
     if (validaAte && validaAte.getTime() <= quando.getTime()) throw new ErroRegra("A validade deve ser depois do horário agendado.");
@@ -203,8 +205,9 @@ async function alterar(
       const jaFeito = async (status: string | undefined) => {
         const agregado = aggregadoDe(m);
         if (!estadoAlvo || status !== estadoAlvo || !agregado) return false;
+        const agregados = [agregado, ...(m.atendimentoId && agregado.agregadoTipo !== "AtendimentoWhatsApp" ? [{ agregadoTipo: "AtendimentoWhatsApp" as const, agregadoId: m.atendimentoId }] : [])];
         const ultimo = await tx.evento.findFirst({
-          where: { tipo: tipoEvento, ...agregado, payload: { path: ["intencaoId"], equals: id } },
+          where: { tipo: tipoEvento, OR: agregados, payload: { path: ["intencaoId"], equals: id } },
           orderBy: [{ criadoEm: "desc" }, { id: "desc" }], select: { autorId: true },
         });
         return ultimo?.autorId === autor.id;
@@ -240,7 +243,7 @@ export async function reagendarMensagem(id: string, agendadaPara: string): Promi
 export async function editarMensagemAgendada(id: string, dados: { texto: string; agendadaPara: string }): Promise<Resultado> {
   return alterar(id, "MensagemAgendadaEditada", async (m) => {
     if (m.atendimentoId) throw new ErroRegra("Assuma a conversa para alterar a mensagem agendada.");
-    const texto = AgendarSchema.shape.texto.parse(dados.texto);
+    const texto = TextoAgendadaSchema.parse(dados.texto);
     const quando = futuro(InstanteSchema.parse(dados.agendadaPara));
     dataFutura(m, quando);
     await exigirAgendamentoNaJanela(quando);

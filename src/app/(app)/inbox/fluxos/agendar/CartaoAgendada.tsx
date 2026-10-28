@@ -51,8 +51,8 @@ export function CartaoAgendada({agendada,atendimentoId,nomeContato,fuso,agora,ao
     <p className="min-w-0 flex-1 [overflow-wrap:anywhere]"><span className="font-semibold">Agendada para <time dateTime={agendada.agendadaPara}>{quandoAgendada(agendada.agendadaPara,fuso,agora)}</time></span> <span className={agendada.autor==="aria"?"text-ai-700":undefined}>{autoriaAgendada(agendada)}</span></p>
    </header>
    <div className="px-3 py-2">
-    {agendada.temAnexo&&<p className="mb-1 flex items-center gap-1 text-xs text-gray-600"><IconPaperclip size={13} aria-hidden className="shrink-0"/>{agendada.tipo==="TEXTO"?"Anexo":"Anexo · "+rotular(TIPO_MENSAGEM_LABEL,agendada.tipo)}</p>}
-    <p className="whitespace-pre-wrap text-[13.5px] [overflow-wrap:anywhere]">{agendada.texto}</p>
+    {agendada.temAnexo&&<p className="mb-1 flex min-w-0 items-center gap-1 text-xs text-gray-600"><IconPaperclip size={13} aria-hidden className="shrink-0"/><span className="min-w-0 truncate">{agendada.anexoNome?.trim()||(agendada.tipo==="TEXTO"?"Anexo":"Anexo · "+rotular(TIPO_MENSAGEM_LABEL,agendada.tipo))}</span></p>}
+    {agendada.texto&&<p className="whitespace-pre-wrap text-[13.5px] [overflow-wrap:anywhere]">{agendada.texto}</p>}
    </div>
    {pergunta&&acoes&&<div className="border-t border-amber-200 bg-amber-50 px-3 py-2">
     <p className="text-[13px] text-amber-800 [overflow-wrap:anywhere]">{perguntaAposResposta(agendada,nomeContato)}</p>
@@ -63,7 +63,7 @@ export function CartaoAgendada({agendada,atendimentoId,nomeContato,fuso,agora,ao
    </div>}
    {pergunta&&!acoes&&<p className="border-t border-amber-200 bg-amber-50 px-3 py-2 text-[13px] text-amber-800 [overflow-wrap:anywhere]">{(nomeContato?.trim()||"O contato")+" respondeu depois do agendamento. A mensagem aguarda confirmação para ser enviada."}</p>}
    {acoes&&!pergunta&&<div className="flex flex-wrap items-center justify-end gap-1 border-t border-border-soft px-2 py-1.5">
-    {aoEditar&&<Botao variante="fantasma" tamanho="sm" disabled={ocupado} onClick={e=>aoEditar(e.currentTarget)}><IconPencil size={14} aria-hidden/>Editar</Botao>}
+    {aoEditar&&agendada.editavel!==false&&<Botao variante="fantasma" tamanho="sm" disabled={ocupado} onClick={e=>aoEditar(e.currentTarget)}><IconPencil size={14} aria-hidden/>Editar</Botao>}
     <Botao variante="fantasma" tamanho="sm" ocupado={envio.ocupado} disabled={confirmando} onClick={()=>void enviarAgora()}><IconSend size={14} aria-hidden/>Enviar agora</Botao>
     <Botao variante="fantasma" tamanho="sm" className="text-danger" disabled={ocupado} onClick={()=>{envio.limpar();setConfirmando(true);}}><IconX size={14} aria-hidden/>Cancelar</Botao>
    </div>}

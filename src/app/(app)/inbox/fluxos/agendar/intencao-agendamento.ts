@@ -1,6 +1,12 @@
 import type {Resultado} from "@/server/_shared/resultado";
 import {executarAcaoCliente,type DesfechoAcao} from "@/lib/acao-cliente";
-export type EntradaAgendamento={atendimentoId:string;quandoLocal:string;fuso:string}&({tipo:"CRIAR";texto:string;perguntarSeResponder:boolean}|{tipo:"EDITAR";intencaoId:string;texto:string});
+export type AnexoAgendamento={tipo:"proposta";documentoId:string;nome:string}|{tipo:"arquivo";url:string;nome:string};
+export type VinculoAgendamento={tipo:"oportunidade";leadId:string}|{tipo:"tarefa";tarefaId:string;titulo:string};
+export type EntradaAgendamento={atendimentoId:string;quandoLocal:string;fuso:string}&({tipo:"CRIAR";texto:string;perguntarSeResponder:boolean;anexo?:AnexoAgendamento;vinculo?:VinculoAgendamento}|{tipo:"EDITAR";intencaoId:string;texto:string});
+export function camposAnexoVinculo(c:{anexo?:AnexoAgendamento;vinculo?:VinculoAgendamento}):{midiaUrl?:string;documentoPropostaId?:string;anexoNome?:string;leadId?:string;tarefaId?:string}{
+ return {...(c.anexo?.tipo==="arquivo"?{midiaUrl:c.anexo.url,anexoNome:c.anexo.nome}:{}),...(c.anexo?.tipo==="proposta"?{documentoPropostaId:c.anexo.documentoId}:{}),
+  ...(c.vinculo?.tipo==="oportunidade"?{leadId:c.vinculo.leadId}:{}),...(c.vinculo?.tipo==="tarefa"?{tarefaId:c.vinculo.tarefaId}:{})};
+}
 export type ComandoAgendamento=EntradaAgendamento&{chaveIdempotencia:string};
 export type AlvoAgendamento={atendimentoId:string}&({tipo:"CRIAR"}|{tipo:"EDITAR";intencaoId:string});
 type Estado=Readonly<{comando:ComandoAgendamento|null;ocupado:boolean;erro:string|null;incerto:boolean}>;

@@ -34,7 +34,65 @@ it("D11 sem Assumir bloqueia nova criação mesmo forçando submit",async()=>{aw
 it("incerto sobrevive remount e recupera comando original mesmo após perder responsável",async()=>{executar.mockRejectedValueOnce(new Error("rede")).mockResolvedValueOnce({ok:true,dado:{id:"ack"}});await montar();await submeter();const original=executar.mock.calls[0][0];await act(async()=>root.render(null));await montar({textoInicial:"Outro draft",fuso:"UTC",podeAgendar:false});expect(eventos(campo("texto")).value).toBe("RascunhoA");expect(campo("quandoLocal").getAttribute("data-fuso")).toBe("America/Sao_Paulo");await submeter();expect(executar.mock.calls[1][0]).toBe(original);expect(concluir).toHaveBeenCalledOnce();});
 it("ACK tardio após desmontar não fecha outro formulário",async()=>{let liberar!:(r:{ok:true;dado:{id:string}})=>void;executar.mockReturnValue(new Promise(r=>liberar=r));await montar();let envio:Promise<void>;const form=doc.body.querySelector("form");expect(form).not.toBeNull();await act(async()=>{envio=Promise.resolve(eventos(form!).onSubmit({preventDefault(){}}));});await act(async()=>root.render(null));await act(async()=>{liberar({ok:true,dado:{id:"ack"}});await envio;});expect(concluir).not.toHaveBeenCalled();expect(salvar).not.toHaveBeenCalled();});
 it("Insights público permanece opt-in e não preenche texto automaticamente",async()=>{await montar({insightsAplicaveis:true,versaoInsights:2});expect(m.insights).toHaveBeenCalledWith(expect.objectContaining({ativo:true,atendimentoId:"a",versao:2}));expect(eventos(campo("texto")).value).toBe("RascunhoA");expect(executar).not.toHaveBeenCalled();});
-it("não introduz anexos, vínculo ou repetição",async()=>{await montar();for(const t of ["Anexar","Vincular a","Repetir"])expect(doc.body.textContent).not.toContain(t);});
+async function escolherVinculo(valor:string){const r=doc.body.querySelectorAll('[name="vinculo"]').find(e=>eventos(e).value===valor);expect(r,`vínculo ${valor}`).toBeDefined();await act(async()=>eventos(r!).onChange({target:{checked:true}}));}
+const opcoes={oportunidadeId:"op1",propostas:[{id:"d1",nome:"Proposta anual.pdf"}],tarefas:[{id:"t1",titulo:"Ligar para Ana"}]};
+it("PopoverAgendar: 'Anexar' mostra Proposta e Arquivo; 'Mais opções' mostra 'Vincular a' sem 'Repetir'",async()=>{
+ await montar({opcoes,subirArquivo:vi.fn()});expect(doc.body.textContent).toContain("Anexar");botao("Proposta");botao("Arquivo");
+ expect(doc.body.textContent).not.toContain("Vincular a");await clicar("Mais opções");expect(doc.body.textContent).toContain("Vincular a");
+ const opcoesVinculo=doc.body.querySelectorAll('[name="vinculo"]').map(o=>o.parentNode?.textContent);expect(opcoesVinculo).toEqual(["Nenhum","Oportunidade","Tarefa · Ligar para Ana"]);
+ expect(doc.body.textContent).not.toContain("Repetir");
+});
+it("editar não mostra Anexar nem Mais opções",async()=>{await montar({opcoes,editar:existente(),intencao:dono.para({tipo:"EDITAR",atendimentoId:"a",intencaoId:"i"})});expect(doc.body.textContent).not.toContain("Anexar");expect(doc.body.textContent).not.toContain("Mais opções");});
+it("proposta escolhida vai na action e dispensa o texto",async()=>{
+ await montar({opcoes,textoInicial:""});expect(eventos(botao("Agendar")).disabled).toBe(true);
+ await clicar("Proposta");await clicar("Proposta anual.pdf");expect(doc.body.textContent).toContain("Proposta anual.pdf");expect(eventos(botao("Agendar")).disabled).toBe(false);
+ await submeter();expect(executar).toHaveBeenCalledExactlyOnceWith(expect.objectContaining({tipo:"CRIAR",texto:"",anexo:{tipo:"proposta",documentoId:"d1",nome:"Proposta anual.pdf"}}));
+});
+it("editar agendada com anexo: mostra o anexo, aceita legenda vazia e salva só legenda e horário",async()=>{
+ await montar({opcoes,editar:{...existente(),texto:"Segue a proposta",tipo:"DOCUMENTO",temAnexo:true,anexoNome:"Proposta anual.pdf"},intencao:dono.para({tipo:"EDITAR",atendimentoId:"a",intencaoId:"i"})});
+ expect(doc.body.textContent).toContain("Proposta anual.pdf");expect(doc.body.textContent).toContain("Legenda");expect(doc.body.textContent).not.toContain("Anexar");
+ await mudar("texto","");expect(eventos(botao("Salvar")).disabled).toBe(false);await clicar("Em 1 hora");await submeter();
+ expect(executar).toHaveBeenCalledExactlyOnceWith({tipo:"EDITAR",atendimentoId:"a",intencaoId:"i",texto:"",quandoLocal:"2026-10-22T11:30",fuso:"America/Sao_Paulo",chaveIdempotencia:"chave-ui363"});
+});
+it("falha ao carregar propostas avisa o erro em vez de dizer que não há oportunidade",async()=>{
+ await montar({opcoes:{oportunidadeId:null,propostas:[],tarefas:[],erroPropostas:true}});await clicar("Proposta");
+ expect(doc.body.textContent).toContain("Não foi possível carregar as propostas.");expect(doc.body.textContent).not.toContain("Esta conversa não tem oportunidade");
+});
+it("Mais opções fica desabilitado enquanto o envio está em andamento",async()=>{
+ let fim!:(r:{ok:true;dado:{id:string}})=>void;executar.mockImplementation(()=>new Promise(r=>{fim=r;}));
+ await montar({opcoes});await act(async()=>{void eventos(doc.body.querySelector("form")!).onSubmit({preventDefault(){}});});
+ expect(eventos(botao("Mais opções")).disabled).toBe(true);await act(async()=>fim({ok:true,dado:{id:"ack"}}));
+});
+it("sem oportunidade, Proposta avisa e não oferece Oportunidade no vínculo",async()=>{
+ await montar({opcoes:{oportunidadeId:null,propostas:[],tarefas:[]}});await clicar("Proposta");expect(doc.body.textContent).toContain("Esta conversa não tem oportunidade com propostas.");
+ await clicar("Mais opções");expect(doc.body.querySelectorAll('[name="vinculo"]').map(o=>o.parentNode?.textContent)).toEqual(["Nenhum"]);
+});
+it("arquivo sobe pelo uploader e vai na action",async()=>{
+ const subirArquivo=vi.fn().mockResolvedValue({ok:true,dado:{url:"/api/files/whatsapp-out/u/1.pdf",nome:"Foto da turma.pdf"}});await montar({opcoes,subirArquivo});
+ const arquivo={name:"Foto da turma.pdf",size:10};await act(async()=>eventos(campo("arquivoAnexo")).onChange({target:{files:[arquivo],value:"x"}}));
+ expect(subirArquivo).toHaveBeenCalledExactlyOnceWith(arquivo);expect(doc.body.textContent).toContain("Foto da turma.pdf");
+ await submeter();expect(executar).toHaveBeenLastCalledWith(expect.objectContaining({anexo:{tipo:"arquivo",url:"/api/files/whatsapp-out/u/1.pdf",nome:"Foto da turma.pdf"}}));
+ expect(doc.body.querySelector('[aria-label="Remover anexo"]')).not.toBeNull();
+});
+it("falha do upload fica no popover sem anexo",async()=>{
+ const subirArquivo=vi.fn().mockResolvedValue({ok:false,erro:"Tipo não suportado."});await montar({opcoes,subirArquivo});
+ await act(async()=>eventos(campo("arquivoAnexo")).onChange({target:{files:[{name:"x.exe",size:1}],value:"x"}}));
+ expect(doc.body.textContent).toContain("Tipo não suportado.");expect(doc.body.querySelector('[aria-label="Remover anexo"]')).toBeNull();
+ await submeter();expect(executar).toHaveBeenCalledExactlyOnceWith(expect.not.objectContaining({anexo:expect.anything()}));
+});
+it("Remover anexo volta a exigir texto",async()=>{
+ await montar({opcoes,textoInicial:""});await clicar("Proposta");await clicar("Proposta anual.pdf");
+ const remover=doc.body.querySelector('[aria-label="Remover anexo"]');expect(remover).not.toBeNull();await act(async()=>eventos(remover!).onClick());
+ expect(eventos(botao("Agendar")).disabled).toBe(true);await submeter();expect(executar).not.toHaveBeenCalled();
+});
+it("Vincular a tarefa aberta ou à oportunidade vai na action",async()=>{
+ await montar({opcoes});await clicar("Mais opções");await escolherVinculo("tarefa:t1");await submeter();
+ expect(executar).toHaveBeenLastCalledWith(expect.objectContaining({vinculo:{tipo:"tarefa",tarefaId:"t1",titulo:"Ligar para Ana"}}));
+});
+it("Vincular à oportunidade usa a oportunidade da conversa",async()=>{
+ await montar({opcoes});await clicar("Mais opções");await escolherVinculo("oportunidade");await submeter();
+ expect(executar).toHaveBeenLastCalledWith(expect.objectContaining({vinculo:{tipo:"oportunidade",leadId:"op1"}}));
+});
 it("PopoverAgendar: 'Perguntar antes de enviar se o contato responder' ligado por padrão e enviado na action",async()=>{await montar();expect(doc.body.textContent).toContain("Perguntar antes de enviar se o contato responder");expect((eventos(campo("perguntarSeResponder")) as unknown as {checked:boolean}).checked).toBe(true);await submeter();expect(executar).toHaveBeenCalledExactlyOnceWith(expect.objectContaining({tipo:"CRIAR",perguntarSeResponder:true}));});
 it("desligar a pergunta envia perguntarSeResponder falso",async()=>{await montar();await act(async()=>eventos(campo("perguntarSeResponder")).onChange({target:{checked:false}}));expect((eventos(campo("perguntarSeResponder")) as unknown as {checked:boolean}).checked).toBe(false);await submeter();expect(executar).toHaveBeenCalledExactlyOnceWith(expect.objectContaining({tipo:"CRIAR",perguntarSeResponder:false}));});
 it("editar não mostra a opção de perguntar",async()=>{await montar({editar:existente(),intencao:dono.para({tipo:"EDITAR",atendimentoId:"a",intencaoId:"i"})});expect(doc.body.textContent).not.toContain("Perguntar antes de enviar");expect(doc.body.querySelector('[name="perguntarSeResponder"]')).toBeNull();});
