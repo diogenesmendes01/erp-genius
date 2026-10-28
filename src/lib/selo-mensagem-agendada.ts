@@ -19,5 +19,4 @@ export function textoSeloMensagemAgendada(quando: string): string {
   return `Mensagem agendada · ${quando}`;
 }
 
-// Remarcar a tarefa não desloca a IntencaoMensagem: o horário do selo continua valendo.
-export const AVISO_REMARCACAO_MENSAGEM = "Remarcar a tarefa não move este envio.";
+export const AVISO_REMARCACAO_MENSAGEM = "Remarcar a tarefa move este envio para o novo horário.";

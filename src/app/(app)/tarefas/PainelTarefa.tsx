@@ -70,6 +70,7 @@ function FormularioTarefa({ tarefa, responsaveis, fusoEscola, fusoExibicao, data
   const [cancelando, setCancelando] = useState(false);
   const [decisaoMensagem, setDecisaoMensagem] = useState<DecisaoMensagemAgendada | null>(null);
   const [escolhendoConclusao, setEscolhendoConclusao] = useState(false);
+  const [aceitarFora, setAceitarFora] = useState(false);
 
   const fechar = () => router.replace(hrefTarefas({ ...params, t: undefined }));
   const horaNaEscola = tarefa?.inicioEm ? textoHora(tarefa.inicioEm, fusoExibicao, fusoEscola) : null;
@@ -95,7 +96,7 @@ function FormularioTarefa({ tarefa, responsaveis, fusoEscola, fusoExibicao, data
         dataCivil: tarefa.dataCivil, hora: tarefa.inicioEm ? horaNoFuso(tarefa.inicioEm, tarefa.fusoOrigem) : null,
         lembreteAntecedenciaMin: tarefa.lembreteAntecedenciaMin as CamposFormulario["lembreteAntecedenciaMin"],
       };
-      return editarTarefa(tarefa.id, tarefa.versao, { ...camposAlterados(lida, base), ...(mudouResponsavel ? { responsavelId: responsavel || null } : {}) });
+      return editarTarefa(tarefa.id, tarefa.versao, { ...camposAlterados(lida, base), ...(mudouResponsavel ? { responsavelId: responsavel || null } : {}), ...(mensagemAgendada && aceitarFora ? { aceitarForaDaJanela: true } : {}) });
     }, tarefa ? "Tarefa salva." : "Tarefa criada.");
     if (!tarefa) tentativa.depoisDo(d);
     if (d?.tipo === "ok") {
@@ -119,7 +120,7 @@ function FormularioTarefa({ tarefa, responsaveis, fusoEscola, fusoExibicao, data
             {tarefa.status === "CANCELADA" && tarefa.motivoCancelamento ? ` · ${tarefa.motivoCancelamento}` : ""}
           </p>
         )}
-        {mensagemAgendada && <p className="mb-3 text-sm font-medium text-brand-700">{textoSeloMensagemAgendada(mensagemAgendada.quando)}<span className="mt-0.5 block font-normal text-gray-600">{AVISO_REMARCACAO_MENSAGEM}</span></p>}
+        {mensagemAgendada && <div className="mb-3 space-y-2"><p className="text-sm font-medium text-brand-700">{textoSeloMensagemAgendada(mensagemAgendada.quando)}<span className="mt-0.5 block font-normal text-gray-600">{AVISO_REMARCACAO_MENSAGEM}</span></p><label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={aceitarFora} onChange={(e) => setAceitarFora(e.target.checked)} />Mover a mensagem mesmo fora da janela de envio</label></div>}
 
           {conversa && <div className="flex flex-wrap gap-x-3">
             <Link href={hrefConversa(conversa.atendimentoId)} className="inline-flex min-h-11 items-center text-sm text-brand-700 hover:underline">Abrir conversa</Link>

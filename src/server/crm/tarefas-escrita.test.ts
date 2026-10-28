@@ -40,7 +40,7 @@ it("vínculo interno ainda exige validação comercial real do núcleo",async()=
 });
 
 it.each([null,"2026-11-01"])("TESTER agenda resolvida adiciona horário/lembrete a tarefa sem horário anterior data=%s",async dataCivil=>{
- const updateMany=vi.fn(async()=>({count:1}));const tx={tarefa:{updateMany}} as unknown as Prisma.TransactionClient;
+ const updateMany=vi.fn(async()=>({count:1}));const tx={tarefa:{updateMany},intencaoMensagem:{findMany:vi.fn(async()=>[])}} as unknown as Prisma.TransactionClient;
  const t={id:"t",status:"ABERTA",versao:1,dataCivil,inicioEm:null,lembrarEm:null,lembreteAntecedenciaMin:null,fusoOrigem:"America/New_York"} as unknown as Tarefa;
  const inicioEm=new Date("2026-11-01T15:00:00Z"),lembrarEm=new Date("2026-11-01T14:30:00Z");
  await editarTarefaTx(tx,autor,t,1,{}, {agendamento:{dataCivil:"2026-11-01",inicioEm,lembrarEm,lembreteAntecedenciaMin:30}});

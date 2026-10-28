@@ -1,8 +1,9 @@
 import { readFileSync } from "node:fs";
 import { beforeEach, expect, it, vi } from "vitest";
-const { evento } = vi.hoisted(() => ({ evento: vi.fn(async () => ({ id: "e" })) }));
+const { evento, janela } = vi.hoisted(() => ({ evento: vi.fn(async () => ({ id: "e" })), janela: vi.fn(async () => null as string | null) }));
 vi.mock("@/server/_shared/evento", () => ({ registrarEvento: evento }));
-import { cancelarMensagensAgendadasDaTarefaTx, decisaoCancelaMensagem, MOTIVO_CANCELADA_COM_TAREFA } from "./mensagem-agendada-tarefa";
+vi.mock("@/server/whatsapp/janela-agendamento", () => ({ recusaForaDaJanela: janela }));
+import { cancelarMensagensAgendadasDaTarefaTx, decisaoCancelaMensagem, moverMensagensPendentesDaTarefaTx, MOTIVO_CANCELADA_COM_TAREFA } from "./mensagem-agendada-tarefa";
 import type { Prisma } from "@prisma/client";
 
 const quando = new Date("2026-10-29T13:00:00.000Z");
@@ -19,12 +20,12 @@ function tx(atual: ReturnType<typeof linha> | null, count = 1) {
     },
   };
 }
-beforeEach(() => { evento.mockClear(); });
+beforeEach(() => { evento.mockClear(); janela.mockReset(); janela.mockResolvedValue(null); });
 
-it("só cancelar mexe na mensagem; manter e omissão preservam", () => {
+it("omitir e cancelar cancelam a mensagem; só manter preserva", () => {
   expect(decisaoCancelaMensagem("cancelar")).toBe(true);
+  expect(decisaoCancelaMensagem(undefined)).toBe(true);
   expect(decisaoCancelaMensagem("manter")).toBe(false);
-  expect(decisaoCancelaMensagem(undefined)).toBe(false);
 });
 
 it("cancela a ativa na tx, grava CANCELADA e o instante no evento", async () => {
@@ -62,6 +63,21 @@ it("corrida no update desfaz a decisão com erro de regra", async () => {
   const db = tx(linha(), 0);
   await expect(cancelarMensagensAgendadasDaTarefaTx(db as unknown as Prisma.TransactionClient, "autor", "t1")).rejects.toThrow("Recarregue a tarefa");
   expect(evento).not.toHaveBeenCalled();
+});
+
+it("move a PENDENTE para o novo instante e exige confirmação fora da janela", async () => {
+  const db = tx(linha());
+  const novo = new Date("2026-10-30T16:00:00.000Z");
+  janela.mockResolvedValueOnce("Fora da janela de envio da escola.");
+  await expect(moverMensagensPendentesDaTarefaTx(db as unknown as Prisma.TransactionClient, "autor", "t1", novo)).rejects.toThrow("Confirme para mover a mensagem mesmo fora da janela");
+  expect(db.intencaoMensagem.updateMany).not.toHaveBeenCalled();
+  janela.mockResolvedValueOnce("Fora da janela de envio da escola.");
+  await moverMensagensPendentesDaTarefaTx(db as unknown as Prisma.TransactionClient, "autor", "t1", novo, { aceitarForaDaJanela: true });
+  expect(db.intencaoMensagem.updateMany).toHaveBeenCalledExactlyOnceWith({
+    where: { id: "m1", tarefaId: "t1", status: "PENDENTE", agendadaPara: quando },
+    data: { agendadaPara: novo },
+  });
+  expect(evento).toHaveBeenCalledExactlyOnceWith(db, expect.objectContaining({ tipo: "MensagemReagendada", payload: expect.objectContaining({ operacao: "REAGENDAR", agendadaPara: novo.toISOString() }) }));
 });
 
 it("o cancelamento da agendada não importa o cliente prisma global", () => {

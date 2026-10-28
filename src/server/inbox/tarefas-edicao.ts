@@ -28,7 +28,7 @@ const Contexto=z.object({contextoEsperado:z.string().min(1),fusoEscolaEsperado:z
 const Campos=CamposTarefaSchema.omit({leadId:true,pessoaId:true,alunoId:true,matriculaId:true});
 const MensagemNaData=z.object({texto:TextoAgendadaSchema,chaveIdempotencia:ChaveIdempotenciaSchema}).strict();
 const Criar=Campos.merge(Contexto).extend({vincularOportunidade:z.boolean(),jaFeita:z.boolean().optional(),chaveIdempotencia:ChaveIdempotenciaSchema,mensagem:MensagemNaData.optional()}).strict();
-const Editar=Campos.partial().merge(Contexto).extend({vinculo:z.enum(["manter","vincularAtual","remover"])}).strict();
+const Editar=Campos.partial().merge(Contexto).extend({vinculo:z.enum(["manter","vincularAtual","remover"]),aceitarForaDaJanela:z.boolean().optional()}).strict();
 export type CriarTarefaInboxInput=z.input<typeof Criar>;
 export type EditarTarefaInboxInput=z.input<typeof Editar>;
 export type TarefaModalSnapshot={id:string;versao:number;titulo:string;tipo:Tarefa["tipo"];descricao:string;prioridade:Tarefa["prioridade"];recorrencia:Tarefa["recorrencia"];dataCivil:string|null;hora:string|null;inicioEm:string|null;duracaoMin:15|30|45|60|90;fusoOrigem:string;lembreteAntecedenciaMin:0|10|15|30|60|1440|null;responsavelId:string|null;notificarUsuarioIds:string[];leadId:string|null;pessoaId:string|null;podeAlterarVinculo:boolean;vinculadaAtual:boolean};
@@ -93,7 +93,7 @@ export async function editarTarefaInbox(sessao:UsuarioSessao,atendimentoId:strin
   await tx.$queryRaw`SELECT id FROM "AtendimentoWhatsApp" WHERE id=${id} FOR UPDATE`;
   await tx.$queryRaw`SELECT id FROM "Tarefa" WHERE id=${tid} FOR UPDATE`;
   const c=await contexto(tx,sessao,id);conferir({contextoEsperado:i.vinculo==="manter"?c.contextoIdentidadeEsperada:c.contextoEsperado},i.contextoEsperado);conferirFuso(fuso,i.fusoEscolaEsperado);
-  const t=await tarefaVisivel(tx,tid,c.filtro),opcoes:OpcoesEdicaoTarefaTx={filtro:c.filtro};
+  const t=await tarefaVisivel(tx,tid,c.filtro),opcoes:OpcoesEdicaoTarefaTx={filtro:c.filtro,aceitarForaDaJanela:i.aceitarForaDaJanela};
   if(i.vinculo!=="manter"){
    if(!c.op||t.leadId&&t.leadId!==c.op.id||i.vinculo==="remover"&&t.leadId!==c.op.id)throw new ErroRegra("Este vínculo não pertence à oportunidade atual.");
    const pessoaAtual=c.pessoa?.leadId===c.op.id?c.pessoa.pessoaId:null;

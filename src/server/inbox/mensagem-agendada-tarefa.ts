@@ -2,6 +2,7 @@ import type { Prisma } from "@prisma/client";
 import { ErroRegra } from "@/server/_shared/sessao";
 import { registrarEvento } from "@/server/_shared/evento";
 import { valorCampoLocal } from "@/server/operacao/fuso-entrada";
+import { recusaForaDaJanela } from "@/server/whatsapp/janela-agendamento";
 import type { Db } from "@/server/whatsapp/escopo";
 import {
   quandoDaMensagemAgendada,
@@ -14,8 +15,9 @@ import {
 export const STATUS_MENSAGEM_AGENDADA_ATIVA = ["PENDENTE", "ADIADA"] as const;
 export const MOTIVO_CANCELADA_COM_TAREFA = "cancelada_com_a_tarefa";
 
-export function decisaoCancelaMensagem(decisao: DecisaoMensagemAgendada | undefined): decisao is "cancelar" {
-  return decisao === "cancelar";
+// Omissão e "cancelar" cancelam. Só "manter" preserva o envio.
+export function decisaoCancelaMensagem(decisao: DecisaoMensagemAgendada | undefined): boolean {
+  return decisao !== "manter";
 }
 
 export async function carregarMensagensAgendadasDasTarefas(
@@ -79,6 +81,54 @@ export async function cancelarMensagensAgendadasDaTarefaTx(tx: Prisma.Transactio
         tarefaId,
         atendimentoId: m.atendimentoId,
         canceladaEm: agora.toISOString(),
+      },
+    });
+  }
+}
+
+export async function moverMensagensPendentesDaTarefaTx(
+  tx: Prisma.TransactionClient,
+  autorId: string,
+  tarefaId: string,
+  inicioEm: Date | null,
+  opcoes: { aceitarForaDaJanela?: boolean } = {},
+): Promise<void> {
+  const candidatas = await tx.intencaoMensagem.findMany({
+    where: { tarefaId, status: "PENDENTE", agendadaPara: { not: null } },
+    select: { id: true },
+    orderBy: { id: "asc" },
+  });
+  if (!candidatas.length) return;
+  if (!inicioEm) throw new ErroRegra("A tarefa tem mensagem agendada. Informe data e horário, ou cancele a mensagem antes de tirar o prazo.");
+  const recusa = await recusaForaDaJanela(inicioEm, tx);
+  if (recusa && !opcoes.aceitarForaDaJanela) {
+    throw new ErroRegra(`${recusa} Confirme para mover a mensagem mesmo fora da janela, ou escolha um horário dentro dela.`);
+  }
+  for (const { id } of candidatas) {
+    await tx.$queryRaw`SELECT id FROM "IntencaoMensagem" WHERE id=${id} AND "tarefaId"=${tarefaId} FOR UPDATE`;
+    const m = await tx.intencaoMensagem.findFirst({
+      where: { id, tarefaId, status: "PENDENTE", agendadaPara: { not: null } },
+      select: { id: true, agendadaPara: true, atendimentoId: true },
+    });
+    if (!m?.agendadaPara || m.agendadaPara.getTime() === inicioEm.getTime()) continue;
+    const r = await tx.intencaoMensagem.updateMany({
+      where: { id: m.id, tarefaId, status: "PENDENTE", agendadaPara: m.agendadaPara },
+      data: { agendadaPara: inicioEm },
+    });
+    if (r.count !== 1) throw new ErroRegra("A mensagem agendada mudou. Recarregue a tarefa.");
+    await registrarEvento(tx, {
+      tipo: "MensagemReagendada",
+      agregadoTipo: m.atendimentoId ? "AtendimentoWhatsApp" : "IntencaoMensagem",
+      agregadoId: m.atendimentoId ?? m.id,
+      autorId,
+      payload: {
+        contexto: "tarefa379",
+        operacao: "REAGENDAR",
+        intencaoId: m.id,
+        tarefaId,
+        atendimentoId: m.atendimentoId,
+        de: m.agendadaPara.toISOString(),
+        agendadaPara: inicioEm.toISOString(),
       },
     });
   }

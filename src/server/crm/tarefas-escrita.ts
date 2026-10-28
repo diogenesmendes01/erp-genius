@@ -10,6 +10,7 @@ import { instanteDaGrade } from "@/server/agenda/grade";
 import { capacidadesCrm, setoresDoUsuario } from "./permissoes";
 import { atendimentoVisivel } from "@/server/whatsapp/atendimentos";
 import type { TarefaInput } from "./tarefas";
+import { moverMensagensPendentesDaTarefaTx } from "@/server/inbox/mensagem-agendada-tarefa";
 const escritaD10=(d:Partial<TarefaInput>,agenda?:number|null)=>d.recorrencia!==undefined||d.notificarUsuarioIds!==undefined||d.prioridade==="BAIXA"||d.lembreteAntecedenciaMin===15||d.lembreteAntecedenciaMin===1440||agenda===15||agenda===1440;
 const MSG_VERSAO="Esta tarefa foi alterada por outra pessoa. Recarregue.";
 const MSG_FORA_CARTEIRA="Oportunidade fora da sua carteira.";
@@ -138,7 +139,7 @@ export async function criarTarefaTx(tx:Prisma.TransactionClient,autor:UsuarioSes
       }
       return t;
 }
-export type OpcoesEdicaoTarefaTx={filtro?:Prisma.TarefaWhereInput;vinculo?:{leadId:string|null;pessoaId:string|null};agendamento?:{dataCivil:string|null;inicioEm:Date|null;lembrarEm:Date|null;lembreteAntecedenciaMin:number|null}};
+export type OpcoesEdicaoTarefaTx={filtro?:Prisma.TarefaWhereInput;vinculo?:{leadId:string|null;pessoaId:string|null};agendamento?:{dataCivil:string|null;inicioEm:Date|null;lembrarEm:Date|null;lembreteAntecedenciaMin:number|null};aceitarForaDaJanela?:boolean};
 export async function editarTarefaTx(tx:Prisma.TransactionClient,autor:UsuarioSessao,t:Tarefa,versao:number,d:Partial<TarefaInput>,opcoes:OpcoesEdicaoTarefaTx={}):Promise<void>{
       const conferirD10=escritaD10(d,opcoes.agendamento?.lembreteAntecedenciaMin);
       if (t.status !== "ABERTA") throw new ErroRegra("Só tarefas abertas podem ser editadas.");
@@ -222,6 +223,10 @@ export async function editarTarefaTx(tx:Prisma.TransactionClient,autor:UsuarioSe
         const final=await validarNotificadosTarefaD10(tx,autor,{responsavelId,setor,gerenteDoResponsavelId:null},[]);autor=final.autor;await validarVinculos(tx,autor,d);
       }
       await registrarEvento(tx, { tipo: "TarefaEditada", agregadoTipo: "Tarefa", agregadoId: t.id, autorId: autor.id, payload: { campos: mudou as Prisma.InputJsonObject, versao: versao + 1 } });
+      if("inicioEm" in data){
+        const inicio=data.inicioEm instanceof Date?data.inicioEm:null;
+        if((inicio?.getTime()??null)!==(t.inicioEm?.getTime()??null))await moverMensagensPendentesDaTarefaTx(tx,autor.id,t.id,inicio,{aceitarForaDaJanela:opcoes.aceitarForaDaJanela});
+      }
       if(conferirD10){
         const responsavelId=typeof data.responsavelId==="string"||data.responsavelId===null?data.responsavelId:t.responsavelId,setor=typeof data.setor==="string"?data.setor:t.setor;
         const final=await validarNotificadosTarefaD10(tx,autor,{responsavelId,setor,gerenteDoResponsavelId:null},selecao?.depois??[]);

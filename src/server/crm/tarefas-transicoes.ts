@@ -5,7 +5,7 @@ import { ErroRegra } from "@/server/_shared/sessao";
 import { registrarEvento } from "@/server/_shared/evento";
 import { ultimoEventoDoAutor } from "@/server/_shared/idempotencia";
 import type { DecisaoMensagemAgendada } from "@/lib/selo-mensagem-agendada";
-import { cancelarMensagensAgendadasDaTarefaTx, decisaoCancelaMensagem } from "@/server/inbox/mensagem-agendada-tarefa";
+import { cancelarMensagensAgendadasDaTarefaTx, decisaoCancelaMensagem, moverMensagensPendentesDaTarefaTx } from "@/server/inbox/mensagem-agendada-tarefa";
 
 export const MSG_VERSAO_TAREFA = "Esta tarefa foi alterada por outra pessoa. Recarregue.";
 export type ContextoTransicaoTarefa = { tx: Prisma.TransactionClient; autor: UsuarioSessao; tarefa: Tarefa; versao: number; filtro?: Prisma.TarefaWhereInput };
@@ -37,11 +37,12 @@ export async function reabrirTarefaTx(c: ContextoTransicaoTarefa): Promise<boole
  return true;
 }
 export type AgendamentoTarefaResolvido = { dataCivil: string | null; inicioEm: Date | null; lembrarEm: Date | null; lembreteAntecedenciaMin: number | null };
-export async function reagendarTarefaTx(c: ContextoTransicaoTarefa, novo: AgendamentoTarefaResolvido): Promise<boolean> {
+export async function reagendarTarefaTx(c: ContextoTransicaoTarefa, novo: AgendamentoTarefaResolvido, opcoes?: { aceitarForaDaJanela?: boolean }): Promise<boolean> {
  const {tx,autor,tarefa:t}=c;
  if(t.status!=="ABERTA")throw new ErroRegra("Só tarefas abertas podem ser reagendadas.");
  await gravar(c,"ABERTA",{...novo,lembreteDisparadoEm:null});
  await registrarEvento(tx,{tipo:"TarefaReagendada",agregadoTipo:"Tarefa",agregadoId:t.id,autorId:autor.id,payload:{de:{dataCivil:t.dataCivil,inicioEm:t.inicioEm?.toISOString()??null},para:{dataCivil:novo.dataCivil,inicioEm:novo.inicioEm?.toISOString()??null}}});
+ if((novo.inicioEm?.getTime()??null)!==(t.inicioEm?.getTime()??null))await moverMensagensPendentesDaTarefaTx(tx,autor.id,t.id,novo.inicioEm,opcoes);
  return true;
 }
 export async function cancelarTarefaTx(c: ContextoTransicaoTarefa, motivo: string, mensagemAgendada?: DecisaoMensagemAgendada): Promise<boolean> {

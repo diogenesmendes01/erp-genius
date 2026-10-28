@@ -18,7 +18,7 @@ import {
 export async function criarTarefa(i: TarefaInput): Promise<Resultado<{ id: string }>> {
   return criarTarefaDominio(i);
 }
-export async function editarTarefa(id: string, versao: number, i: Partial<TarefaInput>): Promise<Resultado> {
+export async function editarTarefa(id: string, versao: number, i: Partial<TarefaInput> & { aceitarForaDaJanela?: boolean }): Promise<Resultado> {
   return editarTarefaDominio(id, versao, i);
 }
 export async function concluirTarefa(id: string, versao: number, resultado?: string, mensagemAgendada?: DecisaoMensagemAgendada): Promise<Resultado> {
@@ -27,7 +27,7 @@ export async function concluirTarefa(id: string, versao: number, resultado?: str
 export async function reabrirTarefa(id: string, versao: number): Promise<Resultado> {
   return reabrirTarefaDominio(id, versao);
 }
-export async function reagendarTarefa(id: string, versao: number, q: { dataCivil: string | null; hora: string | null }): Promise<Resultado> {
+export async function reagendarTarefa(id: string, versao: number, q: { dataCivil: string | null; hora: string | null; aceitarForaDaJanela?: boolean }): Promise<Resultado> {
   return reagendarTarefaDominio(id, versao, q);
 }
 export async function cancelarTarefa(id: string, versao: number, motivo: string, mensagemAgendada?: DecisaoMensagemAgendada): Promise<Resultado> {

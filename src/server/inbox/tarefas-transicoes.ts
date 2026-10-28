@@ -11,11 +11,11 @@ import { instanteDoCampoLocal, valorCampoLocal } from "@/server/operacao/fuso-en
 import type { DecisaoMensagemAgendada } from "@/lib/selo-mensagem-agendada";
 import { avisarAtendimento } from "./aviso";
 
-export type ReagendamentoInbox = {dataCivil:string|null;hora:string|null;fusoEscolaEsperado:string};
+export type ReagendamentoInbox = {dataCivil:string|null;hora:string|null;fusoEscolaEsperado:string;aceitarForaDaJanela?:boolean};
 const Id=z.string().min(1,"Tarefa não encontrada.");
 const Versao=z.number().int().positive();
 const DataCivil=z.string().regex(/^\d{4}-\d{2}-\d{2}$/).refine(v=>{const d=new Date(v+"T00:00:00Z");return Number.isFinite(d.getTime())&&d.toISOString().slice(0,10)===v;},"Informe uma data válida.");
-const Q=z.object({dataCivil:DataCivil.nullable(),hora:z.string().regex(/^(?:[01]\d|2[0-3]):[0-5]\d$/).nullable(),fusoEscolaEsperado:z.string().min(1)}).strict();
+const Q=z.object({dataCivil:DataCivil.nullable(),hora:z.string().regex(/^(?:[01]\d|2[0-3]):[0-5]\d$/).nullable(),fusoEscolaEsperado:z.string().min(1),aceitarForaDaJanela:z.boolean().optional()}).strict();
 type Transicao = {tipo:"concluir";mensagemAgendada?:DecisaoMensagemAgendada}|{tipo:"reabrir"}|{tipo:"cancelar";motivo:string;mensagemAgendada?:DecisaoMensagemAgendada}|{tipo:"reagendar";q:ReagendamentoInbox};
 const Decisao=z.enum(["cancelar","manter"]).optional();
 export async function executarTarefaInboxTx(sessao:UsuarioSessao,atendimentoId:string,tarefaId:string,versao:number,entrada:Transicao):Promise<void>{
@@ -51,7 +51,7 @@ export async function executarTarefaInboxTx(sessao:UsuarioSessao,atendimentoId:s
    if(q!.dataCivil&&q!.hora){const r=instanteDoCampoLocal(q!.dataCivil+"T"+q!.hora,fuso!);if(!r.ok)throw new ErroRegra(r.erro);inicioEm=r.instante;}
    const antecedencia=inicioEm?c.tarefa.lembreteAntecedenciaMin:null;
    const dataCivil=inicioEm?valorCampoLocal(inicioEm,c.tarefa.fusoOrigem).slice(0,10):q!.dataCivil;
-   mudou=await reagendarTarefaTx(c,{dataCivil,inicioEm,lembreteAntecedenciaMin:antecedencia,lembrarEm:inicioEm&&antecedencia!==null?new Date(inicioEm.getTime()-antecedencia*60000):null});
+   mudou=await reagendarTarefaTx(c,{dataCivil,inicioEm,lembreteAntecedenciaMin:antecedencia,lembrarEm:inicioEm&&antecedencia!==null?new Date(inicioEm.getTime()-antecedencia*60000):null},{aceitarForaDaJanela:q!.aceitarForaDaJanela});
   }
   if(mudou)await avisarAtendimento(tx,id);
  });
