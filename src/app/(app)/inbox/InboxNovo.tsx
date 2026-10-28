@@ -83,6 +83,7 @@ export interface PropsInboxNovo {
   abrirPainelPadrao?: boolean;
   opcoesNovaConversa?: OpcoesAtendimento;
   sino?: ReactNode;
+  whatsappDesconectado?: boolean;
 }
 
 export function paramsDosFiltros(f: FiltrosInbox, cursor?: string | null, opcoes: { contagens?: boolean } = {}): string {
@@ -152,7 +153,7 @@ const ouNulo = <T,>(l: T[] | null): T[] | null => (l?.length ? l : null);
 const COLUNA_LISTA = "min-[960px]:flex min-[960px]:w-[300px] min-[960px]:shrink-0 min-[1100px]:w-[372px]";
 const COLUNA_CONVERSA = "min-[960px]:flex min-[960px]:min-w-0 min-[960px]:flex-1";
 
-export function InboxNovo({ inicial, filtros, selecionado: selecionadoInicial, usuario, fuso, fusoEscola, destinos, triagem: triagemBruta = null, revisoes: revisoesBrutas = null, opcoesFiltro, contagens: contagensIniciais, resumo: resumoInicial, abrirPainelPadrao, opcoesNovaConversa, sino, agoraInicial, podeAbrirFunil = false, podeCriarOportunidade = false,agendarAoAbrir=false }: PropsInboxNovo) {
+export function InboxNovo({ inicial, filtros, selecionado: selecionadoInicial, usuario, fuso, fusoEscola, destinos, triagem: triagemBruta = null, revisoes: revisoesBrutas = null, opcoesFiltro, contagens: contagensIniciais, resumo: resumoInicial, abrirPainelPadrao, opcoesNovaConversa, sino, agoraInicial, podeAbrirFunil = false, podeCriarOportunidade = false,agendarAoAbrir=false, whatsappDesconectado=false }: PropsInboxNovo) {
   const parametrosDaRota = useSearchParams();
   const router = useRouter();
   const selecionadoDaRota = parametrosDaRota === null ? selecionadoInicial : (parametrosDaRota.get("c") || null);
@@ -569,7 +570,7 @@ export function InboxNovo({ inicial, filtros, selecionado: selecionadoInicial, u
           faixaAria={resumo ? <FaixaAriaAtiva situacao={resumo.aria} contagens={resumo.contagens} aoMudar={recarregarLista} /> : undefined}
           itens={itens} proximo={proximo} selecionado={selecionado} aoSelecionar={abrir} aoCarregarMais={() => void maisAntigas()}
           fuso={fuso} usuarioId={usuario.id} agoraInicial={agoraInicial} podeGerenciarNumeros={usuario.papeis.includes("ADMINISTRADOR")}
-          focoAoFecharPopover={focoAoFecharPopover} aoNovaConversa={() => setNovaConversaAberta(true)} novaConversaAberta={novaConversaAberta} aoFecharNovaConversa={() => setNovaConversaAberta(false)}
+          focoAoFecharPopover={focoAoFecharPopover} aoNovaConversa={() => setNovaConversaAberta(true)} novaConversaAberta={novaConversaAberta} aoFecharNovaConversa={() => setNovaConversaAberta(false)} whatsappDesconectado={whatsappDesconectado}
           novaConversa={opcoesNovaConversa ? <PopoverNovaConversa key={selecionado ?? "lista"} opcoes={opcoesNovaConversa} itens={itens} usuario={usuario} intencao={intencaoNovaConversa} aoSelecionar={abrir} aoFechar={() => setNovaConversaAberta(false)} /> : undefined} />
       </section>
 
@@ -578,9 +579,15 @@ export function InboxNovo({ inicial, filtros, selecionado: selecionadoInicial, u
           <div className="flex min-h-0 flex-1 flex-col overflow-y-auto p-3">
             {(triagem || revisoes) && <PainelTriagem triagem={triagem} revisoes={revisoes} preferenciaFusoExibicao={fuso} />}
             <div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-2 p-6 text-center">
-              <IconMessages size={40} className="shrink-0 text-gray-400" aria-hidden />
-              <p className="text-[15px] font-semibold text-gray-800">Escolha uma conversa</p>
-              <p className="text-[13px] text-gray-600">As mensagens aparecem aqui.</p>
+              {whatsappDesconectado ? (
+                <p className="text-[15px] font-semibold text-gray-800" role="status">WhatsApp desconectado, entre em contato com seu gerente!</p>
+              ) : (
+                <>
+                  <IconMessages size={40} className="shrink-0 text-gray-400" aria-hidden />
+                  <p className="text-[15px] font-semibold text-gray-800">Escolha uma conversa</p>
+                  <p className="text-[13px] text-gray-600">As mensagens aparecem aqui.</p>
+                </>
+              )}
             </div>
           </div>
         ) : (

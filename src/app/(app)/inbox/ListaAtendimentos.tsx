@@ -16,15 +16,22 @@ export interface PropsListaAtendimentos {
   fuso?: string | null;
   usuarioId?: string;
   agoraInicial?: number;
+  whatsappDesconectado?: boolean;
 }
 
-export function ListaAtendimentos({ itens, proximo, selecionado, aoSelecionar, aoCarregarMais, fuso = null, usuarioId, agoraInicial }: PropsListaAtendimentos) {
+export function ListaAtendimentos({ itens, proximo, selecionado, aoSelecionar, aoCarregarMais, fuso = null, usuarioId, agoraInicial, whatsappDesconectado = false }: PropsListaAtendimentos) {
   const rolagem = useRef<HTMLDivElement>(null);
   const agora = new Date(useAgoraDosPrazos(itens, agoraInicial));
 
   return (
     <div ref={rolagem} className="min-h-0 flex-1 overflow-y-auto px-2 pb-3 pt-1">
-      {itens.length === 0 && <EstadoVazio bloco>Nenhuma conversa neste filtro.</EstadoVazio>}
+      {itens.length === 0 && (
+        <EstadoVazio bloco>
+          {whatsappDesconectado
+            ? "WhatsApp desconectado, entre em contato com seu gerente!"
+            : "Nenhuma conversa neste filtro."}
+        </EstadoVazio>
+      )}
       <VirtualList
         items={itens}
         getKey={(i) => i.id}

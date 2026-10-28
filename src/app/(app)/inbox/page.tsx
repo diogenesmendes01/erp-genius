@@ -6,7 +6,7 @@ import { decodificarCursor } from "@/server/inbox/cursor";
 import { contarChipsInbox, listarAtendimentosPagina, obterItemListaInbox } from "@/server/inbox/consultas-pagina";
 import { criarOperacaoListaInbox } from "@/server/inbox/contexto-lista";
 import { resumoDaListaInbox } from "@/server/inbox/contagens";
-import { opcoesFiltroInbox } from "@/server/inbox/opcoes-filtro";
+import { opcoesFiltroInbox, vendedorSemWhatsAppConectado } from "@/server/inbox/opcoes-filtro";
 import { InboxNovo } from "./InboxNovo";
 import { listarOpcoesAtendimento, listarTriagemWhatsApp, listarRevisoesEnvio } from "@/server/whatsapp/operacoes-atendimento";
 import { consultarPreferenciaFusoEquipe } from "@/server/preferencias/fuso-exibicao";
@@ -48,7 +48,11 @@ export default async function InboxPage({
     contarChipsInbox(usuario, filtros,{operacao}),
     resumoDaListaInbox(usuario,filtros,undefined,{operacao}),
   ]);
-  if (c && !inicial.itens.some((i) => i.id === c)) {
+  const whatsappDesconectado = vendedorSemWhatsAppConectado(usuario.papeis, opcoesFiltro.numeros);
+  if (whatsappDesconectado) {
+    inicial.itens = [];
+    inicial.proximo = null;
+  } else if (c && !inicial.itens.some((i) => i.id === c)) {
     const item = await obterItemListaInbox(usuario, c,{operacao});
     if (item) inicial.itens = [item, ...inicial.itens];
   }
@@ -58,7 +62,7 @@ export default async function InboxPage({
   const agoraInicial = Date.now();
   return (
     <div className="-m-4 md:-m-8 flex min-h-0 flex-col h-[calc(100dvh-3.5625rem)] sm:h-[calc(100dvh-3.3125rem)] md:h-dvh">
-      <InboxNovo podeCriarOportunidade={capacidadesCrm(usuario.papeis).has("funil.mover")} podeAbrirFunil={capacidadesCrm(usuario.papeis).has("funil.ver")} agoraInicial={agoraInicial} inicial={inicial} filtros={filtros} selecionado={c} agendarAoAbrir={um(parametros.agendar)==="1"&&!!c} usuario={{ id: usuario.id, nome: usuario.nome, papeis: usuario.papeis }} fusoEscola={fusoEscola} fuso={fuso}
+      <InboxNovo podeCriarOportunidade={capacidadesCrm(usuario.papeis).has("funil.mover")} podeAbrirFunil={capacidadesCrm(usuario.papeis).has("funil.ver")} agoraInicial={agoraInicial} inicial={inicial} filtros={filtros} selecionado={whatsappDesconectado ? null : c} agendarAoAbrir={!whatsappDesconectado && um(parametros.agendar)==="1"&&!!c} whatsappDesconectado={whatsappDesconectado} usuario={{ id: usuario.id, nome: usuario.nome, papeis: usuario.papeis }} fusoEscola={fusoEscola} fuso={fuso}
         destinos={opcoes.destinos.map((d) => ({ chave: d.chave, nome: d.nome, finalidade: d.finalidade, disponivel: d.disponivel }))}
         triagem={triagem} revisoes={revisoes} opcoesFiltro={opcoesFiltro} contagens={contagens} resumo={resumo}
         opcoesNovaConversa={opcoes} sino={<SinoNotificacoes key="sino-inbox" notificacoes={notificacoes} fusoExibicao={fuso} fusoEscola={fusoEscola} />} />

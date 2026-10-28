@@ -7,6 +7,7 @@ import { contarChipsInbox, listarAtendimentosPagina } from "@/server/inbox/consu
 
 import { criarOperacaoListaInbox } from "@/server/inbox/contexto-lista";
 import { resumoDaListaInbox } from "@/server/inbox/contagens";
+import { ehVendedorExclusivo, opcoesFiltroInbox, vendedorSemWhatsAppConectado } from "@/server/inbox/opcoes-filtro";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -26,6 +27,12 @@ export async function GET(req: Request) {
   const bruto = params.get("cursor");
   const cursor = bruto && decodificarCursor(bruto) ? bruto : null;
   if (bruto && !cursor) return NextResponse.json({ erro: "Cursor inválido." }, { status: 400 });
+  if (ehVendedorExclusivo(usuario.papeis)) {
+    const opcoesFiltro = await opcoesFiltroInbox(usuario);
+    if (vendedorSemWhatsAppConectado(usuario.papeis, opcoesFiltro.numeros)) {
+      return NextResponse.json({ itens: [], proximo: null }, { headers: { "Cache-Control": "no-store" } });
+    }
+  }
   const enviar = params.get("envio") === "1";
   const operacao=criarOperacaoListaInbox(usuario,{enviar});
   const pedirResumo=params.get("contagens")==="1"&&!cursor;
