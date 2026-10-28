@@ -1,21 +1,18 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { CategoriaDocumento, EtapaLead, Papel, Temperatura, type Prisma } from "@prisma/client";
+import { CategoriaDocumento, EtapaLead, Temperatura, type Prisma } from "@prisma/client";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { registrarEvento } from "@/server/_shared/evento";
 import { executarAcao, type Resultado } from "@/server/_shared/resultado";
 import { ErroPermissao, ErroRegra, apenasPortal, exigirSessao, type UsuarioSessao } from "@/server/_shared/sessao";
-import { exigirInstanteDoCampoLocal } from "@/server/_shared/campo-local";
 import { escopoComercialAtual } from "@/server/_shared/escopo-comercial";
 import { DataCivilSchema } from "@/server/matricula/cobertura";
-import { AgendarExperimentalSchema, ResumoSchema, type ResumoInput } from "@/server/comercial/schema";
+import { ResumoSchema, type ResumoInput } from "@/server/comercial/schema";
 import { prepararMudancaPrevisao, type PrevisaoOportunidadeInput, type ValoresPrevisao } from "@/server/comercial/previsao-schema";
-import { EVENTO_EXPERIMENTAL_ATRIBUIDA } from "@/server/comercial/experimental";
 import { destinoDoArraste } from "@/server/crm/etapas";
 import { concluirTarefa, criarTarefa, reabrirTarefa } from "@/server/crm/tarefas";
-import { capacidadesCrm } from "@/server/crm/permissoes";
 import { exigirArquivoVinculavel } from "@/server/uploads/autorizacao";
 import { avisarAtendimento } from "./aviso";
 import { avisarAtendimentoAtualizado } from "./barramento";
@@ -145,94 +142,6 @@ export async function anexarDocumentoPropostaNoInbox(
         payload: { categoria: CategoriaDocumento.PROPOSTA, nome: dados.nome },
       });
       return true;
-    });
-  });
-}
-
-export async function agendarExperimentalNoInbox(
-  atendimentoId: string,
-  oportunidadeIdEsperada: string,
-  input: { dataISO?: string; dataLocal?: string; fuso?: string; professorId?: string | null },
-): Promise<Resultado> {
-  return executarAcao(async () => {
-    const dados = AgendarExperimentalSchema.parse(input);
-    const data = dados.dataLocal ? exigirInstanteDoCampoLocal(dados.dataLocal, dados.fuso) : new Date(dados.dataISO ?? "");
-    if (Number.isNaN(data.getTime())) throw new ErroRegra("Data inválida.");
-    const professorId = dados.professorId ?? null;
-    await mutarOportunidadeDoInbox(atendimentoId, oportunidadeIdEsperada, async (tx, autor, leadId) => {
-      const lead = await tx.oportunidade.findUniqueOrThrow({ where: { id: leadId }, select: { etapa: true, professorExperimentalId: true } });
-      const destino = destinoDoArraste(lead.etapa, EtapaLead.EXPERIMENTAL_AGENDADA);
-      const remarcando = lead.etapa === EtapaLead.EXPERIMENTAL_AGENDADA;
-      if (!remarcando) {
-        if (destino.tipo === "recusar") throw new ErroRegra(destino.motivo);
-        if (destino.tipo !== "acao" || destino.acao !== "agendarExperimental") throw new ErroRegra("Use “Agendar experimental”.");
-      }
-      if (professorId) {
-        const professor = await tx.usuario.findUnique({ where: { id: professorId }, select: { ativo: true, papeis: true } });
-        if (!professor?.ativo) throw new ErroRegra("Professor não encontrado.");
-        if (!professor.papeis.includes(Papel.PROFESSOR)) throw new ErroRegra("Usuário informado não é professor.");
-      }
-      await tx.oportunidade.update({
-        where: { id: leadId },
-        data: {
-          etapa: EtapaLead.EXPERIMENTAL_AGENDADA,
-          dataExperimental: data,
-          professorExperimentalId: professorId,
-          experimentalConfirmadaEm: null,
-          aguardandoReagendamentoEm: null,
-        },
-      });
-      await registrarEvento(tx, {
-        tipo: "ExperimentalAgendada",
-        agregadoTipo: "Lead",
-        agregadoId: leadId,
-        autorId: autor.id,
-        payload: { data: data.toISOString() },
-      });
-      if (professorId !== lead.professorExperimentalId) {
-        await registrarEvento(tx, {
-          tipo: EVENTO_EXPERIMENTAL_ATRIBUIDA,
-          agregadoTipo: "Lead",
-          agregadoId: leadId,
-          autorId: autor.id,
-          payload: { de: lead.professorExperimentalId, professorId },
-        });
-      }
-      return true;
-    });
-  });
-}
-
-export async function confirmarExperimentalNoInbox(atendimentoId: string, oportunidadeIdEsperada: string): Promise<Resultado> {
-  return executarAcao(() => mutarOportunidadeDoInbox(atendimentoId, oportunidadeIdEsperada, async (tx, autor, leadId) => {
-    const lead = await tx.oportunidade.findUniqueOrThrow({
-      where: { id: leadId },
-      select: { etapa: true, dataExperimental: true, experimentalConfirmadaEm: true },
-    });
-    if (lead.etapa !== EtapaLead.EXPERIMENTAL_AGENDADA || !lead.dataExperimental) throw new ErroRegra("Não há experimental agendada para confirmar.");
-    if (lead.experimentalConfirmadaEm) return false;
-    const quando = new Date();
-    await tx.oportunidade.update({ where: { id: leadId }, data: { experimentalConfirmadaEm: quando } });
-    await registrarEvento(tx, {
-      tipo: "ExperimentalConfirmada",
-      agregadoTipo: "Lead",
-      agregadoId: leadId,
-      autorId: autor.id,
-      payload: { experimentalConfirmadaEm: quando.toISOString() },
-    });
-    return true;
-  }));
-}
-
-export async function professoresParaExperimental(atendimentoId: string): Promise<Resultado<{ id: string; nome: string }[]>> {
-  return executarAcao(async () => {
-    Id.parse(atendimentoId);
-    const autor = await exigirSessao();
-    if (!capacidadesCrm(autor.papeis).has("funil.mover")) throw new ErroPermissao("Você não tem acesso a esta função do CRM.");
-    return prisma.usuario.findMany({
-      where: { ativo: true, papeis: { has: Papel.PROFESSOR } },
-      orderBy: [{ nome: "asc" }, { id: "asc" }],
-      select: { id: true, nome: true },
     });
   });
 }

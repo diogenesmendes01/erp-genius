@@ -10,9 +10,6 @@ const acoes = vi.hoisted(() => ({
   resumo: vi.fn(async () => ({ ok: true as const })),
   proposta: vi.fn(async () => ({ ok: true as const })),
   anexo: vi.fn(async () => ({ ok: true as const })),
-  agendar: vi.fn(async () => ({ ok: true as const })),
-  confirmar: vi.fn(async () => ({ ok: true as const })),
-  professores: vi.fn(async () => ({ ok: true as const, dado: [{ id: "p1", nome: "Helena" }] })),
   link: vi.fn(async () => ({ ok: true as const })),
 }));
 vi.mock("@tabler/icons-react", () => ({ IconUpload: () => createElement("span") }));
@@ -21,9 +18,6 @@ vi.mock("@/server/inbox/acoes-fechamento-painel", () => ({
   atualizarResumoNoInbox: acoes.resumo,
   enviarPropostaNoInbox: acoes.proposta,
   anexarDocumentoPropostaNoInbox: acoes.anexo,
-  agendarExperimentalNoInbox: acoes.agendar,
-  confirmarExperimentalNoInbox: acoes.confirmar,
-  professoresParaExperimental: acoes.professores,
 }));
 vi.mock("@/server/matricula/acoes", () => ({ registrarLinkPagamento: acoes.link }));
 
@@ -102,14 +96,14 @@ it("proposta, contratação e cópia do link acontecem na inbox", async () => {
   const mudar = vi.fn();
   await act(async () => root.render(createElement(AcoesFechamentoOportunidade, {
     atendimentoId: "a481", oportunidade: { ...oportunidade, documentosProposta: [{ id: "d1", nome: "proposta.pdf", url: "/api/files/p.pdf", categoria: "PROPOSTA" }] },
-    fuso: "America/Sao_Paulo", podeAgir: true, secao: "enviarProposta", aoMudar: mudar,
+    podeAgir: true, secao: "enviarProposta", aoMudar: mudar,
   })));
   const enviar = host.querySelectorAll("button").find((b) => b.textContent === "Confirmar envio de proposta")!;
   await act(async () => { handler(enviar, "onClick")(); });
   expect(acoes.proposta).toHaveBeenCalledWith("a481", "op481");
   expect(host.textContent).toContain("proposta.pdf");
   await act(async () => root.render(createElement(AcoesFechamentoOportunidade, {
-    atendimentoId: "a481", oportunidade: comTaxa, fuso: "America/Sao_Paulo", podeAgir: true, secao: "prepararContratacao", aoMudar: mudar,
+    atendimentoId: "a481", oportunidade: comTaxa, podeAgir: true, secao: "prepararContratacao", aoMudar: mudar,
   })));
   expect(host.querySelector("a")?.getAttribute("href")).toBe("/matriculas/m481/preparacao");
   expect(host.textContent).toContain("Exceção rejeitada");
@@ -118,7 +112,7 @@ it("proposta, contratação e cópia do link acontecem na inbox", async () => {
   await act(async () => { handler(copiar, "onClick")(); });
   expect(host.textContent).toContain("Link copiado!");
   await act(async () => root.render(createElement(AcoesFechamentoOportunidade, {
-    atendimentoId: "a481", oportunidade, fuso: "America/Sao_Paulo", podeAgir: true, secao: null, aoMudar: mudar,
+    atendimentoId: "a481", oportunidade, podeAgir: true, secao: null, aoMudar: mudar,
   })));
   expect(host.textContent).toBe("");
 });

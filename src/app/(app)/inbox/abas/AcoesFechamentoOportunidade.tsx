@@ -1,30 +1,22 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { CategoriaDocumento } from "@prisma/client";
 import { Botao } from "@/components/Botao";
 import { MensagemStatus } from "@/components/MensagemStatus";
-import { CampoDataHoraLocal } from "@/components/CampoDataHoraLocal";
 import { FeedbackAcao } from "@/components/FeedbackAcao";
 import { UploadArquivo } from "@/components/UploadArquivo";
 import { useAcaoCliente } from "@/lib/acao-cliente";
 import { useChaveIdempotencia } from "@/lib/chave-idempotencia";
 import { STATUS_COBRANCA_LABEL } from "@/lib/labels";
 import { registrarLinkPagamento } from "@/server/matricula/acoes";
-import {
-  agendarExperimentalNoInbox,
-  anexarDocumentoPropostaNoInbox,
-  confirmarExperimentalNoInbox,
-  enviarPropostaNoInbox,
-  professoresParaExperimental,
-} from "@/server/inbox/acoes-fechamento-painel";
+import { anexarDocumentoPropostaNoInbox, enviarPropostaNoInbox } from "@/server/inbox/acoes-fechamento-painel";
 import type { ContratacaoPainel, OportunidadeAtualPainel, StatusAlcadaPainel } from "@/server/inbox/painel-oportunidades";
 
-export type SecaoFechamentoInbox = "agendarExperimental" | "enviarProposta" | "prepararContratacao";
+export type SecaoFechamentoInbox = "enviarProposta" | "prepararContratacao";
 type Props = {
   atendimentoId: string;
   oportunidade: OportunidadeAtualPainel;
-  fuso: string;
   podeAgir: boolean;
   secao: SecaoFechamentoInbox | null;
   aoMudar(): void;
@@ -38,48 +30,19 @@ const ALCADA: Record<StatusAlcadaPainel, string> = {
 };
 const contratacaoVazia: ContratacaoPainel = { matriculaId: null, statusAlcada: null, motivoDecisao: null, taxaMatricula: null };
 
-export function AcoesFechamentoOportunidade({ atendimentoId, oportunidade: o, fuso, podeAgir, secao, aoMudar }: Props) {
+export function AcoesFechamentoOportunidade({ atendimentoId, oportunidade: o, podeAgir, secao, aoMudar }: Props) {
   const acao = useAcaoCliente({ idempotente: false });
   const acaoLink = useAcaoCliente({ idempotente: true });
   const tentativaLink = useChaveIdempotencia();
   const contratacao = o.contratacao ?? contratacaoVazia;
   const documentos = o.documentosProposta ?? [];
-  const mostrarExperimental = secao === "agendarExperimental" || (podeAgir && o.etapa === "EXPERIMENTAL_AGENDADA");
   const mostrarProposta = secao === "enviarProposta" || o.etapa === "PROPOSTA" || documentos.length > 0;
   const mostrarContratacao = podeAgir && (secao === "prepararContratacao" || !!contratacao.matriculaId || o.etapa === "AGUARDANDO_MATRICULA" || o.etapa === "MATRICULADO");
-  const [quando, setQuando] = useState("");
-  const [professorId, setProfessorId] = useState(o.professorExperimentalId ?? "");
-  const [professores, setProfessores] = useState<{ id: string; nome: string }[]>([]);
-  const [carregouProfs, setCarregouProfs] = useState(false);
   const [link, setLink] = useState("");
   const [copiado, setCopiado] = useState(false);
   const taxa = contratacao.taxaMatricula;
 
-  useEffect(() => {
-    if (!mostrarExperimental || !podeAgir) return;
-    let cancelado = false;
-    void professoresParaExperimental(atendimentoId).then((r) => {
-      if (cancelado) return;
-      if (r.ok && r.dado) setProfessores(r.dado);
-      setCarregouProfs(true);
-    }).catch(() => { if (!cancelado) setCarregouProfs(true); });
-    return () => { cancelado = true; };
-  }, [mostrarExperimental, podeAgir, atendimentoId]);
-
-  if (!mostrarExperimental && !mostrarProposta && !mostrarContratacao) return null;
-
-  async function agendar(evento: React.FormEvent<HTMLFormElement>) {
-    evento.preventDefault();
-    if (!podeAgir || acao.ocupado || !quando) return;
-    const r = await acao.executar(() => agendarExperimentalNoInbox(atendimentoId, o.id, { dataLocal: quando, fuso, professorId: professorId || null }), "Experimental agendada.");
-    if (r?.tipo === "ok") { setQuando(""); aoMudar(); }
-  }
-
-  async function confirmar() {
-    if (!podeAgir || acao.ocupado) return;
-    const r = await acao.executar(() => confirmarExperimentalNoInbox(atendimentoId, o.id), "Experimental confirmada.");
-    if (r?.tipo === "ok") aoMudar();
-  }
+  if (!mostrarProposta && !mostrarContratacao) return null;
 
   async function enviarProposta() {
     if (!podeAgir || acao.ocupado) return;
@@ -111,23 +74,6 @@ export function AcoesFechamentoOportunidade({ atendimentoId, oportunidade: o, fu
   }
 
   return <div className="space-y-3">
-    {mostrarExperimental && <section aria-label="Agendar experimental" className="space-y-2 rounded-[10px] border border-gray-200 bg-surface-muted p-3">
-      <h4 className="text-[13px] font-semibold">Aula experimental</h4>
-      {podeAgir && <form onSubmit={(e) => void agendar(e)} className="space-y-2">
-        <label className="grid gap-1 text-sm">Data e hora da experimental
-          <CampoDataHoraLocal fuso={fuso} value={quando} disabled={acao.ocupado} onChange={(e) => setQuando(e.target.value)} />
-        </label>
-        <label className="grid gap-1 text-sm">Professor
-          <select aria-label="Professor da experimental" className="w-full rounded-md border border-border-soft bg-surface p-2" value={professorId} disabled={acao.ocupado || !carregouProfs} onChange={(e) => setProfessorId(e.target.value)}>
-            <option value="">Sem professor</option>
-            {professores.map((p) => <option key={p.id} value={p.id}>{p.nome}</option>)}
-          </select>
-        </label>
-        <Botao type="submit" variante="primario" tamanho="sm" disabled={acao.ocupado || !quando}>Agendar experimental</Botao>
-      </form>}
-      {podeAgir && o.etapa === "EXPERIMENTAL_AGENDADA" && o.dataExperimental && !o.experimentalConfirmada && <Botao variante="secundario" tamanho="sm" disabled={acao.ocupado} onClick={() => void confirmar()}>Confirmar experimental</Botao>}
-    </section>}
-
     {mostrarProposta && <section aria-label="Proposta" className="space-y-2 rounded-[10px] border border-gray-200 bg-surface-muted p-3">
       <h4 className="text-[13px] font-semibold">Proposta</h4>
       {podeAgir && o.etapa !== "PROPOSTA" && o.etapa !== "MATRICULADO" && o.etapa !== "PERDIDO" && <Botao variante="primario" tamanho="sm" disabled={acao.ocupado} onClick={() => void enviarProposta()}>Confirmar envio de proposta</Botao>}

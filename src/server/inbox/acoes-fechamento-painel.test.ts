@@ -14,12 +14,10 @@ const m = vi.hoisted(() => ({
   update: vi.fn(),
   findFirstDoc: vi.fn(),
   createDoc: vi.fn(),
-  findProfessor: vi.fn(),
   queryRaw: vi.fn(),
   findUser: vi.fn(),
   findOp: vi.fn(),
   findAtendimentos: vi.fn(),
-  findProfessores: vi.fn(),
 }));
 
 vi.mock("next/cache", () => ({ revalidatePath: m.revalidar }));
@@ -37,16 +35,15 @@ vi.mock("./contexto-oportunidade", () => ({
 const tx = {
   oportunidade: { findUniqueOrThrow: m.findUniqueOrThrow, update: m.update, findFirst: m.findOp },
   documento: { findFirst: m.findFirstDoc, create: m.createDoc },
-  usuario: { findUnique: m.findUser, findMany: m.findProfessores },
+  usuario: { findUnique: m.findUser },
   atendimentoWhatsApp: { findMany: m.findAtendimentos },
   $queryRaw: m.queryRaw,
 };
-vi.mock("@/lib/prisma", () => ({ prisma: { $transaction: async (fn: (cliente: typeof tx) => Promise<unknown>) => fn(tx), usuario: { findMany: m.findProfessores } } }));
+vi.mock("@/lib/prisma", () => ({ prisma: { $transaction: async (fn: (cliente: typeof tx) => Promise<unknown>) => fn(tx) } }));
 
 import {
   anexarDocumentoPropostaNoInbox,
   atualizarResumoNoInbox,
-  confirmarExperimentalNoInbox,
   definirPrevisaoOportunidade,
   definirTemperaturaNoInbox,
   enviarPropostaNoInbox,
@@ -106,14 +103,6 @@ it("anexo de proposta grava Documento com categoria PROPOSTA", async () => {
   expect(m.evento).toHaveBeenCalledWith(tx, expect.objectContaining({ tipo: "DocumentoAnexado", payload: { categoria: "PROPOSTA", nome: "proposta.pdf" } }));
   expect((await anexarDocumentoPropostaNoInbox("a481", "op481", { nome: "", url: "" })).ok).toBe(false);
   expect(m.createDoc).toHaveBeenCalledOnce();
-});
-
-it("confirmar experimental registra ExperimentalConfirmada", async () => {
-  m.findUniqueOrThrow.mockResolvedValueOnce({ etapa: "EXPERIMENTAL_AGENDADA", dataExperimental: new Date("2026-11-01T15:00:00Z"), experimentalConfirmadaEm: null });
-  expect((await confirmarExperimentalNoInbox("a481", "op481")).ok).toBe(true);
-  expect(m.update).toHaveBeenCalledWith({ where: { id: "op481" }, data: { experimentalConfirmadaEm: expect.any(Date) } });
-  expect(m.evento).toHaveBeenCalledWith(tx, expect.objectContaining({ tipo: "ExperimentalConfirmada", agregadoTipo: "Lead", agregadoId: "op481" }));
-  expect(m.evento).not.toHaveBeenCalledWith(tx, expect.objectContaining({ tipo: "LeadEditado", payload: expect.objectContaining({ campo: "experimentalConfirmada" }) }));
 });
 
 it("previsão direta trava o lead, respeita o esperado e avisa atendimento aberto", async () => {

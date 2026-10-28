@@ -47,7 +47,12 @@ it("carregar projeta qualificação, proposta e contratação no mesmo select", 
   };
   let consulta: { select?: Record<string, unknown> } | undefined;
   const findUnique = vi.fn(async (args: { select?: Record<string, unknown> }) => { consulta = args; return oportunidade; });
-  const db = { atendimentoWhatsApp: { findFirst: vi.fn(async () => ({ id: "a481", finalidade: "COMERCIAL", leadId: "op481", conversa: { contatoId: "c" } })) }, oportunidade: { findUnique, findFirst: vi.fn(async () => ({ id: "op481" })), findMany: vi.fn(async () => []) } };
+  const professores = [{ id: "prof481", nome: "Helena fictícia" }];
+  const db = {
+    atendimentoWhatsApp: { findFirst: vi.fn(async () => ({ id: "a481", finalidade: "COMERCIAL", leadId: "op481", conversa: { contatoId: "c" } })) },
+    usuario: { findMany: vi.fn(async () => professores) },
+    oportunidade: { findUnique, findFirst: vi.fn(async () => ({ id: "op481" })), findMany: vi.fn(async () => []) },
+  };
   const painel = await carregarOportunidadesPainel(u, "a481", db as unknown as Db);
   expect(consulta?.select).toMatchObject({
     interesse: true, objetivo: true, urgencia: true, orcamento: true, objecao: true, proximaAcao: true, professorExperimentalId: true,
@@ -56,7 +61,9 @@ it("carregar projeta qualificação, proposta e contratação no mesmo select", 
   });
   expect(painel?.atual).toMatchObject({
     interesse: "Inglês", objetivo: "Viagem", urgencia: "Este mês", orcamento: "500", objecao: null, proximaAcao: "Enviar PDF",
+    professorExperimentalId: null, experimentalConfirmada: false, professores,
     documentosProposta: [{ id: "d1", nome: "proposta.pdf" }],
     contratacao: { matriculaId: "m481", statusAlcada: "DENTRO_ALCADA", taxaMatricula: { cobrancaId: "c481", status: "PENDENTE", linkPagamento: null } },
   });
+  expect(painel).toMatchObject({ professores, professorExperimentalId: null });
 });

@@ -64,6 +64,7 @@ function OportunidadeDoAtendimento({ dados, capacidades, atendimentoId, fuso, fu
     if (destino.tipo === "recusar") { setErroLocal(destino.motivo); return; }
     if (destino.tipo === "acao") {
       if (destino.acao === "marcarPerdido") { aoAbrirPerda(); return; }
+      if (destino.acao === "agendarExperimental") return;
       setSecao(destino.acao); return;
     }
     void mover(etapa);
@@ -79,7 +80,7 @@ function OportunidadeDoAtendimento({ dados, capacidades, atendimentoId, fuso, fu
     <BarraEtapas etapa={o.etapa} podeMover={capacidades.moverEtapa} ocupado={acao.ocupado} aoEscolher={escolher} />
     <CartaoExperimental oportunidade={o} fuso={fuso} fusoEscola={fusoEscola ?? fuso ?? ""} podeAbrirFunil={podeAbrirFunil} podeMover={capacidades.moverEtapa} />
     <QualificacaoOportunidadeInbox atendimentoId={atendimentoId} oportunidadeId={o.id} temperatura={o.temperatura} etapa={o.etapa} podeEditar={podeFechar} resumo={{ interesse: o.interesse ?? null, objetivo: o.objetivo ?? null, urgencia: o.urgencia ?? null, orcamento: o.orcamento ?? null, objecao: o.objecao ?? null, proximaAcao: o.proximaAcao ?? null }} aoMudar={aoMudar} />
-    <AcoesFechamentoOportunidade atendimentoId={atendimentoId} oportunidade={o} fuso={fusoEscola ?? fuso ?? ""} podeAgir={podeFechar} secao={secao} aoMudar={aoMudar} />
+    <AcoesFechamentoOportunidade atendimentoId={atendimentoId} oportunidade={o} podeAgir={podeFechar} secao={secao} aoMudar={aoMudar} />
     <FeedbackAcao erro={erroLocal ?? acao.erro} sucesso={acao.sucesso} />
     <dl className="space-y-2 text-[13px]">
       {([['Responsável', o.responsavel?.nome ?? 'Sem responsável'], ['Produto', o.produto ?? '—']] as const).map(([rotulo, valor]) => <div key={rotulo} className="grid min-w-0 grid-cols-[104px_minmax(0,1fr)] gap-2"><dt className="text-gray-600">{rotulo}</dt><dd className="min-w-0 [overflow-wrap:anywhere]">{valor}</dd></div>)}

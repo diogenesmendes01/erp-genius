@@ -6,7 +6,7 @@ import {afterEach,beforeEach,expect,it,vi} from "vitest";
 import {criarDomMinimo,desligarObservadores,type Elemento} from "@/test/dom-minimo";
 import type {OportunidadesPainel} from "@/server/inbox/painel-oportunidades";
 vi.mock("@tabler/icons-react",()=>({IconCalendarTime:()=>createElement('span'),IconPencil:()=>createElement('span'),IconTrash:()=>createElement('span'),IconBriefcase:()=>createElement('span'),IconPlus:()=>createElement('span'),IconHandStop:()=>createElement('span'),IconThumbDown:()=>createElement('span'),IconCalendarCheck:()=>createElement('span'),IconUpload:()=>createElement('span'),IconBuilding:()=>createElement('span')}));
-vi.mock("@/server/inbox/acoes-fechamento-painel",()=>({definirTemperaturaNoInbox:vi.fn(),atualizarResumoNoInbox:vi.fn(),enviarPropostaNoInbox:vi.fn(),anexarDocumentoPropostaNoInbox:vi.fn(),agendarExperimentalNoInbox:vi.fn(),confirmarExperimentalNoInbox:vi.fn(),professoresParaExperimental:vi.fn(async()=>({ok:true,dado:[]}))}));
+vi.mock("@/server/inbox/acoes-fechamento-painel",()=>({definirTemperaturaNoInbox:vi.fn(),atualizarResumoNoInbox:vi.fn(),enviarPropostaNoInbox:vi.fn(),anexarDocumentoPropostaNoInbox:vi.fn()}));
 vi.mock("@/server/matricula/acoes",()=>({registrarLinkPagamento:vi.fn()}));
 const {mover}=vi.hoisted(()=>({mover:vi.fn()}));vi.mock("@/server/inbox/acoes-painel",()=>({moverEtapaNoInbox:mover,agendarExperimentalNoInbox:vi.fn(),atribuirProfessorExperimentalNoInbox:vi.fn(),confirmarExperimentalNoInbox:vi.fn()}));
 import {AbaOportunidades} from "./AbaOportunidades";

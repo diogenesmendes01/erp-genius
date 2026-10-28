@@ -119,7 +119,6 @@ export const ROTULO_EVENTO_CRM: Record<string, (payload: Payload) => string> = {
   DocumentoAnexado: () => "Documento anexado",
   DocumentoArquivado: () => "Documento arquivado",
   ExperimentalAtribuida: () => "Professor da experimental atribuído",
-  ExperimentalConfirmada: () => "Experimental confirmada",
   PessoasMescladas: () => "Contatos mesclados",
 };
 

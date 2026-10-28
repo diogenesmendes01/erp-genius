@@ -16,7 +16,7 @@ import { SecoesParidadeFunil } from "./SecoesParidadeFunil";
 const oportunidade: DetalheOportunidade = {
   id: "op481", codigo: null, nome: "Empresa fictícia", b2b: true, etapa: "QUALIFICADO", temperatura: "QUENTE",
   probabilidadePct: 70, previsaoFechamento: "2026-12-15", valorPrevisto: null, moeda: null, pais: null, dono: null,
-  proximaAcao: null, proximoFollowUp: null, dataExperimental: null, motivoPerda: null, criadoEm: new Date("2026-10-01T00:00:00Z"),
+  proximaAcao: null, proximoFollowUp: null, dataExperimental: null, professorExperimental: null, experimentalConfirmadaEm: null, motivoPerda: null, criadoEm: new Date("2026-10-01T00:00:00Z"),
   pessoaId: null, interesse: null, objetivo: null, urgencia: null, orcamento: null, objecao: null, telefoneE164: null,
   paisId: null, segmento: "EMPRESA", origemCampanha: null, origemConjunto: null, origemAnuncio: null, origemPalavra: null,
   planoPrevisto: null, comissaoPrevista: null, dataProposta: null, documentos: [], taxaMatricula: null,
