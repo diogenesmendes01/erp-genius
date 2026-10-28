@@ -31,6 +31,8 @@ export type DetalheOportunidade = {
   proximaAcao: string | null;
   proximoFollowUp: Date | null;
   dataExperimental: Date | null;
+  professorExperimental: { id: string; nome: string } | null;
+  experimentalConfirmadaEm: Date | null;
   motivoPerda: MotivoPerda | null;
   criadoEm: Date;
   pessoaId: string | null;
@@ -80,6 +82,7 @@ export const ROTULO_EVENTO_CRM: Record<string, (payload: Payload) => string> = {
     return de && para ? `Etapa: ${de} → ${para}` : para ? `Etapa: ${para}` : "Etapa alterada";
   },
   ExperimentalAgendada: () => "Experimental agendada",
+  ExperimentalConfirmada: () => "Presença na experimental confirmada",
   ExperimentalRealizada: () => "Experimental realizada",
   NoShow: () => "Não compareceu à experimental",
   PropostaEnviada: () => "Proposta enviada",
@@ -152,6 +155,7 @@ export async function obterOportunidade(id: string, usuario: UsuarioSessao): Pro
     include: {
       pais: { select: { nome: true, moedaLocal: true } },
       vendedor: { select: { id: true, nome: true } },
+      professorExperimental: { select: { id: true, nome: true } },
       documentos: { where: { arquivado: false }, orderBy: { criadoEm: "desc" }, select: { id: true, categoria: true, nome: true, url: true } },
       matricula: {
         select: {
@@ -188,6 +192,8 @@ export async function obterOportunidade(id: string, usuario: UsuarioSessao): Pro
     proximaAcao: l.proximaAcao,
     proximoFollowUp: l.proximoFollowUp,
     dataExperimental: l.dataExperimental,
+    professorExperimental: l.professorExperimental,
+    experimentalConfirmadaEm: l.experimentalConfirmadaEm,
     motivoPerda: l.motivoPerda,
     criadoEm: l.criadoEm,
     pessoaId: l.pessoaId,

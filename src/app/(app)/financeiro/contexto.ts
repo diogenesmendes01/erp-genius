@@ -1,8 +1,8 @@
 import { cache } from "react";
-import { Papel } from "@prisma/client";
+import { Papel, TipoAprovacao } from "@prisma/client";
 import { exigirPapelLeitura } from "@/lib/guards";
 import { contarInformesAConferir, podeConfigurarComissoes } from "@/server/financeiro/consultas";
-import { listarAprovacoesPendentes } from "@/server/ajustes/consultas";
+import { listarAprovacoesPendentes, listarPreparacoesPendentesAprovacao } from "@/server/ajustes/consultas";
 import { listarPropostasRetomada } from "@/server/retomada/consultas";
 import { abasVisiveis, type AbaFinanceiro, type PermissoesFinanceiro } from "./abas";
 import type { AprovacaoRow } from "./FinanceiroPainel";
@@ -33,10 +33,11 @@ export async function contextoDaAba(aba: AbaFinanceiro): Promise<ContextoFinance
 }
 
 export const carregarFilasPendentes = memo(async (p: PermissoesFinanceiro) => {
-  const [informesAConferir, retomadas, aprovacoesRaw] = await Promise.all([
+  const [informesAConferir, retomadas, aprovacoesRaw, preparacoes] = await Promise.all([
     p.podeOperarCobranca ? contarInformesAConferir() : Promise.resolve(0),
     p.podeOperarCobranca ? listarPropostasRetomada() : Promise.resolve({ ok: true as const, dado: [] }),
     p.podeAprovar ? listarAprovacoesPendentes() : Promise.resolve([]),
+    p.podeAprovar ? listarPreparacoesPendentesAprovacao() : Promise.resolve([]),
   ]);
   const aprovacoes: AprovacaoRow[] = aprovacoesRaw.map((a) => {
     const d = (a.payload ?? {}) as Record<string, unknown>;
@@ -52,8 +53,28 @@ export const carregarFilasPendentes = memo(async (p: PermissoesFinanceiro) => {
       valorPara: typeof d.valorPara === "number" ? d.valorPara : 0,
       descontoValor: typeof d.descontoValor === "number" ? d.descontoValor : 0,
       moeda: typeof d.moeda === "string" ? d.moeda : "",
+      origem: "APROVACAO_COBRANCA",
     };
   });
+  for (const prep of preparacoes) {
+    aprovacoes.push({
+      id: prep.id,
+      origem: "PREPARACAO_MATRICULA",
+      matriculaId: prep.matriculaId,
+      preparacaoId: prep.preparacaoId,
+      podeAprovarDireto: prep.podeAprovarDireto,
+      solicitante: prep.solicitante,
+      tipo: TipoAprovacao.DESCONTO,
+      motivo: prep.motivo,
+      vigencia: null,
+      impactoMensal: prep.descontoValor,
+      alunoNome: prep.alunoNome,
+      valorDe: prep.valorDe,
+      valorPara: prep.valorPara,
+      descontoValor: prep.descontoValor,
+      moeda: prep.moeda,
+    });
+  }
   return {
     informesAConferir,
     retomadas: retomadas.ok ? retomadas.dado ?? [] : [],

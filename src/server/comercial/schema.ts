@@ -53,6 +53,10 @@ export const DatasSchema = z.object({
   proximoFollowUp: dataOpcional,
   dataExperimental: dataHoraOpcional,
   dataProposta: dataOpcional,
+  professorExperimentalId: z.preprocess(
+    (v) => (v === "" ? null : v),
+    z.string().min(1).nullable().optional(),
+  ),
 });
 export type DatasInput = z.input<typeof DatasSchema> & { fusoDataExperimental?: string };
 

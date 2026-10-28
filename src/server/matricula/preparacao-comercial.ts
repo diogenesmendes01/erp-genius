@@ -8,13 +8,14 @@ import { executarAcao, exigirSessaoComPapel, ErroPermissao, ErroRegra, registrar
 import { escopoComercialAtual } from "@/server/_shared/escopo-comercial";
 import { conferirTurmaParaReserva } from "./reserva-disponibilidade";
 import { CadastroInicialSchema, PreparacaoComercialSchema, prepararContratacaoTx } from "./preparacao-comercial-tx";
+import { sugestaoNovoCadastroDoLead } from "./sugestao-novo-cadastro";
 
 const papeis: Papel[] = [Papel.ADMINISTRADOR, Papel.VENDEDOR, Papel.GERENTE_COMERCIAL, Papel.SECRETARIA_ACADEMICA];
 async function leadAutorizado(tx: Prisma.TransactionClient, autorId: string, leadId: string) {
   const autor = await tx.usuario.findUnique({ where: { id: autorId }, select: { id: true, nome: true, ativo: true, papeis: true } });
   if (!autor?.ativo || !autor.papeis.some((p) => papeis.includes(p))) throw new ErroPermissao();
   const operacional = autor.papeis.includes(Papel.ADMINISTRADOR) || autor.papeis.includes(Papel.SECRETARIA_ACADEMICA);
-  const lead = await tx.oportunidade.findFirst({ where: { AND: [{ id: leadId }, operacional ? {} : await escopoComercialAtual(autor, tx)] }, select: { id: true, nome: true, telefoneE164: true, matricula: { select: { id: true } } } });
+  const lead = await tx.oportunidade.findFirst({ where: { AND: [{ id: leadId }, operacional ? {} : await escopoComercialAtual(autor, tx)] }, select: { id: true, nome: true, telefoneE164: true, paisId: true, pessoa: { select: { nome: true, email: true } }, matricula: { select: { id: true } } } });
   if (!lead) throw new ErroPermissao("Oportunidade fora da sua carteira.");
   return lead;
 }
@@ -31,7 +32,8 @@ export async function consultarCadastrosPreparacao(input: { leadId: string; pagi
         select: { id: true, primeiroNome: true, sobrenome: true } }) : [];
       const podeCadastrarNovo = contatoConferivel && !lead.matricula && !await tx.aluno.count({ where: { telefoneE164: lead.telefoneE164 } });
       const paisesCadastro = podeCadastrarNovo ? await tx.pais.findMany({ orderBy: { nome: "asc" }, select: { id: true, nome: true } }) : [];
-      return { podeCadastrarNovo, paisesCadastro, lead: { id: lead.id, nome: lead.nome }, matriculaId: lead.matricula?.id ?? null, contatoConferivel, pagina: d.pagina, possuiMais: candidatos.length > 20, candidatos: candidatos.slice(0, 20) };
+      const sugestaoNovoCadastro = lead.matricula ? null : sugestaoNovoCadastroDoLead(lead);
+      return { podeCadastrarNovo, paisesCadastro, sugestaoNovoCadastro, lead: { id: lead.id, nome: lead.nome }, matriculaId: lead.matricula?.id ?? null, contatoConferivel, pagina: d.pagina, possuiMais: candidatos.length > 20, candidatos: candidatos.slice(0, 20) };
     }, { isolationLevel: Prisma.TransactionIsolationLevel.RepeatableRead });
   });
 }

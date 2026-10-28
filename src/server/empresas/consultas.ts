@@ -1,6 +1,8 @@
-import { Papel, StatusCobranca, TipoCobranca } from "@prisma/client";
+import { Papel, Prisma, StatusCobranca, TipoCobranca } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { numero, numeroOuNull, exigirSessaoComPapel } from "@/server/_shared";
+import type { UsuarioSessao } from "@/server/_shared/sessao";
+import { escopoComercialAtual } from "@/server/_shared/escopo-comercial";
 import { EMPRESAS_POR_PAGINA, orderByEmpresas, whereFiltrosEmpresas, type FiltrosEmpresas } from "./filtros";
 import { vencimentoEmAtraso } from "@/server/operacao/fuso";
 import { fusoDaEscola } from "@/server/relatorios/atendimento";
@@ -25,9 +27,45 @@ export async function listarEmpresas(): Promise<EmpresaResumo[]> {
   }));
 }
 
+function papeisDe(usuario: { papeis?: Papel[] }) {
+  return usuario.papeis ?? [];
+}
+
+function visaoIrrestrita(usuario: { papeis?: Papel[] }) {
+  const papeis = papeisDe(usuario);
+  return papeis.includes(Papel.ADMINISTRADOR) || papeis.includes(Papel.FINANCEIRO) || papeis.includes(Papel.SECRETARIA_ACADEMICA);
+}
+
+function podeVerFaturasB2B(usuario: { papeis?: Papel[] }) {
+  const papeis = papeisDe(usuario);
+  return papeis.includes(Papel.ADMINISTRADOR) || papeis.includes(Papel.FINANCEIRO);
+}
+
+async function whereEmpresasVisiveis(usuario: UsuarioSessao): Promise<Prisma.EmpresaWhereInput> {
+  if (visaoIrrestrita(usuario)) return {};
+  const papeis = papeisDe(usuario);
+  if (!papeis.includes(Papel.VENDEDOR) && !papeis.includes(Papel.GERENTE_COMERCIAL)) return { id: "__sem_acesso__" };
+  const escopo = await escopoComercialAtual(usuario);
+  return {
+    OR: [
+      { oportunidades: { some: escopo } },
+      { pessoas: { some: { oportunidades: { some: escopo } } } },
+      { matriculas: { some: { lead: { is: escopo } } } },
+    ],
+  };
+}
+
+function combinarEmpresa(filtro: Prisma.EmpresaWhereInput, escopo: Prisma.EmpresaWhereInput): Prisma.EmpresaWhereInput {
+  const temEscopo = Object.keys(escopo).length > 0;
+  const temFiltro = Object.keys(filtro).length > 0;
+  if (temEscopo && temFiltro) return { AND: [filtro, escopo] };
+  return temEscopo ? escopo : filtro;
+}
+
 export async function listarEmpresasPagina(filtros: FiltrosEmpresas) {
-  await exigirSessaoComPapel(Papel.FINANCEIRO);
-  const where = whereFiltrosEmpresas(filtros);
+  const usuario = await exigirSessaoComPapel(Papel.FINANCEIRO, Papel.GERENTE_COMERCIAL, Papel.VENDEDOR);
+  const escopo = await whereEmpresasVisiveis(usuario);
+  const where = combinarEmpresa(whereFiltrosEmpresas(filtros), escopo);
   const [empresas, total, totalBase] = await Promise.all([
     prisma.empresa.findMany({
       where,
@@ -39,7 +77,7 @@ export async function listarEmpresasPagina(filtros: FiltrosEmpresas) {
       },
     }),
     prisma.empresa.count({ where }),
-    prisma.empresa.count(),
+    Object.keys(escopo).length ? prisma.empresa.count({ where: escopo }) : prisma.empresa.count(),
   ]);
   return { itens: await resumirEmpresas(empresas), total, totalBase };
 }
@@ -85,18 +123,26 @@ export interface FaturaResumo {
 }
 
 export async function obterEmpresa(id: string) {
-  await exigirSessaoComPapel(Papel.FINANCEIRO);
-  const empresa = await prisma.empresa.findUnique({
-    where: { id },
+  const usuario = await exigirSessaoComPapel(Papel.FINANCEIRO, Papel.GERENTE_COMERCIAL, Papel.VENDEDOR);
+  const escopo = await whereEmpresasVisiveis(usuario);
+  const comercial = !visaoIrrestrita(usuario);
+  const escopoLead = comercial ? await escopoComercialAtual(usuario) : null;
+  const empresa = await prisma.empresa.findFirst({
+    where: { id, ...escopo },
     include: {
       matriculas: {
+        ...(escopoLead ? { where: { lead: { is: escopoLead } } } : {}),
         include: {
           aluno: { select: { id: true, primeiroNome: true, sobrenome: true } },
           cobrancas: { where: { tipo: TipoCobranca.MENSALIDADE } },
         },
         orderBy: { criadoEm: "desc" },
       },
-      faturas: { orderBy: { competencia: "desc" }, include: { _count: { select: { cobrancas: true } } } },
+      faturas: {
+        ...(podeVerFaturasB2B(usuario) ? {} : { where: { id: { in: [] } } }),
+        orderBy: { competencia: "desc" },
+        include: { _count: { select: { cobrancas: true } } },
+      },
     },
   });
   if (!empresa) return null;

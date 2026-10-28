@@ -6,7 +6,7 @@ import { competenciasFaturaveis, obterEmpresa } from "@/server/empresas/consulta
 import { listarProdutosParaMatricula } from "@/server/matricula/consultas";
 import { FichaEmpresa } from "./FichaEmpresa";
 
-const PAPEIS: Papel[] = [Papel.FINANCEIRO];
+const PAPEIS: Papel[] = [Papel.FINANCEIRO, Papel.GERENTE_COMERCIAL, Papel.VENDEDOR];
 
 export default async function EmpresaDetalhePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -15,9 +15,10 @@ export default async function EmpresaDetalhePage({ params }: { params: Promise<{
 
   const dados = await obterEmpresa(id);
   if (!dados) notFound();
+  const podeOperarB2B = papeis.includes(Papel.ADMINISTRADOR) || papeis.includes(Papel.FINANCEIRO);
   const [produtos, competencias] = await Promise.all([
     listarProdutosParaMatricula(),
-    competenciasFaturaveis(id),
+    podeOperarB2B ? competenciasFaturaveis(id) : Promise.resolve([]),
   ]);
 
   const podePagar = papeis.includes(Papel.ADMINISTRADOR) || papeis.includes(Papel.FINANCEIRO) || papeis.includes(Papel.SECRETARIA_ACADEMICA);
@@ -30,6 +31,7 @@ export default async function EmpresaDetalhePage({ params }: { params: Promise<{
       produtos={produtos.map((p) => ({ id: p.id, label: `${p.idioma.nome} · ${p.modalidade.nome}` }))}
       competencias={competencias}
       podePagar={podePagar}
+      podeEditar={podeOperarB2B}
     />
   );
 }

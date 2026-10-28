@@ -8,7 +8,7 @@ import { CampoMoeda } from "@/components/CampoMoeda";
 import { botaoClasses } from "@/components/Botao";
 import { MSG_RESULTADO_INCERTO } from "@/lib/mensagens";
 import { CampoTexto } from "@/components/CampoTexto";
-export function PreparacaoFormulario({ leadId, oferta, candidatos, turmas, novaPessoa, paises }: { novaPessoa: boolean; paises: { id: string; nome: string }[]; leadId: string; oferta: { id: string; versaoEntrada: number; formaAgenda: string | null; produtoId: string; paisId: string; moeda: string }; candidatos: { id: string; primeiroNome: string; sobrenome: string | null }[]; turmas: { id: string; nome: string }[] }) {
+export function PreparacaoFormulario({ leadId, oferta, candidatos, turmas, novaPessoa, paises, sugestaoNovoCadastro = null }: { novaPessoa: boolean; paises: { id: string; nome: string }[]; sugestaoNovoCadastro?: { primeiroNome: string; sobrenome: string; email: string; paisId: string } | null; leadId: string; oferta: { id: string; versaoEntrada: number; formaAgenda: string | null; produtoId: string; paisId: string; moeda: string }; candidatos: { id: string; primeiroNome: string; sobrenome: string | null }[]; turmas: { id: string; nome: string }[] }) {
   const router = useRouter(), chave = useRef<string | null>(null);
   const particular = oferta.formaAgenda?.startsWith("PARTICULAR_") ?? false;
   const [agendaParticular, setAgendaParticular] = useState<AgendaConferida | null>(null);
@@ -32,10 +32,10 @@ export function PreparacaoFormulario({ leadId, oferta, candidatos, turmas, novaP
     } catch { setErro(MSG_RESULTADO_INCERTO); } }); }}>
     <fieldset disabled={ocupado} className="space-y-4">
     {novaPessoa ? <fieldset className="space-y-3"><legend>Cadastro básico de pessoa nova</legend>
-      <label className="block">Primeiro nome<input name="primeiroNome" required maxLength={100} className="block rounded border p-2" /></label>
-      <label className="block">Sobrenome<input name="sobrenome" maxLength={150} className="block rounded border p-2" /></label>
-      <label className="block">E-mail (opcional)<input name="email" type="email" maxLength={254} className="block rounded border p-2" /></label>
-      <label className="block">País do cadastro<select name="paisCadastro" required defaultValue="" className="block rounded border p-2"><option value="" disabled>Selecione o país da pessoa</option>{paises.map((p) => <option key={p.id} value={p.id}>{p.nome}</option>)}</select></label>
+      <label className="block">Primeiro nome<input name="primeiroNome" required maxLength={100} defaultValue={sugestaoNovoCadastro?.primeiroNome ?? ""} className="block rounded border p-2" /></label>
+      <label className="block">Sobrenome<input name="sobrenome" maxLength={150} defaultValue={sugestaoNovoCadastro?.sobrenome ?? ""} className="block rounded border p-2" /></label>
+      <label className="block">E-mail (opcional)<input name="email" type="email" maxLength={254} defaultValue={sugestaoNovoCadastro?.email ?? ""} className="block rounded border p-2" /></label>
+      <label className="block">País do cadastro<select name="paisCadastro" required defaultValue={sugestaoNovoCadastro?.paisId ?? ""} className="block rounded border p-2"><option value="" disabled>Selecione o país da pessoa</option>{paises.map((p) => <option key={p.id} value={p.id}>{p.nome}</option>)}</select></label>
       <p>O telefone será o contato registrado na negociação. A Secretaria complementa documentos e dados administrativos.</p>
     </fieldset> : <>    <label className="block">Cadastro do aluno<select name="aluno" required value={aluno?.id ?? ""} onChange={(e) => { const a = candidatos.find((c) => c.id === e.target.value); setAluno(a ? { id: a.id, nome: nomeDoCandidato(a) } : aluno?.id === e.target.value ? aluno : null); }} className="block w-full rounded border p-2"><option value="" disabled>Selecione após conferir a identidade</option>{aluno && !candidatos.some((a) => a.id === aluno.id) && <option value={aluno.id}>{aluno.nome}</option>}{candidatos.map((a) => <option key={a.id} value={a.id}>{nomeDoCandidato(a)}</option>)}</select></label>
 </>}

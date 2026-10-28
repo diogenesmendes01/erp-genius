@@ -33,8 +33,12 @@ const { prismaMock, authMock } = vi.hoisted(() => ({
 vi.mock("@/lib/prisma", () => ({ prisma: prismaMock }));
 vi.mock("@/lib/auth", () => ({ auth: () => authMock() }));
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
+vi.mock("@/server/relatorios/atendimento", async (original) => ({
+  ...(await original<typeof import("@/server/relatorios/atendimento")>()),
+  fusoDaEscola: async () => "America/Sao_Paulo",
+}));
 
-import { checkinExperimental, agendarExperimental } from "./acoes";
+import { checkinExperimental, agendarExperimental, atualizarDatas, confirmarPresencaExperimental } from "./acoes";
 import { dadosHomeProfessor } from "@/server/home/consultas";
 
 const usuariosNoBanco = new Map<string, Record<string, unknown>>();
@@ -319,5 +323,99 @@ describe("agendarExperimental", () => {
     expect(prismaMock.oportunidade.findFirst).toHaveBeenCalledWith({ where: { AND: [{ id: "lead-alheio" }, { vendedorDonoId: { in: ["vend1"] } }] } });
     expect(prismaMock.oportunidade.update).not.toHaveBeenCalled();
     expect(prismaMock.evento.create).not.toHaveBeenCalled();
+  });
+});
+
+describe("confirmarPresencaExperimental", () => {
+  const agendada = {
+    id: "lead1",
+    vendedorDonoId: "vend1",
+    etapa: EtapaLead.EXPERIMENTAL_AGENDADA,
+    dataExperimental: new Date("2026-06-22T15:00:00.000Z"),
+    experimentalConfirmadaEm: null,
+  };
+
+  it("grava a confirmação e o evento da presença", async () => {
+    comoUsuario("vend1", [Papel.VENDEDOR]);
+    prismaMock.oportunidade.findFirst.mockResolvedValue(agendada);
+    const r = await confirmarPresencaExperimental("lead1");
+    expect(r.ok).toBe(true);
+    const data = (prismaMock.oportunidade.update.mock.calls[0]![0] as { data: { experimentalConfirmadaEm: Date } }).data;
+    expect(data.experimentalConfirmadaEm).toBeInstanceOf(Date);
+    expect(prismaMock.evento.create).toHaveBeenCalledWith(expect.objectContaining({
+      data: expect.objectContaining({
+        tipo: "ExperimentalConfirmada",
+        agregadoTipo: "Lead",
+        agregadoId: "lead1",
+        autorId: "vend1",
+        payload: expect.objectContaining({
+          dataExperimental: "2026-06-22T15:00:00.000Z",
+        }),
+      }),
+    }));
+  });
+
+  it("confirmação já registrada não grava de novo", async () => {
+    comoUsuario("vend1", [Papel.VENDEDOR]);
+    prismaMock.oportunidade.findFirst.mockResolvedValue({ ...agendada, experimentalConfirmadaEm: new Date("2026-06-22T16:00:00.000Z") });
+    const r = await confirmarPresencaExperimental("lead1");
+    expect(r.ok).toBe(true);
+    expect(prismaMock.oportunidade.update).not.toHaveBeenCalled();
+    expect(prismaMock.evento.create).not.toHaveBeenCalled();
+  });
+
+  it("recusa etapa que não é experimental agendada", async () => {
+    comoUsuario("vend1", [Papel.VENDEDOR]);
+    prismaMock.oportunidade.findFirst.mockResolvedValue({ ...agendada, etapa: EtapaLead.NOVO, dataExperimental: null });
+    const r = await confirmarPresencaExperimental("lead1");
+    expect(r.ok).toBe(false);
+    if (r.ok) return;
+    expect(r.erro).toBe("Só é possível confirmar presença de uma aula experimental agendada.");
+    expect(prismaMock.oportunidade.update).not.toHaveBeenCalled();
+  });
+
+  it("professor não confirma presença comercial", async () => {
+    comoUsuario("prof1", [Papel.PROFESSOR]);
+    const r = await confirmarPresencaExperimental("lead1");
+    expect(r.ok).toBe(false);
+    expect(prismaMock.oportunidade.update).not.toHaveBeenCalled();
+  });
+});
+
+describe("atualizarDatas", () => {
+  function eventos(tipo: string) {
+    return prismaMock.evento.create.mock.calls
+      .map((c: unknown[]) => c[0] as { data: { tipo: string; payload: Record<string, unknown> } })
+      .filter((c) => c.data.tipo === tipo);
+  }
+
+  it("remarcação zera a confirmação e a troca de professor registra ExperimentalAtribuida", async () => {
+    comoUsuario("vend1", [Papel.VENDEDOR]);
+    existeUsuario("prof1", { id: "prof1", papeis: [Papel.PROFESSOR] });
+    prismaMock.oportunidade.findUnique.mockResolvedValue({
+      dataExperimental: new Date("2026-10-01T12:00:00.000Z"),
+      professorExperimentalId: null,
+    });
+    const r = await atualizarDatas("lead1", {
+      dataExperimental: "2026-11-02T15:00:00.000Z",
+      professorExperimentalId: "prof1",
+    });
+    expect(r.ok, r.ok ? "" : r.erro).toBe(true);
+    const data = (prismaMock.oportunidade.update.mock.calls[0]![0] as { data: Record<string, unknown> }).data;
+    expect(data.experimentalConfirmadaEm).toBeNull();
+    expect(data.professorExperimentalId).toBe("prof1");
+    expect(eventos("ExperimentalAtribuida")[0]?.data.payload).toMatchObject({ de: null, professorId: "prof1" });
+  });
+
+  it("salvar a mesma data e o mesmo professor preserva a confirmação e não duplica o vínculo", async () => {
+    comoUsuario("vend1", [Papel.VENDEDOR]);
+    existeUsuario("prof1", { id: "prof1", papeis: [Papel.PROFESSOR] });
+    const instante = new Date("2026-11-02T15:00:00.000Z");
+    prismaMock.oportunidade.findUnique.mockResolvedValue({ dataExperimental: instante, professorExperimentalId: "prof1" });
+    const r = await atualizarDatas("lead1", { dataExperimental: instante.toISOString(), professorExperimentalId: "prof1" });
+    expect(r.ok, r.ok ? "" : r.erro).toBe(true);
+    const data = (prismaMock.oportunidade.update.mock.calls[0]![0] as { data: Record<string, unknown> }).data;
+    expect(data).not.toHaveProperty("experimentalConfirmadaEm");
+    expect(eventos("ExperimentalAtribuida")).toHaveLength(0);
   });
 });

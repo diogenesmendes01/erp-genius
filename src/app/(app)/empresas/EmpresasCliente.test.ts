@@ -81,6 +81,7 @@ describe("EmpresasCliente (filtros na URL)", () => {
     expect(html.match(/aria-sort="/g)).toHaveLength(1);
     expect(html).toContain('href="/empresas?busca=acme&amp;ordem=colaboradores&amp;dir=desc&amp;pagina=3"');
     expect(html).toMatch(/<a[^>]*href="\/empresas\?ordem=colaboradores&amp;dir=desc"[^>]*>Limpar filtros<\/a>/);
+    expect(html).toMatch(/<a[^>]*href="\/empresas\?busca=acme"[^>]*>Voltar à ordem padrão<\/a>/);
     expect(html).toContain('<input type="hidden" name="ordem" value="colaboradores"/>');
   });
 

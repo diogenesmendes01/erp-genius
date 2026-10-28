@@ -6,7 +6,11 @@ import {dadosTarefaModal,criarTarefaInbox,editarTarefaInbox,type DadosModalTaref
 import { z } from "zod";
 import type { DecisaoMensagemAgendada } from "@/lib/selo-mensagem-agendada";
 import { executarTarefaInboxTx, type ReagendamentoInbox } from "./tarefas-transicoes";
-import { EtapaLead } from "@prisma/client";
+import { EtapaLead, Papel, type Prisma } from "@prisma/client";
+import { AgendarExperimentalSchema, type AgendarExperimentalInput } from "@/server/comercial/schema";
+import { EVENTO_EXPERIMENTAL_ATRIBUIDA, professorAtribuido } from "@/server/comercial/experimental";
+import { exigirInstanteDoCampoLocal } from "@/server/_shared/campo-local";
+import { registrarEvento } from "@/server/_shared";
 import { moverEtapaTx } from "@/server/crm/mover-etapa";
 import { revalidatePath } from "next/cache";
 import { PerdaSchema, type PerdaInput } from "@/server/comercial/schema";
@@ -175,4 +179,107 @@ export async function cancelarAgendadaNoInbox(atendimentoId:string,intencaoId:st
 }
 export async function preverNotificadosTarefaNoInbox(atendimentoId:string,pedido:PedidoPreviaNotificadosTarefa):Promise<Resultado<PreviaNotificadosTarefa>>{
  return executarAcao(async()=>preverNotificadosTarefaInbox(await exigirSessao(),atendimentoId,pedido));
+}
+
+async function professorInformado(tx: Prisma.TransactionClient, professorId: string) {
+  const professor = await tx.usuario.findUnique({ where: { id: professorId }, select: { papeis: true, ativo: true } });
+  if (!professor || !professor.ativo) throw new ErroRegra("Professor não encontrado.");
+  if (!professor.papeis.includes(Papel.PROFESSOR)) throw new ErroRegra("Usuário informado não é professor.");
+}
+
+function podeAgendarExperimental(etapa: EtapaLead) {
+  return etapa === EtapaLead.EXPERIMENTAL_AGENDADA || destinoDoArraste(etapa, EtapaLead.EXPERIMENTAL_AGENDADA).tipo === "acao";
+}
+
+export async function agendarExperimentalNoInbox(atendimentoId: string, oportunidadeIdEsperada: string, input: AgendarExperimentalInput): Promise<Resultado> {
+  return executarAcao(async () => {
+    const sessao = await exigirSessao();
+    const id = Id.parse(atendimentoId);
+    const esperada = Id.parse(oportunidadeIdEsperada);
+    const dados = AgendarExperimentalSchema.parse(input);
+    const data = dados.dataLocal ? exigirInstanteDoCampoLocal(dados.dataLocal, dados.fuso) : new Date(dados.dataISO ?? "");
+    if (Number.isNaN(data.getTime())) throw new ErroRegra("Data inválida.");
+    const professorId = dados.professorId ?? null;
+    await prisma.$transaction(async (tx) => {
+      await comOportunidadeDoInboxTx(tx, sessao, id, esperada, async (autor, leadId) => {
+        const antes = await tx.oportunidade.findUniqueOrThrow({ where: { id: leadId }, select: { etapa: true } });
+        if (!podeAgendarExperimental(antes.etapa)) {
+          const destino = destinoDoArraste(antes.etapa, EtapaLead.EXPERIMENTAL_AGENDADA);
+          throw new ErroRegra(destino.tipo === "recusar" ? destino.motivo : "Não é possível agendar a experimental nesta etapa.");
+        }
+        if (professorId) await professorInformado(tx, professorId);
+        const anterior = await professorAtribuido(tx, leadId);
+        await tx.oportunidade.update({
+          where: { id: leadId },
+          data: {
+            etapa: EtapaLead.EXPERIMENTAL_AGENDADA,
+            dataExperimental: data,
+            professorExperimentalId: professorId,
+            experimentalConfirmadaEm: null,
+            aguardandoReagendamentoEm: null,
+          },
+        });
+        await registrarEvento(tx, { tipo: "ExperimentalAgendada", agregadoTipo: "Lead", agregadoId: leadId, autorId: autor.id, payload: { data: data.toISOString() } });
+        if (professorId !== anterior) {
+          await registrarEvento(tx, { tipo: EVENTO_EXPERIMENTAL_ATRIBUIDA, agregadoTipo: "Lead", agregadoId: leadId, autorId: autor.id, payload: { de: anterior, professorId } });
+        }
+        await avisarAtendimento(tx, id);
+      });
+    });
+    revalidatePath("/funil");
+    revalidatePath("/inbox");
+    revalidatePath("/home");
+  });
+}
+
+export async function atribuirProfessorExperimentalNoInbox(atendimentoId: string, oportunidadeIdEsperada: string, professorId: string): Promise<Resultado> {
+  return executarAcao(async () => {
+    const sessao = await exigirSessao();
+    const id = Id.parse(atendimentoId);
+    const esperada = Id.parse(oportunidadeIdEsperada);
+    const professor = z.string().min(1, "Escolha o professor da experimental.").parse(professorId);
+    await prisma.$transaction(async (tx) => {
+      await comOportunidadeDoInboxTx(tx, sessao, id, esperada, async (autor, leadId) => {
+        await professorInformado(tx, professor);
+        const anterior = await professorAtribuido(tx, leadId);
+        if (anterior === professor) return;
+        await tx.oportunidade.update({ where: { id: leadId }, data: { professorExperimentalId: professor } });
+        await registrarEvento(tx, { tipo: EVENTO_EXPERIMENTAL_ATRIBUIDA, agregadoTipo: "Lead", agregadoId: leadId, autorId: autor.id, payload: { de: anterior, professorId: professor } });
+        await avisarAtendimento(tx, id);
+      });
+    });
+    revalidatePath("/funil");
+    revalidatePath("/inbox");
+    revalidatePath("/home");
+  });
+}
+
+export async function confirmarExperimentalNoInbox(atendimentoId: string, oportunidadeIdEsperada: string): Promise<Resultado> {
+  return executarAcao(async () => {
+    const sessao = await exigirSessao();
+    const id = Id.parse(atendimentoId);
+    const esperada = Id.parse(oportunidadeIdEsperada);
+    await prisma.$transaction(async (tx) => {
+      await comOportunidadeDoInboxTx(tx, sessao, id, esperada, async (autor, leadId) => {
+        const antes = await tx.oportunidade.findUniqueOrThrow({ where: { id: leadId }, select: { etapa: true, dataExperimental: true, experimentalConfirmadaEm: true } });
+        if (antes.etapa !== EtapaLead.EXPERIMENTAL_AGENDADA || !antes.dataExperimental) {
+          throw new ErroRegra("Só é possível confirmar presença de uma aula experimental agendada.");
+        }
+        if (antes.experimentalConfirmadaEm) return;
+        const agora = new Date();
+        await tx.oportunidade.update({ where: { id: leadId }, data: { experimentalConfirmadaEm: agora } });
+        await registrarEvento(tx, {
+          tipo: "ExperimentalConfirmada",
+          agregadoTipo: "Lead",
+          agregadoId: leadId,
+          autorId: autor.id,
+          payload: { dataExperimental: antes.dataExperimental.toISOString(), confirmadaEm: agora.toISOString() },
+        });
+        await avisarAtendimento(tx, id);
+      });
+    });
+    revalidatePath("/funil");
+    revalidatePath("/inbox");
+    revalidatePath("/home");
+  });
 }

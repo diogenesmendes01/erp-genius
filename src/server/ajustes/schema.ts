@@ -15,6 +15,14 @@ export type AjusteInput = z.input<typeof AjusteSchema>;
 
 export const DecisaoSchema = z.object({
   aprovar: z.boolean(),
-  motivo: z.string().optional(),
+  motivo: z.string().trim().max(2000).optional(),
+}).superRefine((dados, ctx) => {
+  if (dados.aprovar === false && (!dados.motivo || dados.motivo.trim().length < 5)) {
+    ctx.addIssue({
+      code: "custom",
+      path: ["motivo"],
+      message: "Informe o motivo da rejeição (mínimo de 5 caracteres) para orientar o vendedor.",
+    });
+  }
 });
 export type DecisaoInput = z.input<typeof DecisaoSchema>;

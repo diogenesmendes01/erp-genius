@@ -43,6 +43,11 @@ describe("trilha de navegação", () => {
     expect(resumo("/alunos/clx1a2b3c/financeiro")).toEqual(["Alunos → /alunos", "Ficha do aluno → /alunos/clx1a2b3c", "Financeiro"]);
   });
 
+  it("oportunidades sem página própria volta ao Funil", () => {
+    expect(SEM_PAGINA["/oportunidades"]).toEqual({ href: "/funil", rotulo: "Funil" });
+    expect(resumo("/oportunidades/clx9abc/contratacao")).toEqual(["Funil → /funil", "Contratação"]);
+  });
+
   it("matrícula não tem lista própria: o primeiro elo é a Secretaria (\"Matrículas\")", () => {
     expect(resumo("/matriculas/cm0xyz9/contrato/aditivos/cp1q2w3/alcadas")).toEqual([
       "Matrículas → /secretaria",

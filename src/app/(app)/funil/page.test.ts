@@ -21,7 +21,7 @@ vi.mock("@/server/_shared", () => ({ exigirSessaoPagina: async () => mocks.usuar
 vi.mock("@/server/crm/funil", async (original) => ({ ...(await original<typeof import("@/server/crm/funil")>()), carregarFunil: mocks.carregar }));
 vi.mock("@/server/crm/filtros-salvos", () => ({ listarFiltros: mocks.listarFiltros }));
 vi.mock("@/server/crm/historico", () => ({ obterOportunidade: mocks.obter, historicoOportunidade: mocks.historico }));
-vi.mock("@/server/comercial/consultas", () => ({ listarVendedores: mocks.vendedores }));
+vi.mock("@/server/comercial/consultas", () => ({ listarVendedores: mocks.vendedores, listarProfessoresAtivos: async () => [] }));
 vi.mock("@/server/paises/consultas", () => ({ listarPaisesOperacionais: mocks.paises }));
 vi.mock("@/lib/prisma", () => ({ prisma: { pessoa: { findFirst: mocks.pessoa }, configuracaoOperacional: { findUnique: mocks.config } } }));
 vi.mock("./FunilCliente", () => ({ FunilCliente: mocks.cliente }));

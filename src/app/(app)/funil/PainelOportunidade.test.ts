@@ -25,6 +25,7 @@ const base: DetalheOportunidade = {
   urgencia: null, orcamento: null, objecao: null, taxaMatricula: null,
   telefoneE164: "+50688887777", paisId: "cr", segmento: "ADULTO", origemCampanha: null, origemConjunto: null,
   origemAnuncio: null, origemPalavra: null, planoPrevisto: null, comissaoPrevista: null, dataProposta: null,
+  professorExperimental: null, experimentalConfirmadaEm: null,
   documentos: [{ id: "d1", categoria: "PROPOSTA", nome: "proposta.pdf", url: "/api/files/a.pdf" }],
 };
 const detalheEmProposta: DetalheOportunidade = { ...base, etapa: "PROPOSTA" };
@@ -63,6 +64,8 @@ describe("PainelOportunidade", () => {
     const html = render(detalheEmExperimental, ["funil.ver", "funil.mover"]);
     expect(html).not.toContain('aria-label="Responsável"');
     expect(html).not.toContain("Realizada");
+    expect(html).toContain("Confirmar presença");
+    expect(html).toContain('aria-label="Professor da experimental"');
     expect(render(detalheEmExperimental)).toContain('aria-label="Responsável"');
   });
   it("oportunidade com taxa de matrícula pendente mostra Registrar link de pagamento (D10)", () => {

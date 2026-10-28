@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState, type ReactNode } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { StatusComissao, TipoAprovacao, Vigencia } from "@prisma/client";
 import { STATUS_COMISSAO_LABEL, rotular, TIPO_APROVACAO_LABEL, VIGENCIA_LABEL } from "@/lib/labels";
@@ -8,6 +9,8 @@ import { formatarMoeda, formatarValores, somarPorMoeda, consolidar, type ValorMo
 import type { CotacaoVigente, relatorioDescontosComissoes } from "@/server/financeiro/consultas";
 import { fecharMesComissoes, salvarConfigFinanceiro, salvarTaxasCambio, atualizarCotacoesAutomatico } from "@/server/financeiro/acoes";
 import { decidirAprovacao } from "@/server/ajustes/acoes";
+import { decidirPrecoPreparacao } from "@/server/matricula/preparacao-preco";
+import { CampoTexto } from "@/components/CampoTexto";
 import { formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
 import { FeedbackAcao } from "@/components/FeedbackAcao";
 import { ConfirmarAcao } from "@/components/ConfirmarAcao";
@@ -57,6 +60,10 @@ export interface AprovacaoRow {
   valorPara: number;
   descontoValor: number;
   moeda: string;
+  origem?: "APROVACAO_COBRANCA" | "PREPARACAO_MATRICULA";
+  matriculaId?: string;
+  preparacaoId?: string;
+  podeAprovarDireto?: boolean;
 }
 
 const btnPri = botaoClasses();
@@ -125,7 +132,14 @@ export function AprovacoesAba({ aprovacoes }: { aprovacoes: AprovacaoRow[] }) {
   return (
     <>
       <FeedbackAcao erro={acao.erro} sucesso={acao.sucesso} className="mb-4" />
-      <Aprovacoes aprovacoes={aprovacoes} onDecidir={(id, ok) => run(() => decidirAprovacao(id, { aprovar: ok }))} isPending={acao.ocupado} />
+      <Aprovacoes aprovacoes={aprovacoes} onDecidir={(id, ok, motivo) => {
+        const row = aprovacoes.find((a) => a.id === id);
+        const preparacaoId = row?.preparacaoId;
+        if (row?.origem === "PREPARACAO_MATRICULA" && preparacaoId) {
+          return run(() => decidirPrecoPreparacao({ preparacaoId, aprovar: ok, motivo: (motivo ?? "").trim() }));
+        }
+        return run(() => decidirAprovacao(id, { aprovar: ok, ...(motivo ? { motivo } : {}) }));
+      }} isPending={acao.ocupado} />
     </>
   );
 }
@@ -252,11 +266,21 @@ export function Aprovacoes({
   isPending,
 }: {
   aprovacoes: AprovacaoRow[];
-  onDecidir: (id: string, aprovar: boolean) => void;
+  onDecidir: (id: string, aprovar: boolean, motivo?: string) => void;
   isPending: boolean;
 }) {
+  const [aberta, setAberta] = useState<{ id: string; aprovar: boolean } | null>(null);
+  const [motivo, setMotivo] = useState("");
   const impactoMensal = somarPorMoeda(aprovacoes.map((a) => ({ moeda: a.moeda, valor: a.impactoMensal })));
   const impactoAnual = impactoMensal.map((v) => ({ moeda: v.moeda, valor: v.valor * 12 }));
+  function pedir(a: AprovacaoRow, aprovar: boolean) {
+    if (aprovar && a.origem !== "PREPARACAO_MATRICULA") {
+      onDecidir(a.id, true);
+      return;
+    }
+    setAberta({ id: a.id, aprovar });
+    setMotivo("");
+  }
   return (
     <div>
       <div className="mb-3 flex flex-wrap gap-4 text-sm text-gray-600">
@@ -273,8 +297,13 @@ export function Aprovacoes({
               <div className="flex items-start justify-between gap-4">
                 <div className="text-sm">
                   <div className="font-medium text-gray-800">
-                    {a.alunoNome} — {TIPO_APROVACAO_LABEL[a.tipo]}
+                    {a.alunoNome} — {a.origem === "PREPARACAO_MATRICULA" ? "Exceção de preço" : TIPO_APROVACAO_LABEL[a.tipo]}
                   </div>
+                  {a.origem === "PREPARACAO_MATRICULA" && a.matriculaId && (
+                    <div className="mt-1">
+                      <Link href={`/matriculas/${a.matriculaId}/preparacao`} className="text-brand-700 underline">Ver preparação</Link>
+                    </div>
+                  )}
                   <div className="text-gray-600">
                     {formatarMoeda(a.valorDe, a.moeda)} → {formatarMoeda(a.valorPara, a.moeda)}{" "}
                     <span className="text-gray-500">(desconto {formatarMoeda(a.descontoValor, a.moeda)})</span>
@@ -285,15 +314,17 @@ export function Aprovacoes({
                   </div>
                 </div>
                 <div className="flex shrink-0 gap-2">
+                  {a.podeAprovarDireto !== false && (
+                    <button
+                      onClick={() => pedir(a, true)}
+                      disabled={isPending}
+                      className={botaoClasses({ tamanho: "sm" })}
+                    >
+                      Aprovar
+                    </button>
+                  )}
                   <button
-                    onClick={() => onDecidir(a.id, true)}
-                    disabled={isPending}
-                    className={botaoClasses({ tamanho: "sm" })}
-                  >
-                    Aprovar
-                  </button>
-                  <button
-                    onClick={() => onDecidir(a.id, false)}
+                    onClick={() => pedir(a, false)}
                     disabled={isPending}
                     className={botaoClasses({ variante: "perigo", tamanho: "sm" })}
                   >
@@ -301,6 +332,23 @@ export function Aprovacoes({
                   </button>
                 </div>
               </div>
+              {aberta?.id === a.id && (
+                <div className="mt-3 grid gap-2">
+                  <label className="grid gap-1 text-sm text-gray-700">
+                    <span>{aberta.aprovar ? "Motivo da aprovação" : "Motivo da rejeição"}</span>
+                    <CampoTexto minLength={5} maxLength={2000} rows={2} value={motivo} onChange={(e) => setMotivo(e.target.value)} />
+                  </label>
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      disabled={isPending || motivo.trim().length < 5}
+                      className={botaoClasses({ tamanho: "sm" })}
+                      onClick={() => { onDecidir(a.id, aberta.aprovar, motivo.trim()); setAberta(null); }}
+                    >Confirmar</button>
+                    <button type="button" className={botaoClasses({ variante: "secundario", tamanho: "sm" })} disabled={isPending} onClick={() => setAberta(null)}>Cancelar</button>
+                  </div>
+                </div>
+              )}
             </li>
           ))}
         </ul>

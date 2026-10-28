@@ -62,13 +62,13 @@ export const NAV: NavItem[] = [
     href: "/empresas",
     label: "Empresas",
     icon: "Building",
-    papeis: [Papel.ADMINISTRADOR, Papel.GERENTE_COMERCIAL, Papel.FINANCEIRO, Papel.SECRETARIA_ACADEMICA],
+    papeis: [Papel.ADMINISTRADOR, Papel.GERENTE_COMERCIAL, Papel.VENDEDOR, Papel.FINANCEIRO, Papel.SECRETARIA_ACADEMICA],
   },
   {
     href: "/configuracao",
     label: "Configuração",
     icon: "Settings",
-    papeis: [Papel.ADMINISTRADOR, Papel.GERENTE_PEDAGOGICO, Papel.SECRETARIA_ACADEMICA],
+    papeis: [Papel.ADMINISTRADOR, Papel.GERENTE_PEDAGOGICO, Papel.GERENTE_COMERCIAL, Papel.SECRETARIA_ACADEMICA],
   },
 ];
 

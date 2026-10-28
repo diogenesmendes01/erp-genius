@@ -1,4 +1,4 @@
-import { Papel, Prisma, StatusCobranca, StatusAprovacao } from "@prisma/client";
+import { Papel, Prisma, StatusCobranca, StatusAprovacao, StatusMatricula } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { somarPorMoeda } from "@/lib/dinheiro";
 import { semDecimais } from "@/server/_shared/decimal";
@@ -6,6 +6,9 @@ import type { UsuarioSessao } from "@/server/_shared";
 import { montarReguaPorCobranca, historicoFinanceiroDoAluno } from "@/server/cobrancas/consultas";
 
 import { exigirSessaoComPapel, exigirPapel } from "@/server/_shared";
+import { escopoComercialAtual } from "@/server/_shared/escopo-comercial";
+import { limitesAtuais } from "@/server/financeiro/politica";
+import { avaliarPreparacaoNaFila, lerConferenciaPreparacao } from "./fila-preparacao";
 import { financeiroOperacional, escopoMatriculaComercial, escopoMatriculaAprovacao } from "@/server/financeiro/acesso";
 import { saldoAtual } from "@/server/financeiro/regras";
 import { carregarTrilhasVencimentoCivil, incluirFonteVencimentoCivil, referenciaVencimentoCivil } from "@/server/financeiro/vencimento-civil";
@@ -141,6 +144,73 @@ export async function listarAprovacoesPendentes() {
     include: { solicitante: { select: { nome: true } } },
   });
   return semDecimais(aprovacoes);
+}
+
+export type PreparacaoPendenteAprovacao = {
+  id: string;
+  preparacaoId: string;
+  matriculaId: string;
+  solicitante: string;
+  alunoNome: string;
+  motivo: string;
+  moeda: string;
+  valorDe: number;
+  valorPara: number;
+  descontoValor: number;
+  podeAprovarDireto: boolean;
+};
+
+export async function listarPreparacoesPendentesAprovacao(): Promise<PreparacaoPendenteAprovacao[]> {
+  const usuario = await exigirSessaoComPapel(Papel.GERENTE_COMERCIAL);
+  const adm = usuario.papeis.includes(Papel.ADMINISTRADOR);
+  if (!adm && !usuario.papeis.includes(Papel.GERENTE_COMERCIAL)) return [];
+  const limites = adm ? null : await prisma.$transaction((tx) => limitesAtuais(tx, usuario));
+  const rows = await prisma.preparacaoComercialMatricula.findMany({
+    where: {
+      decisaoPreco: { is: null },
+      preparadorId: { not: usuario.id },
+      matricula: {
+        status: { in: [StatusMatricula.RASCUNHO, StatusMatricula.AGUARDANDO] },
+        ...(adm ? {} : { lead: { is: await escopoComercialAtual(usuario) } }),
+      },
+    },
+    orderBy: { criadaEm: "asc" },
+    select: {
+      id: true, matriculaId: true, criadaEm: true, moeda: true, motivo: true, referencias: true,
+      taxaProposta: true, valorServicoProposto: true,
+      preparador: { select: { nome: true } },
+      matricula: { select: { aluno: { select: { primeiroNome: true, sobrenome: true } } } },
+    },
+  });
+  return rows.flatMap((row) => {
+    const avaliacao = avaliarPreparacaoNaFila({
+      admin: adm,
+      referencias: row.referencias,
+      criadaEm: row.criadaEm,
+      alcadaAlteradaEm: limites?.alcadaAlteradaEm ?? null,
+      limites,
+    });
+    if (!avaliacao.visivel) return [];
+    const conferencia = lerConferenciaPreparacao(row.referencias);
+    const referencias = (conferencia?.componentes ?? []).flatMap((c) => (c.referencia == null ? [] : [Number(c.referencia)]));
+    const propostos = (conferencia?.componentes ?? []).map((c) => Number(c.proposto));
+    const valorPara = propostos.length ? propostos.reduce((s, n) => s + n, 0) : Number(row.taxaProposta) + Number(row.valorServicoProposto);
+    const valorDe = referencias.length ? referencias.reduce((s, n) => s + n, 0) : valorPara;
+    const nome = [row.matricula.aluno.primeiroNome, row.matricula.aluno.sobrenome].filter(Boolean).join(" ");
+    return [{
+      id: `preparacao:${row.id}`,
+      preparacaoId: row.id,
+      matriculaId: row.matriculaId,
+      solicitante: row.preparador.nome,
+      alunoNome: nome || "—",
+      motivo: row.motivo,
+      moeda: row.moeda,
+      valorDe,
+      valorPara,
+      descontoValor: Math.max(0, valorDe - valorPara),
+      podeAprovarDireto: avaliacao.podeAprovarDireto,
+    }];
+  });
 }
 
 export async function obterResumoComercialFinanceiro(alunoId: string, usuario: UsuarioSessao) {

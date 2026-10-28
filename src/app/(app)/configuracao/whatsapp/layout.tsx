@@ -5,7 +5,7 @@ import { SubTabs } from "@/components/SubTabs";
 import { secoesParaPapeis } from "./secoes";
 
 export default async function WhatsAppConfigLayout({ children }: { children: React.ReactNode }) {
-  const papeis = await exigirPapelLeitura(Papel.ADMINISTRADOR, Papel.GERENTE_COMERCIAL);
+  const papeis = await exigirPapelLeitura(Papel.ADMINISTRADOR);
   if (!papeis) return <AcessoNegado recurso="a configuração do WhatsApp" />;
   const secoes = secoesParaPapeis(papeis).map((s) => ({ href: s.href, label: s.label }));
   return (
