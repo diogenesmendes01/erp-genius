@@ -3,7 +3,8 @@
 import { useDraggable } from "@dnd-kit/core";
 import { IconGripVertical } from "@tabler/icons-react";
 import { Avatar } from "@/components/Avatar";
-import { TEMPERATURA_CLS, TEMPERATURA_LABEL } from "@/lib/labels";
+import { BadgeEstado, type TomEstado } from "@/components/BadgeEstado";
+import { TEMPERATURA_LABEL } from "@/lib/labels";
 import { dataCivilInstitucional } from "@/server/operacao/fuso";
 import type { CartaoFunil } from "@/server/crm/funil";
 
@@ -46,15 +47,21 @@ export function valorComMoeda(valor: string | number, moeda: string): string {
   return `${moeda.trim().toUpperCase()} ${new Intl.NumberFormat("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n)}`;
 }
 
+const TOM_TEMPERATURA: Record<CartaoFunil["temperatura"], TomEstado> = {
+  QUENTE: "perigo",
+  MORNO: "aviso",
+  FRIO: "frio",
+};
+
 export function Temperatura({ temperatura }: { temperatura: CartaoFunil["temperatura"] }) {
   return (
-    <span
+    <BadgeEstado
+      tom={TOM_TEMPERATURA[temperatura]}
       role="img"
       aria-label={`Temperatura: ${TEMPERATURA_LABEL[temperatura]}`}
-      className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${TEMPERATURA_CLS[temperatura]}`}
     >
-      <span aria-hidden="true">{TEMPERATURA_LABEL[temperatura]}</span>
-    </span>
+      {TEMPERATURA_LABEL[temperatura]}
+    </BadgeEstado>
   );
 }
 
@@ -75,12 +82,12 @@ function Corpo({ cartao, agora, fuso, aoAbrir, alca }: Omit<Props, "podeMover" |
       <div className="min-w-0 flex-1">
         <button type="button" onClick={() => aoAbrir(cartao.id)} className="block w-full text-left max-sm:min-h-11">
           <span className="block truncate font-medium">{cartao.nome}</span>
-          <span className="block text-xs text-gray-600">{cartao.codigo ?? "Sem código"}</span>
+          <span className="block font-mono text-xs tabular-nums text-gray-600">{cartao.codigo ? `#${cartao.codigo}` : "Sem código"}</span>
         </button>
         <div className="mt-2 flex flex-wrap items-center gap-2">
           <Temperatura temperatura={cartao.temperatura} />
-          {cartao.b2b && <span className="rounded-full bg-surface-muted px-2 py-0.5 text-xs text-gray-600">Empresa</span>}
-          {cartao.valorPrevisto && cartao.moeda && <span className="text-xs text-gray-700">{valorComMoeda(cartao.valorPrevisto, cartao.moeda)}</span>}
+          {cartao.b2b && <BadgeEstado tom="ia">Empresa</BadgeEstado>}
+          {cartao.valorPrevisto && cartao.moeda && <span className="font-mono text-xs tabular-nums text-gray-700">{valorComMoeda(cartao.valorPrevisto, cartao.moeda)}</span>}
         </div>
         <p className="mt-2 text-xs text-gray-600">{textoDiasNaEtapa(cartao.etapaDesde, agora, fuso)}</p>
         {proxima && <p className={"text-xs " + (proxima.vencida ? "text-red-700" : "text-gray-600")}>{proxima.texto}</p>}

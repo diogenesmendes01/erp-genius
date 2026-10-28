@@ -7,26 +7,32 @@ import type { ConversaParaAbrir } from "@/server/inbox/atalhos";
 
 import { useRouter } from "next/navigation";
 import { EtapaLead, Temperatura } from "@prisma/client";
+import { IconPhone, IconSpeakerphone, IconUser } from "@tabler/icons-react";
 import { Drawer } from "@/components/Drawer";
+import { Avatar } from "@/components/Avatar";
+import { BadgeEstado } from "@/components/BadgeEstado";
+import { BarraEtapas } from "@/components/BarraEtapas";
 import { Botao, botaoClasses } from "@/components/Botao";
+import { CONTROLE_CAMPO } from "@/components/Campo";
 import { Chip } from "@/components/Chip";
 import { CampoTexto } from "@/components/CampoTexto";
 import { EstadoVazio } from "@/components/EstadoVazio";
 import { ConfirmarAcao } from "@/components/ConfirmarAcao";
 import { FeedbackAcao } from "@/components/FeedbackAcao";
+import { LinhaCampo } from "@/components/LinhaCampo";
 import { useAcaoCliente } from "@/lib/acao-cliente";
 import { useChaveIdempotencia } from "@/lib/chave-idempotencia";
 import { formatarMoeda } from "@/lib/dinheiro";
-import { ETAPA_LABEL, MOTIVO_PERDA_LABEL, TEMPERATURA_CLS, TEMPERATURA_LABEL } from "@/lib/labels";
-import { atribuirDono, atribuirProfessorExperimental, confirmarPresencaExperimental, definirTemperatura, agendarExperimental, enviarProposta, registrarNotaInterna } from "@/server/comercial/acoes";
+import { ETAPA_LABEL, MOTIVO_PERDA_LABEL, TEMPERATURA_LABEL } from "@/lib/labels";
+import { atribuirDono, atribuirProfessorExperimental, confirmarPresencaExperimental, definirTemperatura, agendarExperimental, enviarProposta, moverEtapa, registrarNotaInterna } from "@/server/comercial/acoes";
 import { registrarLinkPagamento } from "@/server/matricula/acoes";
-import { destinoDoArraste } from "@/server/crm/etapas";
+import { destinoDoArraste, type DestinoArraste } from "@/server/crm/etapas";
 import type { CapacidadeCrm } from "@/server/crm/permissoes";
 import type { DetalheOportunidade, ItemHistorico } from "@/server/crm/historico";
 import { ModalPerda } from "./ModalPerda";
 import { SecoesParidadeFunil } from "./SecoesParidadeFunil";
 import { DadosOportunidade, DatasOportunidade, DocumentosOportunidade, InteracaoOportunidade, ResumoOportunidade } from "./EdicaoOportunidade";
-import { FUSO_PADRAO } from "./CartaoOportunidade";
+import { FUSO_PADRAO, Temperatura as SeloTemperatura } from "./CartaoOportunidade";
 import { formatarDiaDaEscola, formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
 import { fusoDoCampoLocal } from "@/server/operacao/fuso-entrada";
 import { CampoDataHoraLocal } from "@/components/CampoDataHoraLocal";
@@ -38,7 +44,7 @@ const ABAS: { id: Aba; rotulo: string }[] = [
   { id: "atividade", rotulo: "Atividade" },
 ];
 
-const CAMPO = "w-full rounded-md border border-gray-300 px-2 py-1.5 text-sm max-sm:min-h-11";
+const CARTAO = "rounded-item border border-gray-200 bg-surface-muted p-3";
 
 type Props = {
   conversa?: ConversaParaAbrir | null;
@@ -57,11 +63,11 @@ type Props = {
 const dataHora = (d: Date | string, preferencia: string | null, fuso: string) => formatarInstanteExibicao(d, preferencia, fuso).texto;
 const diaCivil = (d: Date | string, fuso: string) => formatarDiaDaEscola(d, fuso);
 
-function Linha({ rotulo, children }: { rotulo: string; children: React.ReactNode }) {
+function Linha({ rotulo, children, mono = false }: { rotulo: string; children: React.ReactNode; mono?: boolean }) {
   return (
-    <div className="flex items-baseline justify-between gap-3 border-b border-gray-200 py-2 text-sm">
+    <div className="flex items-baseline justify-between gap-3 border-b border-gray-200 py-2 text-sm last:border-b-0">
       <dt className="text-gray-600">{rotulo}</dt>
-      <dd className="text-right text-gray-900">{children}</dd>
+      <dd className={"text-right text-gray-800" + (mono ? " font-mono tabular-nums" : "")}>{children}</dd>
     </div>
   );
 }
@@ -128,6 +134,24 @@ export function PainelOportunidade({ oportunidade: op, historico, capacidades, v
     }
   }
 
+  function escolherEtapa(etapa: EtapaLead, destino: DestinoArraste) {
+    if (!podeMover || acao.ocupado) return;
+    if (destino.tipo === "nenhum") return;
+    if (destino.tipo === "recusar") {
+      acao.limpar();
+      acao.setErro(destino.motivo);
+      return;
+    }
+    if (destino.tipo === "acao") {
+      acao.limpar();
+      if (destino.acao === "marcarPerdido") setPerda(true);
+      else if (destino.acao === "enviarProposta") void rodar(() => enviarProposta(op.id), "Proposta enviada.");
+      else if (destino.acao === "prepararContratacao") router.push(`/oportunidades/${op.id}/contratacao`);
+      return;
+    }
+    void rodar(() => moverEtapa(op.id, etapa), "Etapa atualizada.");
+  }
+
   return (
     <>
       <Drawer
@@ -136,17 +160,23 @@ export function PainelOportunidade({ oportunidade: op, historico, capacidades, v
         title={op.nome}
         largura="w-full max-sm:max-w-none sm:max-w-2xl md:w-[45%]"
       >
-        <div className="mb-3 flex flex-wrap items-center gap-2 text-sm">
-          <span className="rounded-full bg-brand-bg px-2 py-0.5 font-medium text-brand-800">{ETAPA_LABEL[op.etapa]}</span>
-          <span className={`rounded-full px-2 py-0.5 font-medium ${TEMPERATURA_CLS[op.temperatura]}`}>{TEMPERATURA_LABEL[op.temperatura]}</span>
-          {op.codigo && <span className="text-gray-600">{op.codigo}</span>}
-          {conversa && <div className="flex flex-wrap gap-x-3">
-            <Link href={hrefConversa(conversa.atendimentoId)} className="inline-flex min-h-11 items-center text-sm text-brand-700 hover:underline">Abrir conversa</Link>
-            {conversa.aberta && <Link href={hrefConversa(conversa.atendimentoId, { agendar: true })} className="inline-flex min-h-11 items-center text-sm text-brand-700 hover:underline">Agendar mensagem</Link>}
-          </div>}
+        <div className="mb-4 flex items-start gap-3">
+          <Avatar nome={op.nome} tamanho={48} />
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-base font-semibold text-gray-900">{op.nome}</p>
+            <div className="mt-1 flex flex-wrap items-center gap-2">
+              {op.codigo && <span className="font-mono text-xs tabular-nums text-gray-600">#{op.codigo}</span>}
+              <BadgeEstado tom="brand" ponto>{ETAPA_LABEL[op.etapa]}</BadgeEstado>
+              <SeloTemperatura temperatura={op.temperatura} />
+            </div>
+            {conversa && <div className="mt-2 flex flex-wrap gap-2">
+              <Link href={hrefConversa(conversa.atendimentoId)} className={botaoClasses({ variante: "secundario", tamanho: "sm" })}>Abrir conversa</Link>
+              {conversa.aberta && <Link href={hrefConversa(conversa.atendimentoId, { agendar: true })} className={botaoClasses({ variante: "secundario", tamanho: "sm" })}>Agendar mensagem</Link>}
+            </div>}
+          </div>
         </div>
 
-        <div role="tablist" aria-label="Seções da oportunidade" className="mb-4 flex gap-1 border-b border-gray-200">
+        <div role="tablist" aria-label="Seções da oportunidade" className="mb-4 flex border-b border-gray-200 px-1">
           {ABAS.map((a) => (
             <button
               key={a.id}
@@ -157,8 +187,8 @@ export function PainelOportunidade({ oportunidade: op, historico, capacidades, v
               aria-controls={`painel-${a.id}`}
               onClick={() => setAba(a.id)}
               className={
-                "min-h-10 border-b-2 px-3 text-sm max-sm:min-h-11 " +
-                (aba === a.id ? "border-brand-600 font-medium text-brand-800" : "border-transparent text-gray-600 hover:bg-highlight")
+                "flex h-[38px] flex-1 items-center justify-center border-b-2 text-[13px] font-semibold transition-colors " +
+                (aba === a.id ? "border-brand-600 text-brand-700" : "border-transparent text-gray-500 hover:text-gray-800")
               }
             >{a.rotulo}</button>
           ))}
@@ -167,17 +197,19 @@ export function PainelOportunidade({ oportunidade: op, historico, capacidades, v
         <FeedbackAcao erro={acao.erro} sucesso={acao.sucesso} className="mb-3" />
 
         {aba === "oportunidade" && (
-          <div role="tabpanel" id="painel-oportunidade" aria-labelledby="aba-oportunidade" className="space-y-5">
+          <div role="tabpanel" id="painel-oportunidade" aria-labelledby="aba-oportunidade" className="space-y-3">
+            <BarraEtapas etapa={op.etapa} podeMover={podeMover} ocupado={acao.ocupado} aoEscolher={escolherEtapa} />
+            <div className={CARTAO}>
             <dl>
-              <Linha rotulo="Valor previsto">{op.valorPrevisto && op.moeda ? formatarMoeda(op.valorPrevisto, op.moeda) : "Não informado"}</Linha>
+              <Linha rotulo="Valor previsto" mono>{op.valorPrevisto && op.moeda ? formatarMoeda(op.valorPrevisto, op.moeda) : "Não informado"}</Linha>
               <Linha rotulo="Próximo passo">{op.proximaAcao ?? "Sem próximo passo"}</Linha>
-              {op.dataExperimental && <Linha rotulo="Experimental">{dataHora(op.dataExperimental, preferenciaFusoExibicao, fuso)}</Linha>}
+              {op.dataExperimental && <Linha rotulo="Experimental" mono>{dataHora(op.dataExperimental, preferenciaFusoExibicao, fuso)}</Linha>}
               {op.etapa === EtapaLead.PERDIDO && op.motivoPerda && <Linha rotulo="Motivo da perda">{MOTIVO_PERDA_LABEL[op.motivoPerda]}</Linha>}
               <Linha rotulo="Responsável">
                 {podeAtribuir ? (
                   <select
                     aria-label="Responsável"
-                    className={CAMPO}
+                    className={CONTROLE_CAMPO}
                     value={novoDono || op.dono?.id || ""}
                     disabled={acao.ocupado}
                     onChange={(e) => setNovoDono(e.target.value)}
@@ -193,7 +225,7 @@ export function PainelOportunidade({ oportunidade: op, historico, capacidades, v
               <div className="grid gap-2">
                 <label className="grid gap-1 text-sm text-gray-700">
                   <span>Motivo da troca de responsável</span>
-                  <CampoTexto rows={2} maxLength={300} className={CAMPO} value={motivoDono} onChange={(e) => setMotivoDono(e.target.value)} />
+                  <CampoTexto rows={2} maxLength={300} className={CONTROLE_CAMPO} value={motivoDono} onChange={(e) => setMotivoDono(e.target.value)} />
                 </label>
                 <div>
                   <Botao variante="secundario" disabled={!motivoDono.trim() || acao.ocupado} onClick={() => setConfirmaDono(true)}>
@@ -202,9 +234,10 @@ export function PainelOportunidade({ oportunidade: op, historico, capacidades, v
                 </div>
               </div>
             )}
+            </div>
 
             {podeMover && !encerrada && (
-              <div className="grid gap-1 text-sm text-gray-700">
+              <div className={CARTAO + " grid gap-1 text-sm text-gray-700"}>
                 <span id="rotulo-temperatura">Temperatura</span>
                 <div role="group" aria-labelledby="rotulo-temperatura" className="flex flex-wrap gap-2">
                   {Object.values(Temperatura).map((t) => (
@@ -219,14 +252,14 @@ export function PainelOportunidade({ oportunidade: op, historico, capacidades, v
             )}
 
             {podeAgendar && (
-              <div className="grid gap-2">
+              <div className={CARTAO + " grid gap-2"}>
                 <label className="grid gap-1 text-sm text-gray-700">
                   <span>Data e hora da experimental</span>
-                  <CampoDataHoraLocal fuso={fusoExperimental} className={CAMPO} value={dataExp} disabled={acao.ocupado} onChange={(e) => setDataExp(e.target.value)} />
+                  <CampoDataHoraLocal fuso={fusoExperimental} className={CONTROLE_CAMPO} value={dataExp} disabled={acao.ocupado} onChange={(e) => setDataExp(e.target.value)} />
                 </label>
                 <label className="grid gap-1 text-sm text-gray-700">
                   <span>Professor da experimental</span>
-                  <select aria-label="Professor da experimental" className={CAMPO} value={professorAgendar} disabled={acao.ocupado} onChange={(e) => setProfessorAgendar(e.target.value)}>
+                  <select aria-label="Professor da experimental" className={CONTROLE_CAMPO} value={professorAgendar} disabled={acao.ocupado} onChange={(e) => setProfessorAgendar(e.target.value)}>
                     <option value="">Sem professor</option>
                     {professores.map((p) => <option key={p.id} value={p.id}>{p.nome}</option>)}
                   </select>
@@ -242,12 +275,12 @@ export function PainelOportunidade({ oportunidade: op, historico, capacidades, v
             )}
 
             {podeMover && op.etapa === EtapaLead.EXPERIMENTAL_AGENDADA && (
-              <div className="grid gap-2">
+              <div className={CARTAO + " grid gap-2"}>
                 <label className="grid gap-1 text-sm text-gray-700">
                   <span>Professor da experimental</span>
                   <select
                     aria-label="Professor da experimental"
-                    className={CAMPO}
+                    className={CONTROLE_CAMPO}
                     value={professorAtual}
                     disabled={acao.ocupado}
                     onChange={(e) => {
@@ -275,12 +308,12 @@ export function PainelOportunidade({ oportunidade: op, historico, capacidades, v
             )}
 
             {taxaAberta && podeMover && (
-              <div className="grid gap-2 rounded-md border border-gray-200 p-3">
+              <div className={CARTAO + " grid gap-2"}>
                 <p className="text-sm font-medium text-gray-800">Taxa de matrícula pendente</p>
                 {taxa!.linkPagamento && (
                   <p className="break-all text-xs text-gray-600">Link atual: {taxa!.linkPagamento}</p>
                 )}
-                <input aria-label="Link ou código de pagamento enviado" className={CAMPO} placeholder="Link ou código de pagamento enviado" value={link} disabled={acao.ocupado || acaoLink.ocupado} onChange={(e) => setLink(e.target.value)} />
+                <input aria-label="Link ou código de pagamento enviado" className={CONTROLE_CAMPO} placeholder="Link ou código de pagamento enviado" value={link} disabled={acao.ocupado || acaoLink.ocupado} onChange={(e) => setLink(e.target.value)} />
                 <div>
                   <Botao
                     variante="secundario"
@@ -308,18 +341,23 @@ export function PainelOportunidade({ oportunidade: op, historico, capacidades, v
         )}
 
         {aba === "detalhes" && (
-          <div role="tabpanel" id="painel-detalhes" aria-labelledby="aba-detalhes" className="space-y-4">
+          <div role="tabpanel" id="painel-detalhes" aria-labelledby="aba-detalhes" className="space-y-3">
+            <div className={CARTAO}>
             <dl>
               <Linha rotulo="Tipo">{op.b2b ? "Empresa (B2B)" : "Pessoa física"}</Linha>
               <Linha rotulo="País">{op.pais ?? "Não informado"}</Linha>
-              <Linha rotulo="Criada em">{dataHora(op.criadoEm, preferenciaFusoExibicao, fuso)}</Linha>
-              {op.proximoFollowUp && <Linha rotulo="Próximo follow-up">{diaCivil(op.proximoFollowUp, fuso)}</Linha>}
+              <Linha rotulo="Criada em" mono>{dataHora(op.criadoEm, preferenciaFusoExibicao, fuso)}</Linha>
+              {op.proximoFollowUp && <Linha rotulo="Próximo follow-up" mono>{diaCivil(op.proximoFollowUp, fuso)}</Linha>}
             </dl>
+            {op.telefoneE164 && <LinhaCampo icone={<IconPhone size={18} />} rotulo="Telefone" valor={op.telefoneE164} mono />}
+            <LinhaCampo icone={<IconUser size={18} />} rotulo="Responsável" valor={op.dono?.nome ?? "Sem responsável"} />
+            {op.origemCampanha && <LinhaCampo icone={<IconSpeakerphone size={18} />} rotulo="Campanha" valor={op.origemCampanha} />}
             {op.pessoaId && (
               <p className="text-sm">
                 <Link className="text-brand-700 underline" href={`/contatos?c=${encodeURIComponent(op.pessoaId)}`}>Abrir contato</Link>
               </p>
             )}
+            </div>
             <DadosOportunidade oportunidade={op} podeEditar={podeMover} paises={paises} />
             <ResumoOportunidade oportunidade={op} podeEditar={podeMover} />
             <DatasOportunidade oportunidade={op} podeEditar={podeMover} fuso={fuso} preferenciaFusoExibicao={preferenciaFusoExibicao} professores={professores} />
@@ -331,10 +369,10 @@ export function PainelOportunidade({ oportunidade: op, historico, capacidades, v
           <div role="tabpanel" id="painel-atividade" aria-labelledby="aba-atividade" className="space-y-4">
             {podeMover && <InteracaoOportunidade oportunidadeId={op.id} />}
             {podeMover && (
-              <div className="grid gap-2">
+              <div className={CARTAO + " grid gap-2"}>
                 <label className="grid gap-1 text-sm text-gray-700">
                   <span>Nota interna (a equipe vê; o contato não)</span>
-                  <CampoTexto rows={3} maxLength={2000} className={CAMPO} value={nota} disabled={acao.ocupado || acaoNota.ocupado} onChange={(e) => setNota(e.target.value)} />
+                  <CampoTexto rows={3} maxLength={2000} className={CONTROLE_CAMPO} value={nota} disabled={acao.ocupado || acaoNota.ocupado} onChange={(e) => setNota(e.target.value)} />
                 </label>
                 <FeedbackAcao erro={acaoNota.erro} sucesso={acaoNota.sucesso} />
                 <div>
