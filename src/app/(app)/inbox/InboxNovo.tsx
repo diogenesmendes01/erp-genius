@@ -580,7 +580,7 @@ export function InboxNovo({ inicial, filtros, selecionado: selecionadoInicial, u
             {(triagem || revisoes) && <PainelTriagem triagem={triagem} revisoes={revisoes} preferenciaFusoExibicao={fuso} />}
             <div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-2 p-6 text-center">
               {whatsappDesconectado ? (
-                <p className="text-[15px] font-semibold text-gray-800" role="status">WhatsApp desconectado, entre em contato com seu gerente!</p>
+                <p className="text-[15px] font-semibold text-gray-800">WhatsApp desconectado, entre em contato com seu gerente!</p>
               ) : (
                 <>
                   <IconMessages size={40} className="shrink-0 text-gray-400" aria-hidden />
