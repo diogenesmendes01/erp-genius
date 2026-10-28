@@ -10,6 +10,7 @@ import { MSG_DECISAO_INCERTA, MSG_RESULTADO_INCERTO } from "@/lib/mensagens";
 import { CampoTexto } from "@/components/CampoTexto";
 import { EstadoVazio } from "@/components/EstadoVazio";
 import { formatarDataCivil } from "@/lib/data-civil";
+import { SeletorCampo } from "@/app/(app)/secretaria/controles";
 type Dados = NonNullable<Extract<Awaited<ReturnType<typeof consultarPropostasUsoCredito>>, { ok: true }>["dado"]>;
 const estilo = "block rounded border p-2";
 export function PropostaUsoCredito({ dados }: { dados: Dados }) {
@@ -29,7 +30,7 @@ export function PropostaUsoCredito({ dados }: { dados: Dados }) {
         if (!r.ok) { setErro(r.erro); return; } chave.current = ""; setValor(""); router.refresh();
       } catch { setErro(MSG_RESULTADO_INCERTO); } });
     }}><fieldset disabled={ocupado} className="space-y-2"><legend>Nova proposta</legend>
-      <label className="block">Cobrança da mesma matrícula<select name="cobranca" required defaultValue="" className={estilo}><option value="" disabled>Selecione</option>{dados.cobrancas.map(c => <option key={c.id} value={c.id}>{rotuloCobranca(c.id)} · saldo {formatarMoeda(c.saldo, dados.moeda)}</option>)}</select></label>
+      <label className="block">Cobrança da mesma matrícula<SeletorCampo name="cobranca" required defaultValue="" className={estilo}><option value="" disabled>Selecione</option>{dados.cobrancas.map(c => <option key={c.id} value={c.id}>{rotuloCobranca(c.id)} · saldo {formatarMoeda(c.saldo, dados.moeda)}</option>)}</SeletorCampo></label>
       <label className="block">Valor a utilizar<CampoMoeda name="valor" moeda={dados.moeda} value={valor} onChange={setValor} required className={estilo} /></label>
       <label className="block">Evidência da concordância do aluno<CampoTexto name="concordancia" required minLength={5} maxLength={2000} className={estilo} /></label>
       <label className="block">Motivo<CampoTexto name="motivo" required minLength={5} maxLength={2000} className={estilo} /></label><button className={botaoClasses({ variante: "secundario", tamanho: "lg" })}>Guardar proposta para conferência</button>
@@ -38,7 +39,7 @@ export function PropostaUsoCredito({ dados }: { dados: Dados }) {
       {p.decisao && <p>Decisão: {p.decisao.motivo}</p>}
       {p.podeDecidir && <form onSubmit={e => { e.preventDefault(); const f = new FormData(e.currentTarget);
         iniciar(async () => { setErro(""); try { const r = await decidirUtilizacaoCredito({ propostaId: p.id, aprovar: f.get("decisao") === "aprovar", motivo: String(f.get("motivo")) }); if (!r.ok) { setErro(r.erro); return; } router.refresh(); } catch { setErro(MSG_DECISAO_INCERTA); } });
-      }}><fieldset disabled={ocupado} className="space-y-2"><label className="block">Decisão<select name="decisao" required defaultValue="" className={estilo}><option value="" disabled>Selecione</option><option value="aprovar">Aprovar e aplicar o abatimento</option><option value="rejeitar">Rejeitar proposta</option></select></label><label className="block">Justificativa<CampoTexto required name="motivo" minLength={5} maxLength={2000} className={estilo} /></label><button className={botaoClasses({ variante: "secundario", tamanho: "lg" })}>Confirmar decisão</button></fieldset></form>}
+      }}><fieldset disabled={ocupado} className="space-y-2"><label className="block">Decisão<SeletorCampo name="decisao" required defaultValue="" className={estilo}><option value="" disabled>Selecione</option><option value="aprovar">Aprovar e aplicar o abatimento</option><option value="rejeitar">Rejeitar proposta</option></SeletorCampo></label><label className="block">Justificativa<CampoTexto required name="motivo" minLength={5} maxLength={2000} className={estilo} /></label><button className={botaoClasses({ variante: "secundario", tamanho: "lg" })}>Confirmar decisão</button></fieldset></form>}
     </article>)}
   </div>;
 }

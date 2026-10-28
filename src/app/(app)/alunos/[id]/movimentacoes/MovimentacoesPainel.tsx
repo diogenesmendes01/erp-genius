@@ -14,6 +14,7 @@ import { botaoClasses } from "@/components/Botao";
 import { MSG_RESULTADO_INCERTO_SEM_CHAVE } from "@/lib/mensagens";
 import { CampoTexto } from "@/components/CampoTexto";
 import { EstadoVazio } from "@/components/EstadoVazio";
+import { SeletorCampo } from "@/app/(app)/secretaria/controles";
 
 type Lista = NonNullable<Extract<Awaited<ReturnType<typeof listarPropostasMovimentacao>>, { ok: true }>["dado"]>;
 type Detalhe = NonNullable<Extract<Awaited<ReturnType<typeof obterDetalhesMovimentacao>>, { ok: true }>["dado"]>;
@@ -95,7 +96,7 @@ export function MovimentacoesPainel({ alunoId, preferenciaFusoExibicao = null }:
   const podeAprovar = !!impactos && !detalhe?.historicoIncompleto && !impactos.matriculas.some((m) => m.pendencias.length > 0);
   return <div className="space-y-4" aria-busy={ocupado}>
     <div className="flex flex-wrap gap-3">
-      <label className="text-sm">Tipo de proposta <select className={botao} disabled={ocupado} value={tipo} onChange={(e) => { setTipo(e.target.value as typeof tipo); setLista(null); setDetalhe(null); setErro(null); }}><option value="PAUSA">Pausa</option><option value="RETOMADA">Retomada</option></select></label>
+      <label className="text-sm">Tipo de proposta <SeletorCampo className={botao} disabled={ocupado} value={tipo} onChange={(e) => { setTipo(e.target.value as typeof tipo); setLista(null); setDetalhe(null); setErro(null); }}><option value="PAUSA">Pausa</option><option value="RETOMADA">Retomada</option></SeletorCampo></label>
       <button className={botaoClasses({ variante: "secundario", tamanho: "lg" })} disabled={ocupado} onClick={() => carregar()}>Consultar propostas</button>
     </div>
     {erro && <p role="alert" className="text-red-700">{erro}</p>}
@@ -119,7 +120,7 @@ export function MovimentacoesPainel({ alunoId, preferenciaFusoExibicao = null }:
         {impactos.matriculas.map((m) => <div key={m.matriculaId} className="space-y-2 border-t pt-3">
           <h3 className="font-medium">Contrato {identificacaoContrato(m.codigo, m.matriculaId)}</h3>
           <Pendencias itens={m.pendencias} />
-          {m.periodos.map((p) => <div key={p.cobrancaId} className="rounded bg-gray-100 p-3 text-sm">
+          {m.periodos.map((p) => <div key={p.cobrancaId} className="rounded bg-surface-muted p-3 text-sm">
             {"cobertura" in p ? <><p>Cobertura anterior: {data(p.coberturaAnterior.inicio)} a {data(p.coberturaAnterior.fim)}</p><p>Cobertura proposta: {data(p.cobertura.inicio)} a {data(p.cobertura.fim)}</p><p>Vencimento: {data(p.vencimentoAnterior)} → {data(p.vencimento)}</p></> : <><p>{p.codigo ?? "Mensalidade"}: {efeito[p.efeito]}</p><p>Cobertura: {p.inicio && p.fim ? `${data(p.inicio)} a ${data(p.fim)}` : "A conferir"}</p><p>Vencimento: {data(p.vencimento)}</p></>}
           </div>)}
           {m.periodos.length === 0 && <EstadoVazio>Nenhum período calculado nesta proposta.</EstadoVazio>}

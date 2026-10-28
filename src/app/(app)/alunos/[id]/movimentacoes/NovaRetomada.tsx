@@ -12,6 +12,8 @@ import { botaoClasses } from "@/components/Botao";
 import { MSG_RESULTADO_INCERTO } from "@/lib/mensagens";
 import { CampoTexto } from "@/components/CampoTexto";
 import { EstadoVazio } from "@/components/EstadoVazio";
+import { SeletorCampo, CaixaCampo } from "@/app/(app)/secretaria/controles";
+import { DatePicker } from "@/components/ui/date-picker";
 type Previa = NonNullable<Extract<Awaited<ReturnType<typeof preverRetomadaMatriculas>>, { ok: true }>["dado"]>;
 type Opcao = "MANTER_VENCIMENTOS" | "REPROGRAMAR_PARCELAS";
 const campo = "rounded border p-2 text-sm";
@@ -61,17 +63,17 @@ export function NovaRetomada({ alunoId, contratos, hoje }: { alunoId: string; co
     <h2 className="text-lg font-medium">Nova proposta de retomada</h2>
     {contratos.length === 0 ? <EstadoVazio>Nenhum contrato pausado disponível.</EstadoVazio> : <fieldset disabled={ocupado} className="space-y-3">
       <legend className="mb-2 font-medium">Contratos pausados</legend>
-      {contratos.map((m) => <label key={m.id} className="flex gap-2 text-sm"><input type="checkbox" checked={ids.includes(m.id)} onChange={(e) => { alterar(true); setIds((v) => e.target.checked ? [...v, m.id] : v.filter((id) => id !== m.id)); }} />{m.identificacao} · {m.nome}</label>)}
-      <label className="block text-sm">Data de retorno <input type="date" className={campo} value={retorno} onChange={(e) => { alterar(true); setRetorno(e.target.value); }} /></label>
+      {contratos.map((m) => <label key={m.id} className="flex gap-2 text-sm"><CaixaCampo checked={ids.includes(m.id)} onChange={(e) => { alterar(true); setIds((v) => e.target.checked ? [...v, m.id] : v.filter((id) => id !== m.id)); }} />{m.identificacao} · {m.nome}</label>)}
+      <label className="block text-sm">Data de retorno <DatePicker className={campo} value={retorno} onChange={(e) => { alterar(true); setRetorno(e.target.value); }} /></label>
       <label className="block text-sm">Motivo<CampoTexto className={`${campo} mt-1 block w-full`} rows={3} maxLength={2000} value={motivo} onChange={(e) => { alterar(); setMotivo(e.target.value); }} /></label>
       <button type="button" className={botaoClasses({ variante: "secundario", tamanho: "lg" })} disabled={!ids.length || !retorno} onClick={() => consultar(true)}>Consultar períodos suspensos</button>
       {base?.matriculas.map((m) => <fieldset key={m.matriculaId} className="space-y-2 border-t pt-3">
         <legend className="font-medium">Contrato {identificacaoContrato(m.codigo, m.matriculaId)}</legend>
         <Pendencias itens={m.pendencias} />
-        <label className="block text-sm">Tratamento dos vencimentos <select className={campo} value={opcoes[m.matriculaId] ?? ""} onChange={(e) => { alterar(); setOpcoes((v) => ({ ...v, [m.matriculaId]: e.target.value as Opcao })); }}><option value="">Selecione</option><option value="MANTER_VENCIMENTOS">Manter vencimentos originais</option><option value="REPROGRAMAR_PARCELAS">Reprogramar vencimentos</option></select></label>
+        <label className="block text-sm">Tratamento dos vencimentos <SeletorCampo className={campo} value={opcoes[m.matriculaId] ?? ""} onChange={(e) => { alterar(); setOpcoes((v) => ({ ...v, [m.matriculaId]: e.target.value as Opcao })); }}><option value="">Selecione</option><option value="MANTER_VENCIMENTOS">Manter vencimentos originais</option><option value="REPROGRAMAR_PARCELAS">Reprogramar vencimentos</option></SeletorCampo></label>
         {opcoes[m.matriculaId] === "MANTER_VENCIMENTOS" && <p className="text-sm">Vencimentos antigos podem continuar em atraso. Retomar não quita a dívida.</p>}
         {m.periodos.map((p) => <label key={p.cobrancaId} className="block text-sm">Período original {data(p.coberturaAnterior.inicio)} a {data(p.coberturaAnterior.fim)} · vencimento {data(p.vencimentoAnterior)}
-          {opcoes[m.matriculaId] === "REPROGRAMAR_PARCELAS" && <input aria-label={`Novo vencimento do período ${formatarDataCivil(p.coberturaAnterior.inicio)}`} type="date" className={`${campo} ml-2`} value={datas[p.cobrancaId] ?? p.vencimentoAnterior} onChange={(e) => { alterar(); setDatas((v) => ({ ...v, [p.cobrancaId]: e.target.value })); }} />}
+          {opcoes[m.matriculaId] === "REPROGRAMAR_PARCELAS" && <DatePicker aria-label={`Novo vencimento do período ${formatarDataCivil(p.coberturaAnterior.inicio)}`} className={`${campo} ml-2`} value={datas[p.cobrancaId] ?? p.vencimentoAnterior} onChange={(e) => { alterar(); setDatas((v) => ({ ...v, [p.cobrancaId]: e.target.value })); }} />}
         </label>)}
       </fieldset>)}
       {base && <button type="button" className={botaoClasses({ variante: "secundario", tamanho: "lg" })} disabled={!escolhasCompletas || motivo.trim().length < 5} onClick={() => consultar(false)}>Conferir proposta completa</button>}

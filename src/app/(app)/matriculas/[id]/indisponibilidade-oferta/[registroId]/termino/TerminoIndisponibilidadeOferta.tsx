@@ -15,6 +15,8 @@ import { CampoTexto } from "@/components/CampoTexto";
 import { EstadoVazio } from "@/components/EstadoVazio";
 import { AvisoFusoNaoConfigurado } from "@/components/AvisoFusoNaoConfigurado";
 import { formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
+import { SeletorCampo } from "@/app/(app)/secretaria/controles";
+import { DatePicker } from "@/components/ui/date-picker";
 
 type Dados = NonNullable<Extract<Awaited<ReturnType<typeof consultarTerminosIndisponibilidadeOferta>>, { ok: true }>["dado"]>;
 
@@ -84,7 +86,7 @@ export function TerminoIndisponibilidadeOferta({
       <fieldset disabled={ocupado} className="space-y-3">
         <legend>Propor término</legend>
         <p className="text-sm">Informe o último dia de indisponibilidade; não informe a data de retorno.</p>
-        <label className="block" htmlFor="fim">Último dia indisponível<input id="fim" className={classe} name="fim" type="date" min={inicio.slice(0, 10)} required /></label>
+        <label className="block" htmlFor="fim">Último dia indisponível<DatePicker id="fim" className={classe} name="fim" min={inicio.slice(0, 10)} required /></label>
         <label className="block" htmlFor="motivo">Motivo<CampoTexto id="motivo" className={classe} name="motivo" minLength={5} maxLength={2000} required /></label>
         <label className="block" htmlFor="evidencia">Evidência<CampoTexto id="evidencia" className={classe} name="evidencia" minLength={5} maxLength={4000} required /></label>
         <button className={botaoClasses({ variante: "secundario", tamanho: "lg" })}>{ocupado ? "Registrando…" : "Propor último dia"}</button>
@@ -100,7 +102,7 @@ export function TerminoIndisponibilidadeOferta({
       <p className="whitespace-pre-wrap">{proposta.motivo}</p>
       <p className="whitespace-pre-wrap">Evidência: {proposta.evidenciaTexto}</p>
       <p>Proposta registrada em {instanteDoEvento(proposta.criadaEm, fusoInstitucional, preferenciaFusoExibicao)}.</p>
-      {proposta.decisao ? <section className="rounded bg-gray-100 p-3"><p>{proposta.decisao.aprovada ? "Término aprovado" : "Término rejeitado"} em {instanteDoEvento(proposta.decisao.decididaEm, fusoInstitucional, preferenciaFusoExibicao)}.</p><p className="whitespace-pre-wrap">{proposta.decisao.motivo}</p><p className="whitespace-pre-wrap">Evidência da decisão: {proposta.decisao.evidenciaTexto}</p></section> : <p role="status">Aguardando decisão independente.</p>}
+      {proposta.decisao ? <section className="rounded bg-surface-muted p-3"><p>{proposta.decisao.aprovada ? "Término aprovado" : "Término rejeitado"} em {instanteDoEvento(proposta.decisao.decididaEm, fusoInstitucional, preferenciaFusoExibicao)}.</p><p className="whitespace-pre-wrap">{proposta.decisao.motivo}</p><p className="whitespace-pre-wrap">Evidência da decisão: {proposta.decisao.evidenciaTexto}</p></section> : <p role="status">Aguardando decisão independente.</p>}
       {proposta.podeDecidir && <form className="space-y-2" onSubmit={evento => {
         evento.preventDefault();
         const formulario = new FormData(evento.currentTarget);
@@ -125,7 +127,7 @@ export function TerminoIndisponibilidadeOferta({
       }}>
         <fieldset disabled={ocupado} className="space-y-2">
           <legend>Decisão independente</legend>
-          <label className="block" htmlFor={`decisao-${proposta.id}`}>Decisão<select id={`decisao-${proposta.id}`} className={classe} name="decisao" defaultValue="" required><option value="" disabled>Selecione</option><option value="aprovar">Aprovar término</option><option value="rejeitar">Rejeitar proposta</option></select></label>
+          <label className="block" htmlFor={`decisao-${proposta.id}`}>Decisão<SeletorCampo id={`decisao-${proposta.id}`} className={classe} name="decisao" defaultValue="" required><option value="" disabled>Selecione</option><option value="aprovar">Aprovar término</option><option value="rejeitar">Rejeitar proposta</option></SeletorCampo></label>
           <label className="block" htmlFor={`motivo-${proposta.id}`}>Justificativa<CampoTexto id={`motivo-${proposta.id}`} className={classe} name="motivo" minLength={5} maxLength={2000} required /></label>
           <label className="block" htmlFor={`evidencia-${proposta.id}`}>Evidência da decisão<CampoTexto id={`evidencia-${proposta.id}`} className={classe} name="evidencia" minLength={5} maxLength={4000} required /></label>
           <button className={botaoClasses({ variante: "secundario", tamanho: "lg" })}>Registrar decisão</button>

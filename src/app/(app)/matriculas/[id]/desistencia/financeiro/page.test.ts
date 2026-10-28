@@ -237,8 +237,8 @@ describe("DesistenciaFinanceiraPage", () => {
 
     const html = renderToStaticMarkup(await Page({ params: Promise.resolve({ id: "m" }) }));
 
-    expect(html.match(/<td>Taxa de matrícula · vencimento 15\/10\/2026 · ₡ 90<\/td>/g)).toHaveLength(2);
-    expect(html).toContain("<td>Cobrança fora da lista desta matrícula</td>");
+    expect(html.match(/<td[^>]*>Taxa de matrícula · vencimento 15\/10\/2026 · ₡ 90<\/td>/g)).toHaveLength(2);
+    expect(html).toContain(">Cobrança fora da lista desta matrícula</td>");
     expect(html).not.toContain("cobranca-interna");
     expect(html).not.toContain("cobranca-de-outra");
   });

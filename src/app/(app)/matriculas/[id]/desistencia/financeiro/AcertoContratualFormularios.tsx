@@ -10,6 +10,7 @@ import { useAcaoCliente } from "@/lib/acao-cliente";
 import { CampoTexto } from "@/components/CampoTexto";
 import { ConfirmarAcao, type FalhaConfirmacao } from "@/components/ConfirmarAcao";
 import { formatarValores, somarPorMoeda, type ValorMoeda } from "@/lib/dinheiro";
+import { SeletorCampo } from "@/app/(app)/secretaria/controles";
 
 function useChaveEstavel() {
   const router = useRouter();
@@ -54,7 +55,7 @@ export function DecidirAcertoContratualFormulario({ propostaId, fotografiaHash }
     if (d?.tipo === "ok") tentativa.depoisDoSucesso();
   }
   return <form className="space-y-3" onSubmit={decidir}>
-    <fieldset disabled={acao.ocupado}><label>Decisão<select name="decisao" required className="ml-2 rounded border p-2"><option value="">Selecione</option><option value="aprovar">Aprovar acerto</option><option value="rejeitar">Rejeitar acerto</option></select></label><label className="mt-2 block">Justificativa<CampoTexto name="motivo" required minLength={5} maxLength={3000} className="mt-1 block w-full rounded border p-2" /></label><button className={`${botaoClasses({ variante: "secundario", tamanho: "lg" })} mt-3`}>{acao.ocupado ? "Registrando…" : "Registrar decisão independente"}</button></fieldset><FeedbackAcao erro={acao.erro} sucesso={acao.sucesso} className="mt-3" />
+    <fieldset disabled={acao.ocupado}><label>Decisão<SeletorCampo name="decisao" required className="ml-2 rounded border p-2"><option value="">Selecione</option><option value="aprovar">Aprovar acerto</option><option value="rejeitar">Rejeitar acerto</option></SeletorCampo></label><label className="mt-2 block">Justificativa<CampoTexto name="motivo" required minLength={5} maxLength={3000} className="mt-1 block w-full rounded border p-2" /></label><button className={`${botaoClasses({ variante: "secundario", tamanho: "lg" })} mt-3`}>{acao.ocupado ? "Registrando…" : "Registrar decisão independente"}</button></fieldset><FeedbackAcao erro={acao.erro} sucesso={acao.sucesso} className="mt-3" />
   </form>;
 }
 

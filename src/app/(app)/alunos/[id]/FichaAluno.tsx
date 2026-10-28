@@ -20,6 +20,8 @@ import { CampoTexto } from "@/components/CampoTexto";
 import { CampoFuso } from "@/components/CampoFuso";
 import { EstadoVazio } from "@/components/EstadoVazio";
 import { Campo, CONTROLE_INVALIDO, focarPrimeiroComErro, type ErrosDeCampos, type LigacaoCampo } from "@/components/Campo";
+import { SeletorCampo, CaixaCampo } from "@/app/(app)/secretaria/controles";
+import { DatePicker } from "@/components/ui/date-picker";
 
 const STATUS_CLS: Record<StatusAluno, string> = {
   ATIVO: "bg-green-100 text-green-700",
@@ -82,7 +84,7 @@ interface PaisOpt {
 }
 
 const inputCls =
-  "w-full rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:border-brand-500 " +
+  "w-full rounded-md border border-gray-200 px-3 py-2 text-sm outline-none focus:border-brand-500 " +
   CONTROLE_INVALIDO;
 
 const IDS_EDICAO = {
@@ -279,22 +281,22 @@ export function FichaAluno({
             {(campo) => <input {...campo} className={inputCls} value={ed.nomePreferido} onChange={(e) => set("nomePreferido", e.target.value)} />}
           </Campo>
           <Campo id="ficha-nascimento" rotulo="Nascimento">
-            {(campo) => <input {...campo} type="date" className={inputCls} value={ed.nascimento} onChange={(e) => set("nascimento", e.target.value)} />}
+            {(campo) => <DatePicker {...campo} className={inputCls} value={ed.nascimento} onChange={(e) => set("nascimento", e.target.value)} />}
           </Campo>
           <Campo id="ficha-genero" rotulo="Gênero">
             {(campo) => (
-              <select {...campo} className={inputCls} value={ed.genero} onChange={(e) => set("genero", e.target.value as Genero | "")}>
+              <SeletorCampo {...campo} className={inputCls} value={ed.genero} onChange={(e) => set("genero", e.target.value as Genero | "")}>
                 <option value="">—</option>
                 {Object.values(Genero).map((g) => (
                   <option key={g} value={g}>{GENERO_LABEL[g]}</option>
                 ))}
-              </select>
+              </SeletorCampo>
             )}
           </Campo>
 
           <Campo id={IDS_EDICAO.paisId} rotulo="País" obrigatorio erro={errosEdicao.paisId}>
             {(campo) => (
-              <select
+              <SeletorCampo
                 {...campo}
                 className={inputCls}
                 value={ed.paisId}
@@ -306,21 +308,21 @@ export function FichaAluno({
                     tipoDocumentoId: np?.tiposDocumento.some((t) => t.id === s.tipoDocumentoId) ? s.tipoDocumentoId : "",
                   }));
                 }}
-              >
+               busca>
                 {paises.map((p) => (
                   <option key={p.id} value={p.id}>{p.nome}</option>
                 ))}
-              </select>
+              </SeletorCampo>
             )}
           </Campo>
           <Campo id="ficha-tipoDocumentoId" rotulo="Tipo de documento">
             {(campo) => (
-              <select {...campo} className={inputCls} value={ed.tipoDocumentoId} onChange={(e) => set("tipoDocumentoId", e.target.value)}>
+              <SeletorCampo {...campo} className={inputCls} value={ed.tipoDocumentoId} onChange={(e) => set("tipoDocumentoId", e.target.value)}>
                 <option value="">—</option>
                 {tiposDocEd.map((t) => (
                   <option key={t.id} value={t.id}>{t.nome}</option>
                 ))}
-              </select>
+              </SeletorCampo>
             )}
           </Campo>
           <Campo id="ficha-documento" rotulo="Número do documento" dica="Documento inválido não impede salvar — fica marcado como “não validado”.">
@@ -344,11 +346,11 @@ export function FichaAluno({
           </Campo>
           <div className="flex items-center gap-4 pt-5 sm:col-span-2">
             <label className="flex items-center gap-2 text-sm text-gray-600">
-              <input type="checkbox" checked={ed.whatsapp} onChange={(e) => set("whatsapp", e.target.checked)} />
+              <CaixaCampo checked={ed.whatsapp} onChange={(e) => set("whatsapp", e.target.checked)} />
               É WhatsApp
             </label>
             <label className="flex items-center gap-2 text-sm text-gray-600">
-              <input type="checkbox" checked={ed.aceitaComunicacoes} onChange={(e) => set("aceitaComunicacoes", e.target.checked)} />
+              <CaixaCampo checked={ed.aceitaComunicacoes} onChange={(e) => set("aceitaComunicacoes", e.target.checked)} />
               Recebe comunicações
             </label>
           </div>
@@ -380,12 +382,12 @@ export function FichaAluno({
 
           <Campo id="ficha-escolaridade" rotulo="Escolaridade">
             {(campo) => (
-              <select {...campo} className={inputCls} value={ed.escolaridade} onChange={(e) => set("escolaridade", e.target.value as Escolaridade | "")}>
+              <SeletorCampo {...campo} className={inputCls} value={ed.escolaridade} onChange={(e) => set("escolaridade", e.target.value as Escolaridade | "")}>
                 <option value="">—</option>
                 {Object.values(Escolaridade).map((e) => (
                   <option key={e} value={e}>{ESCOLARIDADE_LABEL[e]}</option>
                 ))}
-              </select>
+              </SeletorCampo>
             )}
           </Campo>
           <Campo id="ficha-idiomaNativo" rotulo="Idioma nativo">
@@ -427,7 +429,7 @@ export function FichaAluno({
             {(campo) => <input {...campo} className={inputCls} value={motivoPausa} onChange={(e) => setMotivoPausa(e.target.value)} />}
           </Campo>
           <Campo id="pausa-retorno" rotulo="Retorno previsto (opcional)" className="mb-3">
-            {(campo) => <input {...campo} type="date" className={inputCls} value={retorno} onChange={(e) => setRetorno(e.target.value)} />}
+            {(campo) => <DatePicker {...campo} className={inputCls} value={retorno} onChange={(e) => setRetorno(e.target.value)} />}
           </Campo>
           <FeedbackAcao erro={acao.erro} className="mb-3" />
           <div className="flex gap-2">
@@ -452,11 +454,11 @@ export function FichaAluno({
           <h3 className="mb-2 text-sm font-medium">Encerrar aluno</h3>
           <Campo id="encerramento-motivo" rotulo="Motivo do encerramento" obrigatorio className="mb-2">
             {(campo) => (
-              <select {...campo} className={inputCls} value={motivoEnc} onChange={(e) => setMotivoEnc(e.target.value as typeof motivoEnc)}>
+              <SeletorCampo {...campo} className={inputCls} value={motivoEnc} onChange={(e) => setMotivoEnc(e.target.value as typeof motivoEnc)}>
                 {MOTIVOS_ENCERRAMENTO.map((m) => (
                   <option key={m} value={m}>{m}</option>
                 ))}
-              </select>
+              </SeletorCampo>
             )}
           </Campo>
           <Campo
@@ -617,11 +619,11 @@ function SelectISO({
   ...ligacao
 }: Omit<LigacaoCampo, "id"> & { id: string; value: string; onChange: (v: string) => void; comVazio?: boolean }) {
   return (
-    <select id={id} {...ligacao} className={inputCls} value={value} onChange={(e) => onChange(e.target.value)}>
+    <SeletorCampo id={id} {...ligacao} className={inputCls} value={value} onChange={(e) => onChange(e.target.value)} busca>
       {comVazio && <option value="">—</option>}
       {PAISES_ISO.map((p) => (
         <option key={p.codigo} value={p.codigo}>{p.nome}</option>
       ))}
-    </select>
+    </SeletorCampo>
   );
 }

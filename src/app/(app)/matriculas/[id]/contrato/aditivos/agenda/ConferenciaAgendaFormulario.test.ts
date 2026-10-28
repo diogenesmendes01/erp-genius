@@ -16,12 +16,13 @@ import { ConferenciaAgendaFormulario, RegistrarFotografia } from "./ConferenciaA
 import { MSG_RESULTADO_INCERTO } from "@/lib/mensagens";
 import { adiada, anuncios } from "@/test/feedback-acao";
 import { FormDataFalso, criarGanchos, elementos, submeter, texto } from "@/test/tela-sem-dom";
+import { SeletorCampo, CaixaCampo } from "@/app/(app)/secretaria/controles";
 
 const dados = { "professor-e": "atual", "fuso-e": "UTC", "inicio-e": "2099-10-11T10:00", "fim-e": "2099-10-11T11:00" };
 const props = { matriculaId: "m", encontros: [{ id: "e", inicio: "2099-10-10T10:00:00.000Z", fim: "2099-10-10T11:00:00.000Z", fusoOrigem: "UTC", professorId: "atual", professor: "Atual" }], professores: [{ id: "primeiro", nome: "Primeiro" }, { id: "atual", nome: "Atual" }] };
 const tela = () => mocks.ganchos!.renderizar(ConferenciaAgendaFormulario, props);
 const no = (tipo: string) => elementos(tela()).find(n => n.type === tipo)!;
-const selecionar = () => { (elementos(tela()).find(n => n.type === "input" && n.props.type === "checkbox")!.props.onChange as () => void)(); return tela(); };
+const selecionar = () => { (elementos(tela()).find(n => n.type === CaixaCampo)!.props.onChange as () => void)(); return tela(); };
 const temResultado = () => elementos(tela()).some(n => n.type === "h3" && texto(n.props.children) === "Resultado da conferência");
 const resultado = { proposta: { encontros: [{ encontroId: "e", professorAnteriorId: "anterior", professorNovoId: "novo", professorAnteriorNome: "Anterior", professorNovoNome: "Novo", inicioAnterior: "2099-10-10T10:00:00.000Z", fimAnterior: "2099-10-10T11:00:00.000Z", inicioNovo: "2099-10-11T10:00:00.000Z", fimNovo: "2099-10-11T11:00:00.000Z", fusoAnterior: "UTC", fusoNovo: "UTC", duracaoMinutos: 60 }] }, pendencias: [] };
 const telaFoto = () => mocks.ganchos!.renderizar(RegistrarFotografia, { matriculaId: "m", resultado });
@@ -37,7 +38,7 @@ afterEach(() => vi.unstubAllGlobals());
 
 it("submete o docente atual, apaga resultado ao editar e bloqueia controles pendentes", async () => {
   const comCampos = selecionar();
-  expect(elementos(comCampos).find(n => n.type === "select")!.props.defaultValue).toBe("atual");
+  expect(elementos(comCampos).find(n => n.type === SeletorCampo)!.props.defaultValue).toBe("atual");
   const pendente = adiada<unknown>();
   mocks.consultar.mockReturnValueOnce(pendente.promessa);
   const envio = submeter(comCampos, dados);
@@ -63,7 +64,7 @@ it("horário DST inválido: o servidor converte e recusa com a mensagem dele; ca
 
 it("valor inicial dos campos no fuso do encontro, sem lançar com fuso inválido", () => {
   const comFuso = (fusoOrigem: string) => { mocks.ganchos = criarGanchos(); return elementos(mocks.ganchos.renderizar(ConferenciaAgendaFormulario, { ...props, encontros: [{ ...props.encontros[0], fusoOrigem }] })); };
-  const inicioInicial = (fusoOrigem: string) => { const nos = comFuso(fusoOrigem); (nos.find(n => n.type === "input" && n.props.type === "checkbox")!.props.onChange as () => void)(); return elementos(mocks.ganchos!.renderizar(ConferenciaAgendaFormulario, { ...props, encontros: [{ ...props.encontros[0], fusoOrigem }] })).find(n => n.props.name === "inicio-e")?.props.defaultValue; };
+  const inicioInicial = (fusoOrigem: string) => { const nos = comFuso(fusoOrigem); (nos.find(n => n.type === CaixaCampo)!.props.onChange as () => void)(); return elementos(mocks.ganchos!.renderizar(ConferenciaAgendaFormulario, { ...props, encontros: [{ ...props.encontros[0], fusoOrigem }] })).find(n => n.props.name === "inicio-e")?.props.defaultValue; };
   expect(inicioInicial("America/Sao_Paulo")).toBe("2099-10-10T07:00");
   expect(inicioInicial("UTC")).toBe("2099-10-10T10:00");
 });

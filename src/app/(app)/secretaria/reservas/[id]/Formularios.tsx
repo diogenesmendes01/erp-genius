@@ -10,6 +10,9 @@ import { CampoTexto } from "@/components/CampoTexto";
 import { FeedbackAcao } from "@/components/FeedbackAcao";
 import { useAcaoCliente } from "@/lib/acao-cliente";
 import type { Resultado } from "@/server/_shared/resultado";
+import { SeletorCampo } from "@/app/(app)/secretaria/controles";
+import { DatePicker } from "@/components/ui/date-picker";
+import { TimePicker } from "@/components/ui/time-picker";
 export function PrepararResolucao({ reservaId, versao, fuso, particular = false }: { reservaId: string; versao: number; fuso: string; particular?: boolean }) {
   const router = useRouter(), chave = useRef<string | null>(null);
   const [tipo, setTipo] = useState<"PRORROGAR" | "LIBERAR">("PRORROGAR");
@@ -23,8 +26,8 @@ export function PrepararResolucao({ reservaId, versao, fuso, particular = false 
       ...(novoPrazo !== undefined ? { novoPrazo } : {}), motivo: String(dados.get("motivo")), tratamentoContratacao: String(dados.get("tratamento")), chaveIdempotencia }), "Proposta enviada para revisão.");
     if (d?.tipo === "ok") router.refresh(); }}>
     <h2 className="font-medium">Preparar resolução</h2>
-    <label className="block">Decisão proposta<select className="block rounded border p-2" value={tipo} onChange={(e) => setTipo(e.target.value as typeof tipo)} disabled={ocupado}><option value="PRORROGAR">Prorrogar reserva</option><option value="LIBERAR">{particular ? "Liberar horários" : "Liberar vaga"}</option></select></label>
-    {tipo === "PRORROGAR" && <div><p>Novo prazo no fuso {fuso}</p><label className="block">Data<input className="block rounded border p-2" type="date" name="data" required /></label><label className="block">Horário<input className="block rounded border p-2" type="time" name="horario" required /></label></div>}
+    <label className="block">Decisão proposta<SeletorCampo className="block rounded border p-2" value={tipo} onChange={(e) => setTipo(e.target.value as typeof tipo)} disabled={ocupado}><option value="PRORROGAR">Prorrogar reserva</option><option value="LIBERAR">{particular ? "Liberar horários" : "Liberar vaga"}</option></SeletorCampo></label>
+    {tipo === "PRORROGAR" && <div><p>Novo prazo no fuso {fuso}</p><label className="block">Data<DatePicker className="block rounded border p-2" name="data" required /></label><label className="block">Horário<TimePicker className="block rounded border p-2" name="horario" required /></label></div>}
     <label className="block">Motivo<CampoTexto className="block w-full rounded border p-2" name="motivo" required minLength={5} maxLength={2000} /></label>
     <label className="block">Tratamento previsto para contratação, documentos e valores<CampoTexto className="block w-full rounded border p-2" name="tratamento" required minLength={10} maxLength={4000} /></label>
     <p>A decisão da reserva não executa o tratamento financeiro ou documental. Esses processos conservam suas próprias aprovações.</p>

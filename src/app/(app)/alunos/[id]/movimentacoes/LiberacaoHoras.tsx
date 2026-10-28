@@ -8,6 +8,8 @@ import { botaoClasses } from "@/components/Botao";
 import { MSG_RESULTADO_INCERTO } from "@/lib/mensagens";
 import { CampoTexto } from "@/components/CampoTexto";
 import { parcelasDiferenca, ROTULO_DESCONTO_CREDITO, ROTULO_REDUCAO_CREDITO, type DiferencaValorCompra } from "@/server/matricula/compra-horas-diferenca";
+import { SeletorCampo } from "@/app/(app)/secretaria/controles";
+import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "@/components/ui/collapsible";
 type DiferencaCompra = Pick<DiferencaValorCompra, "desconto" | "reducaoAditivo">;
 const estilo = "rounded border p-2 text-sm";
 const moedaDoCalculo = (calculo: unknown) => {
@@ -29,7 +31,7 @@ export function LiberacaoHoras({ alunoId, reservaId, propostas, diferencaCompra,
       e.preventDefault(); const f = new FormData(e.currentTarget); chave.current ||= crypto.randomUUID(); const chaveIdempotencia = chave.current;
       void iniciar(() => executar(() => proporLiberacaoHorasRemarcacao({ reservaId, evidenciaEscolhaRemarcacao: String(f.get("escolha")), motivo: String(f.get("motivo")), chaveIdempotencia, destino: f.get("destino") === "CREDITO" ? "CREDITO" : "REMARCACAO" })));
     }}><fieldset disabled={ocupado} className="space-y-2"><legend>Tratamento escolhido pelo aluno</legend>
-      <label className="grid gap-1">Escolha<select name="destino" required defaultValue="" className={estilo}><option value="" disabled>Selecione</option><option value="REMARCACAO">Liberar horas para remarcação</option><option value="CREDITO">Converter horas em crédito do valor pago</option></select></label>
+      <label className="grid gap-1">Escolha<SeletorCampo name="destino" required defaultValue="" className={estilo}><option value="" disabled>Selecione</option><option value="REMARCACAO">Liberar horas para remarcação</option><option value="CREDITO">Converter horas em crédito do valor pago</option></SeletorCampo></label>
       <label className="grid gap-1">Evidência da escolha do aluno<CampoTexto name="escolha" required minLength={5} maxLength={2000} className={estilo} /></label>
       <label className="grid gap-1">Motivo financeiro<CampoTexto name="motivo" required minLength={5} maxLength={2000} className={estilo} /></label>
       <button className={botaoClasses({ variante: "secundario", tamanho: "lg" })}>Preparar proposta para conferência</button>
@@ -44,7 +46,7 @@ export function LiberacaoHoras({ alunoId, reservaId, propostas, diferencaCompra,
         e.preventDefault(); const f = new FormData(e.currentTarget);
         void iniciar(() => executar(() => decidirLiberacaoHorasRemarcacao({ propostaId: p.id, aprovar: f.get("decisao") === "aprovar", motivo: String(f.get("motivo")) })));
       }}><fieldset disabled={ocupado} className="space-y-2">
-        <label className="grid gap-1">Decisão<select name="decisao" required defaultValue="" className={estilo}><option value="" disabled>Selecione</option><option value="aprovar">{p.destino === "CREDITO" ? "Aprovar conversão em crédito" : "Aprovar liberação para remarcação"}</option><option value="rejeitar">Rejeitar proposta</option></select></label>
+        <label className="grid gap-1">Decisão<SeletorCampo name="decisao" required defaultValue="" className={estilo}><option value="" disabled>Selecione</option><option value="aprovar">{p.destino === "CREDITO" ? "Aprovar conversão em crédito" : "Aprovar liberação para remarcação"}</option><option value="rejeitar">Rejeitar proposta</option></SeletorCampo></label>
         <label className="grid gap-1">Justificativa<CampoTexto name="motivo" required minLength={5} maxLength={2000} className={estilo} /></label><button className={botaoClasses({ variante: "secundario", tamanho: "lg" })}>Confirmar decisão</button>
       </fieldset></form>}
     </article>)}
@@ -60,5 +62,5 @@ export function MemoriaCredito({ calculo, diferencaCompra }: { calculo: unknown;
     ...(parcelas.reducao ? [["reducaoAditivo", ROTULO_REDUCAO_CREDITO, diferencaCompra.reducaoAditivo] as [string, string, unknown]] : []),
     linha("minutosComprados", "Minutos comprados"), linha("minutosConvertidos", "Minutos desta conversão"), linha("minutosAnteriores", "Minutos convertidos anteriormente"),
     linha("valorAnterior", "Créditos anteriores da compra"), linha("valorAcumulado", "Valor acumulado após esta conversão"), linha("valorCredito", "Crédito desta proposta")];
-  return <details><summary>Memória de cálculo</summary><dl className="space-y-1 text-sm">{campos.map(([campo, rotulo, valor]) => <div key={campo}><dt className="font-medium">{rotulo}</dt><dd>{String(valor ?? "Não informado")}</dd></div>)}</dl></details>;
+  return <Collapsible><CollapsibleTrigger className="flex w-full items-center justify-between py-2 text-left text-sm font-medium text-gray-800">Memória de cálculo</CollapsibleTrigger><CollapsibleContent forceMount className="data-[state=closed]:hidden"><dl className="space-y-1 text-sm">{campos.map(([campo, rotulo, valor]) => <div key={campo}><dt className="font-medium">{rotulo}</dt><dd>{String(valor ?? "Não informado")}</dd></div>)}</dl></CollapsibleContent></Collapsible>;
 }

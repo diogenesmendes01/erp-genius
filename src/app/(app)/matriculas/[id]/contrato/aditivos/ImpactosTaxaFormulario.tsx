@@ -10,6 +10,7 @@ import { botaoClasses } from "@/components/Botao";
 import { useAcaoCliente } from "@/lib/acao-cliente";
 import { CampoTexto } from "@/components/CampoTexto";
 import { EstadoVazio } from "@/components/EstadoVazio";
+import { SeletorCampo } from "@/app/(app)/secretaria/controles";
 
 type Cobranca = { id: string; codigo: string | null; moeda: string; valorNegociado: string; vencimento: string };
 
@@ -38,7 +39,7 @@ export function ImpactosTaxaFormulario({ matriculaId, propostaId, conclusaoId, r
     <p>Classifique cada cobrança de taxa. Cobranças preservadas também exigem justificativa; a assinatura não altera valores sozinha.</p>
     {!cobrancas.length ? <EstadoVazio role="status">Nenhuma cobrança de taxa foi encontrada para esta matrícula.</EstadoVazio> : <fieldset disabled={acao.ocupado} className="space-y-3">{cobrancas.map(c => <article className="space-y-2 rounded border p-3" key={c.id}>
       <p className="font-medium">{c.codigo ?? "Taxa sem código"} · {formatarMoeda(c.valorNegociado, c.moeda)} · vencimento {formatarDataCivil(c.vencimento.slice(0, 10))}</p>
-      <label className="block">Tratamento<select className="ml-2 rounded border p-1" value={decisoes[c.id] ?? "AFETADA"} onChange={e => setDecisoes(atual => ({ ...atual, [c.id]: e.target.value as "AFETADA" | "PRESERVADA" }))}><option value="AFETADA">Afetada pelo aditivo</option><option value="PRESERVADA">Preservada</option></select></label>
+      <label className="block">Tratamento<SeletorCampo className="ml-2 rounded border p-1" value={decisoes[c.id] ?? "AFETADA"} onChange={e => setDecisoes(atual => ({ ...atual, [c.id]: e.target.value as "AFETADA" | "PRESERVADA" }))}><option value="AFETADA">Afetada pelo aditivo</option><option value="PRESERVADA">Preservada</option></SeletorCampo></label>
       <label className="block">Justificativa<CampoTexto className="mt-1 block w-full rounded border p-2" minLength={5} maxLength={2000} value={justificativas[c.id] ?? ""} onChange={e => setJustificativas(atual => ({ ...atual, [c.id]: e.target.value }))} /></label>
     </article>)}</fieldset>}
     <button type="button" className={botaoClasses({ tamanho: "lg" })} disabled={!podePreparar || acao.ocupado} onClick={preparar}>{acao.ocupado ? "Preparando…" : "Preparar conjunto de impactos"}</button>

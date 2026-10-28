@@ -15,6 +15,8 @@ import { botaoClasses } from "@/components/Botao";
 import { MSG_RESULTADO_INCERTO, MSG_RESULTADO_INCERTO_SEM_CHAVE } from "@/lib/mensagens";
 import { CampoTexto } from "@/components/CampoTexto";
 import { EstadoVazio } from "@/components/EstadoVazio";
+import { SeletorCampo } from "@/app/(app)/secretaria/controles";
+import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "@/components/ui/collapsible";
 type Dados = NonNullable<Extract<Awaited<ReturnType<typeof consultarComprasHorasAntecipadas>>, { ok: true }>["dado"]>;
 const estilo = "rounded border p-2 text-sm";
 
@@ -48,7 +50,7 @@ function Compras({ alunoId, matriculaId, preferenciaFusoExibicao, fusoEscola }: 
     {erro && <p role="alert">{erro}</p>}<MensagemStatus texto={aviso} />
     {dados && <>
       {dados.compras.length === 0 && <EstadoVazio>Nenhuma compra de horas registrada nesta matrícula.</EstadoVazio>}
-      {dados.compras.map((c) => <details key={c.id} className="rounded border p-2"><summary>{c.minutosComprados} minutos comprados · {formatarMoeda(c.valorPagoAlocado, c.moeda)}</summary>
+      {dados.compras.map((c) => <Collapsible key={c.id} className="rounded border p-2"><CollapsibleTrigger className="flex w-full items-center justify-between py-2 text-left text-sm font-medium text-gray-800">{c.minutosComprados} minutos comprados · {formatarMoeda(c.valorPagoAlocado, c.moeda)}</CollapsibleTrigger><CollapsibleContent forceMount className="data-[state=closed]:hidden">
         <RegistroCompraHoras nome={c.registrador.nome} criadoEm={c.criadoEm} preferenciaFusoExibicao={preferenciaFusoExibicao} fusoEscola={fusoEscola} />
         <p>{c.liquidacao ? `Quitação: ${formatarMoeda(c.liquidacao.valorEmDinheiro, c.moeda)} em dinheiro e ${formatarMoeda(c.liquidacao.valorEmCredito, c.moeda)} em crédito.` : "Compra anterior: consulte os registros de origem para conferir a quitação."}</p><p>Valor original: {formatarMoeda(c.valorOriginal, c.moeda)}. {parcelasDiferenca(c.diferencaValor).desconto && <>{ROTULO_DESCONTO_COMPRA}: {formatarMoeda(c.diferencaValor.desconto, c.moeda)}. </>}{parcelasDiferenca(c.diferencaValor).reducao && <>{ROTULO_REDUCAO_COMPRA}: {formatarMoeda(c.diferencaValor.reducaoAditivo, c.moeda)}. </>}Cobrança: {c.cobrancaId}.</p><p>{c.evidenciaCondicoes}</p>
         <p>{resumoMinutosCompra(c)}</p>
@@ -67,10 +69,10 @@ function Compras({ alunoId, matriculaId, preferenciaFusoExibicao, fusoEscola }: 
             } catch { setErro(MSG_RESULTADO_INCERTO); }
           });
         }}><fieldset disabled={ocupado} className="space-y-2"><legend>Vincular horas a encontro já agendado</legend>
-          <label className="grid gap-1">Encontro<select name="encontro" required className={estilo} defaultValue=""><option value="">Selecione</option>{dados.encontros.map(e => <option key={e.id} value={e.id}>{new Intl.DateTimeFormat("pt-BR", { dateStyle: "short", timeStyle: "short", timeZone: e.fusoOrigem }).format(new Date(e.inicio))} · {e.fusoOrigem} · {(Date.parse(e.fim) - Date.parse(e.inicio)) / 60000} minutos</option>)}</select></label>
+          <label className="grid gap-1">Encontro<SeletorCampo name="encontro" required className={estilo} defaultValue=""><option value="">Selecione</option>{dados.encontros.map(e => <option key={e.id} value={e.id}>{new Intl.DateTimeFormat("pt-BR", { dateStyle: "short", timeStyle: "short", timeZone: e.fusoOrigem }).format(new Date(e.inicio))} · {e.fusoOrigem} · {(Date.parse(e.fim) - Date.parse(e.inicio)) / 60000} minutos</option>)}</SeletorCampo></label>
           <label className="grid gap-1">Motivo<CampoTexto name="motivo" minLength={5} maxLength={2000} required className={estilo} /></label><button className={botaoClasses({ variante: "secundario", tamanho: "lg" })}>Reservar horas</button>
         </fieldset></form>}
-      </details>)}
+      </CollapsibleContent></Collapsible>)}
       {!dados.cobrancas.length ? <EstadoVazio>Nenhuma cobrança de particular por hora paga e sem compra vinculada.</EstadoVazio> : <form className="space-y-2" onChange={() => { chave.current = ""; }} onSubmit={(e) => {
         e.preventDefault(); const form = e.currentTarget, f = new FormData(form);
         const c = dados.cobrancas.find((c) => c.id === f.get("cobranca"));
@@ -87,7 +89,7 @@ function Compras({ alunoId, matriculaId, preferenciaFusoExibicao, fusoEscola }: 
       }}><fieldset disabled={ocupado} className="space-y-2">
         <legend className="font-medium">Identificar compra já paga</legend>
         <p>O registro confere contrato, recebimentos e utilizações de crédito aprovadas. Informe a quantidade total de minutos prevista na compra.</p>
-        <label className="grid gap-1">Cobrança das horas<select name="cobranca" required className={estilo} defaultValue=""><option value="">Selecione</option>{dados.cobrancas.map((c) => <option key={c.id} value={c.id}>{formatarDataCivil(c.vencimento)} · {formatarMoeda(c.valorNegociado, c.moeda)} · {c.id}</option>)}</select></label>
+        <label className="grid gap-1">Cobrança das horas<SeletorCampo name="cobranca" required className={estilo} defaultValue=""><option value="">Selecione</option>{dados.cobrancas.map((c) => <option key={c.id} value={c.id}>{formatarDataCivil(c.vencimento)} · {formatarMoeda(c.valorNegociado, c.moeda)} · {c.id}</option>)}</SeletorCampo></label>
         <label className="grid gap-1">Minutos comprados<input name="minutos" type="number" required min={1} max={5256000} step={1} className={estilo} /></label>
         <label className="grid gap-1">Evidência das condições da compra<CampoTexto name="evidencia" required minLength={5} maxLength={2000} className={estilo} /></label>
         <button className={botaoClasses({ variante: "secundario", tamanho: "lg" })}>Registrar compra de horas</button>
@@ -99,7 +101,7 @@ function Compras({ alunoId, matriculaId, preferenciaFusoExibicao, fusoEscola }: 
 export function ComprasHorasPainel({ alunoId, contratos, preferenciaFusoExibicao = null, fusoEscola }: { alunoId: string; contratos: { id: string; codigo: string | null }[]; preferenciaFusoExibicao?: string | null; fusoEscola: string }) {
   const [matriculaId, setMatriculaId] = useState(contratos[0]?.id ?? "");
   return <section className="space-y-3 rounded border p-3" aria-label="Compras de horas antecipadas"><h2 className="text-lg font-medium">Compras de horas antecipadas</h2>
-    <label className="grid gap-1">Contrato das horas<select className={estilo} value={matriculaId} onChange={(e) => setMatriculaId(e.target.value)}>{contratos.map((c) => <option key={c.id} value={c.id}>{c.codigo ?? c.id}</option>)}</select></label>
+    <label className="grid gap-1">Contrato das horas<SeletorCampo className={estilo} value={matriculaId} onChange={(e) => setMatriculaId(e.target.value)}>{contratos.map((c) => <option key={c.id} value={c.id}>{c.codigo ?? c.id}</option>)}</SeletorCampo></label>
     {matriculaId && <Compras key={matriculaId} alunoId={alunoId} matriculaId={matriculaId} preferenciaFusoExibicao={preferenciaFusoExibicao} fusoEscola={fusoEscola} />}
   </section>;
 }

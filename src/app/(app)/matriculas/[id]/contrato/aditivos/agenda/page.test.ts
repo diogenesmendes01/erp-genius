@@ -11,7 +11,7 @@ it("renderiza controles somente leitura da conferência sem acesso financeiro", 
   const html = renderToStaticMarkup(await Page({ params: Promise.resolve({ id: "m" }) }));
   expect(mocks.opcoes).toHaveBeenCalledWith({ matriculaId: "m" });
   expect(html).toContain("Conferência — não reserva nem altera agenda.");
-  expect(html).toContain('type="checkbox"');
+  expect(html).toContain('role="checkbox"');
   expect(html).toContain("Conferir alterações");
   expect(html).not.toMatch(/financeir|aprovar|gerar contrato/i);
   expect(html).not.toContain("contrato legado");

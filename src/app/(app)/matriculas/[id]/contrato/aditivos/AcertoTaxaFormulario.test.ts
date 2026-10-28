@@ -16,17 +16,18 @@ import { CampoTexto } from "@/components/CampoTexto";
 import { MSG_RESULTADO_INCERTO } from "@/lib/mensagens";
 import { anuncios } from "@/test/feedback-acao";
 import { criarGanchos, elementos } from "@/test/tela-sem-dom";
+import { SeletorCampo } from "@/app/(app)/secretaria/controles";
 
 const props = { matriculaId: "m", propostaAditivoId: "aditivo", conclusaoId: "assinatura", revisaoHash: "hash", cobrancas: [{ id: "taxa", codigo: "C1", moeda: "BRL", valorOriginal: "100", valorNegociado: "100", valorRecebido: "100", valorLiquidadoCredito: "0", saldo: "0", vencimento: "2026-09-01", valorNovo: "80", vencimentoNovo: "2026-10-01", creditoNovo: "20", saldoAposAcerto: "0", pendencia: null }] };
 const tela = () => mocks.ganchos!.renderizar(AcertoTaxaFormulario, props);
 const digitar = (no: { props: Record<string, unknown> }, value: string) => (no.props.onChange as (e: unknown) => void)({ target: { value } });
 function mount(selected = "taxa") {
-  digitar(elementos(tela()).find(n => n.type === "select")!, selected);
+  digitar(elementos(tela()).find(n => n.type === SeletorCampo)!, selected);
   const [motivo, evidencia] = elementos(tela()).filter(n => n.type === CampoTexto);
   digitar(motivo, "Motivo conferido");
   digitar(evidencia, "Protocolo do acordo");
   const arvore = tela();
-  return { botao: elementos(arvore).find(n => n.type === "button")!.props, select: elementos(arvore).find(n => n.type === "select")!.props };
+  return { botao: elementos(arvore).find(n => n.type === "button")!.props, select: elementos(arvore).find(n => n.type === SeletorCampo)!.props };
 }
 beforeEach(() => {
   vi.clearAllMocks();

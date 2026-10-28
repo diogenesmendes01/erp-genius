@@ -14,6 +14,9 @@ import { useAcaoCliente } from "@/lib/acao-cliente";
 import { useChaveIdempotencia } from "@/lib/chave-idempotencia";
 import { CampoTexto } from "@/components/CampoTexto";
 import { EstadoVazio } from "@/components/EstadoVazio";
+import { SeletorCampo } from "@/app/(app)/secretaria/controles";
+import { DatePicker } from "@/components/ui/date-picker";
+import { TimePicker } from "@/components/ui/time-picker";
 type Dados = NonNullable<Extract<Awaited<ReturnType<typeof consultarCondicoesHoras>>, { ok: true }>["dado"]>;
 export function CondicoesHoras({ dados: d, preferenciaFusoExibicao = null }: { dados: Dados; preferenciaFusoExibicao?: string | null }) {
   const router = useRouter(), preparo = useAcaoCliente({ idempotente: true }), tentativa = useChaveIdempotencia(), decisao = useAcaoCliente({ idempotente: false });
@@ -47,8 +50,8 @@ export function CondicoesHoras({ dados: d, preferenciaFusoExibicao = null }: { d
         <label className="block">Preço por hora de 60 minutos ({d.moeda})<CampoMoeda className={classe} value={valorHora} onChange={setValorHora} moeda={d.moeda} required /></label>
         <label className="block">Antecedência de cancelamento, em minutos<input className={classe} name="antecedencia" type="number" min="0" max="5256000" step="1" required /></label>
         <p>Início de vigência conforme contrato · horário de {d.fuso}</p>
-        <label className="block">Data<input className={classe} name="data" type="date" required /></label>
-        <label className="block">Hora<input className={classe} name="hora" type="time" required /></label>
+        <label className="block">Data<DatePicker className={classe} name="data" required /></label>
+        <label className="block">Hora<TimePicker className={classe} name="hora" required /></label>
         <label className="block">Referência e condições da cláusula de preço<CampoTexto className={classe} name="preco" maxLength={2000} required /></label>
         <label className="block">Referência e condições da cláusula de cancelamento<CampoTexto className={classe} name="cancelamento" maxLength={2000} required /></label>
         <label className="block">Motivo da transcrição<CampoTexto className={classe} name="motivo" minLength={5} maxLength={2000} required /></label>
@@ -73,7 +76,7 @@ export function CondicoesHoras({ dados: d, preferenciaFusoExibicao = null }: { d
         if (r?.tipo === "incerto") decisao.setErro(MSG_DECISAO_INCERTA);
         if (r?.tipo === "ok") router.refresh();
       }}><fieldset disabled={ocupado} className="space-y-2"><legend>Revisão administrativa</legend>
-        <label className="block">Decisão<select className={classe} name="decisao" defaultValue="" required><option value="" disabled>Selecione</option><option value="aprovar">Aprovar transcrição</option><option value="rejeitar">Rejeitar transcrição</option></select></label>
+        <label className="block">Decisão<SeletorCampo className={classe} name="decisao" defaultValue="" required><option value="" disabled>Selecione</option><option value="aprovar">Aprovar transcrição</option><option value="rejeitar">Rejeitar transcrição</option></SeletorCampo></label>
         <label className="block">Justificativa<CampoTexto className={classe} name="motivo" minLength={5} maxLength={2000} required /></label>
         <button className={botaoClasses({ variante: "secundario", tamanho: "lg" })}>Registrar decisão</button>
       </fieldset></form>}

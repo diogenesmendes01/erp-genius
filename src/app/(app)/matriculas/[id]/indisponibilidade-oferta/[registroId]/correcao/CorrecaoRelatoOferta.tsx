@@ -9,6 +9,7 @@ import { FeedbackAcao } from "@/components/FeedbackAcao";
 import { useAcaoCliente } from "@/lib/acao-cliente";
 import { useChaveIdempotencia } from "@/lib/chave-idempotencia";
 import { decidirCorrecaoRelatoIndisponibilidadeOferta, proporCorrecaoRelatoIndisponibilidadeOferta } from "@/server/matricula/indisponibilidade-oferta-correcao";
+import { DatePicker } from "@/components/ui/date-picker";
 
 const CONTROLE = "block w-full rounded border p-2";
 
@@ -31,10 +32,10 @@ export function ProporCorrecaoRelato({ registroId, inicio, fim }: { registroId: 
   }}>
     <h2 className="text-xl">Propor correção do período</h2>
     <fieldset disabled={acao.ocupado} className="space-y-3">
-      <Campo rotulo="Início correto" obrigatorio>{(campo) => <input {...campo} className={CONTROLE} type="date" name="inicio" required value={novoInicio} onChange={(e) => setNovoInicio(e.target.value)} />}</Campo>
+      <Campo rotulo="Início correto" obrigatorio>{(campo) => <DatePicker {...campo} className={CONTROLE} name="inicio" required value={novoInicio} onChange={(e) => setNovoInicio(e.target.value)} />}</Campo>
       {fim === null
         ? <p>Relato em aberto: o último dia é registrado pelo término da indisponibilidade, não pela correção.</p>
-        : <Campo rotulo="Fim correto" obrigatorio>{(campo) => <input {...campo} className={CONTROLE} type="date" name="fim" min={novoInicio} required value={novoFim} onChange={(e) => setNovoFim(e.target.value)} />}</Campo>}
+        : <Campo rotulo="Fim correto" obrigatorio>{(campo) => <DatePicker {...campo} className={CONTROLE} name="fim" min={novoInicio} required value={novoFim} onChange={(e) => setNovoFim(e.target.value)} />}</Campo>}
       <Campo rotulo="Motivo" obrigatorio>{(campo) => <CampoTexto {...campo} className={CONTROLE} minLength={5} maxLength={2000} required value={motivo} onChange={(e) => setMotivo(e.target.value)} />}</Campo>
       <Campo rotulo="Evidência" obrigatorio>{(campo) => <CampoTexto {...campo} className={CONTROLE} minLength={5} maxLength={4000} required value={evidencia} onChange={(e) => setEvidencia(e.target.value)} />}</Campo>
     </fieldset>

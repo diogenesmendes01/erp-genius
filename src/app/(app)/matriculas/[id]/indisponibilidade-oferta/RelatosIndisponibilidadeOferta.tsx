@@ -13,6 +13,8 @@ import { CampoTexto } from "@/components/CampoTexto";
 import { EstadoVazio } from "@/components/EstadoVazio";
 import { AvisoFusoNaoConfigurado } from "@/components/AvisoFusoNaoConfigurado";
 import { formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
+import { SeletorCampo } from "@/app/(app)/secretaria/controles";
+import { DatePicker } from "@/components/ui/date-picker";
 
 type Dados = NonNullable<Extract<Awaited<ReturnType<typeof consultarRelatosIndisponibilidadeOferta>>, { ok: true }>['dado']>;
 const dataCivil = (valor: string) => new Intl.DateTimeFormat("pt-BR", { dateStyle: "short", timeZone: "UTC" }).format(new Date(`${valor.slice(0, 10)}T00:00:00Z`));
@@ -64,8 +66,8 @@ export function RelatosIndisponibilidadeOferta({ matriculaId, dados: d, fusoInst
     }}>
       <fieldset disabled={ocupado} className="space-y-3">
         <legend>Novo relato</legend>
-        <label className="block" htmlFor="inicio">Início civil<input id="inicio" className={classe} name="inicio" type="date" required {...periodo.propsInicio} /></label>
-        <label className="block" htmlFor="fim">Fim civil, se já conhecido<input id="fim" className={classe} name="fim" type="date" min={periodo.min} /></label>
+        <label className="block" htmlFor="inicio">Início civil<DatePicker id="inicio" className={classe} name="inicio" required {...periodo.propsInicio} /></label>
+        <label className="block" htmlFor="fim">Fim civil, se já conhecido<DatePicker id="fim" className={classe} name="fim" min={periodo.min} /></label>
         <label className="block" htmlFor="motivo">Motivo<CampoTexto id="motivo" className={classe} name="motivo" minLength={5} maxLength={2000} required /></label>
         <label className="block" htmlFor="evidencia">Evidência do relato<CampoTexto id="evidencia" className={classe} name="evidencia" minLength={5} maxLength={4000} required /></label>
         <button className={botaoClasses({ variante: "secundario", tamanho: "lg" })}>{ocupado ? "Registrando…" : "Registrar relato"}</button>
@@ -81,7 +83,7 @@ export function RelatosIndisponibilidadeOferta({ matriculaId, dados: d, fusoInst
       <p className="whitespace-pre-wrap">{relato.motivo}</p>
       <p className="whitespace-pre-wrap">Evidência: {relato.evidenciaTexto}</p>
       <p>Relatado em {instanteDoEvento(relato.criadaEm, fusoInstitucional, preferenciaFusoExibicao)}.</p>
-      {relato.confirmacao ? <section className="rounded bg-gray-100 p-3"><p>{relato.confirmacao.confirmada ? "Indisponibilidade confirmada" : "Indisponibilidade recusada"} em {instanteDoEvento(relato.confirmacao.confirmadaEm, fusoInstitucional, preferenciaFusoExibicao)}.</p><p className="whitespace-pre-wrap">{relato.confirmacao.motivo}</p><p className="whitespace-pre-wrap">Evidência da decisão: {relato.confirmacao.evidenciaTexto}</p></section> : <p role="status">Aguardando confirmação independente.</p>}
+      {relato.confirmacao ? <section className="rounded bg-surface-muted p-3"><p>{relato.confirmacao.confirmada ? "Indisponibilidade confirmada" : "Indisponibilidade recusada"} em {instanteDoEvento(relato.confirmacao.confirmadaEm, fusoInstitucional, preferenciaFusoExibicao)}.</p><p className="whitespace-pre-wrap">{relato.confirmacao.motivo}</p><p className="whitespace-pre-wrap">Evidência da decisão: {relato.confirmacao.evidenciaTexto}</p></section> : <p role="status">Aguardando confirmação independente.</p>}
       {relato.confirmacao?.confirmada && <p><Link className="underline" href={`/matriculas/${matriculaId}/indisponibilidade-oferta/${relato.id}/correcao`}>Corrigir período ou ver correções</Link></p>}
       {relato.confirmacao?.confirmada && relato.fim === null && <Link className="underline" href={`/matriculas/${matriculaId}/indisponibilidade-oferta/${relato.id}/termino`}>{relato.terminoAprovado ? "Ver histórico do término" : "Registrar o último dia de indisponibilidade"}</Link>}
       {relato.podeConfirmar && <form className="space-y-2" onSubmit={evento => {
@@ -105,7 +107,7 @@ export function RelatosIndisponibilidadeOferta({ matriculaId, dados: d, fusoInst
         });
       }}>
         <fieldset disabled={ocupado} className="space-y-2"><legend>Confirmação independente</legend>
-          <label className="block" htmlFor={`decisao-${relato.id}`}>Decisão<select id={`decisao-${relato.id}`} className={classe} name="decisao" defaultValue="" required><option value="" disabled>Selecione</option><option value="confirmar">Confirmar indisponibilidade</option><option value="recusar">Recusar relato</option></select></label>
+          <label className="block" htmlFor={`decisao-${relato.id}`}>Decisão<SeletorCampo id={`decisao-${relato.id}`} className={classe} name="decisao" defaultValue="" required><option value="" disabled>Selecione</option><option value="confirmar">Confirmar indisponibilidade</option><option value="recusar">Recusar relato</option></SeletorCampo></label>
           <label className="block" htmlFor={`motivo-${relato.id}`}>Justificativa<CampoTexto id={`motivo-${relato.id}`} className={classe} name="motivo" minLength={5} maxLength={2000} required /></label>
           <label className="block" htmlFor={`evidencia-${relato.id}`}>Evidência da decisão<CampoTexto id={`evidencia-${relato.id}`} className={classe} name="evidencia" minLength={5} maxLength={4000} required /></label>
           <button className={botaoClasses({ variante: "secundario", tamanho: "lg" })}>Registrar decisão</button>

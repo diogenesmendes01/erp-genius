@@ -60,7 +60,7 @@ describe("indicadores de seleção com texto: bg-brand-solid, nunca bg-brand-500
     const passos = [...html.matchAll(/<span class="flex h-7 w-7 items-center justify-center rounded-full text-xs font-medium ([^"]*)">([^<]*)<\/span>/g)].map((m) => [m[2], m[1]]);
     expect(passos).toEqual([
       ["1", "bg-brand-solid text-on-brand"],
-      ["2", "bg-gray-100 text-gray-500"],
+      ["2", "bg-surface-muted text-gray-500"],
     ]);
     expect(html).not.toMatch(/bg-brand-(?:500|600)/);
   });

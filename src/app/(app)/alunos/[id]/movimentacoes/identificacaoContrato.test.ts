@@ -39,7 +39,7 @@ describe("identificação de contratos legados nas movimentações", () => {
       expect(retomada).toContain(identificacao);
       expect(encerramento).toContain(identificacao);
     }
-    expect(encerramento).toContain('name="matricula" value="matricula-legada-1"');
-    expect(encerramento).toContain('name="matricula" value="matricula-legada-2"');
+    expect(encerramento).toMatch(/<input(?=[^>]*name="matricula")(?=[^>]*value="matricula-legada-1")[^>]*>/);
+    expect(encerramento).toMatch(/<input(?=[^>]*name="matricula")(?=[^>]*value="matricula-legada-2")[^>]*>/);
   });
 });

@@ -20,6 +20,7 @@ import type { ReactNode } from "react";
 import { FormularioParticipantes, valorDigitado } from "./Formulario";
 import { SeletorMaioridade, hrefMaioridade } from "./SeletorMaioridade";
 import { FormDataFalso, criarGanchos, elementos, submeter, type No } from "@/test/tela-sem-dom";
+import { SeletorCampo } from "@/app/(app)/secretaria/controles";
 
 beforeEach(() => { vi.clearAllMocks(); m.ganchos = criarGanchos(); vi.stubGlobal("FormData", FormDataFalso); });
 afterEach(() => { vi.unstubAllGlobals(); });
@@ -91,12 +92,12 @@ describe("FormularioParticipantes — a maioridade troca sem apagar o preenchime
 
 describe("SeletorMaioridade — troca client-side, sem <form method=get>", () => {
   const seletor = (maioridade: "MAIOR" | "MENOR" | null) => m.ganchos!.renderizar(SeletorMaioridade, { maioridade });
-  const escolher = (valor: string) => (elementos(seletor("MENOR")).find((n) => n.type === "select")!.props.onChange as (e: { target: { value: string } }) => void)({ target: { value: valor } });
+  const escolher = (valor: string) => (elementos(seletor("MENOR")).find((n) => n.type === SeletorCampo)!.props.onChange as (e: { target: { value: string } }) => void)({ target: { value: valor } });
   const botao = (t: ReactNode) => elementos(t).find((n) => n.type === "button")!;
 
   it("atualiza a URL pelo roteador, sem rolar a tela, e só quando a escolha mudou", () => {
     expect(elementos(seletor("MENOR")).some((n) => n.type === "form")).toBe(false);
-    expect(elementos(seletor("MENOR")).find((n) => n.type === "select")!.props.name).toBe("maioridade");
+    expect(elementos(seletor("MENOR")).find((n) => n.type === SeletorCampo)!.props.name).toBe("maioridade");
     expect(botao(seletor("MENOR")).props.disabled).toBe(true);
     escolher("MAIOR");
     expect(botao(seletor("MENOR")).props.disabled).toBe(false);

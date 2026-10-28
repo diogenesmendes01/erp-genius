@@ -20,6 +20,7 @@ import { CondicoesContinuidadeMensal } from "./CondicoesContinuidadeMensal";
 import { MSG_DECISAO_INCERTA, MSG_RESULTADO_INCERTO } from "@/lib/mensagens";
 import { anuncios, contratoFeedbackSeparado } from "@/test/feedback-acao";
 import { FormDataFalso, criarGanchos, elementos, submeter, texto } from "@/test/tela-sem-dom";
+import { SeletorCampo } from "@/app/(app)/secretaria/controles";
 
 beforeEach(() => { vi.resetAllMocks(); m.ganchos = criarGanchos(); vi.stubGlobal("FormData", FormDataFalso); });
 afterEach(() => { vi.unstubAllGlobals(); });
@@ -31,7 +32,7 @@ const dados = {
 const tela = () => m.ganchos!.renderizar(CondicoesContinuidadeMensal, { dados, fusoEscola: "America/Sao_Paulo" });
 
 const escolher = (id: string, valor: string) =>
-  (elementos(tela()).find((n) => n.type === "select" && n.props.id === id)!.props.onChange as (e: { target: { value: string } }) => void)({ target: { value: valor } });
+  (elementos(tela()).find((n) => n.type === SeletorCampo && n.props.id === id)!.props.onChange as (e: { target: { value: string } }) => void)({ target: { value: valor } });
 function escolherRegras() {
   escolher("referencia-cobertura", "MES_CIVIL");
   escolher("ajuste-vencimento", "MANTER_DATA");

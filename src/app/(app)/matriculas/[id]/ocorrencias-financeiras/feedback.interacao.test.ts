@@ -20,6 +20,7 @@ vi.mock("@/server/matricula/ocorrencia-financeira-conferir", () => ({ conferirOc
 import { ConferenciaHoras } from "./ConferenciaHoras";
 import { adiada, anuncios, contratoFeedbackSeparado, novosAnuncios } from "@/test/feedback-acao";
 import { FormDataFalso, botao, clicar, criarGanchos, elementos, submeter, temBotao } from "@/test/tela-sem-dom";
+import { SeletorCampo } from "@/app/(app)/secretaria/controles";
 
 beforeEach(() => { vi.resetAllMocks(); m.ganchos = criarGanchos(); vi.stubGlobal("FormData", FormDataFalso); });
 afterEach(() => { vi.unstubAllGlobals(); });
@@ -36,7 +37,7 @@ const previa = { classificacao: { desfecho: "REALIZADA", limiteCancelamento: nul
 const tela = () => m.ganchos!.renderizar(ConferenciaHoras, props);
 
 const escolherCondicoes = () =>
-  (elementos(tela()).find((n) => n.type === "select")!.props.onChange as (e: { target: { value: string } }) => void)({ target: { value: "c1" } });
+  (elementos(tela()).find((n) => n.type === SeletorCampo)!.props.onChange as (e: { target: { value: string } }) => void)({ target: { value: "c1" } });
 async function carregarPrevia() {
   escolherCondicoes();
   m.prever.mockResolvedValueOnce({ ok: true, dado: previa });

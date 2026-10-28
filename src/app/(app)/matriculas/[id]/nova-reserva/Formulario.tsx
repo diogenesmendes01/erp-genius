@@ -11,6 +11,7 @@ import { FeedbackAcao } from "@/components/FeedbackAcao";
 import { CampoFuso } from "@/components/CampoFuso";
 import { useAcaoCliente } from "@/lib/acao-cliente";
 import type { Resultado } from "@/server/_shared/resultado";
+import { SeletorCampo, CaixaCampo } from "@/app/(app)/secretaria/controles";
 type Base = NonNullable<Extract<Awaited<ReturnType<typeof consultarFormularioNovaReserva>>, { ok: true }>["dado"]>;
 type Revisao = NonNullable<Extract<Awaited<ReturnType<typeof revisarNovaReservaParticular>>, { ok: true }>["dado"]>;
 export function NovaReservaFormulario({ base }: { base: Base }) {
@@ -65,7 +66,7 @@ export function NovaReservaFormulario({ base }: { base: Base }) {
     <label className="block">Buscar professor<input value={busca} onChange={(e) => setBusca(e.target.value)} className="block border p-2" /></label><button type="button" onClick={() => buscar(1)} className={botaoClasses({ variante: "secundario", tamanho: "lg" })}>Buscar</button>
     <div>{pagina > 1 && <button type="button" className={botaoClasses({ variante: "secundario" })} onClick={() => buscar(pagina - 1)}>Professores anteriores</button>} {mais && <button type="button" className={botaoClasses({ variante: "secundario" })} onClick={() => buscar(pagina + 1)}>Mais professores</button>}</div>
     <FeedbackAcao erro={acaoConsulta.erro} />
-    <label className="block">Professor<select value={professorId} onChange={(e) => { setProfessor(e.target.value); invalidar(); }} className="block border p-2"><option value="">Selecione</option>{professores.map((p) => <option key={p.id} value={p.id}>{p.nome}</option>)}</select></label>
+    <label className="block">Professor<SeletorCampo value={professorId} onChange={(e) => { setProfessor(e.target.value); invalidar(); }} className="block border p-2" busca><option value="">Selecione</option>{professores.map((p) => <option key={p.id} value={p.id}>{p.nome}</option>)}</SeletorCampo></label>
     <label className="block">Fuso dos horários<CampoFuso name="fusoOrigem" valor={fuso} onChange={(valor) => { setFuso(valor); invalidar(); }} required={false} className="block border p-2" /><span>Exemplo: America/Sao_Paulo</span></label>
     {encontros.map((e, i) => <fieldset key={i} className="flex flex-wrap gap-3 rounded border p-3"><legend>Encontro {i + 1}</legend>{(["data", "horario", "duracao"] as const).map((campo) => <label key={campo}>{campo === "data" ? "Data" : campo === "horario" ? "Horário" : "Duração em minutos"}<input type={campo === "data" ? "date" : campo === "horario" ? "time" : "number"} min={campo === "duracao" ? 1 : undefined} max={campo === "duracao" ? 1440 : undefined} value={e[campo]} onChange={(event) => { setEncontros(encontros.map((v, j) => j === i ? { ...v, [campo]: event.target.value } : v)); invalidar(); }} className="block border p-2" /></label>)}<button type="button" className={botaoClasses({ variante: "perigo" })} disabled={encontros.length === 1} onClick={() => { setEncontros(encontros.filter((_, j) => j !== i)); invalidar(); }}>Remover</button></fieldset>)}
     <button type="button" disabled={encontros.length >= 1000} onClick={() => { setEncontros([...encontros, { data: "", horario: "", duracao: "" }]); invalidar(); }} className={botaoClasses({ variante: "secundario", tamanho: "lg" })}>Adicionar encontro</button>
@@ -79,7 +80,7 @@ export function NovaReservaFormulario({ base }: { base: Base }) {
       <h3>Cobranças existentes — não serão reemitidas</h3><ul>{revisao.cobrancas.map((c) => <li key={c.id}>{rotular(TIPO_COBRANCA_LABEL, c.tipo)} · {formatarMoeda(c.valorNegociado, c.moeda)} · saldo {c.saldo == null ? "a conferir" : formatarMoeda(c.saldo, c.moeda)} · {rotular(STATUS_COBRANCA_LABEL, c.status)} · {c.informesPendentes} comprovante(s) pendente(s)</li>)}</ul>
       <h3>Condições de entrada registradas</h3><ul>{revisao.plano.map((p) => <li key={p.tipo}>{rotular(TIPO_COBRANCA_LABEL, p.tipo)} · {formatarMoeda(p.valor, p.moeda)} · vencimento {formatarDataCivil(p.vencimento)}{p.cobertura ? ` · cobertura ${formatarDataCivil(p.cobertura.inicio)} a ${formatarDataCivil(p.cobertura.fim)}` : ""}</li>)}</ul>
       <label className="block">Motivo<CampoTexto value={motivo} onChange={(e) => { setMotivo(e.target.value); chave.current = null; }} minLength={5} maxLength={2000} className="block w-full border p-2" /></label>
-      <label className="block"><input type="checkbox" checked={conferido} onChange={(e) => setConferido(e.target.checked)} /> Conferi cadastro, pagador, condições, cobranças e todos os horários acordados.</label>
+      <label className="block"><CaixaCampo checked={conferido} onChange={(e) => setConferido(e.target.checked)} /> Conferi cadastro, pagador, condições, cobranças e todos os horários acordados.</label>
       <button type="button" disabled={!conferido || motivo.trim().length < 5} onClick={confirmar} className={botaoClasses({ variante: "secundario", tamanho: "lg" })}>Confirmar nova reserva</button>
       <FeedbackAcao erro={acaoConfirmacao.erro} sucesso={acaoConfirmacao.sucesso} />
     </section>}

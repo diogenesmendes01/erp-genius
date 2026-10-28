@@ -9,6 +9,7 @@ import { botaoClasses } from "@/components/Botao";
 import { MSG_RESULTADO_INCERTO_SEM_CHAVE } from "@/lib/mensagens";
 import { CampoTexto } from "@/components/CampoTexto";
 import { CATEGORIA_DOCUMENTO_LABEL, rotular } from "@/lib/labels";
+import { SeletorCampo, CaixaCampo } from "@/app/(app)/secretaria/controles";
 type Consulta = Awaited<ReturnType<typeof consultarFormularioParticipantes>>;
 type Dados = NonNullable<Extract<Consulta, { ok: true }>["dado"]>;
 type Participante = z.infer<typeof ConferirParticipantesSchema>["participantes"][number];
@@ -51,7 +52,7 @@ export function FormularioParticipantes({ dados }: { dados: Dados }) {
     <fieldset disabled={ocupado || incompleto} className="space-y-4"><legend className="font-medium">Conferência versão {dados.versaoEsperada + 1}</legend>
       {dados.maioridade && <section className="space-y-2 rounded border p-3"><h2>Fundamento da classificação de maioridade</h2>
         <label className="block">Critério aplicável conferido<CampoTexto {...ligar("criterio")} required minLength={5} maxLength={2000} className={campo} /></label>
-        <label className="block">Documento conferido<select {...ligar("evidenciaMaioridade")} required className={campo}><option value="" disabled>Selecione</option>{dados.documentos.map((d) => <option key={d.id} value={d.id}>{d.nome} · {rotular(CATEGORIA_DOCUMENTO_LABEL, d.categoria)}</option>)}</select></label>
+        <label className="block">Documento conferido<SeletorCampo {...ligar("evidenciaMaioridade")} required className={campo}><option value="" disabled>Selecione</option>{dados.documentos.map((d) => <option key={d.id} value={d.id}>{d.nome} · {rotular(CATEGORIA_DOCUMENTO_LABEL, d.categoria)}</option>)}</SeletorCampo></label>
       </section>}
       {dados.participantes.map((p) => <section key={p.papel} className="space-y-2 rounded border p-3"><h2 className="font-medium">{PAPEIS_MODELO[p.papel]} · {p.etapa === "CLIENTE" ? "primeira etapa" : "após assinaturas do cliente"}</h2>
         {p.automatico ? p.identidade ? <dl><dt>Nome</dt><dd>{p.identidade.nome}</dd><dt>E-mail</dt><dd>{p.identidade.email}</dd><dt>Documento</dt><dd>{p.identidade.documento}</dd></dl> : <p role="alert">Complete nome, documento e e-mail no cadastro ou no pagador desta matrícula antes de conferir.</p> : <>
@@ -59,11 +60,11 @@ export function FormularioParticipantes({ dados }: { dados: Dados }) {
           <label className="block">E-mail individual<input {...ligar(`${p.papel}_email`)} type="email" required maxLength={254} className={campo} /></label>
           <label className="block">Documento da pessoa<input {...ligar(`${p.papel}_documento`)} required maxLength={100} className={campo} /></label>
           <label className="block">Representação conferida<CampoTexto {...ligar(`${p.papel}_representacao`)} required minLength={5} maxLength={2000} className={campo} /></label>
-          <label className="block">Evidência da representação<select {...ligar(`${p.papel}_evidencia`)} required className={campo}><option value="" disabled>Selecione</option>{dados.documentos.map((d) => <option key={d.id} value={d.id}>{d.nome} · {rotular(CATEGORIA_DOCUMENTO_LABEL, d.categoria)}</option>)}</select></label>
+          <label className="block">Evidência da representação<SeletorCampo {...ligar(`${p.papel}_evidencia`)} required className={campo}><option value="" disabled>Selecione</option>{dados.documentos.map((d) => <option key={d.id} value={d.id}>{d.nome} · {rotular(CATEGORIA_DOCUMENTO_LABEL, d.categoria)}</option>)}</SeletorCampo></label>
         </>}
       </section>)}
       <label className="block">Motivo da conferência<CampoTexto {...ligar("motivo")} required minLength={5} maxLength={2000} className={campo} /></label>
-      <label className="block"><input name="conferido" type="checkbox" required /> Conferi as identidades, contatos e a representação aplicável a cada pessoa.</label>
+      <label className="block"><CaixaCampo name="conferido" required /> Conferi as identidades, contatos e a representação aplicável a cada pessoa.</label>
       <button className={botaoClasses({ variante: "secundario", tamanho: "lg" })}>{ocupado ? "Registrando…" : "Registrar conferência dos participantes"}</button>
     </fieldset>
     {erro && <p role="alert">{erro}</p>}

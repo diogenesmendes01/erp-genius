@@ -49,18 +49,21 @@ describe("AlunosLista (filtros na URL)", () => {
     expect(html).toMatch(/<form[^>]*action="\/alunos"/);
     expect(html).toContain('role="search"');
     expect(html).toContain('value="ana"');
-    expect(html).toContain('<option value="p1" selected="">Costa Rica</option>');
-    expect(html).toContain('<option value="t1" selected="">T-01 · Inglês · Inglês B1</option>');
+    expect(html).toContain('<input type="hidden" name="pais" value="p1"/>');
+    expect(html).toContain(">Costa Rica<");
+    expect(html).toContain('<input type="hidden" name="turma" value="t1"/>');
+    expect(html).toContain(">T-01 · Inglês · Inglês B1<");
     expect(html).toContain('href="/alunos"');
   });
 
   it("campos controlados refletem os filtros da URL (sem recriar o formulário — sem `key`)", () => {
     const pausado = render({ totalBase: 5, filtros: lerFiltrosAlunos({ status: "PAUSADO", busca: "ana" }) });
-    expect(pausado).toContain('<option value="PAUSADO" selected="">');
+    expect(pausado).toContain('<input type="hidden" name="status" value="PAUSADO"/>');
     expect(pausado).toContain('value="ana"');
     const limpo = render({ totalBase: 5, filtros: lerFiltrosAlunos({}) });
     expect(limpo).not.toContain('value="ana"');
-    expect(limpo).toContain('<option value="" selected="">Todos os status</option>');
+    expect(limpo).toContain('<input type="hidden" name="status" value=""/>');
+    expect(limpo).toContain(">Todos os status<");
   });
 
   it("carregando: botão desativado com \"Buscando…\", contador e tabela aria-busy", () => {
@@ -107,9 +110,10 @@ describe("AlunosLista (filtros na URL)", () => {
     expect(html).toMatch(/aria-sort="ascending"[^>]*><a [^>]*href="\/alunos\?status=ATIVO&amp;ordem=nome&amp;dir=desc"[^>]*>Aluno</);
     expect(html).toMatch(/<th scope="col"(?! aria-sort)[^>]*><a [^>]*href="\/alunos\?status=ATIVO&amp;ordem=pais&amp;dir=asc"[^>]*>País</);
     expect(html).toMatch(/<th scope="col"(?! aria-sort)[^>]*><a [^>]*href="\/alunos\?status=ATIVO&amp;ordem=status&amp;dir=asc"[^>]*>Status</);
-    expect(html).toContain('<th class="px-4 py-2 font-medium">Turma</th>');
-    expect(html).toContain('<th class="px-4 py-2 font-medium">Financeiro</th>');
-    expect(html).not.toContain('type="hidden"');
+    expect(html).toMatch(/<th class="[^"]*px-4[^"]*">Turma<\/th>/);
+    expect(html).toMatch(/<th class="[^"]*px-4[^"]*">Financeiro<\/th>/);
+    expect(html).not.toContain('name="ordem"');
+    expect(html).not.toContain('name="dir"');
   });
 
   it("ordem escolhida: coluna marcada; paginação, limpar e formulário sem JavaScript mantêm a ordem", () => {

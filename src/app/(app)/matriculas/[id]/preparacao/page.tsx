@@ -16,11 +16,11 @@ export default async function PreparacaoDetalhePage({ params }: { params: Promis
   const { id } = await params, resultado = await consultarPreparacaoContratacao({ matriculaId: id });
   if (!resultado.ok || !resultado.dado) return <p role="alert">{resultado.ok ? "Consulta indisponível." : resultado.erro}</p>;
   const { matricula: m, preparacao: p } = resultado.dado;
-  const secretaria = usuario.papeis.some((p) => p === Papel.SECRETARIA_ACADEMICA || p === Papel.ADMINISTRADOR);
+  const secretaria = usuario.papeis?.some((p) => p === Papel.SECRETARIA_ACADEMICA || p === Papel.ADMINISTRADOR) ?? false;
   const tipos: Record<string, string> = { MATRICULA: "Taxa de matrícula", MENSALIDADE: "Mensalidade", HORA_PARTICULAR: "Hora particular (60 minutos)" };
   const fuso = p?.reserva?.janela.fusoAdmissao ?? p?.reservaParticular?.horarios[0]?.fusoOrigem ?? "UTC";
   const data = (d: Date, origem = fuso) => { const x = formatarInstanteExibicao(d, null, origem); return `${x.texto} (${x.fuso})`; };
-  return <div className="space-y-4"><VoltarPara href={`/secretaria?matriculaId=${id}`} para="Contratação" /><h1 className="text-2xl font-medium">Proposta da contratação · {m.codigo ?? "Em preparação"}</h1>
+  return <div className="space-y-4"><VoltarPara href={secretaria ? `/secretaria?matriculaId=${id}` : "/funil"} /><h1 className="text-2xl font-medium">Proposta da contratação · {m.codigo ?? "Em preparação"}</h1>
     <p>{m.aluno.primeiroNome} {m.aluno.sobrenome} · {m.produto.idioma.nome} · {m.produto.modalidade.nome} · {m.pais.nome}</p>
     {secretaria && <Link className="block underline" href={`/matriculas/${encodeURIComponent(id)}/desistencia`}>Pedido de desistência da preparação</Link>}
     {secretaria && <Suspense fallback={<QuadroPendencias><EsqueletoSecao rotulo="pendências para conferência da Secretaria" /></QuadroPendencias>}><PendenciasPreparacao matriculaId={id} /></Suspense>}

@@ -25,6 +25,7 @@ import { CampoTexto } from "@/components/CampoTexto";
 import { MSG_RESULTADO_INCERTO } from "@/lib/mensagens";
 import { anuncios, contratoFeedbackSeparado, novosAnuncios } from "@/test/feedback-acao";
 import { clicar, criarGanchos, elementos } from "@/test/tela-sem-dom";
+import { CaixaCampo } from "@/app/(app)/secretaria/controles";
 import type { ReactNode } from "react";
 
 beforeEach(() => { vi.clearAllMocks(); m.ganchos = criarGanchos(); });
@@ -51,7 +52,7 @@ const chamarOnChange = (no: { props: Record<string, unknown> } | undefined, even
 async function revisarEConferir() {
   m.revisar.mockResolvedValueOnce(revisaoOk);
   await clicar(tela(), "Revisar horários e condições");
-  chamarOnChange(elementos(tela()).find((n) => n.type === "input" && n.props.type === "checkbox"), { target: { checked: true } });
+  chamarOnChange(elementos(tela()).find((n) => n.type === CaixaCampo), { target: { checked: true } });
   chamarOnChange(elementos(tela()).find((n) => n.type === CampoTexto), { target: { value: "Retomada combinada com o aluno" } });
 }
 

@@ -15,6 +15,8 @@ import { useAcaoCliente } from "@/lib/acao-cliente";
 import { useChaveIdempotencia } from "@/lib/chave-idempotencia";
 import { CampoTexto } from "@/components/CampoTexto";
 import { EstadoVazio } from "@/components/EstadoVazio";
+import { SeletorCampo, CaixaCampo } from "@/app/(app)/secretaria/controles";
+import { DatePicker } from "@/components/ui/date-picker";
 
 type Dados = NonNullable<Extract<Awaited<ReturnType<typeof consultarCondicoesContinuidadeMensal>>, { ok: true }>['dado']>;
 type Referencia = "" | "MES_CIVIL" | "CICLO_MATRICULA";
@@ -110,12 +112,12 @@ export function CondicoesContinuidadeMensal({ dados: d, preferenciaFusoExibicao 
           <label className="block" htmlFor="valor-negociado">Preço negociado ({d.moeda})<input id="valor-negociado" className={classe} name="valorNegociado" inputMode="decimal" pattern="(?:0|[1-9][0-9]{0,9})(?:[.][0-9]{1,2})?" required /></label>
         </div>
         <p>Use ponto para os centavos, por exemplo 1000.00. A moeda é a da matrícula e não pode ser alterada.</p>
-        <label className="block" htmlFor="vigente-desde">Vigência civil desde<input id="vigente-desde" className={classe} name="vigenteDesde" type="date" required /></label>
+        <label className="block" htmlFor="vigente-desde">Vigência civil desde<DatePicker id="vigente-desde" className={classe} name="vigenteDesde" required /></label>
         <fieldset className="space-y-2 rounded border p-3">
           <legend>Referência da cobertura mensal</legend>
-          <label className="block" htmlFor="referencia-cobertura">Tipo de cobertura<select id="referencia-cobertura" className={classe} value={referencia} onChange={evento => setReferencia(evento.target.value as Referencia)} required><option value="" disabled>Selecione</option><option value="MES_CIVIL">Mês civil</option><option value="CICLO_MATRICULA">Ciclo da matrícula</option></select></label>
+          <label className="block" htmlFor="referencia-cobertura">Tipo de cobertura<SeletorCampo id="referencia-cobertura" className={classe} value={referencia} onChange={evento => setReferencia(evento.target.value as Referencia)} required><option value="" disabled>Selecione</option><option value="MES_CIVIL">Mês civil</option><option value="CICLO_MATRICULA">Ciclo da matrícula</option></SeletorCampo></label>
           {referencia === "MES_CIVIL" && <p>A cobertura começa no primeiro dia de cada mês civil.</p>}
-          {referencia === "CICLO_MATRICULA" && <label className="block" htmlFor="ancora-cobertura">Data âncora do ciclo<input id="ancora-cobertura" className={classe} name="ancora" type="date" required /></label>}
+          {referencia === "CICLO_MATRICULA" && <label className="block" htmlFor="ancora-cobertura">Data âncora do ciclo<DatePicker id="ancora-cobertura" className={classe} name="ancora" required /></label>}
         </fieldset>
         <div className="grid gap-3 md:grid-cols-2">
           <label className="block" htmlFor="dia-vencimento">Dia do vencimento<input id="dia-vencimento" className={classe} name="diaVencimento" type="number" min="1" max="31" step="1" required /></label>
@@ -124,23 +126,23 @@ export function CondicoesContinuidadeMensal({ dados: d, preferenciaFusoExibicao 
         <fieldset className="space-y-2 rounded border p-3">
           <legend>Ajuste de vencimento</legend>
           <p>Escolha a regra registrada no contrato. Nenhuma regra é presumida.</p>
-          <label className="block" htmlFor="ajuste-vencimento">Regra de ajuste<select id="ajuste-vencimento" className={classe} value={ajusteVencimento} onChange={evento => setAjusteVencimento(evento.target.value as AjusteVencimento)} required><option value="" disabled>Selecione</option><option value="MANTER_DATA">Manter a data calculada</option><option value="PROXIMO_DIA_UTIL">Prorrogar para o próximo dia útil</option></select></label>
+          <label className="block" htmlFor="ajuste-vencimento">Regra de ajuste<SeletorCampo id="ajuste-vencimento" className={classe} value={ajusteVencimento} onChange={evento => setAjusteVencimento(evento.target.value as AjusteVencimento)} required><option value="" disabled>Selecione</option><option value="MANTER_DATA">Manter a data calculada</option><option value="PROXIMO_DIA_UTIL">Prorrogar para o próximo dia útil</option></SeletorCampo></label>
           {ajusteVencimento === "PROXIMO_DIA_UTIL" && <div className="space-y-3 rounded border p-3">
             <p>Transcreva o calendário financeiro aplicável. País, fins de semana e feriados não são presumidos.</p>
             <div className="grid gap-3 md:grid-cols-2">
               <label className="block" htmlFor="calendario-id">Identificador do calendário<input id="calendario-id" className={classe} name="calendarioId" required /></label>
               <label className="block" htmlFor="calendario-versao">Versão do calendário<input id="calendario-versao" className={classe} name="calendarioVersao" type="number" min="1" step="1" required /></label>
               <label className="block" htmlFor="calendario-referencia">Referência do calendário<input id="calendario-referencia" className={classe} name="calendarioReferencia" required /></label>
-              <label className="block" htmlFor="calendario-inicio">Início da vigência<input id="calendario-inicio" className={classe} name="calendarioInicioVigencia" type="date" required {...periodo.propsInicio} /></label>
-              <label className="block" htmlFor="calendario-fim">Fim da vigência<input id="calendario-fim" className={classe} name="calendarioFimVigencia" type="date" required min={periodo.min} /></label>
+              <label className="block" htmlFor="calendario-inicio">Início da vigência<DatePicker id="calendario-inicio" className={classe} name="calendarioInicioVigencia" required {...periodo.propsInicio} /></label>
+              <label className="block" htmlFor="calendario-fim">Fim da vigência<DatePicker id="calendario-fim" className={classe} name="calendarioFimVigencia" required min={periodo.min} /></label>
             </div>
-            <fieldset className="space-y-1"><legend>Dias da semana considerados úteis</legend>{diasDaSemana.map(([dia, nome]) => <label key={dia} className="mr-3 inline-flex items-center gap-1"><input type="checkbox" checked={diasSemanaUteis.includes(dia)} onChange={evento => setDiasSemanaUteis(atual => evento.target.checked ? [...atual, dia] : atual.filter(valor => valor !== dia))} />{nome}</label>)}</fieldset>
-            <fieldset className="space-y-2"><legend>Feriados do calendário</legend>{feriados.map((feriado, indice) => <div key={indice} className="flex gap-2"><input className={classe} type="date" value={feriado} aria-label={`Feriado ${indice + 1}`} onChange={evento => setFeriados(atual => atual.map((valor, posicao) => posicao === indice ? evento.target.value : valor))} required /><button type="button" className={botaoClasses({ variante: "perigo" })} onClick={() => setFeriados(atual => atual.filter((_, posicao) => posicao !== indice))}>Remover</button></div>)}<button type="button" className={botaoClasses({ variante: "secundario", tamanho: "lg" })} onClick={() => setFeriados(atual => [...atual, ""])}>Adicionar feriado</button></fieldset>
+            <fieldset className="space-y-1"><legend>Dias da semana considerados úteis</legend>{diasDaSemana.map(([dia, nome]) => <label key={dia} className="mr-3 inline-flex items-center gap-1"><CaixaCampo checked={diasSemanaUteis.includes(dia)} onChange={evento => setDiasSemanaUteis(atual => evento.target.checked ? [...atual, dia] : atual.filter(valor => valor !== dia))} />{nome}</label>)}</fieldset>
+            <fieldset className="space-y-2"><legend>Feriados do calendário</legend>{feriados.map((feriado, indice) => <div key={indice} className="flex gap-2"><DatePicker className={classe} value={feriado} aria-label={`Feriado ${indice + 1}`} onChange={evento => setFeriados(atual => atual.map((valor, posicao) => posicao === indice ? evento.target.value : valor))} required /><button type="button" className={botaoClasses({ variante: "perigo" })} onClick={() => setFeriados(atual => atual.filter((_, posicao) => posicao !== indice))}>Remover</button></div>)}<button type="button" className={botaoClasses({ variante: "secundario", tamanho: "lg" })} onClick={() => setFeriados(atual => [...atual, ""])}>Adicionar feriado</button></fieldset>
           </div>}
         </fieldset>
         <fieldset className="space-y-2 rounded border p-3">
           <legend>Referência do vencimento</legend>
-          <label className="block" htmlFor="referencia-vencimento">Quando o vencimento se relaciona à cobertura<select id="referencia-vencimento" className={classe} value={referenciaVencimento} onChange={evento => setReferenciaVencimento(evento.target.value as ReferenciaVencimento)} required><option value="" disabled>Selecione</option><option value="MES_COBERTURA">No mês da cobertura</option><option value="MES_ANTERIOR">No mês anterior à cobertura</option><option value="MES_SEGUINTE">No mês seguinte à cobertura</option></select></label>
+          <label className="block" htmlFor="referencia-vencimento">Quando o vencimento se relaciona à cobertura<SeletorCampo id="referencia-vencimento" className={classe} value={referenciaVencimento} onChange={evento => setReferenciaVencimento(evento.target.value as ReferenciaVencimento)} required><option value="" disabled>Selecione</option><option value="MES_COBERTURA">No mês da cobertura</option><option value="MES_ANTERIOR">No mês anterior à cobertura</option><option value="MES_SEGUINTE">No mês seguinte à cobertura</option></SeletorCampo></label>
           <p>Informe a regra contratada. Esta escolha não é presumida para versões novas nem para o histórico.</p>
         </fieldset>
         <label className="block" htmlFor="motivo">Motivo da transcrição<CampoTexto id="motivo" className={classe} name="motivo" minLength={5} maxLength={2000} required /></label>
@@ -175,7 +177,7 @@ export function CondicoesContinuidadeMensal({ dados: d, preferenciaFusoExibicao 
       }}>
         <fieldset disabled={ocupado} className="space-y-2">
           <legend>Revisão administrativa independente</legend>
-          <label className="block" htmlFor={`decisao-${versao.id}`}>Decisão<select id={`decisao-${versao.id}`} className={classe} name="decisao" defaultValue="" required><option value="" disabled>Selecione</option><option value="aprovar">Aprovar transcrição</option><option value="rejeitar">Rejeitar transcrição</option></select></label>
+          <label className="block" htmlFor={`decisao-${versao.id}`}>Decisão<SeletorCampo id={`decisao-${versao.id}`} className={classe} name="decisao" defaultValue="" required><option value="" disabled>Selecione</option><option value="aprovar">Aprovar transcrição</option><option value="rejeitar">Rejeitar transcrição</option></SeletorCampo></label>
           <label className="block" htmlFor={`motivo-${versao.id}`}>Justificativa<CampoTexto id={`motivo-${versao.id}`} className={classe} name="motivo" minLength={5} maxLength={2000} required /></label>
           <button className={botaoClasses({ variante: "secundario", tamanho: "lg" })}>Registrar decisão</button>
         </fieldset>
