@@ -3,16 +3,28 @@ import { beforeEach, expect, it, vi } from "vitest";
 const { evento, janela } = vi.hoisted(() => ({ evento: vi.fn(async () => ({ id: "e" })), janela: vi.fn(async () => null as string | null) }));
 vi.mock("@/server/_shared/evento", () => ({ registrarEvento: evento }));
 vi.mock("@/server/whatsapp/janela-agendamento", () => ({ recusaForaDaJanela: janela }));
+import { Papel, type Prisma } from "@prisma/client";
 import { cancelarMensagensAgendadasDaTarefaTx, decisaoCancelaMensagem, moverMensagensPendentesDaTarefaTx, MOTIVO_CANCELADA_COM_TAREFA } from "./mensagem-agendada-tarefa";
-import type { Prisma } from "@prisma/client";
 
 const quando = new Date("2026-10-29T13:00:00.000Z");
 function linha(status: "PENDENTE" | "ADIADA" = "PENDENTE") {
-  return { id: "m1", status, agendadaPara: quando, atendimentoId: "a1" };
+  return {
+    id: "m1",
+    status,
+    agendadaPara: quando,
+    atendimentoId: "a1",
+    autorId: "autor",
+    origem: "HUMANO" as const,
+    passo: null,
+    passoComercial: null,
+    atendimento: { status: "EM_ATENDIMENTO" as const, responsavelId: "autor" },
+  };
 }
 function tx(atual: ReturnType<typeof linha> | null, count = 1) {
   return {
     $queryRaw: vi.fn(async () => []),
+    $executeRaw: vi.fn(async () => 0),
+    usuario: { findUnique: vi.fn(async () => ({ id: "autor", papeis: [Papel.ADMINISTRADOR], ativo: true })) },
     intencaoMensagem: {
       findMany: vi.fn(async () => (atual ? [{ id: atual.id }] : [])),
       findFirst: vi.fn(async () => atual),

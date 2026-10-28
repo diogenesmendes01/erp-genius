@@ -9,6 +9,8 @@ import {
   type DecisaoMensagemAgendada,
   type MensagemAgendadaDaTarefa,
 } from "@/lib/selo-mensagem-agendada";
+import { podeCancelarAgendadaInbox, podeGerirAgendadaInbox } from "./atividade-regras";
+import { avisarAtendimento } from "./aviso";
 
 // ADIADA cobre o equivalente de "aguardando confirmação" (motivo aguarda_confirmacao_resposta).
 // O schema não tem status AGUARDANDO_CONFIRMACAO nem coluna canceladaEm em IntencaoMensagem.
@@ -56,19 +58,43 @@ export async function cancelarMensagensAgendadasDaTarefaTx(tx: Prisma.Transactio
     select: { id: true },
     orderBy: { id: "asc" },
   });
+  if (!candidatas.length) return;
+  const autor = await tx.usuario.findUnique({
+    where: { id: autorId },
+    select: { id: true, papeis: true, ativo: true },
+  });
+  if (!autor?.ativo) throw new ErroRegra("Sua sessão não está mais ativa.");
+  const atendimentosAfetados = new Set<string>();
   const agora = new Date();
   for (const { id } of candidatas) {
     await tx.$queryRaw`SELECT id FROM "IntencaoMensagem" WHERE id=${id} AND "tarefaId"=${tarefaId} FOR UPDATE`;
     const m = await tx.intencaoMensagem.findFirst({
       where: { id, tarefaId, status: { in: [...STATUS_MENSAGEM_AGENDADA_ATIVA] }, agendadaPara: { not: null } },
-      select: { id: true, status: true, agendadaPara: true, atendimentoId: true },
+      select: {
+        id: true,
+        status: true,
+        agendadaPara: true,
+        atendimentoId: true,
+        autorId: true,
+        origem: true,
+        passo: true,
+        passoComercial: true,
+        atendimento: { select: { status: true, responsavelId: true } },
+      },
     });
     if (!m?.agendadaPara) continue;
+    const contexto = m.atendimento
+      ? { ativo: m.atendimento.status !== "ENCERRADO", responsavelId: m.atendimento.responsavelId }
+      : undefined;
+    if (!podeCancelarAgendadaInbox(autor, m, contexto)) {
+      throw new ErroRegra("Você só pode cancelar mensagens agendadas por você (ou como administrador). Escolha manter a mensagem agendada.");
+    }
     const r = await tx.intencaoMensagem.updateMany({
       where: { id: m.id, tarefaId, status: m.status, agendadaPara: m.agendadaPara },
       data: { status: "CANCELADA", motivoFalha: MOTIVO_CANCELADA_COM_TAREFA },
     });
     if (r.count !== 1) throw new ErroRegra("A mensagem agendada mudou. Recarregue a tarefa.");
+    if (m.atendimentoId) atendimentosAfetados.add(m.atendimentoId);
     await registrarEvento(tx, {
       tipo: "MensagemAgendadaCancelada",
       agregadoTipo: m.atendimentoId ? "AtendimentoWhatsApp" : "IntencaoMensagem",
@@ -83,6 +109,9 @@ export async function cancelarMensagensAgendadasDaTarefaTx(tx: Prisma.Transactio
         canceladaEm: agora.toISOString(),
       },
     });
+  }
+  for (const atendimentoId of atendimentosAfetados) {
+    await avisarAtendimento(tx, atendimentoId);
   }
 }
 
@@ -100,22 +129,50 @@ export async function moverMensagensPendentesDaTarefaTx(
   });
   if (!candidatas.length) return;
   if (!inicioEm) throw new ErroRegra("A tarefa tem mensagem agendada. Informe data e horário, ou cancele a mensagem antes de tirar o prazo.");
+  if (inicioEm.getTime() <= Date.now()) {
+    throw new ErroRegra(
+      "A tarefa tem mensagem agendada. Escolha data e horário no futuro, ou cancele a mensagem antes de remarcar para o passado.",
+    );
+  }
   const recusa = await recusaForaDaJanela(inicioEm, tx);
   if (recusa && !opcoes.aceitarForaDaJanela) {
     throw new ErroRegra(`${recusa} Confirme para mover a mensagem mesmo fora da janela, ou escolha um horário dentro dela.`);
   }
+  const autor = await tx.usuario.findUnique({
+    where: { id: autorId },
+    select: { id: true, papeis: true, ativo: true },
+  });
+  if (!autor?.ativo) throw new ErroRegra("Sua sessão não está mais ativa.");
+  const atendimentosAfetados = new Set<string>();
   for (const { id } of candidatas) {
     await tx.$queryRaw`SELECT id FROM "IntencaoMensagem" WHERE id=${id} AND "tarefaId"=${tarefaId} FOR UPDATE`;
     const m = await tx.intencaoMensagem.findFirst({
       where: { id, tarefaId, status: "PENDENTE", agendadaPara: { not: null } },
-      select: { id: true, agendadaPara: true, atendimentoId: true },
+      select: {
+        id: true,
+        status: true,
+        agendadaPara: true,
+        atendimentoId: true,
+        autorId: true,
+        origem: true,
+        passo: true,
+        passoComercial: true,
+        atendimento: { select: { status: true, responsavelId: true } },
+      },
     });
     if (!m?.agendadaPara || m.agendadaPara.getTime() === inicioEm.getTime()) continue;
+    const contexto = m.atendimento
+      ? { ativo: m.atendimento.status !== "ENCERRADO", responsavelId: m.atendimento.responsavelId }
+      : undefined;
+    if (!podeGerirAgendadaInbox(autor, m, contexto)) {
+      throw new ErroRegra("Você só pode reagendar mensagens agendadas por você (ou como administrador).");
+    }
     const r = await tx.intencaoMensagem.updateMany({
       where: { id: m.id, tarefaId, status: "PENDENTE", agendadaPara: m.agendadaPara },
       data: { agendadaPara: inicioEm },
     });
     if (r.count !== 1) throw new ErroRegra("A mensagem agendada mudou. Recarregue a tarefa.");
+    if (m.atendimentoId) atendimentosAfetados.add(m.atendimentoId);
     await registrarEvento(tx, {
       tipo: "MensagemReagendada",
       agregadoTipo: m.atendimentoId ? "AtendimentoWhatsApp" : "IntencaoMensagem",
@@ -131,5 +188,8 @@ export async function moverMensagensPendentesDaTarefaTx(
         agendadaPara: inicioEm.toISOString(),
       },
     });
+  }
+  for (const atendimentoId of atendimentosAfetados) {
+    await avisarAtendimento(tx, atendimentoId);
   }
 }
