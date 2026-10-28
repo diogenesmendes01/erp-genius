@@ -46,20 +46,25 @@ export function AcoesFechamentoOportunidade({ atendimentoId, oportunidade: o, fu
   const documentos = o.documentosProposta ?? [];
   const mostrarExperimental = secao === "agendarExperimental" || (podeAgir && o.etapa === "EXPERIMENTAL_AGENDADA");
   const mostrarProposta = secao === "enviarProposta" || o.etapa === "PROPOSTA" || documentos.length > 0;
-  const mostrarContratacao = secao === "prepararContratacao" || !!contratacao.matriculaId || o.etapa === "AGUARDANDO_MATRICULA" || o.etapa === "MATRICULADO";
+  const mostrarContratacao = podeAgir && (secao === "prepararContratacao" || !!contratacao.matriculaId || o.etapa === "AGUARDANDO_MATRICULA" || o.etapa === "MATRICULADO");
   const [quando, setQuando] = useState("");
   const [professorId, setProfessorId] = useState(o.professorExperimentalId ?? "");
   const [professores, setProfessores] = useState<{ id: string; nome: string }[]>([]);
+  const [carregouProfs, setCarregouProfs] = useState(false);
   const [link, setLink] = useState("");
   const [copiado, setCopiado] = useState(false);
   const taxa = contratacao.taxaMatricula;
 
   useEffect(() => {
     if (!mostrarExperimental || !podeAgir) return;
-    let vivo = true;
-    void professoresParaExperimental().then((r) => { if (vivo && r.ok && r.dado) setProfessores(r.dado); });
-    return () => { vivo = false; };
-  }, [mostrarExperimental, podeAgir]);
+    let cancelado = false;
+    void professoresParaExperimental(atendimentoId).then((r) => {
+      if (cancelado) return;
+      if (r.ok && r.dado) setProfessores(r.dado);
+      setCarregouProfs(true);
+    }).catch(() => { if (!cancelado) setCarregouProfs(true); });
+    return () => { cancelado = true; };
+  }, [mostrarExperimental, podeAgir, atendimentoId]);
 
   if (!mostrarExperimental && !mostrarProposta && !mostrarContratacao) return null;
 
@@ -113,7 +118,7 @@ export function AcoesFechamentoOportunidade({ atendimentoId, oportunidade: o, fu
           <CampoDataHoraLocal fuso={fuso} value={quando} disabled={acao.ocupado} onChange={(e) => setQuando(e.target.value)} />
         </label>
         <label className="grid gap-1 text-sm">Professor
-          <select aria-label="Professor da experimental" className="w-full rounded-md border border-border-soft bg-surface p-2" value={professorId} disabled={acao.ocupado} onChange={(e) => setProfessorId(e.target.value)}>
+          <select aria-label="Professor da experimental" className="w-full rounded-md border border-border-soft bg-surface p-2" value={professorId} disabled={acao.ocupado || !carregouProfs} onChange={(e) => setProfessorId(e.target.value)}>
             <option value="">Sem professor</option>
             {professores.map((p) => <option key={p.id} value={p.id}>{p.nome}</option>)}
           </select>

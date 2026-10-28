@@ -53,6 +53,8 @@ async function mutarOportunidadeDoInbox(
     if (mudou) await avisarAtendimento(tx, id);
   }));
   revalidatePath("/funil");
+  revalidatePath("/inbox");
+  revalidatePath("/home");
 }
 
 export async function definirTemperaturaNoInbox(atendimentoId: string, oportunidadeIdEsperada: string, temperatura: Temperatura): Promise<Resultado> {
@@ -212,18 +214,19 @@ export async function confirmarExperimentalNoInbox(atendimentoId: string, oportu
     const quando = new Date();
     await tx.oportunidade.update({ where: { id: leadId }, data: { experimentalConfirmadaEm: quando } });
     await registrarEvento(tx, {
-      tipo: "LeadEditado",
+      tipo: "ExperimentalConfirmada",
       agregadoTipo: "Lead",
       agregadoId: leadId,
       autorId: autor.id,
-      payload: { campo: "experimentalConfirmada", experimentalConfirmadaEm: quando.toISOString() },
+      payload: { experimentalConfirmadaEm: quando.toISOString() },
     });
     return true;
   }));
 }
 
-export async function professoresParaExperimental(): Promise<Resultado<{ id: string; nome: string }[]>> {
+export async function professoresParaExperimental(atendimentoId: string): Promise<Resultado<{ id: string; nome: string }[]>> {
   return executarAcao(async () => {
+    Id.parse(atendimentoId);
     const autor = await exigirSessao();
     if (!capacidadesCrm(autor.papeis).has("funil.mover")) throw new ErroPermissao("Você não tem acesso a esta função do CRM.");
     return prisma.usuario.findMany({
@@ -253,9 +256,10 @@ export async function definirPrevisaoOportunidade(
         if (!papelEditaPrevisao(autor)) throw new ErroPermissao("Você não tem acesso à edição desta oportunidade.");
         const op = await tx.oportunidade.findFirst({
           where: { AND: [{ id }, await escopoComercialAtual(autor, tx)] },
-          select: { id: true, probabilidadePct: true, previsaoFechamento: true },
+          select: { id: true, etapa: true, probabilidadePct: true, previsaoFechamento: true },
         });
         if (!op) throw new ErroPermissao("Você não tem acesso à edição desta oportunidade.");
+        if (encerrada(op.etapa)) throw new ErroRegra("Oportunidade encerrada não pode ser alterada.");
         const mudanca = prepararMudancaPrevisao(op, dados.alteracoes);
         if (!mudanca.alterado) return;
         const probabilidadeDivergiu = mudanca.dados.probabilidadePct !== undefined && op.probabilidadePct !== dados.esperado.probabilidadePct;

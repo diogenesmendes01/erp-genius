@@ -47,6 +47,10 @@ type MatriculaPainel = {
   cobrancas: { id: string; status: StatusCobranca; linkPagamento: string | null }[];
 } | null;
 
+export function mapearDocumentoProposta(docs?: { id: string; nome: string; url: string; categoria: CategoriaDocumento }[] | null): DocumentoPropostaPainel[] {
+  return (docs ?? []).filter((d) => d.categoria === "PROPOSTA");
+}
+
 export function projetarContratacao(matricula: MatriculaPainel): ContratacaoPainel {
   if (!matricula) return { matriculaId: null, statusAlcada: null, motivoDecisao: null, taxaMatricula: null };
   const decisao = matricula.preparacaoComercial?.decisaoPreco ?? null;
@@ -131,7 +135,7 @@ export async function carregarOportunidadesPainel(u: UsuarioSessao, atendimentoI
       experimentalConfirmada: op.experimentalConfirmadaEm !== null, professorExperimental: op.professorExperimental?.nome ?? null,
       professorExperimentalId: op.professorExperimentalId ?? null, atendimentoId, professores, motivoPerda: op.motivoPerda,
       interesse: op.interesse ?? null, objetivo: op.objetivo ?? null, urgencia: op.urgencia ?? null, orcamento: op.orcamento ?? null, objecao: op.objecao ?? null, proximaAcao: op.proximaAcao ?? null,
-      documentosProposta: op.documentos ?? [],
+      documentosProposta: mapearDocumentoProposta(op.documentos),
       contratacao: projetarContratacao(op.matricula ?? null),
     },
     outras: outras.map(o => ({ id: o.id, titulo: o.nome, etapa: o.etapa, valor: o.valorPrevisto?.toFixed(2) ?? null, moeda: o.pais?.moedaLocal ?? null })),

@@ -46,6 +46,7 @@ vi.mock("@/lib/prisma", () => ({ prisma: { $transaction: async (fn: (cliente: ty
 import {
   anexarDocumentoPropostaNoInbox,
   atualizarResumoNoInbox,
+  confirmarExperimentalNoInbox,
   definirPrevisaoOportunidade,
   definirTemperaturaNoInbox,
   enviarPropostaNoInbox,
@@ -61,7 +62,7 @@ beforeEach(() => {
   m.findFirstDoc.mockResolvedValue(null);
   m.queryRaw.mockResolvedValue([{ id: "op481" }]);
   m.findUser.mockResolvedValue({ ...autor, ativo: true });
-  m.findOp.mockResolvedValue({ id: "op481", probabilidadePct: 10, previsaoFechamento: null });
+  m.findOp.mockResolvedValue({ id: "op481", etapa: "QUALIFICADO", probabilidadePct: 10, previsaoFechamento: null });
   m.findAtendimentos.mockResolvedValue([{ id: "a481", conversaId: "c481" }]);
   m.criarTarefa.mockResolvedValue({ ok: true, dado: { id: "t481" } });
 });
@@ -75,6 +76,8 @@ it("temperatura igual não grava; mudança registra LeadEditado e avisa o atendi
   expect(m.evento).toHaveBeenCalledWith(tx, expect.objectContaining({ tipo: "LeadEditado", payload: expect.objectContaining({ campo: "temperatura", de: "MORNO", temperatura: "QUENTE" }) }));
   expect(m.avisar).toHaveBeenCalledWith(tx, "a481");
   expect(m.revalidar).toHaveBeenCalledWith("/funil");
+  expect(m.revalidar).toHaveBeenCalledWith("/inbox");
+  expect(m.revalidar).toHaveBeenCalledWith("/home");
 });
 
 it("resumo grava os seis campos e oportunidade encerrada é recusada", async () => {
@@ -105,6 +108,14 @@ it("anexo de proposta grava Documento com categoria PROPOSTA", async () => {
   expect(m.createDoc).toHaveBeenCalledOnce();
 });
 
+it("confirmar experimental registra ExperimentalConfirmada", async () => {
+  m.findUniqueOrThrow.mockResolvedValueOnce({ etapa: "EXPERIMENTAL_AGENDADA", dataExperimental: new Date("2026-11-01T15:00:00Z"), experimentalConfirmadaEm: null });
+  expect((await confirmarExperimentalNoInbox("a481", "op481")).ok).toBe(true);
+  expect(m.update).toHaveBeenCalledWith({ where: { id: "op481" }, data: { experimentalConfirmadaEm: expect.any(Date) } });
+  expect(m.evento).toHaveBeenCalledWith(tx, expect.objectContaining({ tipo: "ExperimentalConfirmada", agregadoTipo: "Lead", agregadoId: "op481" }));
+  expect(m.evento).not.toHaveBeenCalledWith(tx, expect.objectContaining({ tipo: "LeadEditado", payload: expect.objectContaining({ campo: "experimentalConfirmada" }) }));
+});
+
 it("previsão direta trava o lead, respeita o esperado e avisa atendimento aberto", async () => {
   expect((await definirPrevisaoOportunidade("op481", { esperado: { probabilidadePct: 10, previsaoFechamento: null }, alteracoes: { probabilidadePct: 80 } })).ok).toBe(true);
   expect(m.queryRaw.mock.calls[0][0].join(" ")).toContain("FOR UPDATE NOWAIT");
@@ -113,6 +124,14 @@ it("previsão direta trava o lead, respeita o esperado e avisa atendimento abert
   expect(m.revalidar).toHaveBeenCalledWith("/funil");
   m.findOp.mockResolvedValueOnce({ id: "op481", probabilidadePct: 40, previsaoFechamento: null });
   expect(await definirPrevisaoOportunidade("op481", { esperado: { probabilidadePct: 10, previsaoFechamento: null }, alteracoes: { probabilidadePct: 80 } })).toMatchObject({ ok: false, erro: expect.stringContaining("previsão mudou") });
+});
+
+it("previsão de oportunidade encerrada é recusada", async () => {
+  for (const etapa of ["PERDIDO", "MATRICULADO"] as const) {
+    m.findOp.mockResolvedValueOnce({ id: "op481", etapa, probabilidadePct: 10, previsaoFechamento: null });
+    expect(await definirPrevisaoOportunidade("op481", { esperado: { probabilidadePct: 10, previsaoFechamento: null }, alteracoes: { probabilidadePct: 80 } })).toEqual({ ok: false, erro: "Oportunidade encerrada não pode ser alterada." });
+  }
+  expect(m.update).not.toHaveBeenCalled();
 });
 
 it("lock NOWAIT ocupado vira recusa sem repetir a transação", async () => {

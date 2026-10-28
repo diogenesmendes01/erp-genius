@@ -62,7 +62,7 @@ export function SecoesParidadeFunil({ oportunidade: op, podeEditarPrevisao, pode
   }
 
   async function alternarTarefa(tarefa: DetalheOportunidade["tarefas"][number]) {
-    if (!podeTarefas || acao.ocupado || (!tarefa.podeAgir && tarefa.status !== "CONCLUIDA")) return;
+    if (!podeTarefas || acao.ocupado || !tarefa.podeAgir) return;
     const r = await acao.executar(() => tarefa.status === "CONCLUIDA"
       ? reabrirTarefaOportunidade(tarefa.id, tarefa.versao)
       : concluirTarefaOportunidade(tarefa.id, tarefa.versao));
@@ -89,10 +89,13 @@ export function SecoesParidadeFunil({ oportunidade: op, podeEditarPrevisao, pode
         </label>
         <Botao type="submit" variante="secundario" tamanho="sm" disabled={acao.ocupado || !titulo.trim()}>Criar tarefa</Botao>
       </form>}
-      {!tarefas.length ? <p className="text-sm text-gray-600">Nenhuma tarefa para esta oportunidade.</p> : <ul className="space-y-2">{tarefas.map((t) => <li key={t.id} className="flex items-start gap-2 text-sm">
-        {podeTarefas && (t.podeAgir || t.status === "CONCLUIDA") && <input type="checkbox" aria-label={(t.status === "CONCLUIDA" ? "Reabrir " : "Concluir ") + t.titulo} checked={t.status === "CONCLUIDA"} disabled={acao.ocupado} onChange={() => void alternarTarefa(t)} />}
-        <span className={t.status === "CONCLUIDA" ? "line-through" : undefined}>{t.titulo}</span>
-      </li>)}</ul>}
+      {!tarefas.length ? <p className="text-sm text-gray-600">Nenhuma tarefa para esta oportunidade.</p> : <ul className="space-y-2">{tarefas.map((t) => {
+        const podeAgir = podeTarefas && t.podeAgir;
+        return <li key={t.id} className="flex items-start gap-2 text-sm">
+          {podeAgir && <input type="checkbox" aria-label={(t.status === "CONCLUIDA" ? "Reabrir " : "Concluir ") + t.titulo} checked={t.status === "CONCLUIDA"} disabled={acao.ocupado || !t.podeAgir} onChange={() => void alternarTarefa(t)} />}
+          <span className={t.status === "CONCLUIDA" ? "line-through" : undefined}>{t.titulo}</span>
+        </li>;
+      })}</ul>}
     </section>
 
     {op.b2bDetalhes && <BlocoB2B bloco={op.b2bDetalhes} verEmpresa={podeVerEmpresa} />}

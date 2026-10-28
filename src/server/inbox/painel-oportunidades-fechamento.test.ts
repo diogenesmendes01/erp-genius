@@ -1,5 +1,5 @@
 import { beforeEach, expect, it, vi } from "vitest";
-import { projetarContratacao } from "./painel-oportunidades";
+import { mapearDocumentoProposta, projetarContratacao } from "./painel-oportunidades";
 
 const m = vi.hoisted(() => ({ lead: vi.fn(async () => true), tarefas: vi.fn(async () => []) }));
 vi.mock("@/lib/prisma", () => ({ prisma: {} }));
@@ -13,6 +13,15 @@ import { carregarOportunidadesPainel } from "./painel-oportunidades";
 import type { Db } from "@/server/whatsapp/escopo";
 
 const u = { id: "u481", nome: "Vendedora fictícia", papeis: ["VENDEDOR" as const] };
+
+it("documentos ausentes no mock não quebram o filtro de proposta", () => {
+  expect(mapearDocumentoProposta(undefined)).toEqual([]);
+  expect(mapearDocumentoProposta(null)).toEqual([]);
+  expect(mapearDocumentoProposta([
+    { id: "d1", nome: "proposta.pdf", url: "/api/files/p.pdf", categoria: "PROPOSTA" },
+    { id: "d2", nome: "rg.pdf", url: "/api/files/rg.pdf", categoria: "OUTRO" },
+  ])).toEqual([{ id: "d1", nome: "proposta.pdf", url: "/api/files/p.pdf", categoria: "PROPOSTA" }]);
+});
 
 it("projeção da alçada distingue dentro, espera, aprovação e rejeição", () => {
   expect(projetarContratacao(null)).toEqual({ matriculaId: null, statusAlcada: null, motivoDecisao: null, taxaMatricula: null });

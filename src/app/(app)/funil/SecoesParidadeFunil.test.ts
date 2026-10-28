@@ -45,6 +45,24 @@ it("drawer mostra previsão, tarefa da oportunidade e bloco B2B", () => {
   expect(html).toContain("Falar com");
 });
 
+it("tarefa concluída sem permissão de agir não oferece reabrir", () => {
+  const html = renderToStaticMarkup(createElement(SecoesParidadeFunil, {
+    oportunidade: { ...oportunidade, tarefas: [{ id: "t2", versao: 3, titulo: "Fechar contrato", status: "CONCLUIDA", podeAgir: false }] },
+    podeEditarPrevisao: false, podeTarefas: true, podeVerEmpresa: false,
+  }));
+  expect(html).toContain("Fechar contrato");
+  expect(html).not.toContain("Reabrir Fechar contrato");
+  expect(html).not.toContain("checkbox");
+});
+
+it("tarefa concluída de quem pode agir oferece reabrir", () => {
+  const html = renderToStaticMarkup(createElement(SecoesParidadeFunil, {
+    oportunidade: { ...oportunidade, tarefas: [{ id: "t3", versao: 4, titulo: "Ligar de novo", status: "CONCLUIDA", podeAgir: true }] },
+    podeEditarPrevisao: false, podeTarefas: true, podeVerEmpresa: false,
+  }));
+  expect(html).toContain('aria-label="Reabrir Ligar de novo"');
+});
+
 it("sem permissão a previsão e as tarefas ficam somente leitura", () => {
   const html = renderToStaticMarkup(createElement(SecoesParidadeFunil, {
     oportunidade: { ...oportunidade, b2bDetalhes: null, tarefas: [] }, podeEditarPrevisao: false, podeTarefas: false, podeVerEmpresa: false,

@@ -119,6 +119,7 @@ export const ROTULO_EVENTO_CRM: Record<string, (payload: Payload) => string> = {
   DocumentoAnexado: () => "Documento anexado",
   DocumentoArquivado: () => "Documento arquivado",
   ExperimentalAtribuida: () => "Professor da experimental atribuído",
+  ExperimentalConfirmada: () => "Experimental confirmada",
   PessoasMescladas: () => "Contatos mesclados",
 };
 
@@ -154,6 +155,14 @@ export async function historicoOportunidade(id: string, usuario: UsuarioSessao):
   }));
 }
 
+export function podeAgirNaTarefa(
+  usuario: Pick<UsuarioSessao, "id" | "papeis">,
+  tarefa: { status: StatusTarefa; responsavelId: string | null; criadorId: string | null },
+): boolean {
+  const ehDonoOuEquipe = capacidadesCrm(usuario.papeis).has("tarefas.equipe") || tarefa.responsavelId === usuario.id || tarefa.criadorId === usuario.id;
+  return ehDonoOuEquipe && (tarefa.status === "ABERTA" || tarefa.status === "CONCLUIDA");
+}
+
 export async function obterOportunidade(id: string, usuario: UsuarioSessao): Promise<DetalheOportunidade | null> {
   if (!usuario?.id || !capacidadesCrm(usuario.papeis).has("funil.ver")) return null;
   const l = await prisma.oportunidade.findFirst({
@@ -167,6 +176,12 @@ export async function obterOportunidade(id: string, usuario: UsuarioSessao): Pro
       participantes: {
         orderBy: [{ criadoEm: "asc" }, { id: "asc" }],
         select: { pessoaId: true, papel: true, pessoa: { select: { nome: true, cargo: true } } },
+      },
+      atendimentosWhatsApp: {
+        where: { status: { not: "ENCERRADO" } },
+        orderBy: [{ criadoEm: "desc" }, { id: "desc" }],
+        take: 1,
+        select: { conversa: { select: { contato: { select: { pessoaId: true } } } } },
       },
       matricula: {
         select: {
@@ -183,11 +198,12 @@ export async function obterOportunidade(id: string, usuario: UsuarioSessao): Pro
   });
   if (!l) return null;
   const conversas = l.b2b && l.empresa ? await atendimentosParaPessoas(usuario, l.participantes.map((p) => p.pessoaId)) : new Map();
+  const pessoaDaConversa = l.atendimentosWhatsApp[0]?.conversa.contato?.pessoaId ?? null;
   const capacidades = capacidadesCrm(usuario.papeis);
   const tarefas = capacidades.has("tarefas.ver") ? await prisma.tarefa.findMany({
     where: { AND: [{ leadId: l.id }, await escopoTarefas(usuario, capacidades.has("tarefas.equipe"))] },
     orderBy: [{ criadoEm: "asc" }, { id: "asc" }],
-    select: { id: true, versao: true, titulo: true, status: true },
+    select: { id: true, versao: true, titulo: true, status: true, responsavelId: true, criadorId: true },
   }) : [];
   const taxa = l.matricula?.cobrancas[0] ?? null;
   const cadastroAdministrativo = usuario.papeis.some((p) => p === Papel.ADMINISTRADOR || p === Papel.SECRETARIA_ACADEMICA);
@@ -238,12 +254,12 @@ export async function obterOportunidade(id: string, usuario: UsuarioSessao): Pro
         nome: p.pessoa.nome,
         papel: p.papel,
         cargo: p.pessoa.cargo,
-        naConversa: false,
+        naConversa: pessoaDaConversa !== null && p.pessoaId === pessoaDaConversa,
         hrefConversa: conversas.has(p.pessoaId) ? hrefConversa(conversas.get(p.pessoaId)!.atendimentoId) : null,
       })),
       decisor: l.participantes.some((p) => p.papel === "DECISOR") ? true : l.participantes.length ? false : null,
     } : null,
-    tarefas: tarefas.map((t) => ({ id: t.id, versao: t.versao, titulo: t.titulo, status: t.status, podeAgir: t.status === "ABERTA" })),
+    tarefas: tarefas.map((t) => ({ id: t.id, versao: t.versao, titulo: t.titulo, status: t.status, podeAgir: podeAgirNaTarefa(usuario, t) })),
     taxaMatricula: taxa
       ? { cobrancaId: taxa.id, status: taxa.status, linkPagamento: taxa.linkPagamento, linkEnviadoEm: taxa.linkEnviadoEm }
       : null,
