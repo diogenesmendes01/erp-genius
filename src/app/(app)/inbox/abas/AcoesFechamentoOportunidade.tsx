@@ -12,6 +12,7 @@ import { STATUS_COBRANCA_LABEL } from "@/lib/labels";
 import { registrarLinkPagamento } from "@/server/matricula/acoes";
 import { anexarDocumentoPropostaNoInbox, enviarPropostaNoInbox } from "@/server/inbox/acoes-fechamento-painel";
 import type { ContratacaoPainel, OportunidadeAtualPainel, StatusAlcadaPainel } from "@/server/inbox/painel-oportunidades";
+import { SolicitacaoCorrecaoCadastral } from "./SolicitacaoCorrecaoCadastral";
 
 export type SecaoFechamentoInbox = "enviarProposta" | "prepararContratacao";
 type Props = {
@@ -87,6 +88,7 @@ export function AcoesFechamentoOportunidade({ atendimentoId, oportunidade: o, po
       {contratacao.matriculaId
         ? <a className="inline-flex min-h-11 items-center text-sm font-medium text-brand-700 underline" href={`/matriculas/${contratacao.matriculaId}/preparacao`}>Ver preparação / alçada</a>
         : <a className="inline-flex min-h-11 items-center text-sm font-medium text-brand-700 underline" href={`/oportunidades/${o.id}/contratacao`}>Preparar contratação</a>}
+      {contratacao.matriculaId && <SolicitacaoCorrecaoCadastral matriculaId={contratacao.matriculaId} />}
       {contratacao.statusAlcada && <p className="text-sm"><span className="inline-flex min-h-[22px] items-center rounded-full bg-brand-bg px-2 text-xs font-semibold text-brand-700">{ALCADA[contratacao.statusAlcada]}</span>{contratacao.statusAlcada === "REJEITADA" && contratacao.motivoDecisao ? <span className="mt-1 block text-gray-700">{contratacao.motivoDecisao}</span> : null}</p>}
       {taxa && <div className="space-y-2">
         <p className="text-sm">Taxa de matrícula: {STATUS_COBRANCA_LABEL[taxa.status]}</p>

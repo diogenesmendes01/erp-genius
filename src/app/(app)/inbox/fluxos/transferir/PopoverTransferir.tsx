@@ -10,6 +10,10 @@ import type { Setor } from "@/server/whatsapp/setor";
 import type { StatusPresencaInbox } from "@/lib/presenca-inbox";
 import type { OpcoesTransferir } from "./opcoes-transferir";
 import type { DestinoTransferencia } from "../../AcoesAtendimento";
+import { Combobox } from "@/components/ui/combobox";
+import { garantirEstilo } from "@/app/(app)/inbox/garantir-estilo";
+import { Checkbox } from "@/components/ui/checkbox";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { PopoverFluxo } from "../PopoverFluxo";
 export type AlvoTransferir = { tipo: "pessoa"; usuarioId: string } | { tipo: "setor"; setor: Setor; destinoChave: string | null } | { tipo: "fila" } | { tipo: "aria" };
 export interface EntradaConfirmacaoTransferir { alvo: AlvoTransferir; contexto: string; anexarResumoAria?: boolean }
@@ -21,6 +25,7 @@ export interface PropsPopoverTransferir {
   aoExecutar(entrada: EntradaConfirmacaoTransferir): void;
 }
 export function PopoverTransferir({ ancora, opcoes, pessoas, destinos, temResumoAria = false, ocupado = false, erro, aoFechar, aoExecutar }: PropsPopoverTransferir) {
+  garantirEstilo();
   const [passo, setPasso] = useState<"inicio" | "pessoas" | "equipes" | "aria">("inicio");
   const [pessoa, setPessoa] = useState("");
   const [equipe, setEquipe] = useState<Setor | "fila" | "">("");
@@ -28,11 +33,11 @@ export function PopoverTransferir({ ancora, opcoes, pessoas, destinos, temResumo
   const [contexto, setContexto] = useState("");
   const [preferenciaResumo, setPreferenciaResumo] = useState<boolean | null>(null);
   const anexarResumoAria = temResumoAria && (preferenciaResumo ?? true);
-  const campoPessoa = useRef<HTMLInputElement>(null);
+  const campoPessoa = useRef<HTMLButtonElement>(null);
   const grupoPessoas = useRef<HTMLFieldSetElement>(null);
   const nomeGrupoPessoa = useId();
   const carregavaPessoas = useRef(pessoas === null);
-  const campoEquipe = useRef<HTMLSelectElement>(null);
+  const campoEquipe = useRef<HTMLDivElement>(null);
   const resumoAria = useRef<HTMLParagraphElement>(null);
   const cancelar = useRef<HTMLButtonElement>(null);
   const passoAnterior = useRef(passo);
@@ -62,18 +67,18 @@ export function PopoverTransferir({ ancora, opcoes, pessoas, destinos, temResumo
       </div> : <>
         {passo === "pessoas" && <fieldset ref={grupoPessoas} tabIndex={-1} disabled={ocupado || pessoas === null} aria-busy={pessoas === null || undefined} className="min-w-0">
           <legend className={ROTULO_CAMPO}>Pessoa <span aria-hidden="true">*</span></legend>
-          {pessoas === null ? <p className="text-sm text-gray-600" role="status">Carregando pessoas…</p> : <div className="max-h-56 space-y-2 overflow-y-auto overscroll-contain">
-            {pessoas.map((p,i)=><label key={p.id} className="flex cursor-pointer items-start gap-3 rounded-lg border border-gray-200 bg-surface p-3 has-checked:border-brand-500 has-checked:bg-brand-50">
-              <input ref={pessoa===p.id||(!pessoa&&i===0)?campoPessoa:undefined} type="radio" name={nomeGrupoPessoa} value={p.id} checked={pessoa===p.id} required disabled={ocupado} onChange={e=>{if(!ocupado)setPessoa(e.target.value);}} className="mt-1 h-4 w-4 shrink-0 accent-brand-600" />
+          {pessoas === null ? <p className="text-sm text-gray-600" role="status">Carregando pessoas…</p> : <RadioGroup name={nomeGrupoPessoa} value={pessoa} required disabled={ocupado} onValueChange={(valor) => { if (!ocupado) setPessoa(valor); }} className="max-h-56 space-y-2 overflow-y-auto overscroll-contain">
+            {pessoas.map((p,i)=><label key={p.id} className="flex cursor-pointer items-start gap-3 rounded-lg border border-gray-200 bg-surface p-3">
+              <RadioGroupItem ref={pessoa===p.id||(!pessoa&&i===0)?campoPessoa:undefined} value={p.id} required disabled={ocupado} />
               <span className="min-w-0"><span className="block break-words text-sm font-medium text-gray-800">{p.nome}</span><span className="block text-xs text-gray-500">{p.carga===undefined?"Carga indisponível":`${p.carga} ${p.carga===1?"conversa aberta":"conversas abertas"} neste setor`} · {p.presenca === "online" ? "Online" : p.presenca === "ausente" ? "Ausente" : p.presenca === "offline" ? "Offline" : "Presença indisponível"}</span></span>
             </label>)}
-          </div>}
+          </RadioGroup>}
         </fieldset>}
         {passo === "pessoas" && pessoas?.length === 0 && <EstadoVazio>Ninguém disponível.</EstadoVazio>}
-        {passo === "equipes" && <Campo rotulo="Equipe ou fila" obrigatorio>{c => <select ref={campoEquipe} {...c} value={equipe} disabled={ocupado} onChange={e => { setEquipe(e.target.value as Setor | "fila"); setDestinoChave(""); }} className="w-full rounded-md border border-gray-300 p-2"><option value="">Escolha…</option>{opcoes.filaDoSetor && <option value="fila">Fila de {rotular(SETOR_ATENDIMENTO_LABEL, opcoes.filaDoSetor)}</option>}{opcoes.setores.map(s => <option key={s} value={s}>{rotular(SETOR_ATENDIMENTO_LABEL, s)}</option>)}</select>}</Campo>}
-        {passo === "equipes" && exigeDestino && <Campo rotulo="Contexto do destino" obrigatorio>{c => <select {...c} disabled={ocupado} value={destinoChave} onChange={e => setDestinoChave(e.target.value)} className="w-full rounded-md border border-gray-300 p-2"><option value="">Escolha…</option>{destinosDisponiveis.map(d => <option key={d.chave} value={d.chave}>{d.nome}</option>)}</select>}</Campo>}
-        {mostraContexto && <Campo rotulo="Contexto da transferência" dica="Opcional">{c => <CampoTexto {...c} disabled={ocupado} rows={3} maxLength={1000} value={contexto} onChange={e => setContexto(e.target.value)} className="w-full rounded-md border border-gray-300 p-2" />}</Campo>}
-        {(passo === "pessoas" || (passo === "equipes" && equipe !== "" && equipe !== "fila")) && temResumoAria && <label className="flex items-start gap-2 text-sm"><input type="checkbox" checked={anexarResumoAria} disabled={ocupado} onChange={e => setPreferenciaResumo(e.target.checked)} />Anexar resumo da Aria como nota</label>}
+        {passo === "equipes" && <Campo rotulo="Equipe ou fila" obrigatorio>{c => <div ref={campoEquipe} tabIndex={-1}><Combobox id={c.id} aria-label="Equipe ou fila" value={equipe} disabled={ocupado} vazio="Escolha…" onValueChange={(valor) => { setEquipe(valor as Setor | "fila"); setDestinoChave(""); }} opcoes={[...(opcoes.filaDoSetor ? [{ valor: "fila", rotulo: `Fila de ${rotular(SETOR_ATENDIMENTO_LABEL, opcoes.filaDoSetor)}` }] : []), ...opcoes.setores.map(s => ({ valor: s, rotulo: rotular(SETOR_ATENDIMENTO_LABEL, s) }))]} /></div>}</Campo>}
+        {passo === "equipes" && exigeDestino && <Campo rotulo="Contexto do destino" obrigatorio>{c => <Combobox id={c.id} aria-label="Contexto do destino" value={destinoChave} disabled={ocupado} vazio="Escolha…" onValueChange={setDestinoChave} opcoes={destinosDisponiveis.map(d => ({ valor: d.chave, rotulo: d.nome }))} />}</Campo>}
+        {mostraContexto && <Campo rotulo="Contexto da transferência" dica="Opcional">{c => <CampoTexto {...c} disabled={ocupado} rows={3} maxLength={1000} value={contexto} onChange={e => setContexto(e.target.value)} className="w-full rounded-md border border-gray-200 p-2" />}</Campo>}
+        {(passo === "pessoas" || (passo === "equipes" && equipe !== "" && equipe !== "fila")) && temResumoAria && <label className="flex items-start gap-2 text-sm"><Checkbox checked={anexarResumoAria} disabled={ocupado} onCheckedChange={(valor) => setPreferenciaResumo(valor === true)} />Anexar resumo da Aria como nota</label>}
         {passo === "aria" && <p ref={resumoAria} tabIndex={-1} className="text-sm text-gray-600">A Aria retoma este atendimento pelas regras atuais.</p>}
       </>}
       <FeedbackAcao erro={erro} />

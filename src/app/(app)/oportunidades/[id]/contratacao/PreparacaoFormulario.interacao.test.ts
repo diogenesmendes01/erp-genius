@@ -24,6 +24,7 @@ import type { ReactNode } from "react";
 import { PreparacaoFormulario } from "./PreparacaoFormulario";
 import { AgendaParticularFormulario, type AgendaConferida } from "./AgendaParticularFormulario";
 import { CampoMoeda } from "@/components/CampoMoeda";
+import { Combobox } from "@/components/ui/combobox";
 import { FormDataFalso, criarGanchos, elementos, submeter, texto } from "@/test/tela-sem-dom";
 
 beforeEach(() => { vi.clearAllMocks(); m.ganchos = criarGanchos(); vi.stubGlobal("FormData", FormDataFalso); });
@@ -37,9 +38,9 @@ const props = (pagina: number, o = oferta()): Props => ({
   turmas: [{ id: `turma-${pagina}`, nome: `Turma ${pagina}` }],
 });
 const tela = (p: Props) => m.ganchos!.renderizar(PreparacaoFormulario, p);
-const select = (t: ReactNode, nome: string) => elementos(t).find((n) => n.type === "select" && n.props.name === nome)!;
-const opcoes = (t: ReactNode, nome: string) => elementos(select(t, nome) as unknown as ReactNode).filter((n) => n.type === "option").map((n) => texto(n.props.children));
-const escolher = (t: ReactNode, nome: string, valor: string) => (select(t, nome).props.onChange as (e: { target: { value: string } }) => void)({ target: { value: valor } });
+const select = (t: ReactNode, nome: string) => elementos(t).find((n) => n.type === Combobox && n.props.name === nome)!;
+const opcoes = (t: ReactNode, nome: string) => { const s = select(t, nome); const lista = (s.props.opcoes as { rotulo: string }[]).map((o) => o.rotulo); return s.props.vazio ? [String(s.props.vazio), ...lista] : lista; };
+const escolher = (t: ReactNode, nome: string, valor: string) => (select(t, nome).props.onValueChange as (v: string) => void)(valor);
 const preencherValores = (p: Props) => {
   const [taxa] = elementos(tela(p)).filter((n) => n.type === CampoMoeda);
   (taxa.props.onChange as (v: string) => void)("100,00");

@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import { BadgeEstado, type TomEstado } from "@/components/BadgeEstado";
 import { Botao } from "@/components/Botao";
 import { CONTROLE_CAMPO } from "@/components/Campo";
+import { Checkbox } from "@/components/ui/checkbox";
+import { CampoData } from "@/components/ui/date-picker";
 import { FeedbackAcao } from "@/components/FeedbackAcao";
 import { useAcaoCliente } from "@/lib/acao-cliente";
 import { formatarDataCivil } from "@/lib/data-civil";
@@ -93,7 +95,7 @@ export function SecoesParidadeFunil({ oportunidade: op, podeEditarPrevisao, pode
       {podeEditarPrevisao && !edicao && <Botao variante="fantasma" tamanho="sm" onClick={abrirPrevisao}>Editar previsão</Botao>}
       {podeEditarPrevisao && edicao && <form onSubmit={(e) => void salvarPrevisao(e)} className="space-y-3">
         <label className="block text-sm">Probabilidade (%)<input aria-label="Probabilidade (%)" className={CONTROLE_CAMPO} type="number" min={0} max={100} step={1} value={edicao.percentual} disabled={acao.ocupado} onChange={(e) => setEdicao({ ...edicao, percentual: e.target.value })} /></label>
-        <label className="block text-sm">Previsão de fechamento<input aria-label="Previsão de fechamento" className={CONTROLE_CAMPO} type="date" value={edicao.dia} disabled={acao.ocupado} onChange={(e) => setEdicao({ ...edicao, dia: e.target.value })} /></label>
+        <label className="block text-sm">Previsão de fechamento<CampoData aria-label="Previsão de fechamento" className={CONTROLE_CAMPO} value={edicao.dia} disabled={acao.ocupado} onChange={(e) => setEdicao({ ...edicao, dia: e.target.value })} /></label>
         <div className="flex flex-wrap gap-2"><Botao type="submit" variante="primario" tamanho="sm" disabled={acao.ocupado}>Salvar previsão</Botao><Botao variante="neutro" tamanho="sm" disabled={acao.ocupado} onClick={() => { setEdicao(null); acao.limpar(); }}>Cancelar</Botao></div>
       </form>}
     </section>
@@ -109,7 +111,7 @@ export function SecoesParidadeFunil({ oportunidade: op, podeEditarPrevisao, pode
       {!tarefas.length ? <p className="text-sm text-gray-600">Nenhuma tarefa para esta oportunidade.</p> : <ul className="space-y-2">{tarefas.map((t) => {
         const podeAgir = podeTarefas && t.podeAgir;
         return <li key={t.id} className="flex items-start gap-2 text-sm">
-          {podeAgir && <input type="checkbox" aria-label={(t.status === "CONCLUIDA" ? "Reabrir " : "Concluir ") + t.titulo} checked={t.status === "CONCLUIDA"} disabled={acao.ocupado || !t.podeAgir} onChange={() => void alternarTarefa(t)} />}
+          {podeAgir && <Checkbox aria-label={(t.status === "CONCLUIDA" ? "Reabrir " : "Concluir ") + t.titulo} checked={t.status === "CONCLUIDA"} disabled={acao.ocupado || !t.podeAgir} onCheckedChange={() => void alternarTarefa(t)} />}
           <span className={t.status === "CONCLUIDA" ? "line-through" : undefined}>{t.titulo}</span>
         </li>;
       })}</ul>}

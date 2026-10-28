@@ -26,6 +26,9 @@ import type { DetalheOportunidade } from "@/server/crm/historico";
 import { FusoInstitucionalSchema, dataCivilInstitucional } from "@/server/operacao/fuso";
 import { fusoDoCampoLocal, valorCampoLocal } from "@/server/operacao/fuso-entrada";
 import { CampoDataHoraLocal } from "@/components/CampoDataHoraLocal";
+import { Combobox } from "@/components/ui/combobox";
+import { CampoData } from "@/components/ui/date-picker";
+import { CampoSelect } from "@/components/ui/select";
 
 const SECAO = "grid gap-3 rounded-item border border-gray-200 bg-surface-muted p-3.5";
 const TITULO = "text-sm font-medium text-gray-900";
@@ -142,20 +145,17 @@ export function DatasOportunidade({ oportunidade: op, podeEditar, fuso, preferen
       <h3 id="op-datas-titulo" className={TITULO}>Datas e follow-up</h3>
       <div className="grid gap-3 sm:grid-cols-3">
         <Campo id="op-datas-followup" rotulo="Próximo follow-up">
-          {(c) => <input {...c} type="date" className={CONTROLE_CAMPO} value={f.followUp} disabled={acao.ocupado} onChange={(e) => setF({ ...f, followUp: e.target.value })} />}
+          {(c) => <CampoData {...c} className={CONTROLE_CAMPO} value={f.followUp} disabled={acao.ocupado} onChange={(e) => setF({ ...f, followUp: e.target.value })} />}
         </Campo>
         <Campo id="op-datas-experimental" rotulo="Experimental (data e hora)">
           {(c) => <CampoDataHoraLocal {...c} fuso={fusoExperimental} className={CONTROLE_CAMPO} value={f.experimental} disabled={acao.ocupado} onChange={(e) => setF({ ...f, experimental: e.target.value })} />}
         </Campo>
         <Campo id="op-datas-proposta" rotulo="Data da proposta">
-          {(c) => <input {...c} type="date" className={CONTROLE_CAMPO} value={f.proposta} disabled={acao.ocupado} onChange={(e) => setF({ ...f, proposta: e.target.value })} />}
+          {(c) => <CampoData {...c} className={CONTROLE_CAMPO} value={f.proposta} disabled={acao.ocupado} onChange={(e) => setF({ ...f, proposta: e.target.value })} />}
         </Campo>
         <Campo id="op-datas-professor" rotulo="Professor da experimental">
           {(c) => (
-            <select {...c} aria-label="Professor da experimental" className={CONTROLE_CAMPO} value={professorId} disabled={acao.ocupado} onChange={(e) => setProfessorId(e.target.value)}>
-              <option value="">Sem professor</option>
-              {professores.map((p) => <option key={p.id} value={p.id}>{p.nome}</option>)}
-            </select>
+            <Combobox id={c.id} aria-label="Professor da experimental" className={CONTROLE_CAMPO} value={professorId} disabled={acao.ocupado} onValueChange={setProfessorId} vazio="Sem professor" busca="Buscar professor" opcoes={professores.map((p) => ({ valor: p.id, rotulo: p.nome }))} />
           )}
         </Campo>
       </div>
@@ -232,16 +232,12 @@ export function DadosOportunidade({ oportunidade: op, podeEditar, paises }: { op
         {texto("telefoneE164", "WhatsApp", "tel")}
         <Campo id="op-dados-paisId" rotulo="País">
           {(c) => (
-            <select {...c} className={CONTROLE_CAMPO} value={f.paisId} disabled={acao.ocupado} onChange={(e) => setF({ ...f, paisId: e.target.value })}>
-              {[<option key="" value="">Não informado</option>, ...paises.map((p) => <option key={p.id} value={p.id}>{p.nome}</option>)]}
-            </select>
+            <Combobox id={c.id} className={CONTROLE_CAMPO} value={f.paisId} disabled={acao.ocupado} onValueChange={(valor) => setF({ ...f, paisId: valor })} vazio="Não informado" busca="Buscar país" opcoes={paises.map((p) => ({ valor: p.id, rotulo: p.nome }))} />
           )}
         </Campo>
         <Campo id="op-dados-segmento" rotulo="Segmento">
           {(c) => (
-            <select {...c} className={CONTROLE_CAMPO} value={f.segmento} disabled={acao.ocupado} onChange={(e) => setF({ ...f, segmento: e.target.value as Segmento })}>
-              {Object.values(Segmento).map((s) => <option key={s} value={s}>{SEGMENTO_LABEL[s]}</option>)}
-            </select>
+            <CampoSelect id={c.id} className={CONTROLE_CAMPO} value={f.segmento} disabled={acao.ocupado} onValueChange={(valor) => setF({ ...f, segmento: valor as Segmento })} opcoes={Object.values(Segmento).map((s) => ({ valor: s, rotulo: SEGMENTO_LABEL[s] }))} />
           )}
         </Campo>
         {texto("origemCampanha", "Campanha (origem)")}
@@ -255,10 +251,7 @@ export function DadosOportunidade({ oportunidade: op, podeEditar, paises }: { op
         </Campo>
         <Campo id="op-dados-b2b" rotulo="Oportunidade corporativa (B2B)">
           {(c) => (
-            <select {...c} className={CONTROLE_CAMPO} value={f.b2b ? "true" : "false"} disabled={acao.ocupado} onChange={(e) => setF({ ...f, b2b: e.target.value === "true" })}>
-              <option value="false">Não</option>
-              <option value="true">Sim</option>
-            </select>
+            <CampoSelect id={c.id} className={CONTROLE_CAMPO} value={f.b2b ? "true" : "false"} disabled={acao.ocupado} onValueChange={(valor) => setF({ ...f, b2b: valor === "true" })} opcoes={[{ valor: "false", rotulo: "Não" }, { valor: "true", rotulo: "Sim" }]} />
           )}
         </Campo>
       </div>
@@ -297,9 +290,7 @@ export function DocumentosOportunidade({ oportunidade: op, podeEditar }: { oport
         <div className="flex flex-wrap items-end gap-2">
           <Campo id="op-documento-categoria" rotulo="Categoria do documento">
             {(c) => (
-              <select {...c} className={CONTROLE_CAMPO} value={categoria} disabled={acao.ocupado} onChange={(e) => setCategoria(e.target.value as CategoriaDocumento)}>
-                {Object.values(CategoriaDocumento).map((k) => <option key={k} value={k}>{CATEGORIA_DOCUMENTO_LABEL[k]}</option>)}
-              </select>
+              <CampoSelect id={c.id} className={CONTROLE_CAMPO} value={categoria} disabled={acao.ocupado} onValueChange={(valor) => setCategoria(valor as CategoriaDocumento)} opcoes={Object.values(CategoriaDocumento).map((k) => ({ valor: k, rotulo: CATEGORIA_DOCUMENTO_LABEL[k] }))} />
             )}
           </Campo>
           <UploadArquivo

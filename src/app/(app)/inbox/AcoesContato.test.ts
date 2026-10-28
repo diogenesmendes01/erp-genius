@@ -58,7 +58,7 @@ const html = (a: Partial<AcoesContatoInbox> = {}) => renderToStaticMarkup(create
 const marcacao = (n: ReactNode) => renderToStaticMarkup(createElement("div", null, n));
 const esvaziar = () => new Promise((r) => setTimeout(r, 0));
 const entrada = (raiz: ReactNode, rotulo: string) => {
-  const achado = elementos(raiz).filter((n) => n.type === "input" && n.props["aria-label"] === rotulo);
+  const achado = elementos(raiz).filter((n) => (n.type === "input" || (typeof n.type === "function" && n.props["aria-label"] === rotulo)) && (n.type === "input" ? n.props["aria-label"] === rotulo : true));
   if (achado.length !== 1) throw new Error(`esperava 1 campo "${rotulo}", achei ${achado.length}`);
   return achado[0];
 };
@@ -261,7 +261,7 @@ describe("AcoesContato: interação", () => {
     m.g = criarGanchos();
     const tela = () => m.g!.renderizar(CobrancaContato, { atendimentoId: "a1", cobranca, fuso: null, aoMudar: vi.fn() });
     const registrar = async () => {
-      if (!elementos(tela()).some((n) => n.type === "input" && n.props["aria-label"] === "Data da promessa de pagamento")) clicarBotao(tela(), "Promessa de pagamento");
+      if (!elementos(tela()).some((n) => n.props["aria-label"] === "Data da promessa de pagamento")) clicarBotao(tela(), "Promessa de pagamento");
       digitar(tela(), "Data da promessa de pagamento", "2026-10-25");
       clicarBotao(tela(), "Registrar promessa");
       await esvaziar();

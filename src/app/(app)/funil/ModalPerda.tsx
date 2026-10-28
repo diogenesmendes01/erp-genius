@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { MotivoPerda } from "@prisma/client";
 import { Modal } from "@/components/Modal";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { CampoTexto } from "@/components/CampoTexto";
 import { Botao } from "@/components/Botao";
 import { FeedbackAcao } from "@/components/FeedbackAcao";
@@ -12,6 +13,7 @@ import { MOTIVO_PERDA_LABEL } from "@/lib/labels";
 import { marcarPerdido } from "@/server/comercial/acoes";
 import { PerdaSchema, type PerdaInput } from "@/server/comercial/schema";
 import type { Resultado } from "@/server/_shared/resultado";
+import { garantirEstilo } from "@/app/(app)/inbox/garantir-estilo";
 
 export type ValoresPerda = { motivoPerda: MotivoPerda | ""; observacao: string };
 
@@ -29,6 +31,7 @@ export function ModalPerda({ oportunidadeId, nome, aoFechar, aoConcluir, acao: a
   aoConcluir?: () => void;
   acao?: (input: PerdaInput) => Promise<Resultado>;
 }) {
+  garantirEstilo();
   const router = useRouter();
   const acao = useAcaoCliente({ idempotente: true });
   const [motivo, setMotivo] = useState<MotivoPerda | "">("");
@@ -55,20 +58,14 @@ export function ModalPerda({ oportunidadeId, nome, aoFechar, aoConcluir, acao: a
     <Modal titulo={`Marcar ${nome} como perdida`} aoFechar={aoFechar} bloquearFechamento={acao.ocupado}>
       <fieldset className="grid gap-1">
         <legend className="mb-2 text-sm text-gray-700">Motivo da perda</legend>
-        {Object.values(MotivoPerda).map((m) => (
-          <label key={m} className="flex min-h-11 items-center gap-2 rounded-md px-1 text-sm text-gray-800 hover:bg-highlight sm:min-h-9">
-            <input
-              type="radio"
-              name="motivoPerda"
-              value={m}
-              checked={motivo === m}
-              disabled={acao.ocupado}
-              onChange={() => setMotivo(m)}
-              className="h-4 w-4 accent-brand-600"
-            />
-            {MOTIVO_PERDA_LABEL[m]}
-          </label>
-        ))}
+        <RadioGroup name="motivoPerda" value={motivo} disabled={acao.ocupado} onValueChange={(valor) => setMotivo(valor as MotivoPerda)}>
+          {Object.values(MotivoPerda).map((m) => (
+            <label key={m} className="flex min-h-11 items-center gap-2 rounded-md px-1 text-sm text-gray-800 hover:bg-highlight sm:min-h-9">
+              <RadioGroupItem value={m} disabled={acao.ocupado} />
+              {MOTIVO_PERDA_LABEL[m]}
+            </label>
+          ))}
+        </RadioGroup>
       </fieldset>
       <label className="mt-3 grid gap-1 text-sm text-gray-700">
         <span>Observação{motivo === MotivoPerda.OUTRO ? " (obrigatória)" : " (opcional)"}</span>
@@ -79,7 +76,7 @@ export function ModalPerda({ oportunidadeId, nome, aoFechar, aoConcluir, acao: a
           value={observacao}
           disabled={acao.ocupado}
           onChange={(e) => setObservacao(e.target.value)}
-          className="rounded-md border border-gray-300 px-2 py-1.5 text-sm"
+          className="rounded-md border border-gray-200 px-2 py-1.5 text-sm"
         />
       </label>
       <FeedbackAcao erro={erroLocal ?? acao.erro} className="mt-3" />

@@ -3,6 +3,8 @@
 import { useId, useState } from "react";
 import Link from "next/link";
 import { Botao } from "@/components/Botao";
+import { CampoData } from "@/components/ui/date-picker";
+import { garantirEstilo } from "@/app/(app)/inbox/garantir-estilo";
 import { CampoTexto } from "@/components/CampoTexto";
 import { ConfirmarAcao } from "@/components/ConfirmarAcao";
 import { EstadoVazio } from "@/components/EstadoVazio";
@@ -106,7 +108,7 @@ export function EditarNomeContato({ atendimentoId, acoes, aoFechar, aoMudar }: {
       )}
       <input value={nome} onChange={(e) => setNome(e.target.value)} maxLength={80} aria-label="Nome salvo do contato"
         aria-describedby={aviso ? `${idNota} ${idDica}` : idDica} placeholder={acoes.nomePerfil ?? ""}
-        className="w-full rounded border border-gray-300 px-2 py-1.5 text-sm" />
+        className="w-full rounded border border-gray-200 px-2 py-1.5 text-sm" />
       <p id={idDica} className="text-xs text-gray-600">
         {acoes.nomePerfil ? `Perfil no WhatsApp: ${acoes.nomePerfil}. ` : ""}Deixe em branco para voltar ao perfil do WhatsApp.
       </p>
@@ -147,7 +149,7 @@ export function VincularContato({ atendimentoId, acoes, aoFechar, aoMudar }: { a
     <div className="space-y-2 rounded border border-gray-200 bg-surface-muted p-3">
       <form role="search" onSubmit={(e) => void buscar(e)} className="flex gap-2">
         <input value={termo} onChange={(e) => setTermo(e.target.value)} maxLength={100} aria-label="Buscar aluno, responsável ou oportunidade para vincular"
-          placeholder="Nome do aluno, responsável ou oportunidade" className="min-w-0 flex-1 rounded border border-gray-300 px-2 py-1.5 text-sm" />
+          placeholder="Nome do aluno, responsável ou oportunidade" className="min-w-0 flex-1 rounded border border-gray-200 px-2 py-1.5 text-sm" />
         <Botao type="submit" tamanho="sm" variante="secundario" ocupado={busca.ocupado}>Buscar</Botao>
         <Botao tamanho="sm" variante="fantasma" onClick={aoFechar}>Fechar</Botao>
       </form>
@@ -206,7 +208,7 @@ export function DesvincularContato({ atendimentoId, vinculos, aoFechar, aoMudar 
           <label htmlFor={`${id}-motivo`} className="block text-xs font-medium text-gray-700">Motivo do desvínculo</label>
           <p className="text-xs text-gray-700">Desvincular de <strong>{escolha.nome}</strong> ({COMO_VINCULO[escolha.tipo]}). O motivo fica registrado no histórico do contato.</p>
           <CampoTexto id={`${id}-motivo`} value={motivo} onChange={(e) => setMotivo(e.target.value)} required minLength={MOTIVO_MINIMO} maxLength={500} rows={2}
-            aria-label="Motivo do desvínculo" className="w-full rounded border border-gray-300 px-2 py-1.5 text-sm" />
+            aria-label="Motivo do desvínculo" className="w-full rounded border border-gray-200 px-2 py-1.5 text-sm" />
         </>
       )}
       <div className="flex gap-2">
@@ -233,6 +235,7 @@ export function DesvincularContato({ atendimentoId, vinculos, aoFechar, aoMudar 
 }
 
 export function CobrancaContato({ atendimentoId, cobranca, fuso, optOut = false, aoMudar }: { atendimentoId: string; cobranca: NonNullable<AcoesContatoInbox["cobranca"]>; fuso: string | null; optOut?: boolean; aoMudar?: () => void }) {
+  garantirEstilo();
   const [pagar, setPagar] = useState(false);
   const [promessa, setPromessa] = useState(false);
   const [data, setData] = useState("");
@@ -282,7 +285,7 @@ export function CobrancaContato({ atendimentoId, cobranca, fuso, optOut = false,
           </div>
           {promessa && (
             <div className="flex flex-wrap items-center gap-2">
-              <input type="date" value={data} onChange={(e) => setData(e.target.value)} aria-label="Data da promessa de pagamento" className="rounded border border-gray-300 px-2 py-1 text-sm" />
+              <CampoData value={data} onChange={(e) => setData(e.target.value)} aria-label="Data da promessa de pagamento" className="rounded border border-gray-200 px-2 py-1 text-sm" />
               <Botao tamanho="sm" ocupado={prometer.ocupado} disabled={!data} onClick={() => void registrarPromessa()}>Registrar promessa</Botao>
             </div>
           )}

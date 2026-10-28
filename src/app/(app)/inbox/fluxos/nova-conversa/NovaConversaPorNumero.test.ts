@@ -13,9 +13,10 @@ vi.mock("@/server/whatsapp/nova-conversa-vendedores",()=>({listarVendedoresNovaC
 vi.mock("@/server/whatsapp/nova-conversa-acoes",()=>({iniciarConversaPorNumero:m.iniciar}));
 let root:Root,doc:Documento,store:ReturnType<typeof criarIntencaoNovaConversa>;
 const selecionar=vi.fn(),fechar=vi.fn();
-function props(el:Elemento){const k=Object.keys(el).find(k=>k.startsWith("__reactProps"))!;return(el as unknown as Record<string,{onChange(e:unknown):void;onSubmit(e:unknown):void;onClick():void}>)[k];}
+function props(el:Elemento){const k=Object.keys(el).find(k=>k.startsWith("__reactProps"))!;return(el as unknown as Record<string,{onChange?(e:unknown):void;onSubmit(e:unknown):void;onClick():void}>)[k];}
+function disparar(el:Elemento,nome:string,arg?:unknown){const direto=props(el) as unknown as Record<string,unknown>;if(typeof direto[nome]==="function"){(direto[nome] as (a?:unknown)=>void)(arg);return;}const fk=Object.keys(el).find(k=>k.startsWith("__reactFiber"));let f=fk?(el as unknown as Record<string,{return?:unknown;memoizedProps?:Record<string,unknown>}>)[fk]:undefined;while(f){const fn=f.memoizedProps?.[nome];if(typeof fn==="function"){(fn as (a?:unknown)=>void)(arg);return;}f=f.return as typeof f;}throw new Error("sem "+nome);}
 function campo(nome:string){const el=doc.body.querySelector(`[name="${nome}"]`);expect(el,`campo ${nome}`).not.toBeNull();return el!;}
-async function mudar(nome:string,value:string){await act(async()=>props(campo(nome)).onChange({target:{value}}));}
+async function mudar(nome:string,value:string){const el=campo(nome);await act(async()=>{const p=props(el);if(typeof p.onChange==="function")p.onChange({target:{value}});else disparar(el,"onValueChange",value);});}
 async function clicar(texto:string){const el=doc.body.querySelectorAll("button").find(x=>x.textContent.includes(texto));expect(el,`botão ${texto}`).toBeDefined();await act(async()=>props(el!).onClick());}
 async function montar(papeis:Papel[]=[Papel.VENDEDOR]){await act(async()=>root.render(createElement(NovaConversaPorNumero,{usuario:{id:"ator",papeis},intencao:store,aoSelecionar:selecionar,aoFechar:fechar})));}
 async function consultar(){await mudar("telefone","+50688889999");await mudar("numeroId","n");await clicar("Conferir número");}

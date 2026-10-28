@@ -10,10 +10,15 @@ import { EtapaLead, Temperatura } from "@prisma/client";
 import { IconPhone, IconSpeakerphone, IconUser } from "@tabler/icons-react";
 import { Drawer } from "@/components/Drawer";
 import { Avatar } from "@/components/Avatar";
-import { BadgeEstado } from "@/components/BadgeEstado";
+import { BadgeEstado, type TomEstado } from "@/components/BadgeEstado";
 import { BarraEtapas } from "@/components/BarraEtapas";
 import { Botao, botaoClasses } from "@/components/Botao";
 import { CONTROLE_CAMPO } from "@/components/Campo";
+import { Combobox } from "@/components/ui/combobox";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { SolicitacaoCorrecaoCadastral } from "@/app/(app)/inbox/abas/SolicitacaoCorrecaoCadastral";
+import { garantirEstilo } from "@/app/(app)/inbox/garantir-estilo";
 import { Chip } from "@/components/Chip";
 import { CampoTexto } from "@/components/CampoTexto";
 import { EstadoVazio } from "@/components/EstadoVazio";
@@ -44,7 +49,7 @@ const ABAS: { id: Aba; rotulo: string }[] = [
   { id: "atividade", rotulo: "Atividade" },
 ];
 
-const CARTAO = "rounded-item border border-gray-200 bg-surface-muted p-3";
+const CARTAO = "rounded-xl border border-gray-200 bg-surface p-3.5";
 
 type Props = {
   conversa?: ConversaParaAbrir | null;
@@ -72,7 +77,35 @@ function Linha({ rotulo, children, mono = false }: { rotulo: string; children: R
   );
 }
 
+function seloExperimental(op: DetalheOportunidade): { texto: string; tom: TomEstado } {
+  if (op.etapa === EtapaLead.NO_SHOW) return { texto: "Não compareceu", tom: "perigo" };
+  if (op.etapa === EtapaLead.EXPERIMENTAL_REALIZADA) return { texto: "Realizada", tom: "sucesso" };
+  if (op.experimentalConfirmadaEm) return { texto: "Confirmada", tom: "sucesso" };
+  return { texto: "Agendada", tom: "brand" };
+}
+
+function ProfessorDaExperimental({ value, onChange, disabled, professores }: {
+  value: string;
+  onChange: (valor: string) => void;
+  disabled: boolean;
+  professores: { id: string; nome: string }[];
+}) {
+  return (
+    <Combobox
+      aria-label="Professor da experimental"
+      value={value}
+      onValueChange={onChange}
+      disabled={disabled}
+      vazio="Sem professor"
+      placeholder="Sem professor"
+      busca="Buscar professor"
+      opcoes={professores.map((p) => ({ valor: p.id, rotulo: p.nome }))}
+    />
+  );
+}
+
 export function PainelOportunidade({ oportunidade: op, historico, capacidades, vendedores, professores = [], paises = [], aoFechar, fuso = FUSO_PADRAO, preferenciaFusoExibicao = null, abaInicial = "oportunidade", conversa }: Props) {
+  garantirEstilo();
   const router = useRouter();
   const [aba, setAba] = useState<Aba>(abaInicial);
   const acao = useAcaoCliente({ idempotente: false });
@@ -82,8 +115,8 @@ export function PainelOportunidade({ oportunidade: op, historico, capacidades, v
   const tentativaLink = useChaveIdempotencia();
   const [perda, setPerda] = useState(false);
   const [dataExp, setDataExp] = useState("");
-  const [professorAgendar, setProfessorAgendar] = useState("");
-  const [professorAtual, setProfessorAtual] = useState(op.professorExperimental?.id ?? "");
+  const [professorAgendar, setProfessorAgendar] = useState(op.professorExperimental?.id ?? "");
+  const [agendaAberta, setAgendaAberta] = useState(false);
   const fusoExperimental = fusoDoCampoLocal(preferenciaFusoExibicao, fuso);
   const [novoDono, setNovoDono] = useState("");
   const [motivoDono, setMotivoDono] = useState("");
@@ -152,6 +185,42 @@ export function PainelOportunidade({ oportunidade: op, historico, capacidades, v
     void rodar(() => moverEtapa(op.id, etapa), "Etapa atualizada.");
   }
 
+  const experimentalMarcada = !!op.dataExperimental;
+  const podeMexerAgenda = podeMover && !encerrada && (podeAgendar || experimentalMarcada || op.etapa === EtapaLead.EXPERIMENTAL_AGENDADA);
+  const selo = experimentalMarcada || op.experimentalConfirmadaEm ? seloExperimental(op) : null;
+  function formularioAgenda(remarcando: boolean) {
+    const professorMudou = !!professorAgendar && professorAgendar !== (op.professorExperimental?.id ?? "");
+    return (
+      <div className="grid gap-2">
+        <label className="grid gap-1 text-sm text-gray-700">
+          <span>Data e hora da experimental</span>
+          <CampoDataHoraLocal aria-label="Data e hora da experimental" fuso={fusoExperimental} className={CONTROLE_CAMPO} value={dataExp} disabled={acao.ocupado} onChange={(e) => setDataExp(e.target.value)} />
+        </label>
+        <label className="grid gap-1 text-sm text-gray-700">
+          <span>Professor da experimental</span>
+          <ProfessorDaExperimental value={professorAgendar} onChange={setProfessorAgendar} disabled={acao.ocupado} professores={professores} />
+        </label>
+        <div>
+          <Botao
+            variante="secundario"
+            disabled={acao.ocupado || (!dataExp && !professorMudou)}
+            onClick={() => {
+              if (dataExp) void rodar(() => agendarExperimental(op.id, { dataLocal: dataExp, fuso: fusoExperimental, ...(professorAgendar ? { professorId: professorAgendar } : {}) }), remarcando ? "Experimental remarcada." : "Experimental agendada.");
+              else if (professorMudou) void rodar(() => atribuirProfessorExperimental(op.id, professorAgendar), "Professor da experimental atualizado.");
+            }}
+          >{remarcando ? "Reagendar experimental" : "Agendar experimental"}</Botao>
+        </div>
+      </div>
+    );
+  }
+  const acoesFechamento = podeProposta || podeContratar || podePerder ? (
+    <div className="flex flex-wrap gap-2">
+      {podeProposta && <Botao disabled={acao.ocupado} onClick={() => rodar(() => enviarProposta(op.id), "Proposta enviada.")}>Enviar proposta</Botao>}
+      {podeContratar && <Link href={`/oportunidades/${op.id}/contratacao`} className={botaoClasses({ variante: "primario" })}>Preparar contratação</Link>}
+      {podePerder && <Botao variante="perigo" disabled={acao.ocupado} onClick={() => setPerda(true)}>Marcar como perdida</Botao>}
+    </div>
+  ) : undefined;
+
   return (
     <>
       <Drawer
@@ -159,6 +228,7 @@ export function PainelOportunidade({ oportunidade: op, historico, capacidades, v
         onClose={aoFechar}
         title={op.nome}
         largura="w-full max-sm:max-w-none sm:max-w-2xl md:w-[45%]"
+        footer={acoesFechamento}
       >
         <div className="mb-4 flex items-start gap-3">
           <Avatar nome={op.nome} tamanho={48} />
@@ -176,47 +246,31 @@ export function PainelOportunidade({ oportunidade: op, historico, capacidades, v
           </div>
         </div>
 
-        <div role="tablist" aria-label="Seções da oportunidade" className="mb-4 flex border-b border-gray-200 px-1">
-          {ABAS.map((a) => (
-            <button
-              key={a.id}
-              type="button"
-              role="tab"
-              id={`aba-${a.id}`}
-              aria-selected={aba === a.id}
-              aria-controls={`painel-${a.id}`}
-              onClick={() => setAba(a.id)}
-              className={
-                "flex h-[38px] flex-1 items-center justify-center border-b-2 text-[13px] font-semibold transition-colors " +
-                (aba === a.id ? "border-brand-600 text-brand-700" : "border-transparent text-gray-500 hover:text-gray-800")
-              }
-            >{a.rotulo}</button>
-          ))}
-        </div>
-
         <FeedbackAcao erro={acao.erro} sucesso={acao.sucesso} className="mb-3" />
 
-        {aba === "oportunidade" && (
-          <div role="tabpanel" id="painel-oportunidade" aria-labelledby="aba-oportunidade" className="space-y-3">
+        <Tabs value={aba} onValueChange={(valor) => setAba(valor as Aba)}>
+          <TabsList aria-label="Seções da oportunidade" className="mb-4 grid w-full grid-cols-3">
+            {ABAS.map((a) => <TabsTrigger key={a.id} value={a.id}>{a.rotulo}</TabsTrigger>)}
+          </TabsList>
+
+          <TabsContent value="oportunidade" className="space-y-3">
             <BarraEtapas etapa={op.etapa} podeMover={podeMover} ocupado={acao.ocupado} aoEscolher={escolherEtapa} />
             <div className={CARTAO}>
             <dl>
               <Linha rotulo="Valor previsto" mono>{op.valorPrevisto && op.moeda ? formatarMoeda(op.valorPrevisto, op.moeda) : "Não informado"}</Linha>
               <Linha rotulo="Próximo passo">{op.proximaAcao ?? "Sem próximo passo"}</Linha>
-              {op.dataExperimental && <Linha rotulo="Experimental" mono>{dataHora(op.dataExperimental, preferenciaFusoExibicao, fuso)}</Linha>}
               {op.etapa === EtapaLead.PERDIDO && op.motivoPerda && <Linha rotulo="Motivo da perda">{MOTIVO_PERDA_LABEL[op.motivoPerda]}</Linha>}
               <Linha rotulo="Responsável">
                 {podeAtribuir ? (
-                  <select
+                  <Combobox
                     aria-label="Responsável"
-                    className={CONTROLE_CAMPO}
                     value={novoDono || op.dono?.id || ""}
                     disabled={acao.ocupado}
-                    onChange={(e) => setNovoDono(e.target.value)}
-                  >
-                    {!op.dono && <option value="">Sem responsável</option>}
-                    {vendedores.map((v) => <option key={v.id} value={v.id}>{v.nome}</option>)}
-                  </select>
+                    onValueChange={setNovoDono}
+                    busca="Buscar responsável"
+                    {...(op.dono ? {} : { vazio: "Sem responsável" })}
+                    opcoes={vendedores.map((v) => ({ valor: v.id, rotulo: v.nome }))}
+                  />
                 ) : (op.dono?.nome ?? "Sem responsável")}
               </Linha>
             </dl>
@@ -237,7 +291,7 @@ export function PainelOportunidade({ oportunidade: op, historico, capacidades, v
             </div>
 
             {podeMover && !encerrada && (
-              <div className={CARTAO + " grid gap-1 text-sm text-gray-700"}>
+              <div className="grid gap-1 text-sm text-gray-700">
                 <span id="rotulo-temperatura">Temperatura</span>
                 <div role="group" aria-labelledby="rotulo-temperatura" className="flex flex-wrap gap-2">
                   {Object.values(Temperatura).map((t) => (
@@ -251,61 +305,25 @@ export function PainelOportunidade({ oportunidade: op, historico, capacidades, v
               </div>
             )}
 
-            {podeAgendar && (
+            {experimentalMarcada ? (
               <div className={CARTAO + " grid gap-2"}>
-                <label className="grid gap-1 text-sm text-gray-700">
-                  <span>Data e hora da experimental</span>
-                  <CampoDataHoraLocal fuso={fusoExperimental} className={CONTROLE_CAMPO} value={dataExp} disabled={acao.ocupado} onChange={(e) => setDataExp(e.target.value)} />
-                </label>
-                <label className="grid gap-1 text-sm text-gray-700">
-                  <span>Professor da experimental</span>
-                  <select aria-label="Professor da experimental" className={CONTROLE_CAMPO} value={professorAgendar} disabled={acao.ocupado} onChange={(e) => setProfessorAgendar(e.target.value)}>
-                    <option value="">Sem professor</option>
-                    {professores.map((p) => <option key={p.id} value={p.id}>{p.nome}</option>)}
-                  </select>
-                </label>
-                <div>
-                  <Botao
-                    variante="secundario"
-                    disabled={!dataExp || acao.ocupado}
-                    onClick={() => rodar(() => agendarExperimental(op.id, { dataLocal: dataExp, fuso: fusoExperimental, ...(professorAgendar ? { professorId: professorAgendar } : {}) }), "Experimental agendada.")}
-                  >Agendar experimental</Botao>
-                </div>
-              </div>
-            )}
-
-            {podeMover && op.etapa === EtapaLead.EXPERIMENTAL_AGENDADA && (
-              <div className={CARTAO + " grid gap-2"}>
-                <label className="grid gap-1 text-sm text-gray-700">
-                  <span>Professor da experimental</span>
-                  <select
-                    aria-label="Professor da experimental"
-                    className={CONTROLE_CAMPO}
-                    value={professorAtual}
-                    disabled={acao.ocupado}
-                    onChange={(e) => {
-                      const professorId = e.target.value;
-                      setProfessorAtual(professorId);
-                      if (professorId && professorId !== op.professorExperimental?.id) {
-                        void rodar(() => atribuirProfessorExperimental(op.id, professorId), "Professor da experimental atualizado.");
-                      }
-                    }}
-                  >
-                    <option value="">Sem professor</option>
-                    {professores.map((p) => <option key={p.id} value={p.id}>{p.nome}</option>)}
-                  </select>
-                </label>
-                {op.dataExperimental && !op.experimentalConfirmadaEm && (
+                <p className="text-sm font-medium text-gray-900">Aula experimental</p>
+                <p className="font-mono text-sm tabular-nums text-gray-800">{dataHora(op.dataExperimental!, preferenciaFusoExibicao, fuso)}</p>
+                <p className="text-sm text-gray-700">{op.professorExperimental?.nome ?? "Sem professor"}</p>
+                {selo && <BadgeEstado tom={selo.tom}>{selo.texto}</BadgeEstado>}
+                {podeMover && op.etapa === EtapaLead.EXPERIMENTAL_AGENDADA && op.dataExperimental && !op.experimentalConfirmadaEm && (
                   <div>
-                    <Botao
-                      variante="secundario"
-                      disabled={acao.ocupado}
-                      onClick={() => rodar(() => confirmarPresencaExperimental(op.id), "Presença na experimental confirmada.")}
-                    >Confirmar presença</Botao>
+                    <Botao variante="secundario" disabled={acao.ocupado} onClick={() => rodar(() => confirmarPresencaExperimental(op.id), "Presença na experimental confirmada.")}>Confirmar presença</Botao>
                   </div>
                 )}
+                {podeMexerAgenda && (
+                  <Collapsible open={agendaAberta} onOpenChange={setAgendaAberta}>
+                    <CollapsibleTrigger className="min-h-11 text-left text-sm text-gray-700 underline hover:bg-highlight">Reagendar / Alterar professor</CollapsibleTrigger>
+                    <CollapsibleContent forceMount className="pt-2">{formularioAgenda(true)}</CollapsibleContent>
+                  </Collapsible>
+                )}
               </div>
-            )}
+            ) : podeAgendar ? <div className={CARTAO}>{formularioAgenda(false)}</div> : null}
 
             {taxaAberta && podeMover && (
               <div className={CARTAO + " grid gap-2"}>
@@ -325,23 +343,11 @@ export function PainelOportunidade({ oportunidade: op, historico, capacidades, v
               </div>
             )}
 
-            <div className="flex flex-wrap gap-2">
-              {podeProposta && (
-                <Botao disabled={acao.ocupado} onClick={() => rodar(() => enviarProposta(op.id), "Proposta enviada.")}>Enviar proposta</Botao>
-              )}
-              {podeContratar && (
-                <Link href={`/oportunidades/${op.id}/contratacao`} className={botaoClasses({ variante: "primario" })}>Preparar contratação</Link>
-              )}
-              {podePerder && (
-                <Botao variante="perigo" disabled={acao.ocupado} onClick={() => setPerda(true)}>Marcar como perdida</Botao>
-              )}
-            </div>
+            {op.matriculaId && <SolicitacaoCorrecaoCadastral matriculaId={op.matriculaId} />}
             <SecoesParidadeFunil oportunidade={op} podeEditarPrevisao={podeMover && !encerrada} podeTarefas={pode("tarefas.ver")} podeVerEmpresa={pode("funil.ver") || pode("comissoes.estornar")} />
-          </div>
-        )}
+          </TabsContent>
 
-        {aba === "detalhes" && (
-          <div role="tabpanel" id="painel-detalhes" aria-labelledby="aba-detalhes" className="space-y-3">
+          <TabsContent value="detalhes" className="space-y-3">
             <div className={CARTAO}>
             <dl>
               <Linha rotulo="Tipo">{op.b2b ? "Empresa (B2B)" : "Pessoa física"}</Linha>
@@ -362,11 +368,9 @@ export function PainelOportunidade({ oportunidade: op, historico, capacidades, v
             <ResumoOportunidade oportunidade={op} podeEditar={podeMover} />
             <DatasOportunidade oportunidade={op} podeEditar={podeMover} fuso={fuso} preferenciaFusoExibicao={preferenciaFusoExibicao} professores={professores} />
             <DocumentosOportunidade oportunidade={op} podeEditar={podeMover} />
-          </div>
-        )}
+          </TabsContent>
 
-        {aba === "atividade" && (
-          <div role="tabpanel" id="painel-atividade" aria-labelledby="aba-atividade" className="space-y-4">
+          <TabsContent value="atividade" className="space-y-4">
             {podeMover && <InteracaoOportunidade oportunidadeId={op.id} />}
             {podeMover && (
               <div className={CARTAO + " grid gap-2"}>
@@ -396,8 +400,8 @@ export function PainelOportunidade({ oportunidade: op, historico, capacidades, v
                 ))}
               </ol>
             )}
-          </div>
-        )}
+          </TabsContent>
+        </Tabs>
       </Drawer>
 
       {perda && <ModalPerda oportunidadeId={op.id} nome={op.nome} aoFechar={() => setPerda(false)} />}

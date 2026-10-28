@@ -9,7 +9,8 @@ vi.mock("../../insights/useSugestaoAgendamento",()=>({useSugestaoAgendamento:m.i
 let root:Root,doc:Documento,gatilho:Elemento,dono:ReturnType<typeof criarIntencoesAgendamento>;
 const executar=vi.fn(),fechar=vi.fn(),concluir=vi.fn(),salvar=vi.fn();
 const agora=new Date("2026-10-22T13:30Z");
-function eventos(el:Elemento){const k=Object.keys(el).find(k=>k.startsWith("__reactProps"))!;return (el as unknown as Record<string,{value?:string;disabled?:boolean;readOnly?:boolean;onChange(e:unknown):void;onSubmit(e:unknown):void;onClick():void}>)[k];}
+function eventos(el:Elemento){const k=Object.keys(el).find(k=>k.startsWith("__reactProps"))!;return (el as unknown as Record<string,{value?:string;disabled?:boolean;readOnly?:boolean;onChange(e:unknown):void;onSubmit(e:unknown):void;onClick():void;onCheckedChange?(v:boolean):void}>)[k];}
+function disparar(el:Elemento,nome:string,arg?:unknown){const direto=eventos(el) as unknown as Record<string,unknown>;if(typeof direto[nome]==="function"){(direto[nome] as (a?:unknown)=>void)(arg);return;}const fk=Object.keys(el).find(k=>k.startsWith("__reactFiber"));let f=fk?(el as unknown as Record<string,{return?:unknown;memoizedProps?:Record<string,unknown>}>)[fk]:undefined;while(f){const fn=f.memoizedProps?.[nome];if(typeof fn==="function"){(fn as (a?:unknown)=>void)(arg);return;}f=f.return as typeof f;}throw new Error("sem "+nome);}
 function campo(nome:string){const c=doc.body.querySelector(`[name="${nome}"]`);expect(c,`campo ${nome}`).not.toBeNull();return c!;}
 function botao(texto:string){const b=doc.body.querySelectorAll("button").find(e=>e.textContent===texto);expect(b,`botão ${texto}`).toBeDefined();return b!;}
 async function mudar(nome:string,value:string){await act(async()=>eventos(campo(nome)).onChange({target:{value}}));}
@@ -34,12 +35,12 @@ it("D11 sem Assumir bloqueia nova criação mesmo forçando submit",async()=>{aw
 it("incerto sobrevive remount e recupera comando original mesmo após perder responsável",async()=>{executar.mockRejectedValueOnce(new Error("rede")).mockResolvedValueOnce({ok:true,dado:{id:"ack"}});await montar();await submeter();const original=executar.mock.calls[0][0];await act(async()=>root.render(null));await montar({textoInicial:"Outro draft",fuso:"UTC",podeAgendar:false});expect(eventos(campo("texto")).value).toBe("RascunhoA");expect(campo("quandoLocal").getAttribute("data-fuso")).toBe("America/Sao_Paulo");await submeter();expect(executar.mock.calls[1][0]).toBe(original);expect(concluir).toHaveBeenCalledOnce();});
 it("ACK tardio após desmontar não fecha outro formulário",async()=>{let liberar!:(r:{ok:true;dado:{id:string}})=>void;executar.mockReturnValue(new Promise(r=>liberar=r));await montar();let envio:Promise<void>;const form=doc.body.querySelector("form");expect(form).not.toBeNull();await act(async()=>{envio=Promise.resolve(eventos(form!).onSubmit({preventDefault(){}}));});await act(async()=>root.render(null));await act(async()=>{liberar({ok:true,dado:{id:"ack"}});await envio;});expect(concluir).not.toHaveBeenCalled();expect(salvar).not.toHaveBeenCalled();});
 it("Insights público permanece opt-in e não preenche texto automaticamente",async()=>{await montar({insightsAplicaveis:true,versaoInsights:2});expect(m.insights).toHaveBeenCalledWith(expect.objectContaining({ativo:true,atendimentoId:"a",versao:2}));expect(eventos(campo("texto")).value).toBe("RascunhoA");expect(executar).not.toHaveBeenCalled();});
-async function escolherVinculo(valor:string){const r=doc.body.querySelectorAll('[name="vinculo"]').find(e=>eventos(e).value===valor);expect(r,`vínculo ${valor}`).toBeDefined();await act(async()=>eventos(r!).onChange({target:{checked:true}}));}
+async function escolherVinculo(valor:string){const alvo=valor||"__nenhum__";const r=doc.body.querySelectorAll('[role="radio"]').find(e=>e.getAttribute("value")===alvo);expect(r,`vínculo ${valor}`).toBeDefined();await act(async()=>disparar(r!,"onValueChange",alvo));}
 const opcoes={oportunidadeId:"op1",propostas:[{id:"d1",nome:"Proposta anual.pdf"}],tarefas:[{id:"t1",titulo:"Ligar para Ana"}]};
 it("PopoverAgendar: 'Anexar' mostra Proposta e Arquivo; 'Mais opções' mostra 'Vincular a' sem 'Repetir'",async()=>{
  await montar({opcoes,subirArquivo:vi.fn()});expect(doc.body.textContent).toContain("Anexar");botao("Proposta");botao("Arquivo");
  expect(doc.body.textContent).not.toContain("Vincular a");await clicar("Mais opções");expect(doc.body.textContent).toContain("Vincular a");
- const opcoesVinculo=doc.body.querySelectorAll('[name="vinculo"]').map(o=>o.parentNode?.textContent);expect(opcoesVinculo).toEqual(["Nenhum","Oportunidade","Tarefa · Ligar para Ana"]);
+ const opcoesVinculo=doc.body.querySelectorAll('[role="radio"]').map(o=>o.parentNode?.textContent);expect(opcoesVinculo).toEqual(["Nenhum","Oportunidade","Tarefa · Ligar para Ana"]);
  expect(doc.body.textContent).not.toContain("Repetir");
 });
 it("editar não mostra Anexar nem Mais opções",async()=>{await montar({opcoes,editar:existente(),intencao:dono.para({tipo:"EDITAR",atendimentoId:"a",intencaoId:"i"})});expect(doc.body.textContent).not.toContain("Anexar");expect(doc.body.textContent).not.toContain("Mais opções");});
@@ -65,7 +66,7 @@ it("Mais opções fica desabilitado enquanto o envio está em andamento",async()
 });
 it("sem oportunidade, Proposta avisa e não oferece Oportunidade no vínculo",async()=>{
  await montar({opcoes:{oportunidadeId:null,propostas:[],tarefas:[]}});await clicar("Proposta");expect(doc.body.textContent).toContain("Esta conversa não tem oportunidade com propostas.");
- await clicar("Mais opções");expect(doc.body.querySelectorAll('[name="vinculo"]').map(o=>o.parentNode?.textContent)).toEqual(["Nenhum"]);
+ await clicar("Mais opções");expect(doc.body.querySelectorAll('[role="radio"]').map(o=>o.parentNode?.textContent)).toEqual(["Nenhum"]);
 });
 it("arquivo sobe pelo uploader e vai na action",async()=>{
  const subirArquivo=vi.fn().mockResolvedValue({ok:true,dado:{url:"/api/files/whatsapp-out/u/1.pdf",nome:"Foto da turma.pdf"}});await montar({opcoes,subirArquivo});
@@ -93,8 +94,8 @@ it("Vincular à oportunidade usa a oportunidade da conversa",async()=>{
  await montar({opcoes});await clicar("Mais opções");await escolherVinculo("oportunidade");await submeter();
  expect(executar).toHaveBeenLastCalledWith(expect.objectContaining({vinculo:{tipo:"oportunidade",leadId:"op1"}}));
 });
-it("PopoverAgendar: 'Perguntar antes de enviar se o contato responder' ligado por padrão e enviado na action",async()=>{await montar();expect(doc.body.textContent).toContain("Perguntar antes de enviar se o contato responder");expect((eventos(campo("perguntarSeResponder")) as unknown as {checked:boolean}).checked).toBe(true);await submeter();expect(executar).toHaveBeenCalledExactlyOnceWith(expect.objectContaining({tipo:"CRIAR",perguntarSeResponder:true}));});
-it("desligar a pergunta envia perguntarSeResponder falso",async()=>{await montar();await act(async()=>eventos(campo("perguntarSeResponder")).onChange({target:{checked:false}}));expect((eventos(campo("perguntarSeResponder")) as unknown as {checked:boolean}).checked).toBe(false);await submeter();expect(executar).toHaveBeenCalledExactlyOnceWith(expect.objectContaining({tipo:"CRIAR",perguntarSeResponder:false}));});
+it("PopoverAgendar: 'Perguntar antes de enviar se o contato responder' ligado por padrão e enviado na action",async()=>{await montar();expect(doc.body.textContent).toContain("Perguntar antes de enviar se o contato responder");expect(doc.body.querySelector('[role="checkbox"]')?.getAttribute("aria-checked")).toBe("true");await submeter();expect(executar).toHaveBeenCalledExactlyOnceWith(expect.objectContaining({tipo:"CRIAR",perguntarSeResponder:true}));});
+it("desligar a pergunta envia perguntarSeResponder falso",async()=>{await montar();const caixa=doc.body.querySelector('[role="checkbox"]')!;await act(async()=>disparar(caixa,"onCheckedChange",false));expect(caixa.getAttribute("aria-checked")).toBe("false");await submeter();expect(executar).toHaveBeenCalledExactlyOnceWith(expect.objectContaining({tipo:"CRIAR",perguntarSeResponder:false}));});
 it("editar não mostra a opção de perguntar",async()=>{await montar({editar:existente(),intencao:dono.para({tipo:"EDITAR",atendimentoId:"a",intencaoId:"i"})});expect(doc.body.textContent).not.toContain("Perguntar antes de enviar");expect(doc.body.querySelector('[name="perguntarSeResponder"]')).toBeNull();});
 it("recupera EDITAR incerto sem depender de row ainda pendente na lista, nem horário futuro",async()=>{
  const i=dono.para({tipo:"EDITAR",atendimentoId:"a",intencaoId:"i"});const e={tipo:"EDITAR" as const,atendimentoId:"a",intencaoId:"i",texto:"Texto em confirmação",quandoLocal:"2026-10-23T09:00",fuso:"America/Sao_Paulo"};executar.mockRejectedValueOnce(new Error("rede")).mockResolvedValueOnce({ok:true,dado:{id:"i"}});await i.enviar(e,executar);const original=executar.mock.calls[0][0];

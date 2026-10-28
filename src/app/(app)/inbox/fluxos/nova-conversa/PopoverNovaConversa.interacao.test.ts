@@ -14,6 +14,7 @@ const numeros = [{ id: "n", nome: "Linha autorizada", comercial: true }];
 const destino = { chave: "COMERCIAL:l", nome: "Comercial · João", finalidade: "COMERCIAL", leadId: "l" } as OpcoesAtendimento["destinos"][number];
 const itens = [{ id: "a", contatoNome: "Ana", contatoTelefone: "", ultimaMensagemEm: "2026-10-25T12:00:00Z" }] as ItemListaInbox[];
 function props(el: Elemento) { const key = Object.keys(el).find(k => k.startsWith("__reactProps"))!; return (el as unknown as Record<string, { onClick(): void; onChange(e: unknown): void; onSubmit(e: unknown): void }>)[key]; }
+function disparar(el: Elemento, nome: string, arg?: unknown) { const direto = props(el) as unknown as Record<string, unknown>; if (typeof direto[nome] === "function") { (direto[nome] as (a?: unknown) => void)(arg); return; } const fk = Object.keys(el).find(k => k.startsWith("__reactFiber")); let f = fk ? (el as unknown as Record<string, { return?: unknown; memoizedProps?: Record<string, unknown> }>)[fk] : undefined; while (f) { const fn = f.memoizedProps?.[nome]; if (typeof fn === "function") { (fn as (a?: unknown) => void)(arg); return; } f = f.return as typeof f; } throw new Error("sem " + nome); }
 async function montar(opcoes: OpcoesAtendimento = { destinos: [destino], numeros, comercial: true }) {
  const dialogo: Parameters<typeof PopoverColuna>[0] = { titulo: "Nova conversa", aberto: true, aoFechar: fechar, children: null };
  await act(async () => root.render(createElement(PopoverColuna, dialogo, createElement(PopoverNovaConversa, { opcoes, itens, aoSelecionar: selecionar, aoFechar: fechar }))));
@@ -41,7 +42,7 @@ it("destino com um canal chama abertura real e só seleciona depois ACK", async 
 });
 it("dois canais exigem escolha explícita, destino indisponível não executa", async () => {
  await montar({ destinos: [destino], numeros: [...numeros, { id: "n2", nome: "Segunda linha", comercial: true }], comercial: true }); await clicar("Comercial · João");
- expect(m.abrir).not.toHaveBeenCalled(); expect(doc.body.textContent).toContain("Segunda linha");
+ expect(m.abrir).not.toHaveBeenCalled(); const canal = doc.body.querySelector('button[aria-label="Canal da escola"]')!; const rotulos = (() => { const fk = Object.keys(canal).find((k) => k.startsWith("__reactFiber"))!; let f = (canal as unknown as Record<string, { return?: unknown; memoizedProps?: { opcoes?: { rotulo: string }[] } }>)[fk]; while (f) { if (f.memoizedProps?.opcoes) return f.memoizedProps.opcoes.map((o) => o.rotulo); f = f.return as typeof f; } return []; })(); expect(rotulos).toContain("Segunda linha"); expect(rotulos).not.toContain("Canal de cobrança"); expect(doc.body.textContent).not.toContain("Canal de cobrança");
  await montar({ destinos: [{ ...destino, disponivel: false, impedimento: "Sem autorização" }], numeros, comercial: true });
  const b = doc.body.querySelectorAll("button").find(b => b.textContent.includes("Comercial · João")); expect(b?.hasAttribute("disabled")).toBe(true); expect(m.abrir).not.toHaveBeenCalled();
 });
@@ -82,7 +83,7 @@ it("clique retido durante busy não duplica a abertura nem troca destino", async
 });
 it("canal escolhido confirma o mesmo destino e usa somente linha elegível", async () => {
  m.abrir.mockResolvedValue({ ok: true, dado: { id: "novo" } }); await montar({ destinos: [destino], numeros: [...numeros, { id: "n2", nome: "Segunda linha", comercial: true }, { id: "institucional", nome: "Canal de cobrança", comercial: false }], comercial: true }); await clicar("Comercial · João");
- expect(doc.body.textContent).not.toContain("Canal de cobrança"); await act(async () => props(doc.body.querySelector("select")!).onChange({ target: { value: "n2" } }));
+ expect(doc.body.textContent).not.toContain("Canal de cobrança"); await act(async () => disparar(doc.body.querySelector('button[aria-label="Canal da escola"]')!, "onValueChange", "n2"));
  await act(async () => props(doc.body.querySelector("form")!).onSubmit({ preventDefault() {} }));
  expect(m.abrir).toHaveBeenCalledExactlyOnceWith({ destinoChave: "COMERCIAL:l", numeroId: "n2", chaveIdempotencia: expect.any(String) }); expect(selecionar).toHaveBeenCalledExactlyOnceWith("novo");
 });

@@ -7,7 +7,7 @@ import type { DetalhesPainel } from "@/server/inbox/painel-detalhes";
 import { GavetaContato, type PropsGavetaContato } from "./GavetaContato";
 const { salvar } = vi.hoisted(() => ({ salvar: vi.fn() }));
 vi.mock("@/server/inbox/acoes-painel", () => ({ editarContatoNoInbox: salvar }));
-vi.mock("@tabler/icons-react", () => ({ IconX: (p: object) => createElement("span", p) }));
+vi.mock("@tabler/icons-react", () => ({ IconX: (p: object) => createElement("span", p), IconCalendar: (p: object) => createElement("span", p) }));
 const dados: DetalhesPainel = { cadastroPessoa:null, informacoesCadastro:null, pessoa: { id: "p326", nome: "Pessoa fictícia326", email: "antes@example.test", cidade: "Origem", cargo: null, linkedin: null, origemCanal: "WHATSAPP", telefone: "+5500000000326", empresa: { id: "e326", nome: "Empresa fictícia326", documento: "RUC-FICTICIO", segmentoMercado: null, porte: null, site: null } }, oportunidade: null, b2b: null, campos: [
   { id: "texto", nome: "Objetivo", tipo: "TEXTO", opcoes: [], obrigatorio: false, valor: "Inicial", ia: true },
   { id: "numero", nome: "Horas", tipo: "NUMERO", opcoes: [], obrigatorio: false, valor: 0, ia: false },
@@ -18,9 +18,28 @@ const dados: DetalhesPainel = { cadastroPessoa:null, informacoesCadastro:null, p
 let root: Root, host: Elemento, doc: Documento;
 const ouvintes: { tipo: string; f: (e: Event) => void; alvo: object }[] = [];
 function eventos(el: object) { const k = Object.keys(el).find(k => k.startsWith("__reactProps"))!; return (el as Record<string, Record<string, (e?: unknown) => unknown>>)[k]; }
+function disparar(el: object, nome: string, arg?: unknown) {
+  const direto = eventos(el);
+  if (typeof direto?.[nome] === "function") { direto[nome](arg); return; }
+  const fk = Object.keys(el).find((k) => k.startsWith("__reactFiber"));
+  let f = fk ? (el as Record<string, { memoizedProps?: Record<string, ((a?: unknown) => unknown) | undefined>; return?: unknown }>)[fk] : undefined;
+  while (f) {
+    const fn = f.memoizedProps?.[nome];
+    if (typeof fn === "function") { fn(arg); return; }
+    f = f.return as typeof f;
+  }
+  throw new Error("sem " + nome);
+}
 const campo = (nome: string) => host.querySelector('[name="'+nome+'"]')!;
 const botao = (nome: string) => Array.from(host.querySelectorAll("button")).find(b => b.textContent === nome)!;
-async function digitar(nome: string, value: string) { await act(async () => { eventos(campo(nome)).onChange({ target: { value } }); }); }
+async function digitar(nome: string, value: string) {
+  await act(async () => {
+    const el = campo(nome);
+    const direto = eventos(el);
+    if (typeof direto?.onChange === "function") direto.onChange({ target: { value } });
+    else disparar(el, "onValueChange", value);
+  });
+}
 async function enviar() { await act(async () => { void eventos(host.querySelector("form")!).onSubmit({ preventDefault() {} }); }); }
 const base: PropsGavetaContato = { atendimentoId: "A", dados, aoFechar() {}, aoSalvo() {}, podeVerFicha: true };
 function AncestralLayout({p,aposCommit}:{p:PropsGavetaContato;aposCommit?:()=>void}){useLayoutEffect(()=>{aposCommit?.();},[aposCommit]);return createElement(GavetaContato,p);}
@@ -66,7 +85,7 @@ it("Escape do Drawer real fecha e devolve foco ao gatilho sem submit", async()=>
 });
 it("cinco tipos mantêm zero/false e enviam somente valores alterados com CAS", async()=>{
   await montar(); expect((campo("numero") as Elemento&{value:string}).value).toBe("0");
-  await act(async()=>eventos(campo("bool")).onChange({target:{checked:true}})); await digitar("numero","5"); await digitar("data","2026-10-23"); await digitar("selecao","B2"); await digitar("texto",""); await enviar();
+  await act(async()=>disparar(campo("bool"), "onCheckedChange", true)); await digitar("numero","5"); await digitar("data","2026-10-23"); await digitar("selecao","B2"); await digitar("texto",""); await enviar();
   expect(salvar).toHaveBeenCalledWith("A",{pessoaIdEsperada:"p326",campos:[{campoId:"texto",valor:null},{campoId:"numero",valor:5},{campoId:"bool",valor:true},{campoId:"data",valor:"2026-10-23"},{campoId:"selecao",valor:"B2"}]});
 });
 it("rótulos ligam controles por IDs DOM únicos e Tab real do Drawer permanece na gaveta",async()=>{

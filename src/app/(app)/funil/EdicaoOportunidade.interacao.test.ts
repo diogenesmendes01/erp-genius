@@ -63,7 +63,9 @@ function montar<P>(componente: (p: P) => ReactNode, props: P) {
     tem: (rotulo: string) => elementos(arvore()).some((n) => (n.type === "button" || n.type === Botao) && texto(n.props.children).trim() === rotulo),
     async clicar(rotulo: string) { await clicarBotao(arvore(), rotulo); },
     digitar(id: string, valor: string) {
-      (controle(campo(arvore(), id)).props.onChange as (e: unknown) => void)({ target: { value: valor, checked: valor === "true" } });
+      const props = controle(campo(arvore(), id)).props;
+      if (typeof props.onValueChange === "function") (props.onValueChange as (v: string) => void)(valor);
+      else (props.onChange as (e: unknown) => void)({ target: { value: valor, checked: valor === "true" } });
     },
     valor: (id: string) => controle(campo(arvore(), id)).props.value,
   };

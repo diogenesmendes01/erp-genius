@@ -48,11 +48,16 @@ function montar(extra: Partial<Props>) {
     erro: () => elementos(arvore()).find((n) => n.type === FeedbackAcao)?.props.erro,
     tem: (rotulo: string) => elementos(arvore()).some((n) => n.type === Campo && texto(n.props.rotulo).trim() === rotulo),
     async digitar(rotulo: string, valor: string, esperaMs = 400) {
-      (controle(campoPor(rotulo)).props.onChange as (e: unknown) => void)({ target: { value: valor } });
+      const props = controle(campoPor(rotulo)).props;
+      if (typeof props.onValueChange === "function") (props.onValueChange as (v: string) => void)(valor);
+      else (props.onChange as (e: unknown) => void)({ target: { value: valor } });
       await vi.advanceTimersByTimeAsync(esperaMs);
     },
-    opcoes: (rotulo: string) =>
-      (controle(campoPor(rotulo)).props.children as No[]).map((o) => texto(o.props.children)),
+    opcoes: (rotulo: string) => {
+      const props = controle(campoPor(rotulo)).props;
+      if (Array.isArray(props.opcoes)) return (props.opcoes as { rotulo: string }[]).map((o) => o.rotulo);
+      return (props.children as No[]).map((o) => texto(o.props.children));
+    },
     async clicar(rotulo: string) {
       const b = elementos(arvore()).filter((n) => typeof n.props.onClick === "function" && texto(n.props.children).trim() === rotulo);
       if (b.length !== 1) throw new Error(`esperava 1 botão "${rotulo}", achei ${b.length}`);
