@@ -126,7 +126,7 @@ function dataCivil(d: Date | string | null, fuso: string): string {
 
 type CamposDatas = { followUp: string; experimental: string; proposta: string };
 
-export function DatasOportunidade({ oportunidade: op, podeEditar, fuso, preferenciaFusoExibicao = null }: { oportunidade: DetalheOportunidade; podeEditar: boolean; fuso: string; preferenciaFusoExibicao?: string | null }) {
+export function DatasOportunidade({ oportunidade: op, podeEditar, fuso, preferenciaFusoExibicao = null, professores = [] }: { oportunidade: DetalheOportunidade; podeEditar: boolean; fuso: string; preferenciaFusoExibicao?: string | null; professores?: { id: string; nome: string }[] }) {
   const { acao, concluiu } = useAcaoSecao();
   const fusoExperimental = fusoDoCampoLocal(preferenciaFusoExibicao, fuso);
   const experimentalInicial = valorCampoLocal(op.dataExperimental, fusoExperimental);
@@ -135,6 +135,7 @@ export function DatasOportunidade({ oportunidade: op, podeEditar, fuso, preferen
     experimental: experimentalInicial,
     proposta: dataCivil(op.dataProposta, fuso),
   });
+  const [professorId, setProfessorId] = useState(op.professorExperimental?.id ?? "");
 
   if (!podeEditar) return null;
   return (
@@ -150,6 +151,14 @@ export function DatasOportunidade({ oportunidade: op, podeEditar, fuso, preferen
         <Campo id="op-datas-proposta" rotulo="Data da proposta">
           {(c) => <input {...c} type="date" className={CONTROLE} value={f.proposta} disabled={acao.ocupado} onChange={(e) => setF({ ...f, proposta: e.target.value })} />}
         </Campo>
+        <Campo id="op-datas-professor" rotulo="Professor da experimental">
+          {(c) => (
+            <select {...c} aria-label="Professor da experimental" className={CONTROLE} value={professorId} disabled={acao.ocupado} onChange={(e) => setProfessorId(e.target.value)}>
+              <option value="">Sem professor</option>
+              {professores.map((p) => <option key={p.id} value={p.id}>{p.nome}</option>)}
+            </select>
+          )}
+        </Campo>
       </div>
       <FeedbackAcao erro={acao.erro} sucesso={acao.sucesso} />
       <div>
@@ -164,6 +173,7 @@ export function DatasOportunidade({ oportunidade: op, podeEditar, fuso, preferen
                 ? { dataExperimental: new Date(op.dataExperimental).toISOString() }
                 : { dataExperimental: enviados.experimental, fusoDataExperimental: fusoExperimental }),
               dataProposta: enviados.proposta,
+              ...(professorId || op.professorExperimental ? { professorExperimentalId: professorId || null } : {}),
             };
             concluiu(await acao.executar(() => atualizarDatas(op.id, dados), "Datas atualizadas."));
           }}

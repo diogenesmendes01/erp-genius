@@ -50,6 +50,7 @@ export function FichaEmpresa({
   colaboradores,
   faturas,
   podePagar,
+  podeEditar = true,
 }: {
   empresa: EmpresaFicha;
   colaboradores: ColaboradorRelatorio[];
@@ -57,6 +58,7 @@ export function FichaEmpresa({
   produtos: { id: string; label: string }[];
   competencias: string[];
   podePagar: boolean;
+  podeEditar?: boolean;
 }) {
   const router = useRouter();
   const acao = useAcaoCliente({ idempotente: false });
@@ -114,7 +116,7 @@ export function FichaEmpresa({
       <section className="rounded-lg border border-gray-200 bg-surface p-4">
         <div className="mb-3 flex items-center justify-between">
           <h2 className="font-medium">Colaboradores ({colaboradores.length})</h2>
-          <Link className={btnPri} href="/matriculas/nova">Preparar matrícula individual</Link>
+          {podeEditar && <Link className={btnPri} href="/matriculas/nova">Preparar matrícula individual</Link>}
         </div>
         <p className="mb-4 text-sm text-gray-500">A empresa pode ser o responsável financeiro, mas cada colaborador é preparado e contratado individualmente.</p>
 
@@ -205,13 +207,15 @@ export function FichaEmpresa({
                               Registrar pagamento
                             </button>
                           )}
-                          <button
-                            className={botaoClasses({ variante: "perigo" })}
-                            disabled={ocupado}
-                            onClick={() => pedirConfirmacao(f, "cancelar")}
-                          >
-                            Cancelar fatura
-                          </button>
+                          {podeEditar && (
+                            <button
+                              className={botaoClasses({ variante: "perigo" })}
+                              disabled={ocupado}
+                              onClick={() => pedirConfirmacao(f, "cancelar")}
+                            >
+                              Cancelar fatura
+                            </button>
+                          )}
                         </span>
                       )}
                     </td>
@@ -264,13 +268,15 @@ export function FichaEmpresa({
           <div><dt className="inline text-gray-500">Telefone: </dt><dd className="inline">{empresa.contatoTelefone ?? "—"}</dd></div>
           <div className="md:col-span-2"><dt className="inline text-gray-500">Observações: </dt><dd className="inline">{empresa.observacoes ?? "—"}</dd></div>
         </dl>
-        <button
-          className={`${botaoClasses({ variante: empresa.ativo ? "perigo" : "secundario" })} mt-3`}
-          disabled={ocupado || confirmarInativacao}
-          onClick={() => (empresa.ativo ? pedirInativacao() : run("contrato", () => definirSituacaoEmpresa(empresa.id, true), "Empresa reativada."))}
-        >
-          {empresa.ativo ? "Inativar empresa" : "Reativar empresa"}
-        </button>
+        {podeEditar && (
+          <button
+            className={`${botaoClasses({ variante: empresa.ativo ? "perigo" : "secundario" })} mt-3`}
+            disabled={ocupado || confirmarInativacao}
+            onClick={() => (empresa.ativo ? pedirInativacao() : run("contrato", () => definirSituacaoEmpresa(empresa.id, true), "Empresa reativada."))}
+          >
+            {empresa.ativo ? "Inativar empresa" : "Reativar empresa"}
+          </button>
+        )}
         {feedback("contrato")}
         {confirmarInativacao && (
           <ConfirmarAcao

@@ -6,6 +6,15 @@ import { escopoComercialAtual } from "@/server/_shared/escopo-comercial";
 import { TIPOS_MUDAM_ETAPA } from "./schema";
 import { whereFiltrosLead, type FiltrosLead } from "./filtros";
 
+export async function listarProfessoresAtivos() {
+  await exigirSessaoComPapel(Papel.VENDEDOR, Papel.GERENTE_COMERCIAL);
+  return prisma.usuario.findMany({
+    where: { ativo: true, papeis: { has: Papel.PROFESSOR } },
+    select: { id: true, nome: true },
+    orderBy: { nome: "asc" },
+  });
+}
+
 export async function listarVendedores() {
   const usuario = await exigirSessaoComPapel(Papel.VENDEDOR, Papel.GERENTE_COMERCIAL);
   return prisma.usuario.findMany({

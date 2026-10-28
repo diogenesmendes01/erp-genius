@@ -90,6 +90,19 @@ function revalidarLead() {
   revalidatePath("/inbox");
 }
 
+function revalidarComercial() {
+  revalidarLead();
+  revalidatePath("/home");
+}
+
+async function bloquearLead(tx: Prisma.TransactionClient, leadId: string) {
+  await tx.$queryRaw`SELECT id FROM "Lead" WHERE id = ${leadId} FOR UPDATE`;
+}
+
+async function leadDoEscopo(tx: Prisma.TransactionClient, leadId: string, autor: UsuarioSessao) {
+  return exigirLeadVisivel(leadId, autor, tx);
+}
+
 async function exigirLeadVisivel(id: string, usuario: UsuarioSessao, tx: Prisma.TransactionClient | typeof prisma = prisma) {
   exigirPapel(usuario, ...PAPEIS_COMERCIAL);
   const lead = await tx.oportunidade.findFirst({ where: { AND: [{ id }, await escopoComercialAtual(usuario, tx)] } });
@@ -341,6 +354,8 @@ export async function atualizarDatas(id: string, input: DatasInput): Promise<Res
       ? exigirInstanteDoCampoLocal(entrada.dataExperimental, fusoDataExperimental).toISOString()
       : entrada.dataExperimental;
     const dados = analisarComDatasDaEscola(DatasSchema, { ...entrada, dataExperimental: experimental }, await fusoDaEscola());
+    if (typeof dados.professorExperimentalId === "string") await exigirProfessorValido(dados.professorExperimentalId);
+    const professor = dados.professorExperimentalId !== undefined ? { professorExperimentalId: dados.professorExperimentalId } : {};
     await prisma.$transaction(async (tx) => {
       await tx.oportunidade.update({
         where: { id },
@@ -348,6 +363,7 @@ export async function atualizarDatas(id: string, input: DatasInput): Promise<Res
           proximoFollowUp: dados.proximoFollowUp ?? null,
           dataExperimental: dados.dataExperimental ?? null,
           dataProposta: dados.dataProposta ?? null,
+          ...professor,
         },
       });
       await registrarEvento(tx, {
@@ -361,6 +377,7 @@ export async function atualizarDatas(id: string, input: DatasInput): Promise<Res
           dataExperimental: dados.dataExperimental?.toISOString() ?? null,
           dataProposta: dados.dataProposta?.toISOString() ?? null,
           dataPropostaCivil: dataCivilOriginal(input.dataProposta, dados.dataProposta),
+          ...professor,
         },
       });
     });
@@ -595,6 +612,33 @@ export async function checkinExperimental(leadId: string, compareceu: boolean): 
     if (repetido) return;
     revalidatePath("/home");
     revalidatePath("/funil");
+  });
+}
+
+export async function confirmarPresencaExperimental(leadId: string): Promise<Resultado> {
+  return executarAcao(async () => {
+    const autor = await exigirSessaoComPapel(Papel.VENDEDOR, Papel.GERENTE_COMERCIAL);
+    await prisma.$transaction(async (tx) => {
+      await bloquearLead(tx, leadId);
+      const antes = await leadDoEscopo(tx, leadId, autor);
+      if (antes.etapa !== EtapaLead.EXPERIMENTAL_AGENDADA || !antes.dataExperimental) {
+        throw new ErroRegra("Só é possível confirmar presença de uma aula experimental agendada.");
+      }
+      if (antes.experimentalConfirmadaEm) return;
+      const agora = new Date();
+      await tx.oportunidade.update({
+        where: { id: leadId },
+        data: { experimentalConfirmadaEm: agora },
+      });
+      await registrarEvento(tx, {
+        tipo: "ExperimentalConfirmada",
+        agregadoTipo: "Lead",
+        agregadoId: leadId,
+        autorId: autor.id,
+        payload: { dataExperimental: antes.dataExperimental.toISOString(), confirmadaEm: agora.toISOString() },
+      });
+    });
+    revalidarComercial();
   });
 }
 

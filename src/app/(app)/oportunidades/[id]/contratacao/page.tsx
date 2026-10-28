@@ -27,7 +27,7 @@ export default async function PreparacaoPage({ params, searchParams }: { params:
       <p>Prazo inicial de reserva: {o.prazoMinutos ?? "Não configurado"} minutos. A disponibilidade será conferida novamente no envio.</p>
       {!o.selecionada.formaAgenda?.startsWith("PARTICULAR_") && <><h3 className="font-medium">Turmas compatíveis nesta página</h3>{o.turmas.map((t) => <p key={t.id}>{t.nome} · {t.vagas ?? "A conferir"} vaga(s) · {t.elegivel ? "Disponível para conferência final" : "Indisponível: conferir janela, agenda e capacidade com a Secretaria"}</p>)}
       <nav className="flex gap-4" aria-label="Páginas das turmas">{o.paginaTurmas > 1 && <Link scroll={false} href={url("turmas", String(o.paginaTurmas - 1))}>Turmas anteriores</Link>}{o.possuiMaisTurmas && <Link scroll={false} href={url("turmas", String(o.paginaTurmas + 1))}>Mais turmas</Link>}</nav></>}
-      {!!o.prazoMinutos && o.selecionada.moedaCoerente && <PreparacaoFormulario key={o.selecionada.id} leadId={id} novaPessoa={c.podeCadastrarNovo} paises={c.paisesCadastro} oferta={o.selecionada} candidatos={c.candidatos} turmas={o.turmas.filter((t) => t.elegivel)} />}
+      {!!o.prazoMinutos && o.selecionada.moedaCoerente && <PreparacaoFormulario key={o.selecionada.id} leadId={id} novaPessoa={c.podeCadastrarNovo} paises={c.paisesCadastro} sugestaoNovoCadastro={c.podeCadastrarNovo ? c.sugestaoNovoCadastro : null} oferta={o.selecionada} candidatos={c.candidatos} turmas={o.turmas.filter((t) => t.elegivel)} />}
     </>}
   </div>;
 }

@@ -59,8 +59,8 @@ describe("Configuração do WhatsApp por rota (E8)", () => {
     expect(await html(Layout({ children: createElement("p", null, "filho") }))).toContain("Acesso negado");
   });
 
-  it("layout: gerente não vê aba; admin vê as quatro seções do canal", async () => {
-    expect(await html(Layout({ children: createElement("p", null, "filho") }))).toContain('<nav aria-label="Seções do WhatsApp"></nav>');
+  it("layout: gerente comercial não entra no canal; admin vê as quatro seções", async () => {
+    expect(await html(Layout({ children: createElement("p", null, "filho") }))).toContain("Acesso negado");
     mocks.papeis.valor = [Papel.ADMINISTRADOR];
     expect(await html(Layout({ children: createElement("p", null, "filho") }))).toContain(">/configuracao/whatsapp/numeros,/configuracao/whatsapp/templates,/configuracao/whatsapp/politica,/configuracao/whatsapp/avisos-agenda<");
   });

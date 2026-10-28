@@ -1,7 +1,7 @@
 import { papelEditaPrevisao } from "./previsao-capacidade";
 import { carregarTarefasDoAtendimento, type TarefaPainel } from "./painel-tarefas";
 import { carregarFusoInstitucionalTx } from "@/server/operacao/relogio";
-import type { EtapaLead, MotivoPerda, Temperatura } from "@prisma/client";
+import { Papel, type EtapaLead, type MotivoPerda, type Temperatura } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import type { UsuarioSessao } from "@/server/_shared/sessao";
 import { escopoComercialAtual } from "@/server/_shared/escopo-comercial";
@@ -12,11 +12,14 @@ export type OportunidadeAtualPainel = {
   id: string; titulo: string; produto: string | null; valor: string | null; moeda: string | null;
   probabilidadePct: number | null; previsaoFechamento: string | null; podeEditarPrevisao: boolean;
   etapa: EtapaLead; temperatura: Temperatura; responsavel: { id: string; nome: string } | null;
-  dataExperimental: string | null; experimentalConfirmada: boolean; professorExperimental: string | null; motivoPerda: MotivoPerda | null;
+  dataExperimental: string | null; experimentalConfirmada: boolean; professorExperimental: string | null;
+  professorExperimentalId?: string | null; atendimentoId?: string; professores?: { id: string; nome: string }[];
+  motivoPerda: MotivoPerda | null;
 };
 export type OutraOportunidadePainel = { id: string; titulo: string; etapa: EtapaLead; valor: string | null; moeda: string | null };
-export type OportunidadesPainel = { atual: OportunidadeAtualPainel | null; outras: OutraOportunidadePainel[]; pessoaId: string | null; tarefas: TarefaPainel[]; fusoEscola: string };
-const vazio = (tarefas: TarefaPainel[] = [], fusoEscola = ""): OportunidadesPainel => ({ atual: null, outras: [], pessoaId: null, tarefas, fusoEscola });
+export type ProfessorPainel = { id: string; nome: string };
+export type OportunidadesPainel = { atual: OportunidadeAtualPainel | null; outras: OutraOportunidadePainel[]; pessoaId: string | null; tarefas: TarefaPainel[]; fusoEscola: string; professores: ProfessorPainel[]; professorExperimentalId: string | null };
+const vazio = (tarefas: TarefaPainel[] = [], fusoEscola = ""): OportunidadesPainel => ({ atual: null, outras: [], pessoaId: null, tarefas, fusoEscola, professores: [], professorExperimentalId: null });
 
 export async function carregarOportunidadesPainel(u: UsuarioSessao, atendimentoId: string, db: Db = prisma): Promise<OportunidadesPainel | null> {
   if (!u?.id) return null;
@@ -35,11 +38,12 @@ export async function carregarOportunidadesPainel(u: UsuarioSessao, atendimentoI
     where: { id: a.leadId },
     select: {
       id: true, nome: true, pessoaId: true, probabilidadePct: true, previsaoFechamento: true, planoPrevisto: true, valorPrevisto: true, etapa: true, temperatura: true, motivoPerda: true,
-      dataExperimental: true, experimentalConfirmadaEm: true, pais: { select: { moedaLocal: true } },
-      vendedor: { select: { id: true, nome: true } }, professorExperimental: { select: { nome: true } },
+      dataExperimental: true, experimentalConfirmadaEm: true, professorExperimentalId: true, pais: { select: { moedaLocal: true } },
+      vendedor: { select: { id: true, nome: true } }, professorExperimental: { select: { id: true, nome: true } },
     },
   });
   if (!op) return vazio(tarefas, fusoEscola);
+  const professores = await db.usuario.findMany({ where: { ativo: true, papeis: { has: Papel.PROFESSOR } }, select: { id: true, nome: true }, orderBy: { nome: "asc" } });
   const podeEditarPrevisao = papelEditaPrevisao(u) && !!await db.oportunidade.findFirst({where:{AND:[{id:op.id},await escopoComercialAtual(u,db)]},select:{id:true}});
   const outras = op.pessoaId ? await db.oportunidade.findMany({
     where: { AND: [{ pessoaId: op.pessoaId, id: { not: op.id } }, await escopoComercialAtual(u, db)] },
@@ -51,9 +55,10 @@ export async function carregarOportunidadesPainel(u: UsuarioSessao, atendimentoI
       id: op.id, titulo: op.nome, produto: op.planoPrevisto, valor: op.valorPrevisto?.toFixed(2) ?? null, moeda: op.pais?.moedaLocal ?? null,
       probabilidadePct: op.probabilidadePct, previsaoFechamento: op.previsaoFechamento, podeEditarPrevisao,
       etapa: op.etapa, temperatura: op.temperatura, responsavel: op.vendedor, dataExperimental: op.dataExperimental?.toISOString() ?? null,
-      experimentalConfirmada: op.experimentalConfirmadaEm !== null, professorExperimental: op.professorExperimental?.nome ?? null, motivoPerda: op.motivoPerda,
+      experimentalConfirmada: op.experimentalConfirmadaEm !== null, professorExperimental: op.professorExperimental?.nome ?? null,
+      professorExperimentalId: op.professorExperimentalId ?? null, atendimentoId, professores, motivoPerda: op.motivoPerda,
     },
     outras: outras.map(o => ({ id: o.id, titulo: o.nome, etapa: o.etapa, valor: o.valorPrevisto?.toFixed(2) ?? null, moeda: o.pais?.moedaLocal ?? null })),
-    pessoaId: op.pessoaId, tarefas, fusoEscola,
+    pessoaId: op.pessoaId, tarefas, fusoEscola, professores, professorExperimentalId: op.professorExperimentalId ?? null,
   };
 }

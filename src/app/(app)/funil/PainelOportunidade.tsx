@@ -18,7 +18,7 @@ import { useAcaoCliente } from "@/lib/acao-cliente";
 import { useChaveIdempotencia } from "@/lib/chave-idempotencia";
 import { formatarMoeda } from "@/lib/dinheiro";
 import { ETAPA_LABEL, MOTIVO_PERDA_LABEL, TEMPERATURA_CLS, TEMPERATURA_LABEL } from "@/lib/labels";
-import { atribuirDono, definirTemperatura, agendarExperimental, enviarProposta, registrarNotaInterna } from "@/server/comercial/acoes";
+import { atribuirDono, atribuirProfessorExperimental, confirmarPresencaExperimental, definirTemperatura, agendarExperimental, enviarProposta, registrarNotaInterna } from "@/server/comercial/acoes";
 import { registrarLinkPagamento } from "@/server/matricula/acoes";
 import { destinoDoArraste } from "@/server/crm/etapas";
 import type { CapacidadeCrm } from "@/server/crm/permissoes";
@@ -45,6 +45,7 @@ type Props = {
   historico: ItemHistorico[];
   capacidades: CapacidadeCrm[];
   vendedores: { id: string; nome: string }[];
+  professores?: { id: string; nome: string }[];
   paises?: { id: string; nome: string }[];
   aoFechar: () => void;
   fuso?: string;
@@ -64,7 +65,7 @@ function Linha({ rotulo, children }: { rotulo: string; children: React.ReactNode
   );
 }
 
-export function PainelOportunidade({ oportunidade: op, historico, capacidades, vendedores, paises = [], aoFechar, fuso = FUSO_PADRAO, preferenciaFusoExibicao = null, abaInicial = "oportunidade", conversa }: Props) {
+export function PainelOportunidade({ oportunidade: op, historico, capacidades, vendedores, professores = [], paises = [], aoFechar, fuso = FUSO_PADRAO, preferenciaFusoExibicao = null, abaInicial = "oportunidade", conversa }: Props) {
   const router = useRouter();
   const [aba, setAba] = useState<Aba>(abaInicial);
   const acao = useAcaoCliente({ idempotente: false });
@@ -74,6 +75,8 @@ export function PainelOportunidade({ oportunidade: op, historico, capacidades, v
   const tentativaLink = useChaveIdempotencia();
   const [perda, setPerda] = useState(false);
   const [dataExp, setDataExp] = useState("");
+  const [professorAgendar, setProfessorAgendar] = useState("");
+  const [professorAtual, setProfessorAtual] = useState(op.professorExperimental?.id ?? "");
   const fusoExperimental = fusoDoCampoLocal(preferenciaFusoExibicao, fuso);
   const [novoDono, setNovoDono] = useState("");
   const [motivoDono, setMotivoDono] = useState("");
@@ -220,13 +223,53 @@ export function PainelOportunidade({ oportunidade: op, historico, capacidades, v
                   <span>Data e hora da experimental</span>
                   <CampoDataHoraLocal fuso={fusoExperimental} className={CAMPO} value={dataExp} disabled={acao.ocupado} onChange={(e) => setDataExp(e.target.value)} />
                 </label>
+                <label className="grid gap-1 text-sm text-gray-700">
+                  <span>Professor da experimental</span>
+                  <select aria-label="Professor da experimental" className={CAMPO} value={professorAgendar} disabled={acao.ocupado} onChange={(e) => setProfessorAgendar(e.target.value)}>
+                    <option value="">Sem professor</option>
+                    {professores.map((p) => <option key={p.id} value={p.id}>{p.nome}</option>)}
+                  </select>
+                </label>
                 <div>
                   <Botao
                     variante="secundario"
                     disabled={!dataExp || acao.ocupado}
-                    onClick={() => rodar(() => agendarExperimental(op.id, { dataLocal: dataExp, fuso: fusoExperimental }), "Experimental agendada.")}
+                    onClick={() => rodar(() => agendarExperimental(op.id, { dataLocal: dataExp, fuso: fusoExperimental, ...(professorAgendar ? { professorId: professorAgendar } : {}) }), "Experimental agendada.")}
                   >Agendar experimental</Botao>
                 </div>
+              </div>
+            )}
+
+            {podeMover && op.etapa === EtapaLead.EXPERIMENTAL_AGENDADA && (
+              <div className="grid gap-2">
+                <label className="grid gap-1 text-sm text-gray-700">
+                  <span>Professor da experimental</span>
+                  <select
+                    aria-label="Professor da experimental"
+                    className={CAMPO}
+                    value={professorAtual}
+                    disabled={acao.ocupado}
+                    onChange={(e) => {
+                      const professorId = e.target.value;
+                      setProfessorAtual(professorId);
+                      if (professorId && professorId !== op.professorExperimental?.id) {
+                        void rodar(() => atribuirProfessorExperimental(op.id, professorId), "Professor da experimental atualizado.");
+                      }
+                    }}
+                  >
+                    <option value="">Sem professor</option>
+                    {professores.map((p) => <option key={p.id} value={p.id}>{p.nome}</option>)}
+                  </select>
+                </label>
+                {op.dataExperimental && !op.experimentalConfirmadaEm && (
+                  <div>
+                    <Botao
+                      variante="secundario"
+                      disabled={acao.ocupado}
+                      onClick={() => rodar(() => confirmarPresencaExperimental(op.id), "Presença na experimental confirmada.")}
+                    >Confirmar presença</Botao>
+                  </div>
+                )}
               </div>
             )}
 
@@ -277,7 +320,7 @@ export function PainelOportunidade({ oportunidade: op, historico, capacidades, v
             )}
             <DadosOportunidade oportunidade={op} podeEditar={podeMover} paises={paises} />
             <ResumoOportunidade oportunidade={op} podeEditar={podeMover} />
-            <DatasOportunidade oportunidade={op} podeEditar={podeMover} fuso={fuso} preferenciaFusoExibicao={preferenciaFusoExibicao} />
+            <DatasOportunidade oportunidade={op} podeEditar={podeMover} fuso={fuso} preferenciaFusoExibicao={preferenciaFusoExibicao} professores={professores} />
             <DocumentosOportunidade oportunidade={op} podeEditar={podeMover} />
           </div>
         )}

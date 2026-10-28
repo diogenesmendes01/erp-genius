@@ -49,6 +49,7 @@ const op: DetalheOportunidade = {
   telefoneE164: "+5511988887777", paisId: "br", segmento: "ADULTO",
   origemCampanha: "Outubro", origemConjunto: "Conjunto A", origemAnuncio: "Anúncio 1", origemPalavra: "ingles",
   planoPrevisto: "Regular A1", comissaoPrevista: "100.00", dataProposta: null,
+  professorExperimental: null, experimentalConfirmadaEm: null,
   documentos: [{ id: "d1", categoria: "PROPOSTA", nome: "proposta.pdf", url: "/api/files/a.pdf" }],
 };
 

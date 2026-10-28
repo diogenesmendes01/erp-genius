@@ -4,8 +4,11 @@ const db = vi.hoisted(() => ({
   empresa: { findMany: vi.fn(), count: vi.fn() },
   pais: { findMany: vi.fn() },
 }));
+const sessao = vi.hoisted(() => vi.fn(async () => ({ id: "u1", nome: "U", papeis: ["FINANCEIRO"] as string[] })));
+const escopo = vi.hoisted(() => vi.fn(async () => ({ vendedorDonoId: { in: ["u1"] } })));
 vi.mock("@/lib/prisma", () => ({ prisma: db }));
-vi.mock("@/server/_shared", () => ({ exigirSessaoComPapel: vi.fn(async () => ({ id: "u1" })), numero: Number, numeroOuNull: (v: unknown) => (v == null ? null : Number(v)) }));
+vi.mock("@/server/_shared", () => ({ exigirSessaoComPapel: sessao, numero: Number, numeroOuNull: (v: unknown) => (v == null ? null : Number(v)) }));
+vi.mock("@/server/_shared/escopo-comercial", () => ({ escopoComercialAtual: escopo }));
 
 import { listarEmpresasPagina } from "./consultas";
 import { EMPRESAS_POR_PAGINA, lerFiltrosEmpresas } from "./filtros";
@@ -16,6 +19,7 @@ describe("lista de /empresas paginada (E4)", () => {
     db.empresa.findMany.mockResolvedValue([{ id: "e1", codigo: "E-1", nome: "Acme", paisId: "p1", ativo: true, _count: { matriculas: 3, faturas: 1 } }]);
     db.empresa.count.mockImplementation(async (args?: { where?: object }) => (args?.where ? 7 : 40));
     db.pais.findMany.mockResolvedValue([{ id: "p1", nome: "Costa Rica" }]);
+    sessao.mockResolvedValue({ id: "u1", nome: "U", papeis: ["FINANCEIRO"] });
   });
 
   it("página com filtros, desempate por id, contagem filtrada e total geral", async () => {
@@ -35,6 +39,19 @@ describe("lista de /empresas paginada (E4)", () => {
     });
     await listarEmpresasPagina(lerFiltrosEmpresas({ ordem: "faturas", dir: "desc" }));
     expect(db.empresa.findMany.mock.calls[1][0].orderBy).toEqual([{ criadoEm: "desc" }, { id: "desc" }]);
+  });
+
+  it("vendedor puro só vê empresas ligadas à carteira", async () => {
+    sessao.mockResolvedValue({ id: "u1", nome: "U", papeis: ["VENDEDOR"] });
+    await listarEmpresasPagina(lerFiltrosEmpresas({ situacao: "ativas" }));
+    const escopoLead = { vendedorDonoId: { in: ["u1"] } };
+    const vinculo = { OR: [
+      { oportunidades: { some: escopoLead } },
+      { pessoas: { some: { oportunidades: { some: escopoLead } } } },
+      { matriculas: { some: { lead: { is: escopoLead } } } },
+    ] };
+    expect(db.empresa.findMany.mock.calls[0][0].where).toEqual({ AND: [{ AND: [{ ativo: true }] }, vinculo] });
+    expect(db.empresa.count).toHaveBeenCalledWith({ where: vinculo });
   });
 
   it("nomes de país só dos países da página (não a tabela inteira)", async () => {

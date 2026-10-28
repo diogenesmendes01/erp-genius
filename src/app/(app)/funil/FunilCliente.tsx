@@ -33,6 +33,7 @@ type Props = {
   capacidades: CapacidadeCrm[];
   podeAtribuir: boolean;
   vendedores: { id: string; nome: string }[];
+  professores?: { id: string; nome: string }[];
   paises: { id: string; nome: string }[];
   fuso?: string;
   preferenciaFusoExibicao?: string | null;
@@ -43,7 +44,7 @@ type Props = {
 const CAMPO = "rounded-md border border-gray-300 bg-surface px-2 py-1.5 text-sm max-sm:min-h-11";
 
 export function FunilCliente({
-  colunas, modo, filtros, dirOrdem, salvos, aberta, oportunidadeNaoEncontrada, capacidades, podeAtribuir, vendedores, paises, fuso = FUSO_PADRAO, preferenciaFusoExibicao = null, vazio, preenchidoNova = null,
+  colunas, modo, filtros, dirOrdem, salvos, aberta, oportunidadeNaoEncontrada, capacidades, podeAtribuir, vendedores, professores = [], paises, fuso = FUSO_PADRAO, preferenciaFusoExibicao = null, vazio, preenchidoNova = null,
 }: Props) {
   const router = useRouter();
   const pathname = usePathname();
@@ -204,6 +205,7 @@ export function FunilCliente({
           conversa={aberta.conversa}
           capacidades={capacidades}
           vendedores={vendedores}
+          professores={professores}
           paises={paises}
           aoFechar={fechar}
           fuso={fuso}

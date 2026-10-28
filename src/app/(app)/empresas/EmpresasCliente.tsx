@@ -40,12 +40,14 @@ export function EmpresasCliente({
   totalBase,
   filtros,
   paises,
+  podeEditar = true,
 }: {
   empresas: EmpresaResumo[];
   total: number;
   totalBase: number;
   filtros: FiltrosEmpresas;
   paises: { id: string; nome: string }[];
+  podeEditar?: boolean;
 }) {
   const router = useRouter();
   const filtrando = temFiltroEmpresas(filtros);
@@ -53,6 +55,7 @@ export function EmpresasCliente({
   const fim = (filtros.pagina - 1) * EMPRESAS_POR_PAGINA + empresas.length;
   const lista = useFiltrosUrl({ campos: camposDosFiltrosEmpresas(filtros), hrefDosCampos: (c) => hrefDosCamposEmpresas(c, filtros.ordem) });
   const limpar = hrefEmpresas({ ...lerFiltrosEmpresas({}), ordem: filtros.ordem });
+  const ordemPadrao = hrefEmpresas({ ...filtros, ordem: null, pagina: 1 });
   const coluna = { ordenacao: filtros.ordem, rota: "/empresas", parametros: parametrosFiltrosEmpresas(filtros), aoClicar: lista.aoClicar };
   const [criando, setCriando] = useState(false);
   const [nome, setNome] = useState("");
@@ -79,10 +82,10 @@ export function EmpresasCliente({
             Cadastro do responsável financeiro para contratos individuais e consulta de faturas históricas.
           </p>
         </div>
-        <button className={btnPri} onClick={() => setCriando((v) => !v)}>Nova empresa</button>
+        {podeEditar && <button className={btnPri} onClick={() => setCriando((v) => !v)}>Nova empresa</button>}
       </div>
 
-      {criando && (
+      {podeEditar && criando && (
         <div className="flex flex-wrap items-end gap-3 rounded-lg border border-gray-200 bg-surface p-4">
           <label className="text-sm">
             <span className="mb-1 block text-xs font-medium text-gray-600">Nome da empresa</span>
@@ -138,6 +141,7 @@ export function EmpresasCliente({
             {lista.buscando ? "Buscando…" : "Buscar"}
           </button>
           {filtrando && <Link href={limpar} onClick={lista.aoClicar(limpar)} className="text-sm text-brand-700 hover:underline">Limpar filtros</Link>}
+          {filtros.ordem !== null && <Link href={ordemPadrao} onClick={lista.aoClicar(ordemPadrao)} className="text-sm text-brand-700 hover:underline">Voltar à ordem padrão</Link>}
         </form>
 
         <p className="mb-2 text-xs text-gray-500" aria-live="polite">

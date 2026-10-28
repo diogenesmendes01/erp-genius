@@ -45,10 +45,10 @@ describe("empresas e dados históricos após merge", () => {
     expect(r.ok).toBe(false);
     expect(await prisma.aluno.count()).toBe(0); expect(await prisma.matricula.count()).toBe(0); expect(await prisma.cobranca.count()).toBe(0);
   });
-  it("gerente comercial não recebe ficha financeira coletiva", async () => {
+  it("gerente comercial lê a ficha e não fecha fatura coletiva", async () => {
     const id = await seedEmpresa();
     authMock.mockResolvedValue({ user: { id: gerente.id } });
-    await expect(obterEmpresa(id)).rejects.toThrow();
+    expect((await obterEmpresa(id))?.empresa.id).toBe(id);
     expect((await fecharFaturaB2B({ empresaId: id, competencia: "2030-01" })).ok).toBe(false);
   });
   it("baixa histórica grava recebimentos/destinações sem ativar matrícula", async () => {
