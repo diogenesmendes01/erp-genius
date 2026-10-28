@@ -3,9 +3,10 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Botao } from "@/components/Botao";
-import { CampoTexto } from "@/components/CampoTexto";
 import { ConfirmarAcao } from "@/components/ConfirmarAcao";
 import { estornarComissaoDoPainel } from "@/server/crm/comissoes-estorno-acao";
+import { CampoSelect } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
 import type { MotivoEstorno } from "@/server/crm/comissoes-estorno";
 
 const MOTIVOS: { valor: MotivoEstorno; rotulo: string }[] = [
@@ -37,13 +38,11 @@ export function EstornarComissao({ id, aluno, valor }: { id: string; aluno: stri
           <p>A comissão de {valor} sai dos totais a pagar. O valor fica registrado e não há reativação pela tela.</p>
           <label className="grid gap-1">
             <span>Motivo</span>
-            <select value={motivo} onChange={(e) => setMotivo(e.target.value as MotivoEstorno)} className="min-h-11 rounded-md border border-gray-300 px-2 text-sm md:min-h-0 md:py-1.5">
-              {MOTIVOS.map((m) => <option key={m.valor} value={m.valor}>{m.rotulo}</option>)}
-            </select>
+            <CampoSelect value={motivo} onValueChange={(v) => setMotivo(v as MotivoEstorno)} opcoes={MOTIVOS.map((m) => ({ valor: m.valor, rotulo: m.rotulo }))} />
           </label>
           <label className="grid gap-1">
             <span>{motivo === "OUTRO" ? "Descreva o motivo" : "Detalhe (opcional)"}</span>
-            <CampoTexto value={detalhe} onChange={(e) => setDetalhe(e.target.value)} maxLength={1000} rows={3} className="rounded-md border border-gray-300 px-2 py-1.5 text-sm" />
+            <Textarea value={detalhe} onChange={(e) => setDetalhe(e.target.value)} maxLength={1000} rows={3} />
           </label>
         </ConfirmarAcao>
       )}

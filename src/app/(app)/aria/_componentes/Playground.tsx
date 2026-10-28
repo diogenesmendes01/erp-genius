@@ -12,6 +12,8 @@ import { ETAPAS_ARIA } from "@/server/aria/matriz";
 import { testarAria } from "@/server/aria/acoes";
 import type { ResultadoPlayground } from "@/server/aria/playground";
 import { CONTROLE } from "./Campos";
+import { CampoCombobox } from "@/components/ui/combobox";
+import { CampoSelect } from "@/components/ui/select";
 
 type Props = { paises: { id: string; nome: string }[]; temRascunho: boolean; nome: string };
 type Fala = { papel: "usuario" | "assistente"; texto: string };
@@ -60,25 +62,17 @@ export function Playground({ paises, temRascunho, nome }: Props) {
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         <Campo rotulo="Etapa da oportunidade">
           {(campo) => (
-            <select {...campo} className={CONTROLE} value={etapa} onChange={(e) => setEtapa(e.target.value as typeof etapa)}>
-              {ETAPAS_ARIA.map((e) => <option key={e} value={e}>{ETAPA_LABEL[e]}</option>)}
-            </select>
+            <CampoSelect id={campo.id} value={etapa} onValueChange={(v) => setEtapa(v as typeof etapa)} opcoes={ETAPAS_ARIA.map((e) => ({ valor: e, rotulo: ETAPA_LABEL[e] }))} />
           )}
         </Campo>
         <Campo rotulo="País dos preços">
           {(campo) => (
-            <select {...campo} className={CONTROLE} value={paisId} onChange={(e) => setPaisId(e.target.value)}>
-              <option value="">Primeiro país ativo</option>
-              {paises.map((p) => <option key={p.id} value={p.id}>{p.nome}</option>)}
-            </select>
+            <CampoCombobox id={campo.id} value={paisId} onValueChange={setPaisId} vazio="Primeiro país ativo" opcoes={paises.map((p) => ({ valor: p.id, rotulo: p.nome }))} />
           )}
         </Campo>
         <Campo rotulo="Configuração testada">
           {(campo) => (
-            <select {...campo} className={CONTROLE} value={usarRascunho ? "rascunho" : "publicada"} onChange={(e) => setUsarRascunho(e.target.value === "rascunho")}>
-              <option value="publicada">Versão publicada</option>
-              <option value="rascunho" disabled={!temRascunho}>Rascunho{temRascunho ? "" : " (não há)"}</option>
-            </select>
+            <CampoSelect id={campo.id} value={usarRascunho ? "rascunho" : "publicada"} onValueChange={(v) => setUsarRascunho(v === "rascunho")} opcoes={[{ valor: "publicada", rotulo: "Versão publicada" }, { valor: "rascunho", rotulo: `Rascunho${temRascunho ? "" : " (não há)"}`, disabled: !temRascunho }]} />
           )}
         </Campo>
       </div>
@@ -86,7 +80,7 @@ export function Playground({ paises, temRascunho, nome }: Props) {
       <div aria-label="Conversa de teste" className="space-y-2 rounded-md border border-gray-200 p-3">
         {historico.length === 0 && <EstadoVazio>Escreva como se fosse o cliente. {nome} responde sem enviar nada.</EstadoVazio>}
         {historico.map((f, i) => (
-          <p key={i} className={"max-w-[85%] rounded-md px-3 py-2 text-sm " + (f.papel === "usuario" ? "bg-gray-100" : "ms-auto bg-brand-50")}>
+          <p key={i} className={"max-w-[85%] rounded-md px-3 py-2 text-sm " + (f.papel === "usuario" ? "bg-surface-muted" : "ms-auto bg-brand-50")}>
             <span className="sr-only">{f.papel === "usuario" ? "Cliente: " : `${nome}: `}</span>
             {f.texto}
           </p>

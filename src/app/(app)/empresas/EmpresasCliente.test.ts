@@ -46,8 +46,10 @@ describe("EmpresasCliente (filtros na URL)", () => {
     expect(html).toMatch(/<form[^>]*action="\/empresas"/);
     expect(html).toContain('role="search"');
     expect(html).toContain('value="acme"');
-    expect(html).toContain('<option value="inativas" selected="">Inativas</option>');
-    expect(html).toContain('<option value="p1" selected="">Costa Rica</option>');
+    expect(html).toContain(">Inativas<");
+    expect(html).toContain('<input type="hidden" name="situacao" value="inativas"/>');
+    expect(html).toContain(">Costa Rica<");
+    expect(html).toContain('<input type="hidden" name="pais" value="p1"/>');
     expect(html).toContain("Limpar filtros");
   });
 
@@ -73,8 +75,11 @@ describe("EmpresasCliente (filtros na URL)", () => {
     expect(html).toMatch(/<a [^>]*href="\/empresas\?situacao=ativas&amp;ordem=nome&amp;dir=asc"[^>]*>Empresa</);
     expect(html).toMatch(/<a [^>]*href="\/empresas\?situacao=ativas&amp;ordem=colaboradores&amp;dir=desc"[^>]*>Colaboradores</);
     expect(html).toMatch(/<a [^>]*href="\/empresas\?situacao=ativas&amp;ordem=situacao&amp;dir=asc"[^>]*>Status</);
-    expect(html).toContain('<th class="px-4 py-2 font-medium">País</th>');
-    expect(html).not.toContain('type="hidden"');
+    expect(html).toContain(">País</th>");
+    expect(html).toContain('<input type="hidden" name="situacao" value="ativas"/>');
+    expect(html).toContain('<input type="hidden" name="pais" value=""/>');
+    expect(html).not.toContain('name="ordem"');
+    expect(html).not.toContain('name="dir"');
   });
 
   it("ordem escolhida: coluna marcada; paginação, limpar e formulário sem JavaScript mantêm a ordem", () => {

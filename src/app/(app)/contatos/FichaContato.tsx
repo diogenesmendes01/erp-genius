@@ -35,6 +35,9 @@ import type { CapacidadeCrm } from "@/server/crm/permissoes";
 import { FUSO_PADRAO } from "../funil/CartaoOportunidade";
 import { formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
 import { NovaOportunidade } from "../funil/NovaOportunidade";
+import { Checkbox } from "@/components/ui/checkbox";
+import { CampoCombobox } from "@/components/ui/combobox";
+import { CampoData } from "@/components/ui/date-picker";
 
 type Aba = "geral" | "historico" | "oportunidades" | "campos";
 const ABAS: { id: Aba; rotulo: string }[] = [
@@ -305,10 +308,7 @@ function FichaCorpo({
               <div className="flex flex-wrap items-end gap-2">
                 <Campo rotulo="Adicionar tag" className="min-w-40 flex-1">
                   {(campo) => (
-                    <select {...campo} className={CONTROLE} value={tagNova} onChange={(e) => setTagNova(e.target.value)}>
-                      <option value="">Selecione</option>
-                      {tagsLivres.map((t) => <option key={t.id} value={t.id}>{t.nome}</option>)}
-                    </select>
+                    <CampoCombobox id={campo.id} value={tagNova} onValueChange={setTagNova} vazio="Selecione" placeholder="Selecione" opcoes={tagsLivres.map((t) => ({ valor: t.id, rotulo: t.nome }))} />
                   )}
                 </Campo>
                 <Botao
@@ -336,9 +336,9 @@ function FichaCorpo({
               {podeEditarCadastro&&cadastro&&<fieldset className="space-y-3">
                 <legend className="text-sm font-medium">Cadastro pessoal</legend>
                 <Campo rotulo="Documento pessoal">{campo=><input {...campo} name="documento" maxLength={DOCUMENTO_PESSOA_MAX} className={CONTROLE} value={cadastro.documento} disabled={acao.ocupado} onChange={e=>mudarCadastro("documento",e.target.value)}/>}</Campo>
-                <Campo rotulo="Tipo de documento">{campo=><select {...campo} name="tipoDocumentoId" className={CONTROLE} value={cadastro.tipoDocumentoId} disabled={acao.ocupado} onChange={e=>mudarCadastro("tipoDocumentoId",e.target.value)}><option value="">Sem tipo</option>{d.informacoesCadastro?.catalogo?.map(t=><option key={t.id} value={t.id}>{t.pais.nome} · {t.nome}</option>)}</select>}</Campo>
+                <Campo rotulo="Tipo de documento">{campo=><CampoCombobox id={campo.id} name="tipoDocumentoId" value={cadastro.tipoDocumentoId} disabled={acao.ocupado} onValueChange={v=>mudarCadastro("tipoDocumentoId",v)} vazio="Sem tipo" opcoes={(d.informacoesCadastro?.catalogo??[]).map(t=>({valor:t.id,rotulo:`${t.pais.nome} · ${t.nome}`}))}/>}</Campo>
                 <Campo rotulo="País emissor (ISO)">{campo=><input {...campo} name="documentoPaisEmissor" className={CONTROLE} value={cadastro.documentoPaisEmissor} maxLength={2} disabled={acao.ocupado} onChange={e=>mudarCadastro("documentoPaisEmissor",e.target.value)}/>}</Campo>
-                <Campo rotulo="Nascimento">{campo=><input {...campo} name="nascimento" type="date" min="0001-01-01" max="9999-12-31" className={CONTROLE} value={cadastro.nascimento} disabled={acao.ocupado} onChange={e=>mudarCadastro("nascimento",e.target.value)}/>}</Campo>
+                <Campo rotulo="Nascimento">{campo=><CampoData {...campo} name="nascimento" min="0001-01-01" max="9999-12-31" value={cadastro.nascimento} disabled={acao.ocupado} onChange={e=>mudarCadastro("nascimento",e.target.value)}/>}</Campo>
                 {d.cadastroPessoa?.documento&&!d.informacoesCadastro?.documento?.validado&&<p className="text-sm text-gray-600">Documento não validado. Confira o número e o tipo informado.</p>}
               </fieldset>}
               <Botao type="submit" tamanho="lg" disabled={acao.ocupado}>Salvar dados</Botao>
@@ -435,7 +435,7 @@ function FichaCorpo({
                 if (c.tipo === "BOOLEANO") {
                   return (
                     <label key={c.id} className="flex min-h-11 items-center gap-2 text-sm">
-                      <input type="checkbox" checked={v === "true"} disabled={!podeEditar} onChange={(e) => atualizar(e.target.checked ? "true" : "false")} className="h-4 w-4" />
+                      <Checkbox checked={v === "true"} disabled={!podeEditar} onCheckedChange={(marcado) => atualizar(marcado === true ? "true" : "false")} aria-label={c.nome} />
                       {c.nome}
                     </label>
                   );
@@ -444,10 +444,7 @@ function FichaCorpo({
                   return (
                     <Campo key={c.id} rotulo={c.nome} obrigatorio={c.obrigatorio}>
                       {(campo) => (
-                        <select {...campo} className={CONTROLE} value={v} disabled={!podeEditar} onChange={(e) => atualizar(e.target.value)}>
-                          <option value="">Não informado</option>
-                          {c.opcoes.map((o) => <option key={o} value={o}>{o}</option>)}
-                        </select>
+                        <CampoCombobox id={campo.id} value={v} disabled={!podeEditar} onValueChange={atualizar} vazio="Não informado" opcoes={c.opcoes.map((o) => ({ valor: o, rotulo: o }))} />
                       )}
                     </Campo>
                   );
@@ -455,7 +452,7 @@ function FichaCorpo({
                 if (c.tipo === "DATA") {
                   return (
                     <Campo key={c.id} rotulo={c.nome} obrigatorio={c.obrigatorio}>
-                      {(campo) => <input {...campo} type="date" className={CONTROLE} value={v} disabled={!podeEditar} onChange={(e) => atualizar(e.target.value)} />}
+                      {(campo) => <CampoData {...campo} value={v} disabled={!podeEditar} onChange={(e) => atualizar(e.target.value)} />}
                     </Campo>
                   );
                 }

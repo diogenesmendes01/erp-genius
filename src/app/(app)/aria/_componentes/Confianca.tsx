@@ -8,7 +8,7 @@ import { FeedbackAcao } from "@/components/FeedbackAcao";
 import { useAcaoCliente } from "@/lib/acao-cliente";
 import type { ConfigAria } from "@/server/aria/config-schema";
 import { definirSupervisao } from "@/server/aria/acoes";
-import { CONTROLE } from "./Campos";
+import { CampoSelect } from "@/components/ui/select";
 import type { RascunhoAberto } from "@/server/aria/versoes";
 import { Salvar } from "./Salvar";
 import { ateParaLigar, tentativaDepoisDo, type TentativaSupervisao } from "./supervisao-tentativa";
@@ -60,16 +60,12 @@ export function Confianca({ config, baseVersaoId, rascunho, podeEditar, podeEdit
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <Campo rotulo="Executa sozinha a partir de (%)" dica="De 55 a 100, de 5 em 5.">
           {(campo) => (
-            <select {...campo} className={CONTROLE} disabled={ro} value={k.executaAPartirDe} onChange={(e) => { const v = Number(e.target.value); setK({ executaAPartirDe: v, transfereAbaixoDe: Math.min(k.transfereAbaixoDe, v - 5) }); }}>
-              {faixa(55, 100).map((n) => <option key={n} value={n} disabled={!podeEditarExpiracao && n < config.confianca.executaAPartirDe}>{n}%</option>)}
-            </select>
+            <CampoSelect id={campo.id} disabled={ro} value={String(k.executaAPartirDe)} onValueChange={(valor) => { const v = Number(valor); setK({ executaAPartirDe: v, transfereAbaixoDe: Math.min(k.transfereAbaixoDe, v - 5) }); }} opcoes={faixa(55, 100).map((n) => ({ valor: String(n), rotulo: `${n}%`, disabled: !podeEditarExpiracao && n < config.confianca.executaAPartirDe }))} />
           )}
         </Campo>
         <Campo rotulo="Transfere para uma pessoa abaixo de (%)" dica="De 0 a 75, de 5 em 5. Sempre pelo menos 5 abaixo do limite de execução.">
           {(campo) => (
-            <select {...campo} className={CONTROLE} disabled={ro} value={k.transfereAbaixoDe} onChange={(e) => { const v = Number(e.target.value); setK({ transfereAbaixoDe: v, executaAPartirDe: Math.max(k.executaAPartirDe, v + 5) }); }}>
-              {faixa(0, 75).map((n) => <option key={n} value={n} disabled={!podeEditarExpiracao && n < config.confianca.transfereAbaixoDe}>{n}%</option>)}
-            </select>
+            <CampoSelect id={campo.id} disabled={ro} value={String(k.transfereAbaixoDe)} onValueChange={(valor) => { const v = Number(valor); setK({ transfereAbaixoDe: v, executaAPartirDe: Math.max(k.executaAPartirDe, v + 5) }); }} opcoes={faixa(0, 75).map((n) => ({ valor: String(n), rotulo: `${n}%`, disabled: !podeEditarExpiracao && n < config.confianca.transfereAbaixoDe }))} />
           )}
         </Campo>
       </div>
@@ -78,17 +74,12 @@ export function Confianca({ config, baseVersaoId, rascunho, podeEditar, podeEdit
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <Campo rotulo="Sugestões sem resposta expiram depois de">
           {(campo) => (
-            <select {...campo} className={CONTROLE} disabled={ro || !podeEditarExpiracao} value={k.expiracaoSugestaoMin} onChange={(e) => setK({ expiracaoSugestaoMin: Number(e.target.value) as (typeof EXPIRACOES)[number] })}>
-              {EXPIRACOES.map((m) => <option key={m} value={m}>{m < 60 ? `${m} minutos` : m === 60 ? "1 hora" : `${m / 60} horas`}</option>)}
-            </select>
+            <CampoSelect id={campo.id} disabled={ro || !podeEditarExpiracao} value={String(k.expiracaoSugestaoMin)} onValueChange={(valor) => setK({ expiracaoSugestaoMin: Number(valor) as (typeof EXPIRACOES)[number] })} opcoes={EXPIRACOES.map((m) => ({ valor: String(m), rotulo: m < 60 ? `${m} minutos` : m === 60 ? "1 hora" : `${m / 60} horas` }))} />
           )}
         </Campo>
         <Campo rotulo="Quando expirar">
           {(campo) => (
-            <select {...campo} className={CONTROLE} disabled={ro || !podeEditarExpiracao} value={k.acaoExpiracao} onChange={(e) => setK({ acaoExpiracao: e.target.value as ConfigAria["confianca"]["acaoExpiracao"] })}>
-              <option value="HANDOFF">Transferir para uma pessoa</option>
-              <option value="DESCARTAR">Descartar a sugestão</option>
-            </select>
+            <CampoSelect id={campo.id} disabled={ro || !podeEditarExpiracao} value={k.acaoExpiracao} onValueChange={(valor) => setK({ acaoExpiracao: valor as ConfigAria["confianca"]["acaoExpiracao"] })} opcoes={[{ valor: "HANDOFF", rotulo: "Transferir para uma pessoa" }, { valor: "DESCARTAR", rotulo: "Descartar a sugestão" }]} />
           )}
         </Campo>
       </div>

@@ -9,6 +9,10 @@ import { FeedbackAcao } from "@/components/FeedbackAcao";
 import { EstadoVazio } from "@/components/EstadoVazio";
 import { useAcaoCliente } from "@/lib/acao-cliente";
 import { ETAPA_LABEL } from "@/lib/labels";
+import { Checkbox } from "@/components/ui/checkbox";
+import { CampoCombobox } from "@/components/ui/combobox";
+import { CampoSelect } from "@/components/ui/select";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { reatribuirCarteiraEmLote } from "@/server/crm/carteira-acoes";
 import { MAX_LOTE_CARTEIRA, TEXTO_CONSEQUENCIA_REATRIBUICAO, type FiltrosCarteira, type LinhaCarteira, type VendedorCarteira } from "@/server/crm/carteira";
 
@@ -76,6 +80,7 @@ export function ListaCarteira({ linhas, vendedores, total, filtros, podeReatribu
   const router = useRouter();
   const [selecionados, setSelecionados] = useState<string[]>([]);
   const [destino, setDestino] = useState("");
+  const [emTurma, setEmTurma] = useState(filtros.emTurma);
   const [motivo, setMotivo] = useState("");
   const acao = useAcaoCliente({ idempotente: false });
   const [confirmando, setConfirmando] = useState(false);
@@ -119,32 +124,18 @@ export function ListaCarteira({ linhas, vendedores, total, filtros, podeReatribu
         </label>
         <label className="grid gap-1 text-sm">
           Vendedor
-          <select name="dono" defaultValue={filtros.donoId} className={CONTROLE}>
-            <option value="">Todos</option>
-            {vendedores.map((v) => (
-              <option key={v.id} value={v.id}>{v.nome} ({v.total})</option>
-            ))}
-          </select>
+          <CampoCombobox name="dono" defaultValue={filtros.donoId} vazio="Todos" opcoes={vendedores.map((v) => ({ valor: v.id, rotulo: `${v.nome} (${v.total})` }))} />
         </label>
         <label className="grid gap-1 text-sm">
           Tipo
-          <select name="tipo" defaultValue={filtros.tipo} className={CONTROLE}>
-            <option value="todos">Todos</option>
-            <option value="pf">Pessoa física</option>
-            <option value="pj">Empresa</option>
-          </select>
+          <CampoSelect name="tipo" defaultValue={filtros.tipo} opcoes={[{ valor: "todos", rotulo: "Todos" }, { valor: "pf", rotulo: "Pessoa física" }, { valor: "pj", rotulo: "Empresa" }]} />
         </label>
         <label className="grid gap-1 text-sm">
           Sem interação
-          <select name="semInteracao" defaultValue={filtros.semInteracaoDias} className={CONTROLE}>
-            <option value="">Qualquer prazo</option>
-            <option value="7">Há 7 dias ou mais</option>
-            <option value="15">Há 15 dias ou mais</option>
-            <option value="30">Há 30 dias ou mais</option>
-          </select>
+          <CampoCombobox name="semInteracao" defaultValue={filtros.semInteracaoDias} vazio="Qualquer prazo" opcoes={[{ valor: "7", rotulo: "Há 7 dias ou mais" }, { valor: "15", rotulo: "Há 15 dias ou mais" }, { valor: "30", rotulo: "Há 30 dias ou mais" }]} />
         </label>
         <label className="flex min-h-11 items-center gap-2 text-sm sm:min-h-9">
-          <input type="checkbox" name="emTurma" value="1" defaultChecked={filtros.emTurma} className="h-4 w-4" />
+          <Checkbox name="emTurma" value="1" checked={emTurma} onCheckedChange={(v) => setEmTurma(v === true)} />
           Só quem já está em turma
         </label>
         <button className={botaoClasses({ variante: "secundario", tamanho: "lg" })}>Filtrar</button>
@@ -168,58 +159,56 @@ export function ListaCarteira({ linhas, vendedores, total, filtros, podeReatribu
           <p className="text-xs text-gray-500">
             {linhas.length < total ? `Mostrando ${linhas.length} de ${total} oportunidades; refine os filtros para ver as demais.` : total === 1 ? "1 oportunidade." : `${total} oportunidades.`}
           </p>
-          <div className="overflow-x-auto rounded-lg border border-border-soft">
-            <table className="w-full text-left text-sm">
-              <thead className="bg-gray-100 text-xs text-gray-600">
-                <tr>
+          <div className="overflow-x-auto rounded-lg border border-gray-200">
+            <Table>
+              <TableHeader className="bg-surface-muted text-xs text-gray-600">
+                <TableRow className="hover:bg-transparent">
                   {podeReatribuir && (
-                    <th scope="col" className="w-11 px-1 py-0">
+                    <TableHead scope="col" className="w-11 px-1 py-0">
                       <label className={CAIXA}>
-                        <input
-                          type="checkbox"
+                        <Checkbox
                           aria-label={linhas.length > MAX_LOTE ? `Selecionar as primeiras ${MAX_LOTE} oportunidades` : "Selecionar todas as oportunidades"}
                           checked={todos}
-                          onChange={() => setSelecionados(todos ? [] : paraTodas)}
-                          className="h-4 w-4"
+                          onCheckedChange={() => setSelecionados(todos ? [] : paraTodas)}
                         />
                       </label>
-                    </th>
+                    </TableHead>
                   )}
-                  <th scope="col" className="px-4 py-2 font-medium">Oportunidade</th>
-                  <th scope="col" className="px-4 py-2 font-medium">Etapa</th>
-                  <th scope="col" className="px-4 py-2 font-medium">Responsável</th>
-                  <th scope="col" className="px-4 py-2 font-medium">Sem interação</th>
-                  <th scope="col" className="px-4 py-2 font-medium">Turma</th>
-                  <th scope="col" className="px-4 py-2 font-medium">Tags</th>
-                </tr>
-              </thead>
-              <tbody>
+                  <TableHead scope="col" className="px-4 py-2 font-medium">Oportunidade</TableHead>
+                  <TableHead scope="col" className="px-4 py-2 font-medium">Etapa</TableHead>
+                  <TableHead scope="col" className="px-4 py-2 font-medium">Responsável</TableHead>
+                  <TableHead scope="col" className="px-4 py-2 font-medium">Sem interação</TableHead>
+                  <TableHead scope="col" className="px-4 py-2 font-medium">Turma</TableHead>
+                  <TableHead scope="col" className="px-4 py-2 font-medium">Tags</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
                 {linhas.map((l) => (
-                  <tr key={l.oportunidadeId} className="border-t border-border-soft">
+                  <TableRow key={l.oportunidadeId}>
                     {podeReatribuir && (
-                      <td className="px-1 py-0">
+                      <TableCell className="px-1 py-0">
                         <label className={CAIXA}>
-                          <input type="checkbox" aria-label={`Selecionar ${l.nome}`} checked={marcados.has(l.oportunidadeId)} onChange={() => alternar(l.oportunidadeId)} className="h-4 w-4" />
+                          <Checkbox aria-label={`Selecionar ${l.nome}`} checked={marcados.has(l.oportunidadeId)} onCheckedChange={() => alternar(l.oportunidadeId)} />
                         </label>
-                      </td>
+                      </TableCell>
                     )}
-                    <td className="px-4 py-2">
+                    <TableCell className="px-4 py-2">
                       <Link href={`/funil?o=${l.oportunidadeId}`} className="font-medium text-brand-700 hover:underline max-sm:inline-flex max-sm:min-h-11 max-sm:items-center">{l.nome}</Link>
                       <span className="block text-xs text-gray-600">{l.tipo === "pj" ? "Empresa" : "Pessoa física"}</span>
-                    </td>
-                    <td className="px-4 py-2">{ETAPA_LABEL[l.etapa]}</td>
-                    <td className="px-4 py-2">{l.dono?.nome ?? "Sem responsável"}</td>
-                    <td className={"px-4 py-2 " + (l.diasSemInteracao >= 15 ? "text-red-700" : "")}>{textoDias(l.diasSemInteracao)}</td>
-                    <td className="px-4 py-2">{l.turmaAtiva ?? "—"}</td>
-                    <td className="px-4 py-2">
+                    </TableCell>
+                    <TableCell className="px-4 py-2">{ETAPA_LABEL[l.etapa]}</TableCell>
+                    <TableCell className="px-4 py-2">{l.dono?.nome ?? "Sem responsável"}</TableCell>
+                    <TableCell className={"px-4 py-2 " + (l.diasSemInteracao >= 15 ? "text-red-700" : "")}>{textoDias(l.diasSemInteracao)}</TableCell>
+                    <TableCell className="px-4 py-2">{l.turmaAtiva ?? "—"}</TableCell>
+                    <TableCell className="px-4 py-2">
                       {l.tags.length === 0 ? "—" : l.tags.map((t) => (
                         <span key={t.id} className="mr-1 inline-flex rounded-full bg-brand-bg px-2 py-0.5 text-xs text-brand-800">{t.nome}</span>
                       ))}
-                    </td>
-                  </tr>
+                    </TableCell>
+                  </TableRow>
                 ))}
-              </tbody>
-            </table>
+              </TableBody>
+            </Table>
           </div>
         </>
       )}
@@ -235,12 +224,7 @@ export function ListaCarteira({ linhas, vendedores, total, filtros, podeReatribu
           <div className="flex flex-wrap items-end gap-3">
             <label className="grid gap-1 text-sm">
               Novo responsável
-              <select value={destino} onChange={(e) => setDestino(e.target.value)} className={CONTROLE}>
-                <option value="">Selecione</option>
-                {vendedores.map((v) => (
-                  <option key={v.id} value={v.id}>{v.nome}</option>
-                ))}
-              </select>
+              <CampoCombobox value={destino} onValueChange={setDestino} vazio="Selecione" placeholder="Selecione" opcoes={vendedores.map((v) => ({ valor: v.id, rotulo: v.nome }))} />
             </label>
             <label className="grid min-w-48 flex-1 gap-1 text-sm">
               Motivo

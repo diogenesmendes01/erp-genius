@@ -15,6 +15,7 @@ import { arquivarFonte, criarFonteTexto } from "@/server/aria/acoes";
 import type { ConfigAria } from "@/server/aria/config-schema";
 import type { FonteTela } from "@/server/aria/tela";
 import { CONTROLE, Interruptor } from "./Campos";
+import { Checkbox } from "@/components/ui/checkbox";
 import type { RascunhoAberto } from "@/server/aria/versoes";
 import { Salvar } from "./Salvar";
 
@@ -84,7 +85,7 @@ export function Conhecimento({ config, baseVersaoId, rascunho, podeEditar, fonte
           <Campo rotulo="Nome" obrigatorio>{(campo) => <input {...campo} className={CONTROLE} maxLength={120} value={nova.nome} onChange={(e) => setNova({ ...nova, nome: e.target.value })} />}</Campo>
           <Campo rotulo="Texto" obrigatorio>{(campo) => <CampoTexto {...campo} className={CONTROLE} rows={6} value={nova.texto} onChange={(e) => setNova({ ...nova, texto: e.target.value })} />}</Campo>
           <label className="flex items-center gap-2 text-sm text-gray-800">
-            <input type="checkbox" className="h-4 w-4 accent-brand-600" checked={nova.enviavel} onChange={(e) => setNova({ ...nova, enviavel: e.target.checked })} />
+            <Checkbox checked={nova.enviavel} onCheckedChange={(marcado) => setNova({ ...nova, enviavel: marcado === true })} aria-label="A Aria pode enviar este documento ao contato" />
             A Aria pode enviar este documento ao contato
           </label>
           <div><Botao ocupado={acao.ocupado} disabled={!nova.nome.trim() || !nova.texto.trim()} onClick={criar}>Adicionar fonte</Botao></div>

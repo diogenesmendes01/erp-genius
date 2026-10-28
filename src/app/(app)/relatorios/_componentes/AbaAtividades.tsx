@@ -1,4 +1,5 @@
 import { EstadoVazio } from "@/components/EstadoVazio";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import type { MetricasAtividades } from "@/server/relatorios/atividades";
 import { fmtInteiro, fmtPct, variacaoTexto } from "./formato";
 import { Kpi } from "./Kpi";
@@ -17,24 +18,24 @@ export function AbaAtividades({ dados, anterior, mostrarAria }: { dados: Metrica
           <EstadoVazio>Nenhuma tarefa no período.</EstadoVazio>
         ) : (
           <div className="overflow-x-auto rounded-lg border border-border-soft">
-            <table className="w-full min-w-[20rem] text-sm">
-              <thead>
-                <tr className="text-left text-gray-600">
-                  <th scope="col" className="p-2">Dia</th>
-                  <th scope="col" className="p-2">Criadas</th>
-                  <th scope="col" className="p-2">Concluídas</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border-soft">
+            <Table className="min-w-[20rem]">
+              <TableHeader>
+                <TableRow className="text-left text-gray-600 hover:bg-transparent">
+                  <TableHead scope="col" className="p-2">Dia</TableHead>
+                  <TableHead scope="col" className="p-2">Criadas</TableHead>
+                  <TableHead scope="col" className="p-2">Concluídas</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
                 {dados.porDia.map((d) => (
-                  <tr key={d.dia}>
-                    <th scope="row" className="p-2 text-left font-normal">{d.dia.split("-").reverse().join("/")}</th>
-                    <td className="p-2">{fmtInteiro(d.criadas)}</td>
-                    <td className="p-2">{fmtInteiro(d.concluidas)}</td>
-                  </tr>
+                  <TableRow key={d.dia}>
+                    <TableHead scope="row" className="p-2 text-left font-normal">{d.dia.split("-").reverse().join("/")}</TableHead>
+                    <TableCell className="p-2">{fmtInteiro(d.criadas)}</TableCell>
+                    <TableCell className="p-2">{fmtInteiro(d.concluidas)}</TableCell>
+                  </TableRow>
                 ))}
-              </tbody>
-            </table>
+              </TableBody>
+            </Table>
           </div>
         )}
       </section>

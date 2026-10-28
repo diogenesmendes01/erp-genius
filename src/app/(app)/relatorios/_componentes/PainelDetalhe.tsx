@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { botaoClasses } from "@/components/Botao";
+import { Input } from "@/components/ui/input";
 import { Drawer } from "@/components/Drawer";
 import { EstadoVazio } from "@/components/EstadoVazio";
 import { ETAPA_LABEL, rotular } from "@/lib/labels";
@@ -23,7 +24,7 @@ export function PainelDetalhe({ titulo, params, resultado, erro, limite }: {
       <div data-painel-detalhe="">
         <form method="get" action="/relatorios" role="search" aria-label="Buscar nas oportunidades" className="flex gap-2">
           {Object.entries(params).filter(([k]) => k !== "busca").map(([k, v]) => <input key={k} type="hidden" name={k} value={v} />)}
-          <input type="search" name="busca" defaultValue={params.busca ?? ""} aria-label="Buscar por nome" placeholder="Buscar por nome" maxLength={100} className="min-h-11 flex-1 rounded-md border border-gray-300 px-2 text-sm md:min-h-0 md:py-1.5" />
+          <Input type="search" name="busca" defaultValue={params.busca ?? ""} aria-label="Buscar por nome" placeholder="Buscar por nome" maxLength={100} className="flex-1" />
           <button type="submit" className={botaoClasses({ variante: "secundario" })}>Buscar</button>
         </form>
         {erro || !resultado ? (

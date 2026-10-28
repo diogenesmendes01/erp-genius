@@ -7,6 +7,8 @@ import { CampoTexto } from "@/components/CampoTexto";
 import { EstadoVazio } from "@/components/EstadoVazio";
 import type { ConfigAria } from "@/server/aria/config-schema";
 import { CONTROLE, emLinhas } from "./Campos";
+import { Checkbox } from "@/components/ui/checkbox";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import type { RascunhoAberto } from "@/server/aria/versoes";
 import { Salvar } from "./Salvar";
 
@@ -56,7 +58,7 @@ export function Comportamento({ config, baseVersaoId, rascunho, podeEditar }: Pr
         <div className="mt-2 flex flex-wrap gap-3">
           {TONS.map((t) => (
             <label key={t.valor} className="flex items-center gap-2 text-sm text-gray-800">
-              <input type="checkbox" className="h-4 w-4 accent-brand-600" checked={c.tons.includes(t.valor)} disabled={ro} onChange={() => alternarTom(t.valor)} />
+              <Checkbox checked={c.tons.includes(t.valor)} disabled={ro} onCheckedChange={() => alternarTom(t.valor)} aria-label={t.rotulo} />
               {t.rotulo}
             </label>
           ))}
@@ -65,14 +67,14 @@ export function Comportamento({ config, baseVersaoId, rascunho, podeEditar }: Pr
 
       <fieldset>
         <legend className="text-sm font-medium text-gray-800">Tamanho das respostas</legend>
-        <div className="mt-2 flex flex-wrap gap-4">
+        <RadioGroup name="tamanho" value={c.tamanho} disabled={ro} onValueChange={(v) => set("tamanho", v as ConfigAria["tamanho"])} className="mt-2 flex flex-wrap gap-4">
           {TAMANHOS.map((t) => (
             <label key={t.valor} className="flex items-center gap-2 text-sm text-gray-800">
-              <input type="radio" name="tamanho" className="h-4 w-4 accent-brand-600" checked={c.tamanho === t.valor} disabled={ro} onChange={() => set("tamanho", t.valor)} />
+              <RadioGroupItem value={t.valor} disabled={ro} aria-label={t.rotulo} />
               {t.rotulo}
             </label>
           ))}
-        </div>
+        </RadioGroup>
       </fieldset>
 
       <Campo rotulo="Instruções" dica="Escreva como se explicasse o trabalho a uma pessoa nova no time.">

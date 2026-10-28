@@ -106,7 +106,8 @@ describe("/aria (página)", () => {
     mocks.carregar.mockResolvedValue(dados({ paises: [{ id: "p1", nome: "Costa Rica" }] }));
     const html = renderToStaticMarkup(await Page({ searchParams: Promise.resolve({ aba: "playground" }) }));
     expect(html).toContain("SIMULAÇÃO · nada é enviado nem alterado");
-    expect(html).toContain("Costa Rica");
+    expect(html).toContain("País dos preços");
+    expect(html).toContain("Primeiro país ativo");
   });
 
   it("historico_mostra_quem_decidiu", async () => {
