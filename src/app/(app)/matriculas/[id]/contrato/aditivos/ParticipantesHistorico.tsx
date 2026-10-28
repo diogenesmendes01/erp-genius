@@ -6,6 +6,7 @@ import { PAPEIS_MODELO } from "@/app/(app)/configuracao/contratos/labels";
 import { EstadoVazio } from "@/components/EstadoVazio";
 import { Paginacao } from "@/components/Paginacao";
 import { hrefLista } from "@/lib/pagina-url";
+import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "@/components/ui/collapsible";
 
 export async function ParticipantesHistorico({ matriculaId, propostaId, pagina, paginaOriginais, preferenciaFusoExibicao = null }: { matriculaId: string; propostaId: string; pagina: number;  paginaOriginais: number; preferenciaFusoExibicao?: string | null }) {
   const r = await consultarConferenciasParticipantesAditivo({ matriculaId, propostaId, pagina });
@@ -18,14 +19,14 @@ export async function ParticipantesHistorico({ matriculaId, propostaId, pagina, 
     {!d.registros.length && (pagina > 1
       ? <EstadoVazio acao={<Link className="underline" href={href(1)}>Ir para a primeira página</Link>}>Nenhuma conferência nesta página.</EstadoVazio>
       : <EstadoVazio>Nenhuma conferência de signatários registrada para este aditivo.</EstadoVazio>)}
-    {d.registros.map(c => <details key={c.id} className="space-y-2 rounded border p-3"><summary>Versão {c.versao} · {c.autor} · {data(c.criadaEm)}</summary>
+    {d.registros.map(c => <Collapsible key={c.id} className="space-y-2 rounded border p-3"><CollapsibleTrigger className="flex w-full items-center justify-between py-2 text-left text-sm font-medium text-gray-800">Versão {c.versao} · {c.autor} · {data(c.criadaEm)}</CollapsibleTrigger><CollapsibleContent forceMount className="data-[state=closed]:hidden">
       <p className="whitespace-pre-wrap">{c.motivo}</p>
       {c.maioridade && <div><p>Maioridade: {c.maioridade.classificacao === "MAIOR" ? "Maior" : "Menor"}</p><p className="whitespace-pre-wrap">Critério: {c.maioridade.criterio}</p><p>Evidência: {c.maioridade.evidencia.nome}</p></div>}
       {c.participantes.map(p => <div key={p.papel} className="border-t pt-2"><h3 className="font-medium">{rotular(PAPEIS_MODELO, p.papel)} · {p.etapa === "CLIENTE" ? "Cliente" : "Escola"}</h3>
         <p>{p.identidade.nome}</p><p>{p.identidade.email}</p><p>Documento: {p.identidade.documento}</p>
         {p.representacao && <><p className="whitespace-pre-wrap">Representação: {p.representacao.descricao}</p><p>Evidência: {p.representacao.evidencia.nome}</p></>}
       </div>)}
-    </details>)}
+    </CollapsibleContent></Collapsible>)}
     <Paginacao pagina={pagina} temProxima={d.maisRegistros} href={href} rotulo="Páginas das conferências" />
   </section>;
 }

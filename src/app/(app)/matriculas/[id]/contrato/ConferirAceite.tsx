@@ -6,6 +6,7 @@ import { FeedbackAcao } from "@/components/FeedbackAcao";
 import { botaoClasses } from "@/components/Botao";
 import { useAcaoCliente } from "@/lib/acao-cliente";
 import { CampoTexto } from "@/components/CampoTexto";
+import { CaixaCampo } from "@/app/(app)/secretaria/controles";
 
 export function ConferirAceite({ matriculaId, conclusaoId, revisaoHash }: { matriculaId: string; conclusaoId: string; revisaoHash: string }) {
   const router = useRouter(), acao = useAcaoCliente({ idempotente: true });
@@ -17,7 +18,7 @@ export function ConferirAceite({ matriculaId, conclusaoId, revisaoHash }: { matr
       "Aceite registrado. A ativação continua sujeita aos demais requisitos da matrícula.");
     if (desfecho?.tipo === "ok") router.refresh();
   }}>
-    <label className="block"><input type="checkbox" name="conferido" required disabled={acao.ocupado} /> Conferi o original, o PDF assinado, a auditoria, todas as assinaturas exigidas e as condições desta matrícula.</label>
+    <label className="block"><CaixaCampo name="conferido" required disabled={acao.ocupado} /> Conferi o original, o PDF assinado, a auditoria, todas as assinaturas exigidas e as condições desta matrícula.</label>
     <label className="block">Registro da conferência<CampoTexto name="motivo" className="block w-full rounded border p-2" required minLength={5} maxLength={2000} disabled={acao.ocupado} /></label>
     <FeedbackAcao erro={acao.erro} sucesso={acao.sucesso} />
     <button className={botaoClasses({ variante: "secundario", tamanho: "lg" })} disabled={acao.ocupado}>{acao.ocupado ? "Registrando…" : "Confirmar aceite do original assinado"}</button>

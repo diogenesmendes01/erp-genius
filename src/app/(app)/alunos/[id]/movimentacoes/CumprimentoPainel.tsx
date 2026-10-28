@@ -11,6 +11,7 @@ import { MSG_RESULTADO_INCERTO_SEM_CHAVE } from "@/lib/mensagens";
 import { CampoTexto } from "@/components/CampoTexto";
 import { EstadoVazio } from "@/components/EstadoVazio";
 import { ESTADO_DIA_COMPENSACAO_LABEL, ESTADO_PROPOSTA_DECIDIDA_LABEL, rotular } from "@/lib/labels";
+import { SeletorCampo, CaixaCampo } from "@/app/(app)/secretaria/controles";
 
 type Dias = NonNullable<Extract<Awaited<ReturnType<typeof consultarCumprimentosRecomposicao>>, { ok: true }>["dado"]>;
 type Props = { alunoId: string; matriculaId: string; usuarioId: string; podeAprovar: boolean; atualizarContexto: () => Promise<void>; preferenciaFusoExibicao?: string | null };
@@ -64,8 +65,8 @@ function Dia({ dia, alunoId, matriculaId, usuarioId, podeAprovar, atualizar, pre
       void iniciar(() => executar(() => decidirCumprimentoRecomposicao({ alunoId, matriculaId, conferenciaId: pendente.id, aprovar,
         motivo: String(f.get("motivo") ?? ""), evidenciaConferida: f.get("evidenciaConferida") === "on" }), aprovar ? "Cumprimento aprovado e direito compensado." : "Conferência rejeitada; direito permanece pendente."));
     }}><fieldset disabled={ocupado} className="space-y-2">
-      <label className="grid gap-1">Decisão de cumprimento<select className={estilo} value={aprovar ? "aprovar" : "rejeitar"} onChange={(e) => setAprovar(e.target.value === "aprovar")}><option value="aprovar">Aprovar cumprimento</option><option value="rejeitar">Rejeitar conferência</option></select></label>
-      {aprovar && <label className="flex gap-2"><input type="checkbox" name="evidenciaConferida" required />Conferi a evidência de que a escola efetivamente ofereceu esta cobertura.</label>}
+      <label className="grid gap-1">Decisão de cumprimento<SeletorCampo className={estilo} value={aprovar ? "aprovar" : "rejeitar"} onChange={(e) => setAprovar(e.target.value === "aprovar")}><option value="aprovar">Aprovar cumprimento</option><option value="rejeitar">Rejeitar conferência</option></SeletorCampo></label>
+      {aprovar && <label className="flex gap-2"><CaixaCampo name="evidenciaConferida" required />Conferi a evidência de que a escola efetivamente ofereceu esta cobertura.</label>}
       <label className="grid gap-1">Justificativa da decisão de cumprimento<CampoTexto className={estilo} name="motivo" required minLength={5} maxLength={2000} /></label>
       <button className={botaoClasses({ variante: "secundario", tamanho: "lg" })}>Registrar decisão de cumprimento</button>
     </fieldset></form>)}

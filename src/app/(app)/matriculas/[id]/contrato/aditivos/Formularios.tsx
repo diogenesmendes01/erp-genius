@@ -3,7 +3,6 @@ import { useId, useState } from "react";
 import { useRouter } from "next/navigation";
 import { decidirAditivoContratual } from "@/server/contratos/aditivos";
 import { prepararAditivoContratualLocal } from "@/server/contratos/aditivos-local";
-import { CampoDataHoraLocal } from "@/components/CampoDataHoraLocal";
 import type { OrigemCampo } from "@/server/contratos/campos";
 import { representarValorAlteracaoAditivo, validarValorAlteracaoAditivo } from "@/server/contratos/aditivo-valores";
 import { ValorEstruturadoCampo } from "./ValorEstruturadoCampo";
@@ -13,6 +12,9 @@ import { botaoClasses } from "@/components/Botao";
 import { MSG_DECISAO_INCERTA } from "@/lib/mensagens";
 import { useAcaoCliente } from "@/lib/acao-cliente";
 import { CampoTexto } from "@/components/CampoTexto";
+import { SeletorCampo, CaixaCampo } from "@/app/(app)/secretaria/controles";
+import { DatePicker } from "@/components/ui/date-picker";
+import { DateTimePicker } from "@/components/ui/date-time-picker";
 
 type Fonte = { tipo: "CONCLUSAO" | "ORIGEM_HISTORICA"; conclusaoId: string | null; conclusaoHash: string | null; origemHistoricaId: string | null; origemHash: string | null; campos: { origem: OrigemCampo; rotulo: string; anterior: string }[] };
 type Modelo = { id: string; codigo: string; versao: number; modeloHash: string; titulo: string };
@@ -53,18 +55,18 @@ export function PrepararAditivo({ matriculaId, fonte, modelos, agenda, fusoVigen
     if (d?.tipo === "ok" && d.dado) router.push(`/matriculas/${encodeURIComponent(matriculaId)}/contrato/aditivos/${encodeURIComponent(d.dado.id)}`);
   }}>
     <h2 className="text-xl">Preparar proposta de aditivo</h2>
-    <div className="block"><label htmlFor={`${id}-modelo`}>Modelo institucional aprovado</label><select id={`${id}-modelo`} className="mt-1 block w-full rounded border p-2" value={modeloId} onChange={e => setModeloId(e.target.value)} required disabled={pendente}><option value="">Selecione um modelo</option>{modelos.map(m => <option key={m.id} value={m.id}>{m.codigo} · versão {m.versao} · {m.titulo}</option>)}</select></div>
-    <fieldset className="space-y-3"><legend className="font-medium">Condições do original que serão alteradas</legend>{fonte.campos.map(c => <div key={c.origem} className="rounded border p-3"><div><input id={`${id}-${c.origem}`} type="checkbox" name={`alterar:${c.origem}`} defaultChecked={c.origem === "AGENDA_PARTICULAR" && !!agenda} disabled={pendente} /> <label htmlFor={`${id}-${c.origem}`}>Alterar {c.rotulo}</label></div><p>Valor preservado: {c.anterior}</p>{c.origem === "AGENDA_PARTICULAR" ? agenda ? <div className="mt-2"><p className="font-medium">Fotografia selecionada</p><p className="whitespace-pre-wrap">{agenda.texto}</p>{agenda.pendencias.length > 0 && <p role="alert">Esta fotografia tem pendências e não pode ser vinculada.</p>}</div> : <div className="block"><label htmlFor={`${id}-novo-${c.origem}`}>Nova descrição da agenda</label><input id={`${id}-novo-${c.origem}`} className="mt-1 block w-full rounded border p-2" name={`novo:${c.origem}`} maxLength={4000} disabled={pendente} /></div> : <div className="mt-2"><ValorEstruturadoCampo campo={c.origem} rotulo={`Novo valor para ${c.rotulo}`} disabled={pendente} onChange={valor => setValoresEstruturados(anteriores => ({ ...anteriores, [c.origem]: valor }))} /></div>}</div>)}</fieldset>
+    <div className="block"><label htmlFor={`${id}-modelo`}>Modelo institucional aprovado</label><SeletorCampo id={`${id}-modelo`} className="mt-1 block w-full rounded border p-2" value={modeloId} onChange={e => setModeloId(e.target.value)} required disabled={pendente} busca><option value="">Selecione um modelo</option>{modelos.map(m => <option key={m.id} value={m.id}>{m.codigo} · versão {m.versao} · {m.titulo}</option>)}</SeletorCampo></div>
+    <fieldset className="space-y-3"><legend className="font-medium">Condições do original que serão alteradas</legend>{fonte.campos.map(c => <div key={c.origem} className="rounded border p-3"><div><CaixaCampo id={`${id}-${c.origem}`} name={`alterar:${c.origem}`} defaultChecked={c.origem === "AGENDA_PARTICULAR" && !!agenda} disabled={pendente} /> <label htmlFor={`${id}-${c.origem}`}>Alterar {c.rotulo}</label></div><p>Valor preservado: {c.anterior}</p>{c.origem === "AGENDA_PARTICULAR" ? agenda ? <div className="mt-2"><p className="font-medium">Fotografia selecionada</p><p className="whitespace-pre-wrap">{agenda.texto}</p>{agenda.pendencias.length > 0 && <p role="alert">Esta fotografia tem pendências e não pode ser vinculada.</p>}</div> : <div className="block"><label htmlFor={`${id}-novo-${c.origem}`}>Nova descrição da agenda</label><input id={`${id}-novo-${c.origem}`} className="mt-1 block w-full rounded border p-2" name={`novo:${c.origem}`} maxLength={4000} disabled={pendente} /></div> : <div className="mt-2"><ValorEstruturadoCampo campo={c.origem} rotulo={`Novo valor para ${c.rotulo}`} disabled={pendente} onChange={valor => setValoresEstruturados(anteriores => ({ ...anteriores, [c.origem]: valor }))} /></div>}</div>)}</fieldset>
     {fonte.campos.some(c => c.origem === "COBERTURA_INICIO" || c.origem === "COBERTURA_FIM") && <fieldset className="space-y-3 rounded border p-3" disabled={pendente}>
       <legend className="font-medium">Períodos seguintes à cobertura corrigida</legend>
       <p>Ao alterar a cobertura, informe no aditivo se a referência dos próximos períodos será preservada ou modificada. Selecione início e fim da cobertura juntos.</p>
-      <label className="block">Regra do ciclo<select className="mt-1 block rounded border p-2" value={escolhaCiclo} onChange={e => setEscolhaCiclo(e.target.value)}><option value="">Selecione ao alterar a cobertura</option><option value="PRESERVAR_REFERENCIA">Preservar referência vigente</option><option value="MUDAR_REFERENCIA">Mudar referência</option></select></label>
+      <label className="block">Regra do ciclo<SeletorCampo className="mt-1 block rounded border p-2" value={escolhaCiclo} onChange={e => setEscolhaCiclo(e.target.value)}><option value="">Selecione ao alterar a cobertura</option><option value="PRESERVAR_REFERENCIA">Preservar referência vigente</option><option value="MUDAR_REFERENCIA">Mudar referência</option></SeletorCampo></label>
       {escolhaCiclo === "MUDAR_REFERENCIA" && <>
-        <label className="block">Referência dos períodos<select className="mt-1 block rounded border p-2" name="referenciaCiclo" defaultValue=""><option value="">Selecione</option><option value="MES_CIVIL">Mês civil</option><option value="CICLO_MATRICULA">Ciclo mensal da matrícula</option></select></label>
-        <label className="block">Data de referência<input className="mt-1 block rounded border p-2" type="date" name="dataReferenciaCiclo" /></label>
+        <label className="block">Referência dos períodos<SeletorCampo className="mt-1 block rounded border p-2" name="referenciaCiclo" defaultValue=""><option value="">Selecione</option><option value="MES_CIVIL">Mês civil</option><option value="CICLO_MATRICULA">Ciclo mensal da matrícula</option></SeletorCampo></label>
+        <label className="block">Data de referência<DatePicker className="mt-1 block rounded border p-2" name="dataReferenciaCiclo" /></label>
       </>}
     </fieldset>}
-    <label className="block">Início da vigência<CampoDataHoraLocal className="mt-1 block rounded border p-2" name="vigencia" fuso={fusoVigencia} required disabled={pendente} /></label>
+    <label className="block">Início da vigência<DateTimePicker className="mt-1 block rounded border p-2" name="vigencia" fuso={fusoVigencia} required disabled={pendente} /></label>
     <p>Informe a vigência no fuso {fusoVigencia}. O instante correspondente será preservado no registro.</p>
     <label className="block">Motivo<CampoTexto className="mt-1 block w-full rounded border p-2" name="motivo" minLength={5} maxLength={4000} required disabled={pendente} /></label>
     <p>Esta proposta não altera condições, não emite taxa e não cria matrícula. Outra pessoa da Administração ainda precisa decidir.</p>
@@ -80,8 +82,8 @@ export function DecidirAditivo({ propostaId, propostaHash, superada }: { propost
     if (d?.tipo === "incerto") acao.setErro(MSG_DECISAO_INCERTA);
     if (d?.tipo === "ok") router.refresh();
   }}>
-    <h2 className="text-xl">Decisão administrativa</h2><label className="block"><input type="checkbox" required disabled={pendente} /> Conferi o original, as alterações e a vigência desta proposta.</label>
-    <label className="block">Decisão<select className="mt-1 block rounded border p-2" name="decisao" defaultValue="" required disabled={pendente}><option value="">Selecione</option><option value="aprovar" disabled={superada}>Aprovar proposta</option><option value="rejeitar">Rejeitar proposta</option></select></label>
+    <h2 className="text-xl">Decisão administrativa</h2><label className="block"><CaixaCampo required disabled={pendente} /> Conferi o original, as alterações e a vigência desta proposta.</label>
+    <label className="block">Decisão<SeletorCampo className="mt-1 block rounded border p-2" name="decisao" defaultValue="" required disabled={pendente}><option value="">Selecione</option><option value="aprovar" disabled={superada}>Aprovar proposta</option><option value="rejeitar">Rejeitar proposta</option></SeletorCampo></label>
     <label className="block">Justificativa<CampoTexto className="mt-1 block w-full rounded border p-2" name="motivo" minLength={5} maxLength={4000} required disabled={pendente} /></label>
     <FeedbackAcao erro={acao.erro} sucesso={acao.sucesso} /><button className={botaoClasses({ variante: "secundario", tamanho: "lg" })} disabled={pendente}>{pendente ? "Registrando…" : "Registrar decisão"}</button>
   </form>;

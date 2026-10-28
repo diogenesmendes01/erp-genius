@@ -10,6 +10,7 @@ import { botaoClasses } from "@/components/Botao";
 import { useAcaoCliente } from "@/lib/acao-cliente";
 import { CampoTexto } from "@/components/CampoTexto";
 import { EstadoVazio } from "@/components/EstadoVazio";
+import { SeletorCampo } from "@/app/(app)/secretaria/controles";
 
 type CobrancaTaxa = {
   id: string; codigo: string | null; moeda: string;
@@ -52,12 +53,12 @@ export function AcertoTaxaFormulario({ matriculaId, propostaAditivoId, conclusao
     {!cobrancas.length && <EstadoVazio role="status">Nenhuma cobrança de taxa disponível para conferência.</EstadoVazio>}
     <fieldset disabled={acao.ocupado} className="space-y-3">
       <label className="block">Cobrança de taxa
-        <select className="mt-1 block w-full rounded border p-2" value={cobrancaId} onChange={e => setCobrancaId(e.target.value)}>
+        <SeletorCampo className="mt-1 block w-full rounded border p-2" value={cobrancaId} onChange={e => setCobrancaId(e.target.value)}>
           <option value="">Selecione a cobrança</option>
           {cobrancas.map(c => <option key={c.id} value={c.id}>{c.codigo ?? "Taxa sem código"} · {formatarMoeda(c.valorNegociado, c.moeda)} · {formatarDataCivil(c.vencimento.slice(0, 10))}</option>)}
-        </select>
+        </SeletorCampo>
       </label>
-      {atual && <dl className="grid gap-2 rounded bg-gray-100 p-3 sm:grid-cols-2">
+      {atual && <dl className="grid gap-2 rounded bg-surface-muted p-3 sm:grid-cols-2">
         <div><dt>Valor original / negociado</dt><dd>{formatarMoeda(atual.valorOriginal, atual.moeda)} / {formatarMoeda(atual.valorNegociado, atual.moeda)}</dd></div>
         <div><dt>Recebido / liquidado com crédito</dt><dd>{atual.valorRecebido != null ? formatarMoeda(atual.valorRecebido, atual.moeda) : "não registrado"} / {formatarMoeda(atual.valorLiquidadoCredito, atual.moeda)}</dd></div>
         <div><dt>Saldo atual / após acerto</dt><dd>{atual.saldo == null ? "Não informado" : formatarMoeda(atual.saldo, atual.moeda)} / {formatarMoeda(atual.saldoAposAcerto, atual.moeda)}</dd></div>

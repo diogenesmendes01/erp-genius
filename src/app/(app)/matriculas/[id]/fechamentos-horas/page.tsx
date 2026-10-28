@@ -13,6 +13,7 @@ import { consultarFusoInstitucional } from "@/server/operacao/consultas";
 import { formatarMoeda } from "@/lib/dinheiro";
 import { DESFECHO_OCORRENCIA_HORAS_LABEL, rotular } from "@/lib/labels";
 import { EstadoVazio } from "@/components/EstadoVazio";
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell, TableCaption } from "@/components/ui/table";
 
 const Memoria = z.object({ periodo: z.object({ inicio: z.string(), fim: z.string(), fuso: z.string(), vencimento: z.string() }),
   apuracao: z.object({ moeda: z.string(), estado: z.enum(["AGUARDANDO_CONFERENCIA", "PROPOSTA_PARCIAL", "APURACAO_COMPLETA", "SEM_ITENS_A_FATURAR"]),
@@ -89,10 +90,10 @@ export default async function Page({ params, searchParams }: { params: Promise<{
           <p>Período: {data(m.data.periodo.inicio)} a {data(m.data.periodo.fim)} · Fuso: {m.data.periodo.fuso} · Vencimento: {data(m.data.periodo.vencimento)}</p>
           <p>Estado da apuração quando preparada: {estados[m.data.apuracao.estado]}</p>
           <p>Total apurado: {formatarMoeda(m.data.apuracao.totalApurado, m.data.apuracao.moeda)} · {m.data.apuracao.minutosApurados} minutos.</p>
-          <div className="overflow-x-auto"><table className="w-full text-left"><caption className="text-left font-medium">Encontros incluídos na apuração</caption>
-            <thead><tr><th>Encontro</th><th>Minutos</th><th>Preço por hora</th><th>Valor ({m.data.apuracao.moeda})</th></tr></thead>
-            <tbody>{m.data.apuracao.itens.map(i => <tr key={i.encontroId}><td>{instanteEncontro(i.origem.inicio)}</td><td>{i.minutos}</td><td>{formatarMoeda(i.valorHoraContratado, m.data.apuracao.moeda)}</td><td>{formatarMoeda(i.valor, m.data.apuracao.moeda)}</td></tr>)}</tbody>
-          </table></div>
+          <div className="overflow-x-auto"><Table className="w-full text-left"><TableCaption className="text-left font-medium">Encontros incluídos na apuração</TableCaption>
+            <TableHeader><TableRow><TableHead>Encontro</TableHead><TableHead>Minutos</TableHead><TableHead>Preço por hora</TableHead><TableHead>Valor ({m.data.apuracao.moeda})</TableHead></TableRow></TableHeader>
+            <TableBody>{m.data.apuracao.itens.map(i => <TableRow key={i.encontroId}><TableCell>{instanteEncontro(i.origem.inicio)}</TableCell><TableCell>{i.minutos}</TableCell><TableCell>{formatarMoeda(i.valorHoraContratado, m.data.apuracao.moeda)}</TableCell><TableCell>{formatarMoeda(i.valor, m.data.apuracao.moeda)}</TableCell></TableRow>)}</TableBody>
+          </Table></div>
           {!m.data.apuracao.itens.length && <EstadoVazio>Nenhum encontro incluído para cobrança nesta versão.</EstadoVazio>}
           <h3 className="font-medium">Pendências ({m.data.apuracao.pendencias.length})</h3>
           <ul>{m.data.apuracao.pendencias.map(p => <li key={p.encontroId}>{encontro(p.encontroId)}: {p.motivo}</li>)}</ul>

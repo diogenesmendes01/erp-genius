@@ -3,6 +3,7 @@ import { formatarMoeda } from "@/lib/dinheiro";
 import { formatarDataCivil } from "@/lib/data-civil";
 import { EstadoVazio } from "@/components/EstadoVazio";
 import { ESTADO_DIA_COMPENSACAO_LABEL, ESTADO_PROPOSTA_DECIDIDA_LABEL, rotular } from "@/lib/labels";
+import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "@/components/ui/collapsible";
 
 export const CompensacoesEncerramentoSchema = z.array(z.object({
   id: z.string(), status: z.enum(["PENDENTE", "APROVADA", "REJEITADA"]),
@@ -21,8 +22,7 @@ export function CompensacoesEncerramento({ compensacoes }: { compensacoes: z.inf
   return <div className="space-y-2 rounded border p-3">
     <h4 className="font-medium">Compensações de cobertura</h4>
     <p>Os valores de compensação ainda precisam compor o acerto completo; não estão incluídos no total mensal apresentado.</p>
-    {compensacoes.map((comp) => <details key={comp.id}>
-      <summary>{rotular(ESTADO_PROPOSTA_DECIDIDA_LABEL, comp.status)} · origem {comp.coberturaOriginalInicio} a {comp.coberturaOriginalFim}{comp.status === "APROVADA" ? ` · ${comp.dias.filter((d) => d.estado === "PENDENTE").length} dias ainda devidos` : " · sem concessão de dias"}</summary>
+    {compensacoes.map((comp) => <Collapsible key={comp.id}><CollapsibleTrigger className="flex w-full items-center justify-between py-2 text-left text-sm font-medium text-gray-800">{rotular(ESTADO_PROPOSTA_DECIDIDA_LABEL, comp.status)} · origem {comp.coberturaOriginalInicio} a {comp.coberturaOriginalFim}{comp.status === "APROVADA" ? ` · ${comp.dias.filter((d) => d.estado === "PENDENTE").length} dias ainda devidos` : " · sem concessão de dias"}</CollapsibleTrigger><CollapsibleContent forceMount className="data-[state=closed]:hidden">
       <p>Cobrança de origem: {comp.cobrancaOrigemId}. Documento: {comp.documentoOrigemId ?? "não registrado"}.</p>
       <p>Valor da cobertura original: {formatarMoeda(comp.valorCoberturaOriginal, comp.moeda)}. {comp.motivo}</p>
       <p>Condições: {comp.evidenciaCondicoes}</p>
@@ -32,6 +32,6 @@ export function CompensacoesEncerramento({ compensacoes }: { compensacoes: z.inf
         {dia.destinadoEm ? ` · registrado em ${dia.destinadoEm}` : ""}
         {dia.programacao && <span> · cobertura programada para {formatarDataCivil(dia.programacao.dataCobertura)}{dia.estado === "PENDENTE" ? " (cumprimento ainda não confirmado)" : ""}</span>}
       </li>)}</ul>}
-    </details>)}
+    </CollapsibleContent></Collapsible>)}
   </div>;
 }

@@ -24,6 +24,7 @@ import { formatarDataCivil } from "@/lib/data-civil";
 import { MSG_DECISAO_INCERTA, MSG_RESULTADO_INCERTO } from "@/lib/mensagens";
 import { adiada, anuncios, contratoFeedbackSeparado, novosAnuncios } from "@/test/feedback-acao";
 import { FormDataFalso, criarGanchos, elementos, submeter, texto } from "@/test/tela-sem-dom";
+import { SeletorCampo } from "@/app/(app)/secretaria/controles";
 import type { ReactNode } from "react";
 
 beforeEach(() => { vi.resetAllMocks(); m.ganchos = criarGanchos(); vi.stubGlobal("FormData", FormDataFalso); });
@@ -31,7 +32,7 @@ afterEach(() => { vi.unstubAllGlobals(); });
 
 const rotuloDoBotao = (t: ReactNode) => texto(elementos(t).find((n) => n.type === "button")!.props.children);
 const escolher = (t: ReactNode, valor: string) =>
-  (elementos(t).find((n) => n.type === "select" && typeof n.props.onChange === "function")!.props.onChange as (e: { target: { value: string } }) => void)({ target: { value: valor } });
+  (elementos(t).find((n) => n.type === SeletorCampo && typeof n.props.onChange === "function")!.props.onChange as (e: { target: { value: string } }) => void)({ target: { value: valor } });
 
 describe("DecidirFechamento", () => {
   const tela = () => m.ganchos!.renderizar(DecidirFechamento, { alunoId: "a", matriculaId: "m", rascunhoId: "r" });

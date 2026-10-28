@@ -19,7 +19,7 @@ describe("TerminoIndisponibilidadeOferta", () => {
       dados: { pagina: 1, temProxima: false, podePropor: true, propostas: [] },
       fusoInstitucional: null,
     } as never));
-    expect(html).toMatch(/<input(?=[^>]*name="fim")(?=[^>]*type="date")(?=[^>]*min="2026-09-10")[^>]*>/);
+    expect(html).toMatch(/<input(?=[^>]*name="fim")(?=[^>]*type="hidden")(?=[^>]*min="2026-09-10")[^>]*>/);
   });
 
   it("histórico vazio: na primeira página diz que não há propostas; numa página seguinte, fala da página e volta ao início (docs/42)", () => {

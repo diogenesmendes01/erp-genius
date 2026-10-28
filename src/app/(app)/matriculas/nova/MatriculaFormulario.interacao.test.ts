@@ -19,7 +19,14 @@ import { MatriculaFormulario, Stepper, errosDoPasso2, type DadosPasso2 } from ".
 import { VARIANTES_BOTAO } from "@/components/Botao";
 import { FeedbackAcao } from "@/components/FeedbackAcao";
 import { MSG_RESULTADO_INCERTO } from "@/lib/mensagens";
-import { botao, campos, clicar, criarGanchos, documentoQueRegistraFoco, elementos, errosDosCampos, preencher } from "@/test/tela-sem-dom";
+import { botao, campos, clicar, criarGanchos, documentoQueRegistraFoco, elementos, errosDosCampos, preencher as preencherBase } from "@/test/tela-sem-dom";
+import { SeletorCampo } from "@/app/(app)/secretaria/controles";
+import { DatePicker } from "@/components/ui/date-picker";
+import { DateTimePicker } from "@/components/ui/date-time-picker";
+import { TimePicker } from "@/components/ui/time-picker";
+
+const preencher = (raiz: ReactNode, id: string, valor: string, extra: unknown[] = []) =>
+  preencherBase(raiz, id, valor, [SeletorCampo, DatePicker, DateTimePicker, TimePicker, ...extra]);
 
 const props = {
   podeCriar: true,
@@ -137,7 +144,7 @@ describe("matrícula nova — passo 1 pela tela", () => {
 
   it("pagador empresa: o nome da empresa é cobrado no próprio campo (o tipo escolhido chega à validação)", () => {
     preencherPasso1();
-    const pagador = elementos(tela()).find((n) => n.type === "select" && n.props["aria-labelledby"] === "matricula-pagador-titulo")!;
+    const pagador = elementos(tela()).find((n) => n.type === SeletorCampo && n.props["aria-labelledby"] === "matricula-pagador-titulo")!;
     (pagador.props.onChange as (e: unknown) => void)({ target: { value: "EMPRESA" } });
     clicar(tela(), PROXIMO);
     const t = tela();

@@ -43,6 +43,7 @@ import { CampoTexto } from "@/components/CampoTexto";
 import { MSG_DECISAO_INCERTA, MSG_RESULTADO_INCERTO } from "@/lib/mensagens";
 import { adiada, anuncios, contratoFeedbackSeparado, novosAnuncios, type Adiada } from "@/test/feedback-acao";
 import { FormDataFalso, botao, clicar, criarGanchos, elementos, formularios, submeter, texto, type No } from "@/test/tela-sem-dom";
+import { SeletorCampo } from "@/app/(app)/secretaria/controles";
 import type { ReactNode } from "react";
 
 beforeEach(() => { vi.clearAllMocks(); m.ganchos = criarGanchos(); vi.stubGlobal("FormData", FormDataFalso); });
@@ -58,7 +59,7 @@ describe("AcertoTaxaFormulario", () => {
   contratoFeedbackSeparado({
     nome: "propor acerto da taxa", tela, action: m.proporAcerto,
     preparar: () => {
-      mudar(elementos(tela()).find((n) => n.type === "select")!, "taxa");
+      mudar(elementos(tela()).find((n) => n.type === SeletorCampo)!, "taxa");
       const [motivo, evidencia] = elementos(tela()).filter((n) => n.type === CampoTexto);
       mudar(motivo, "Motivo conferido");
       mudar(evidencia, "Protocolo do acordo");
@@ -123,7 +124,7 @@ describe("PrepararAditivo", () => {
   };
   const tela = () => m.ganchos!.renderizar(PrepararAditivo, props);
   const preparar = () => {
-    mudar(elementos(tela()).find((n) => n.type === "select" && n.props.id === "teste-modelo")!, "modelo");
+    mudar(elementos(tela()).find((n) => n.type === SeletorCampo && n.props.id === "teste-modelo")!, "modelo");
     (elementos(tela()).find((n) => n.type === ValorEstruturadoCampo)!.props.onChange as (v: unknown) => void)({ tipo: "TEXT", texto: "Nome corrigido" });
   };
   const acionar = () => submeter(tela(), { vigencia: "2026-10-01T10:00", motivo: "Ajuste contratual conferido", "alterar:ALUNO_NOME": "on" });
@@ -313,7 +314,7 @@ describe("ProcessoFormulario", () => {
   const tela = () => m.ganchos!.renderizar(ProcessoFormulario, { matriculaId: "m", propostaId: "p", artefatoId: "a", conferenciaId: "c", ambiente: "SANDBOX" as const });
   contratoFeedbackSeparado({
     nome: "preparar processo de assinatura", tela, action: m.processo,
-    preparar: () => mudar(elementos(tela()).find((n) => n.type === "select")!, "ZAPSIGN"),
+    preparar: () => mudar(elementos(tela()).find((n) => n.type === SeletorCampo)!, "ZAPSIGN"),
     acionar: () => submeter(tela()),
     sucesso: "Processo preparado internamente.", incerto: MSG_RESULTADO_INCERTO,
     ocupado: () => botaoOcupado(tela(), "Preparando…"),

@@ -6,6 +6,7 @@ import { FeedbackAcao } from "@/components/FeedbackAcao";
 import { botaoClasses } from "@/components/Botao";
 import { useAcaoCliente } from "@/lib/acao-cliente";
 import { CampoTexto } from "@/components/CampoTexto";
+import { CaixaCampo } from "@/app/(app)/secretaria/controles";
 export function AssinaturaFormulario({ matriculaId, propostaId, artefatoId, revisaoHash }: { matriculaId: string; propostaId: string; artefatoId: string; revisaoHash: string }) {
   const router = useRouter(), acao = useAcaoCliente({ idempotente: true });
   const tentativa = useRef<{ dados: string; chave: string } | null>(null);
@@ -18,7 +19,7 @@ export function AssinaturaFormulario({ matriculaId, propostaId, artefatoId, revi
     if (d?.tipo === "ok") router.refresh();
   }}>
     <h2 className="text-xl">Registrar conferência do original</h2>
-    <label className="block"><input type="checkbox" required disabled={acao.ocupado} /> Abri o PDF preservado e conferi o documento, a vigência e os signatários apresentados.</label>
+    <label className="block"><CaixaCampo required disabled={acao.ocupado} /> Abri o PDF preservado e conferi o documento, a vigência e os signatários apresentados.</label>
     <label className="block">Motivo<CampoTexto className="mt-1 block w-full rounded border p-2" required minLength={5} maxLength={2000} name="motivo" disabled={acao.ocupado} /></label>
     <button className={botaoClasses({ variante: "secundario", tamanho: "lg" })} disabled={acao.ocupado}>{acao.ocupado ? "Registrando…" : "Registrar conferência"}</button>
     <FeedbackAcao erro={acao.erro} sucesso={acao.sucesso} />

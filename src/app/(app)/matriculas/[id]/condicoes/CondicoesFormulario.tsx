@@ -5,6 +5,8 @@ import { registrarCondicoesEntrada } from "@/server/secretaria/condicoes-entrada
 import { botaoClasses } from "@/components/Botao";
 import { MSG_RESULTADO_INCERTO } from "@/lib/mensagens";
 import { CampoTexto } from "@/components/CampoTexto";
+import { SeletorCampo } from "@/app/(app)/secretaria/controles";
+import { DatePicker } from "@/components/ui/date-picker";
 export function CondicoesFormulario({ matriculaId, pagadorId, versao, regime, temAdiantamento }: { matriculaId: string; pagadorId: string; versao: number; regime: string; temAdiantamento: boolean }) {
   const router = useRouter(), chave = useRef<string | null>(null), [erro, setErro] = useState(""), [ocupado, setOcupado] = useState(false);
   return <form className="space-y-3" onSubmit={async (e) => {
@@ -18,14 +20,14 @@ export function CondicoesFormulario({ matriculaId, pagadorId, versao, regime, te
     finally { setOcupado(false); }
   }}>
     <h2 className="text-xl">Registrar condições</h2>
-    <label className="block">Vencimento da taxa<input name="taxa" type="date" required className="ml-2 rounded border p-2" /></label>
+    <label className="block">Vencimento da taxa<DatePicker name="taxa" required className="ml-2 rounded border p-2" /></label>
     {regime === "MENSALIDADE" ? <>
-      <label className="block">Referência da cobertura<select name="referencia" required defaultValue="" className="ml-2 rounded border p-2"><option value="">Selecione</option><option value="MES_CIVIL">Mês civil</option><option value="CICLO_MATRICULA">Ciclo da matrícula</option></select></label>
-      <label className="block">Início da cobertura<input name="inicio" type="date" required className="ml-2 rounded border p-2" /></label>
+      <label className="block">Referência da cobertura<SeletorCampo name="referencia" required defaultValue="" className="ml-2 rounded border p-2"><option value="">Selecione</option><option value="MES_CIVIL">Mês civil</option><option value="CICLO_MATRICULA">Ciclo da matrícula</option></SeletorCampo></label>
+      <label className="block">Início da cobertura<DatePicker name="inicio" required className="ml-2 rounded border p-2" /></label>
       <p>Para mês civil, informe o primeiro dia do mês. Cobertura é separada do vencimento.</p>
-      <label className="block">Primeiro vencimento<input name="primeiro" type="date" required className="ml-2 rounded border p-2" /></label>
+      <label className="block">Primeiro vencimento<DatePicker name="primeiro" required className="ml-2 rounded border p-2" /></label>
       <label className="block">Dia de vencimento contratado<input name="dia" type="number" min="1" max="31" step="1" required className="ml-2 rounded border p-2" /></label>
-    </> : temAdiantamento ? <label className="block">Vencimento do adiantamento<input name="adiantamento" type="date" required className="ml-2 rounded border p-2" /></label> : <p>Particular por hora sem antecipação: não será registrada uma mensalidade.</p>}
+    </> : temAdiantamento ? <label className="block">Vencimento do adiantamento<DatePicker name="adiantamento" required className="ml-2 rounded border p-2" /></label> : <p>Particular por hora sem antecipação: não será registrada uma mensalidade.</p>}
     <label className="block">Motivo<CampoTexto name="motivo" required minLength={5} maxLength={2000} className="block rounded border p-2" /></label>
     <button disabled={ocupado} className={botaoClasses({ variante: "secundario", tamanho: "lg" })}>{ocupado ? "Registrando…" : "Registrar condições de entrada"}</button>{erro && <p role="alert">{erro}</p>}
   </form>;

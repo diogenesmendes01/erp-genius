@@ -1,5 +1,6 @@
 "use client";
 import { CATEGORIA_DOCUMENTO_LABEL, rotular } from "@/lib/labels";
+import { SeletorCampo } from "@/app/(app)/secretaria/controles";
 
 export type EvidenciaDisponivel = { id: string; nome: string; categoria: string };
 
@@ -14,11 +15,11 @@ export function EvidenciaSeletor({ nome, titulo, documentos, selecionada, onChan
   const opcoes = selecionada && !documentos.some(d => d.id === selecionada.id)
     ? [selecionada, ...documentos] : documentos;
   return <label className="block">{titulo}
-    <select name={nome} className="mt-1 block w-full rounded border p-2" required
+    <SeletorCampo name={nome} className="mt-1 block w-full rounded border p-2" required
       disabled={disabled} value={selecionada?.id ?? ""}
       onChange={e => onChange(opcoes.find(d => d.id === e.target.value) ?? null)}>
       <option value="">Selecione uma evidência</option>
       {opcoes.map(d => <option key={d.id} value={d.id}>{d.nome} · {rotular(CATEGORIA_DOCUMENTO_LABEL, d.categoria)}</option>)}
-    </select>
+    </SeletorCampo>
   </label>;
 }

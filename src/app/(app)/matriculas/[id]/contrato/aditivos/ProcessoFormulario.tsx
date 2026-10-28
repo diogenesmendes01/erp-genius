@@ -6,6 +6,7 @@ import { prepararProcessoAssinaturaAditivo } from "@/server/contratos/aditivo-en
 import { botaoClasses } from "@/components/Botao";
 import { FeedbackAcao } from "@/components/FeedbackAcao";
 import { useAcaoCliente } from "@/lib/acao-cliente";
+import { SeletorCampo } from "@/app/(app)/secretaria/controles";
 
 export function ProcessoFormulario({ matriculaId, propostaId, artefatoId, conferenciaId, ambiente, simuladoDisponivel = false }: {
   matriculaId: string; propostaId: string; artefatoId: string; conferenciaId: string; ambiente: "SANDBOX" | "PRODUCAO";
@@ -18,7 +19,7 @@ export function ProcessoFormulario({ matriculaId, propostaId, artefatoId, confer
   }}>
     <h2 className="text-xl">Preparar processo de assinatura</h2>
     <p>Esta preparação não envia o documento ao fornecedor e não conclui assinaturas.</p>
-    <div><label htmlFor="fornecedor-aditivo">Fornecedor</label><select id="fornecedor-aditivo" className="mt-1 block rounded border p-2" value={fornecedor} onChange={event => setFornecedor(event.target.value)} required disabled={acao.ocupado}><option value="">Selecione o fornecedor</option><option value="ZAPSIGN">ZapSign</option><option value="CLICKSIGN">Clicksign</option><option value="DOCUSIGN">DocuSign</option>{simuladoDisponivel && <option value="SIMULADO">Simulado (nenhum documento sai do ERP)</option>}</select></div>
+    <div><label htmlFor="fornecedor-aditivo">Fornecedor</label><SeletorCampo id="fornecedor-aditivo" className="mt-1 block rounded border p-2" value={fornecedor} onChange={event => setFornecedor(event.target.value)} required disabled={acao.ocupado}><option value="">Selecione o fornecedor</option><option value="ZAPSIGN">ZapSign</option><option value="CLICKSIGN">Clicksign</option><option value="DOCUSIGN">DocuSign</option>{simuladoDisponivel && <option value="SIMULADO">Simulado (nenhum documento sai do ERP)</option>}</SeletorCampo></div>
     <div><span className="font-medium">Ambiente da fonte</span><p>{ambiente === "PRODUCAO" ? "Produção" : "Sandbox"}</p></div>
     <FeedbackAcao erro={acao.erro} sucesso={acao.sucesso} /><button className={botaoClasses({ variante: "secundario", tamanho: "lg" })} disabled={acao.ocupado}>{acao.ocupado ? "Preparando…" : "Preparar processo de assinatura"}</button>
   </form>;

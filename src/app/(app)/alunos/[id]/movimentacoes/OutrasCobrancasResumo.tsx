@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { formatarMoeda } from "@/lib/dinheiro";
+import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "@/components/ui/collapsible";
 const schema = z.object({ contratos: z.array(z.object({ calculo: z.object({ matriculaId: z.string(), moeda: z.string() }), outrasCobrancasConferidas: z.object({
   pendencias: z.array(z.string()), parcelas: z.array(z.object({ cobrancaId: z.string(), valorOriginal: z.string(), valorDevidoProposto: z.string(), valorRecebido: z.string(), saldoDevido: z.string(), creditoApurado: z.string(), motivo: z.string(), evidenciaContratual: z.string(),
     valorLiquidadoCredito: z.string().optional(),
@@ -16,7 +17,7 @@ export function OutrasCobrancasResumo({ snapshot }: { snapshot: unknown }) {
     <h4>Demais cobranças · {c.calculo.matriculaId}</h4>
     {!c.outrasCobrancasConferidas ? <p>Esta versão não contém conferência das demais cobranças.</p> : <>
       {c.outrasCobrancasConferidas.pendencias.map((p) => <p key={p} className="text-amber-800">{p}</p>)}
-      {c.outrasCobrancasConferidas.parcelas.map((p) => <details key={p.cobrancaId}><summary>Cobrança {p.cobrancaId} · devido proposto {formatarMoeda(p.valorDevidoProposto, c.calculo.moeda)}</summary>
+      {c.outrasCobrancasConferidas.parcelas.map((p) => <Collapsible key={p.cobrancaId}><CollapsibleTrigger className="flex w-full items-center justify-between py-2 text-left text-sm font-medium text-gray-800">Cobrança {p.cobrancaId} · devido proposto {formatarMoeda(p.valorDevidoProposto, c.calculo.moeda)}</CollapsibleTrigger><CollapsibleContent forceMount className="data-[state=closed]:hidden">
         <dl className="grid gap-x-4 gap-y-1 sm:grid-cols-2">
           <dt>Valor negociado antes do acerto</dt><dd>{formatarMoeda(p.valorOriginal, c.calculo.moeda)}</dd>
           <dt>Recebimentos registrados</dt><dd>{formatarMoeda(p.valorRecebido, c.calculo.moeda)}</dd>
@@ -26,18 +27,18 @@ export function OutrasCobrancasResumo({ snapshot }: { snapshot: unknown }) {
           <dt>Crédito apurado pelo acerto</dt><dd>{formatarMoeda(p.creditoApurado, c.calculo.moeda)}</dd>
         </dl>
         <p>O saldo considera os recebimentos e créditos já utilizados. O crédito apurado será registrado na efetivação do acerto aprovado; sua utilização ou devolução exige o fluxo correspondente.</p>
-        {p.origemFaturamentoHoras && <details className="mt-2"><summary>Origem das particulares por hora · {p.origemFaturamentoHoras.itens.length} encontro(s)</summary>
+        {p.origemFaturamentoHoras && <Collapsible className="mt-2"><CollapsibleTrigger className="flex w-full items-center justify-between py-2 text-left text-sm font-medium text-gray-800">Origem das particulares por hora · {p.origemFaturamentoHoras.itens.length} encontro(s)</CollapsibleTrigger><CollapsibleContent forceMount className="data-[state=closed]:hidden">
           <p>Emissão {p.origemFaturamentoHoras.emissaoId}. Aprovação do fechamento {p.origemFaturamentoHoras.decisaoId}.</p>
           <ul>{p.origemFaturamentoHoras.itens.map(item => <li key={item.id}>Conferência {item.conferenciaId} · valor faturado preservado {formatarMoeda(item.valor, c.calculo.moeda)}</li>)}</ul>
-        </details>}
-        {!!p.recebimentos?.length && <details className="mt-2"><summary>Recebimentos preservados · {p.recebimentos.length}</summary>
+        </CollapsibleContent></Collapsible>}
+        {!!p.recebimentos?.length && <Collapsible className="mt-2"><CollapsibleTrigger className="flex w-full items-center justify-between py-2 text-left text-sm font-medium text-gray-800">Recebimentos preservados · {p.recebimentos.length}</CollapsibleTrigger><CollapsibleContent forceMount className="data-[state=closed]:hidden">
           <ul>{p.recebimentos.map(recebimento => <li key={recebimento.id}>Recebimento {recebimento.id} · {formatarMoeda(recebimento.valor, recebimento.moeda)}</li>)}</ul>
-        </details>}
-        {!!p.utilizacoesCredito?.length && <details className="mt-2"><summary>Utilizações anteriores de crédito · {p.utilizacoesCredito.length}</summary>
+        </CollapsibleContent></Collapsible>}
+        {!!p.utilizacoesCredito?.length && <Collapsible className="mt-2"><CollapsibleTrigger className="flex w-full items-center justify-between py-2 text-left text-sm font-medium text-gray-800">Utilizações anteriores de crédito · {p.utilizacoesCredito.length}</CollapsibleTrigger><CollapsibleContent forceMount className="data-[state=closed]:hidden">
           <ul>{p.utilizacoesCredito.map(uso => <li key={uso.propostaId}>Crédito {uso.creditoId} · {formatarMoeda(uso.valor, c.calculo.moeda)} · aprovação {uso.decisaoId}</li>)}</ul>
-        </details>}
+        </CollapsibleContent></Collapsible>}
         <p>Motivo: {p.motivo}. Evidência: {p.evidenciaContratual}.</p>
-      </details>)}
+      </CollapsibleContent></Collapsible>)}
       {c.outrasCobrancasConferidas.consolidado && <p>Subtotal das demais cobranças: saldo devido {formatarMoeda(c.outrasCobrancasConferidas.consolidado.saldoDevidoSemCompensarCreditos, c.calculo.moeda)}; crédito separado {formatarMoeda(c.outrasCobrancasConferidas.consolidado.creditoApurado, c.calculo.moeda)}.</p>}
     </>}
     <p>Proposta sujeita à aprovação independente. Não utiliza créditos, devolve dinheiro ou converte horas antecipadas.</p>

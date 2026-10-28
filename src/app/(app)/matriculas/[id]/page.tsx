@@ -19,7 +19,7 @@ export default async function MatriculaHubPage({ params }: { params: Promise<{ i
         <ul className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
           {secoes.map((s) => (
             <li key={s.href}>
-              <Link href={s.href} className="block rounded-md border border-gray-200 bg-surface px-4 py-3 text-sm hover:bg-gray-50">
+              <Link href={s.href} className="block rounded-md border border-gray-200 bg-surface px-4 py-3 text-sm hover:bg-surface-muted">
                 {s.label}
               </Link>
             </li>

@@ -117,7 +117,7 @@ export function ImportarAlunosModal() {
                   <p className="mb-1 text-xs font-medium text-gray-700">
                     {res.ignorados!.length} linha(s) ignorada(s) por já existir o aluno:
                   </p>
-                  <ul className="max-h-40 overflow-auto rounded bg-gray-50 p-2 text-xs text-gray-600">
+                  <ul className="max-h-40 overflow-auto rounded bg-surface-muted p-2 text-xs text-gray-600">
                     {res.ignorados!.map((i) => (
                       <li key={i.linha}>
                         Linha {i.linha}: {i.motivo}
@@ -131,7 +131,7 @@ export function ImportarAlunosModal() {
                   <p className="mb-1 text-xs font-medium text-amber-700">
                     {res.erros.length} linha(s) com problema:
                   </p>
-                  <ul className="max-h-40 overflow-auto rounded bg-gray-50 p-2 text-xs text-gray-600">
+                  <ul className="max-h-40 overflow-auto rounded bg-surface-muted p-2 text-xs text-gray-600">
                     {res.erros.map((e) => (
                       <li key={e.linha}>
                         Linha {e.linha}: {e.motivo}

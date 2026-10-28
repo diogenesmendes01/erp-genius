@@ -6,6 +6,8 @@ import { botaoClasses } from "@/components/Botao";
 import { MSG_RESULTADO_INCERTO_SEM_CHAVE } from "@/lib/mensagens";
 import { CampoTexto } from "@/components/CampoTexto";
 import { EstadoVazio } from "@/components/EstadoVazio";
+import { SeletorCampo } from "@/app/(app)/secretaria/controles";
+import { DatePicker } from "@/components/ui/date-picker";
 
 type Dados = NonNullable<Extract<Awaited<ReturnType<typeof consultarDisponibilidadesOferta>>, { ok: true }>["dado"]>;
 const campo = "block w-full rounded border p-2";
@@ -38,8 +40,8 @@ export function DisponibilidadeOferta({ matriculaId, inicial }: { matriculaId: s
     }}>
       <fieldset disabled={ocupado} className="space-y-3">
         <legend>Propor confirmação de oferta</legend>
-        <label className="block">Início do período<input type="date" name="inicio" required {...periodo.propsInicio} className={campo} /></label>
-        <label className="block">Fim do período<input type="date" name="fim" required min={periodo.min} className={campo} /></label>
+        <label className="block">Início do período<DatePicker name="inicio" required {...periodo.propsInicio} className={campo} /></label>
+        <label className="block">Fim do período<DatePicker name="fim" required min={periodo.min} className={campo} /></label>
         <label className="block">Justificativa<CampoTexto name="motivo" required minLength={5} maxLength={2000} className={campo} /></label>
         <label className="block">Evidências da oferta<CampoTexto name="evidencia" required minLength={5} maxLength={4000} className={campo} /></label>
         <button className={botaoClasses({ variante: "secundario", tamanho: "lg" })} type="submit">Enviar para conferência</button>
@@ -57,7 +59,7 @@ export function DisponibilidadeOferta({ matriculaId, inicial }: { matriculaId: s
       }); }}>
         <fieldset disabled={ocupado} className="space-y-2">
           <legend>Conferência independente</legend>
-          <label>Decisão<select name="decisao" required className={campo}><option value="">Selecione</option><option value="aprovar">Aprovar</option><option value="rejeitar">Rejeitar</option></select></label>
+          <label>Decisão<SeletorCampo name="decisao" required className={campo}><option value="">Selecione</option><option value="aprovar">Aprovar</option><option value="rejeitar">Rejeitar</option></SeletorCampo></label>
           <label>Motivo<CampoTexto name="motivo" required minLength={5} maxLength={2000} className={campo} /></label>
           <label>Evidências conferidas<CampoTexto name="evidencia" required minLength={5} maxLength={4000} className={campo} /></label>
           <button className={botaoClasses({ variante: "secundario", tamanho: "lg" })} type="submit">Registrar decisão</button>

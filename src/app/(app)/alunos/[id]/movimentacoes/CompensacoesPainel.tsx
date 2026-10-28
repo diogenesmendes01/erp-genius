@@ -13,6 +13,8 @@ import { formatarDataCivil } from "@/lib/data-civil";
 import { botaoClasses } from "@/components/Botao";
 import { MSG_RESULTADO_INCERTO, MSG_RESULTADO_INCERTO_SEM_CHAVE } from "@/lib/mensagens";
 import { CampoTexto } from "@/components/CampoTexto";
+import { SeletorCampo } from "@/app/(app)/secretaria/controles";
+import { DatePicker } from "@/components/ui/date-picker";
 
 type Contexto = NonNullable<Extract<Awaited<ReturnType<typeof consultarContextoEncerramento>>, { ok: true }>["dado"]>;
 const estilo = "rounded border p-2 text-sm";
@@ -41,7 +43,7 @@ function Decisao({ proposta, usuarioId, podeAprovar, atualizar }: {
         } catch { setErro(MSG_RESULTADO_INCERTO_SEM_CHAVE); }
       });
     }}><fieldset disabled={ocupado} className="space-y-2">
-      <label className="grid gap-1">Decisão<select className={estilo} value={aprovar ? "aprovar" : "rejeitar"} onChange={(e) => setAprovar(e.target.value === "aprovar")}><option value="aprovar">Aprovar dias de compensação</option><option value="rejeitar">Rejeitar proposta</option></select></label>
+      <label className="grid gap-1">Decisão<SeletorCampo className={estilo} value={aprovar ? "aprovar" : "rejeitar"} onChange={(e) => setAprovar(e.target.value === "aprovar")}><option value="aprovar">Aprovar dias de compensação</option><option value="rejeitar">Rejeitar proposta</option></SeletorCampo></label>
       <label className="grid gap-1">Justificativa da decisão<CampoTexto className={estilo} name="motivo" required minLength={5} maxLength={2000} /></label>
       <button className={botaoClasses({ variante: "secundario", tamanho: "lg" })}>Registrar decisão</button>
     </fieldset></form>}
@@ -71,7 +73,7 @@ export function CompensacoesPainel({ alunoId, contratos, usuarioId, podeAprovar,
   return <section className="space-y-3 rounded border p-3" aria-label="Compensações por falta de oferta">
     <h2 className="text-lg font-medium">Compensações por falta de oferta da escola</h2>
     <p>Registre dias de indisponibilidade em parte de um período. Aprovar os dias reconhece o direito; extensão de cobertura e acerto financeiro exigem seus próprios fluxos.</p>
-    <label className="grid gap-1">Contrato para compensação<select className={estilo} disabled={ocupado} value={matriculaId} onChange={(e) => { selecao.current = e.target.value; setMatriculaId(e.target.value); setContexto(null); setCobrancaId(""); setDias([]); setErro(null); setAviso(null); chave.current = ""; }}>{contratos.map((c) => <option key={c.id} value={c.id}>{c.codigo ?? c.id}</option>)}</select></label>
+    <label className="grid gap-1">Contrato para compensação<SeletorCampo className={estilo} disabled={ocupado} value={matriculaId} onChange={(e) => { selecao.current = e.target.value; setMatriculaId(e.target.value); setContexto(null); setCobrancaId(""); setDias([]); setErro(null); setAviso(null); chave.current = ""; }}>{contratos.map((c) => <option key={c.id} value={c.id}>{c.codigo ?? c.id}</option>)}</SeletorCampo></label>
     <button type="button" className={botaoClasses({ variante: "secundario", tamanho: "lg" })} disabled={ocupado || !matriculaId} onClick={() => { void iniciar(async () => { setErro(null); try { await atualizar(); } catch (e) { setErro(e instanceof Error ? e.message : "Falha na consulta."); } }); }}>Carregar compensações</button>
     {erro && <p role="alert" className="text-red-700">{erro}</p>}<MensagemStatus texto={aviso} />
     {contexto && <>
@@ -93,8 +95,8 @@ export function CompensacoesPainel({ alunoId, contratos, usuarioId, podeAprovar,
         });
       }}><fieldset disabled={ocupado} className="space-y-2">
         <legend className="font-medium">Preparar proposta</legend>
-        <label className="grid gap-1">Mensalidade de origem<select className={estilo} required value={cobrancaId} onChange={(e) => { setCobrancaId(e.target.value); setDias([]); }}><option value="">Selecione</option>{contexto.cobrancas.filter((c) => c.tipo === "MENSALIDADE" && c.status !== "CANCELADA" && c.coberturaInicio && c.coberturaFim).map((c) => <option key={c.id} value={c.id}>{formatarDataCivil(c.coberturaInicio)} a {formatarDataCivil(c.coberturaFim)} · {formatarMoeda(c.valorNegociado, c.moeda)} · {c.id}</option>)}</select></label>
-        <label className="grid gap-1">Dia sem oferta<input type="date" className={estilo} value={dia} min={cobranca?.coberturaInicio ?? undefined} max={cobranca?.coberturaFim ?? undefined} onChange={(e) => setDia(e.target.value)} /></label>
+        <label className="grid gap-1">Mensalidade de origem<SeletorCampo className={estilo} required value={cobrancaId} onChange={(e) => { setCobrancaId(e.target.value); setDias([]); }}><option value="">Selecione</option>{contexto.cobrancas.filter((c) => c.tipo === "MENSALIDADE" && c.status !== "CANCELADA" && c.coberturaInicio && c.coberturaFim).map((c) => <option key={c.id} value={c.id}>{formatarDataCivil(c.coberturaInicio)} a {formatarDataCivil(c.coberturaFim)} · {formatarMoeda(c.valorNegociado, c.moeda)} · {c.id}</option>)}</SeletorCampo></label>
+        <label className="grid gap-1">Dia sem oferta<DatePicker className={estilo} value={dia} min={cobranca?.coberturaInicio ?? undefined} max={cobranca?.coberturaFim ?? undefined} onChange={(e) => setDia(e.target.value)} /></label>
         <button type="button" className={botaoClasses({ variante: "secundario", tamanho: "lg" })} onClick={() => { if (!dia || !cobranca?.coberturaInicio || !cobranca.coberturaFim || dia < cobranca.coberturaInicio || dia > cobranca.coberturaFim) { setErro("Selecione um dia da cobertura original."); return; } setDias((atual) => [...new Set([...atual, dia])].sort()); chave.current = ""; setErro(null); }}>Adicionar dia</button>
         <ul>{dias.map((d) => <li key={d}>{d} <button type="button" className={botaoClasses({ variante: "perigo", tamanho: "lg" })} onClick={() => { setDias((atual) => atual.filter((v) => v !== d)); chave.current = ""; }}>Remover {d}</button></li>)}</ul>
         <label className="grid gap-1">Motivo da indisponibilidade<CampoTexto className={estilo} name="motivo" required minLength={5} maxLength={2000} /></label>

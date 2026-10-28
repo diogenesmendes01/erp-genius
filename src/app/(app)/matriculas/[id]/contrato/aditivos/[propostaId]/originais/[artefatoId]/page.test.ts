@@ -103,9 +103,9 @@ describe("ConferenciaOriginalAditivoPage", () => {
     expect(html).not.toContain("SIMULADA");
     mocks.processo.mockResolvedValue({ ok: true, dado: null });
     html = await render();
-    expect(html).toContain('<option value="SIMULADO">');
+    expect(html).toContain(">Simulado (nenhum documento sai do ERP)<");
     mocks.integracao.mockResolvedValue({ ok: true, dado: null });
-    expect(await render()).not.toContain('<option value="SIMULADO">');
+    expect(await render()).not.toContain(">Simulado (nenhum documento sai do ERP)<");
   });
 
   it("conferências vazias numa página seguinte: a volta ao início preserva tentativas e observações", async () => {

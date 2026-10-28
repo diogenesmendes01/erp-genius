@@ -5,6 +5,7 @@ import { registrarPagadorPreparacao } from "@/server/secretaria/pagador-preparac
 import { botaoClasses } from "@/components/Botao";
 import { MSG_RESULTADO_INCERTO } from "@/lib/mensagens";
 import { CampoTexto } from "@/components/CampoTexto";
+import { SeletorCampo } from "@/app/(app)/secretaria/controles";
 type Dados = { nome: string; paisId: string; documento?: string | null; email?: string | null; telefoneE164?: string | null; endereco?: string | null };
 
 export const TIPOS_COM_IDENTIFICACAO = ["RESPONSAVEL", "EMPRESA"] as const;
@@ -49,11 +50,11 @@ export function PagadorFormulario({ matriculaId, versao, paises, atual }: { matr
     } catch { setErro(MSG_RESULTADO_INCERTO); }
     finally { setOcupado(false); }
   }}>
-    <label className="block">Quem pagará<select required value={tipo} onChange={(e) => setTipo(e.target.value)} className="ml-2 rounded border p-2"><option value="">Selecione</option><option value="ALUNO">Próprio aluno</option><option value="RESPONSAVEL">Responsável</option><option value="EMPRESA">Empresa</option></select></label>
+    <label className="block">Quem pagará<SeletorCampo required value={tipo} onChange={(e) => setTipo(e.target.value)} className="ml-2 rounded border p-2"><option value="">Selecione</option><option value="ALUNO">Próprio aluno</option><option value="RESPONSAVEL">Responsável</option><option value="EMPRESA">Empresa</option></SeletorCampo></label>
     {tipo === "ALUNO" ? <p>Será registrada uma cópia dos dados atuais do próprio aluno. Confira o cadastro antes de continuar.</p> : identificacao && <fieldset className="space-y-2"><legend>Identificação do pagador</legend>
       <p className="text-sm">Trocar o tipo de pagador não apaga o que já foi preenchido: cada tipo guarda os próprios dados.</p>
       <label className="block">Nome ou razão social<input {...ligar("nome")} required maxLength={200} className="ml-2 rounded border p-2" /></label>
-      <label className="block">País<select {...ligar("paisId")} required className="ml-2 rounded border p-2"><option value="">Selecione</option>{paises.map((p) => <option key={p.id} value={p.id}>{p.nome}</option>)}</select></label>
+      <label className="block">País<SeletorCampo {...ligar("paisId")} required className="ml-2 rounded border p-2" busca><option value="">Selecione</option>{paises.map((p) => <option key={p.id} value={p.id}>{p.nome}</option>)}</SeletorCampo></label>
       <label className="block">Documento<input {...ligar("documento")} maxLength={100} className="ml-2 rounded border p-2" /></label>
       <label className="block">E-mail<input {...ligar("email")} type="email" maxLength={254} className="ml-2 rounded border p-2" /></label>
       <label className="block">Telefone internacional<input {...ligar("telefoneE164")} placeholder="+50688887777" pattern="\+[1-9][0-9]{7,14}" className="ml-2 rounded border p-2" /></label>

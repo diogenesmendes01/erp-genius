@@ -46,8 +46,8 @@ describe("proposta de utilização de crédito", () => {
   it("a cobrança de origem e as cobranças da proposta saem por código e vencimento; nenhum id vira texto", async () => {
     const html = await renderizar();
     expect(html).toContain("Cobrança de origem: C-000077 · Mensalidade · vencimento 10/08/2026.");
-    expect(html).toContain(">Cobrança sem código · vencimento 10/10/2026 · saldo R$ 20,00</option>");
-    expect(html).toContain(">C-000099 · vencimento 10/11/2026 · saldo R$ 15,00</option>");
+    expect(html).toContain(">Cobrança sem código · vencimento 10/10/2026 · saldo R$ 20,00<");
+    expect(html).toContain(">C-000099 · vencimento 10/11/2026 · saldo R$ 15,00<");
     expect(html).toContain("<p>Cobrança: Cobrança que não está mais em aberto</p>");
     const texto = html.replace(/(?:href|value)="[^"]*"/g, "");
     for (const id of ["credito-interno", "matricula-interna", "cobranca-origem-interna", "aplicacao-interna", "decisao-interna", "cobranca-aberta-interna", "cobranca-quitada-interna", "aluno-interno"]) expect(texto, id).not.toContain(id);

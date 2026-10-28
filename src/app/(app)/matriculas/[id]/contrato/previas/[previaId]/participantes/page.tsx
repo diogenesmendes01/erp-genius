@@ -15,6 +15,7 @@ import { formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
 import { VoltarPara } from "@/components/VoltarPara";
 import { SeletorMaioridade } from "./SeletorMaioridade";
 import { EstadoVazio } from "@/components/EstadoVazio";
+import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "@/components/ui/collapsible";
 const Historico = z.object({ maioridade: ConferirParticipantesSchema.innerType().shape.maioridade,
   participantes: z.array(z.object({ papel: RegraAssinaturaSchema.shape.papel, identidade: IdentidadeSignatarioSchema,
     representacao: z.object({ descricao: z.string(), evidenciaDocumentoId: z.string() }).optional() })),
@@ -53,12 +54,12 @@ export default async function ParticipantesPage({ params, searchParams }: { para
           : <EstadoVazio>Nenhuma conferência de participantes registrada para esta prévia.</EstadoVazio>)}
         {historico.dado.registros.map((r) => {
           const conteudo = Historico.safeParse(r.snapshot);
-          return <details className="rounded border p-3" key={r.id}><summary>Versão {r.versao} · {r.autor.nome} · {textoInstanteAdministrativo(r.criadaEm, preferenciaFusoExibicao)}</summary><div className="mt-3 space-y-3"><p className="whitespace-pre-wrap">{r.motivo}</p>
+          return <Collapsible className="rounded border p-3" key={r.id}><CollapsibleTrigger className="flex w-full items-center justify-between py-2 text-left text-sm font-medium text-gray-800">Versão {r.versao} · {r.autor.nome} · {textoInstanteAdministrativo(r.criadaEm, preferenciaFusoExibicao)}</CollapsibleTrigger><CollapsibleContent forceMount className="data-[state=closed]:hidden"><div className="mt-3 space-y-3"><p className="whitespace-pre-wrap">{r.motivo}</p>
             {conteudo.success ? <>
               {conteudo.data.maioridade && <p>Maioridade: {conteudo.data.maioridade.classificacao === "MAIOR" ? "maior" : "menor"} · Critério: {conteudo.data.maioridade.criterio} · Evidência: {conteudo.data.documentos.find((d) => d.id === conteudo.data.maioridade?.evidenciaDocumentoId)?.nome ?? "Identificada no registro"}</p>}
               {conteudo.data.participantes.map((p) => <div key={p.papel} className="border-t pt-2"><h3 className="font-medium">{PAPEIS_MODELO[p.papel]}</h3><p>{p.identidade.nome} · {p.identidade.email} · {p.identidade.documento}</p>{p.representacao && <p>Representação: {p.representacao.descricao} · Evidência: {conteudo.data.documentos.find((d) => d.id === p.representacao?.evidenciaDocumentoId)?.nome ?? "Identificada no registro"}</p>}</div>)}
             </> : <p role="alert">Estrutura histórica precisa de conferência.</p>}
-          </div></details>;
+          </div></CollapsibleContent></Collapsible>;
         })}
         <nav className="flex gap-4" aria-label="Páginas das conferências">{pagina > 1 && <Link href={`?pagina=${pagina - 1}&maioridade=${maioridade ?? ""}`}>Mais recentes</Link>}<span>Página {pagina}</span>{historico.dado.temProxima && <Link href={`?pagina=${pagina + 1}&maioridade=${maioridade ?? ""}`}>Anteriores</Link>}</nav>
       </>}

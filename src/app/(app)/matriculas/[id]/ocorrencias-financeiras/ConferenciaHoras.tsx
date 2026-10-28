@@ -13,6 +13,8 @@ import { botaoClasses } from "@/components/Botao";
 import { CampoTexto } from "@/components/CampoTexto";
 import { useAcaoCliente } from "@/lib/acao-cliente";
 import { formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
+import { SeletorCampo } from "@/app/(app)/secretaria/controles";
+import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "@/components/ui/collapsible";
 type Dados = NonNullable<Extract<Awaited<ReturnType<typeof consultarOcorrenciasFinanceiras>>, { ok: true }>["dado"]>;
 type Previa = NonNullable<Extract<Awaited<ReturnType<typeof preverConferenciaOcorrenciaHoras>>, { ok: true }>["dado"]>;
 function Memoria({ snapshot, data }: { snapshot: unknown; data: (v: string) => string }) {
@@ -62,13 +64,13 @@ export function ConferenciaHoras({ encontro: e, condicoes, matricula, preferenci
       <p>{e.conferencia.conferente.nome} · {instante(e.conferencia.conferidaEm)}</p><p>{e.conferencia.motivo}</p>
       {e.conferencia.aplicacaoNaoCobravel && <p role="note">{descreverAulaNaoCobravel(e.conferencia.aplicacaoNaoCobravel.efeito)} Declaração aplicada em {instante(e.conferencia.aplicacaoNaoCobravel.aplicadaEm)}.</p>}
       {e.conferencia.consumoAntecipacao && <p>Reserva antecipada {e.conferencia.consumoAntecipacao.reservaId} da compra {e.conferencia.consumoAntecipacao.reserva.compraId} consumida por esta ocorrência. Não foi criada cobrança, recebimento ou crédito.</p>}
-      <details><summary>Memória preservada da conferência</summary><Memoria snapshot={e.conferencia.snapshot} data={data} /></details>
+      <Collapsible><CollapsibleTrigger className="flex w-full items-center justify-between py-2 text-left text-sm font-medium text-gray-800">Memória preservada da conferência</CollapsibleTrigger><CollapsibleContent forceMount className="data-[state=closed]:hidden"><Memoria snapshot={e.conferencia.snapshot} data={data} /></CollapsibleContent></Collapsible>
       <p>A emissão da cobrança é uma etapa separada.</p>
     </section> : e.ocorrencia && <>
-      <label className="block">Condições aprovadas<select className="ml-2 rounded border p-2" value={condicoesId} disabled={ocupado} onChange={event => { setCondicoesId(event.target.value); setPrevia(null); carregamento.limpar(); registro.limpar(); }}>
+      <label className="block">Condições aprovadas<SeletorCampo className="ml-2 rounded border p-2" value={condicoesId} disabled={ocupado} onChange={event => { setCondicoesId(event.target.value); setPrevia(null); carregamento.limpar(); registro.limpar(); }}>
         <option value="">Selecione a versão aplicável</option>
         {condicoes.filter(c => !!c.regras).map(c => <option key={c.id} value={c.id}>Versão {c.versao} · desde {data(c.regras!.vigenteDesde)} · {formatarMoeda(c.regras!.valorHora, c.regras!.moeda)}/hora</option>)}
-      </select></label>
+      </SeletorCampo></label>
       <button className={botaoClasses({ variante: "secundario", tamanho: "lg" })} disabled={ocupado || !condicoesId} onClick={carregarPrevia}>Conferir prévia</button>
       <FeedbackAcao erro={carregamento.erro} />
       {previa && <section className="space-y-2 rounded border p-3"><h3>Prévia — ainda não registrada</h3>

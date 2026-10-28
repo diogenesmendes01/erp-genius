@@ -13,8 +13,8 @@ import { DecidirCorrecaoRelato, ProporCorrecaoRelato } from "./CorrecaoRelatoOfe
 describe("correção do período do relato (Q157)", () => {
   it("relato encerrado: propõe início e fim, partindo do período vigente", () => {
     const html = renderToStaticMarkup(createElement(ProporCorrecaoRelato, { registroId: "r", inicio: "2026-10-01", fim: "2026-10-10" }));
-    expect(html).toMatch(/<input(?=[^>]*name="inicio")(?=[^>]*type="date")(?=[^>]*value="2026-10-01")[^>]*>/);
-    expect(html).toMatch(/<input(?=[^>]*name="fim")(?=[^>]*type="date")(?=[^>]*value="2026-10-10")[^>]*>/);
+    expect(html).toMatch(/<input(?=[^>]*name="inicio")(?=[^>]*type="hidden")(?=[^>]*value="2026-10-01")[^>]*>/);
+    expect(html).toMatch(/<input(?=[^>]*name="fim")(?=[^>]*type="hidden")(?=[^>]*value="2026-10-10")[^>]*>/);
     expect(html).toContain("Propor correção");
   });
 

@@ -6,6 +6,7 @@ import { FeedbackAcao } from "@/components/FeedbackAcao";
 import { botaoClasses } from "@/components/Botao";
 import { CampoTexto } from "@/components/CampoTexto";
 import { useAcaoCliente } from "@/lib/acao-cliente";
+import { CaixaCampo } from "@/app/(app)/secretaria/controles";
 
 export function EfetivacaoFormulario({ pedidoId, estadoHash, decisaoFinanceiraId }: { pedidoId: string; estadoHash: string; decisaoFinanceiraId?: string }) {
   const router = useRouter();
@@ -27,7 +28,7 @@ export function EfetivacaoFormulario({ pedidoId, estadoHash, decisaoFinanceiraId
     {decisaoFinanceiraId && <p>O cancelamento das cobranças tem aprovação financeira. A confirmação aplicará esse tratamento junto com a desistência.</p>}
     <fieldset disabled={acao.ocupado || concluido} className="space-y-3">
       <label className="block">Conferência final e motivo<CampoTexto name="motivo" required minLength={10} maxLength={3000} className="mt-1 block w-full rounded border p-2" placeholder="Registre como conferiu a solicitação e a ausência de pagamento ou assinatura fora do ERP." /></label>
-      <label className="block"><input type="checkbox" name="conferencia" value="confirmada" required /> Confirmei que não há pagamento, comprovante ou assinatura pendente de registro para esta contratação.</label>
+      <label className="block"><CaixaCampo name="conferencia" value="confirmada" required /> Confirmei que não há pagamento, comprovante ou assinatura pendente de registro para esta contratação.</label>
       <button type="submit" className={botaoClasses({ variante: "perigo", tamanho: "lg" })}>{acao.ocupado ? "Efetivando…" : "Confirmar desistência e liberar reservas"}</button>
     </fieldset>
     <FeedbackAcao erro={acao.erro} sucesso={acao.sucesso} />

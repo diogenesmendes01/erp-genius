@@ -18,6 +18,7 @@ import { PrepararAditivo } from "./Formularios";
 import { ValorEstruturadoCampo } from "./ValorEstruturadoCampo";
 import { anuncios } from "@/test/feedback-acao";
 import { FormDataFalso, criarGanchos, elementos, submeter, type No } from "@/test/tela-sem-dom";
+import { SeletorCampo } from "@/app/(app)/secretaria/controles";
 import type { ReactNode } from "react";
 
 type Origem = "COBERTURA_INICIO" | "COBERTURA_FIM" | "ALUNO_NOME";
@@ -35,7 +36,7 @@ afterEach(() => vi.unstubAllGlobals());
 
 const mudar = (no: No, value: string) => (no.props.onChange as (e: unknown) => void)({ target: { value } });
 const selectCom = (t: ReactNode, opcao: string) =>
-  elementos(t).find(n => n.type === "select" && elementos(n.props.children as ReactNode).some(o => o.type === "option" && o.props.value === opcao))!;
+  elementos(t).find(n => n.type === SeletorCampo && elementos(n.props.children as ReactNode).some(o => o.type === "option" && o.props.value === opcao))!;
 
 function montar(escolha: string, cobertura = true) {
   const campos: Origem[] = cobertura ? ["COBERTURA_INICIO", "COBERTURA_FIM"] : ["ALUNO_NOME"];

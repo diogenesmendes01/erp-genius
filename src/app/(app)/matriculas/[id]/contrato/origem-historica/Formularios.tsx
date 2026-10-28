@@ -8,6 +8,8 @@ import { CampoTexto } from "@/components/CampoTexto";
 import { useAcaoCliente } from "@/lib/acao-cliente";
 import { MSG_DECISAO_INCERTA } from "@/lib/mensagens";
 import type { Resultado } from "@/server/_shared/resultado";
+import { SeletorCampo, CaixaCampo } from "@/app/(app)/secretaria/controles";
+import { DatePicker } from "@/components/ui/date-picker";
 
 const texto = (form: FormData, campo: string) => String(form.get(campo) ?? "").trim();
 const campo = "ml-2 rounded border p-2";
@@ -48,7 +50,7 @@ export function RegistrarOrigemHistorica({ matriculaId, moeda, regime }: { matri
  <fieldset disabled={acao.ocupado || concluido} className="space-y-2">
   <label className="block">PDF assinado<input type="file" name="pdfAssinado" accept="application/pdf" required className={campo} /></label>
   <label className="block">Referência do contrato (número, pasta, identificação)<input name="referencia" required minLength={2} maxLength={200} className={campo} /></label>
-  <label className="block">Data da assinatura<input type="date" name="assinadoEm" required className={campo} /></label>
+  <label className="block">Data da assinatura<DatePicker name="assinadoEm" required className={campo} /></label>
   <fieldset className="space-y-1 rounded border p-2"><legend>Aluno</legend>
    <label className="block">Nome<input name="alunoNome" required className={campo} /></label>
    <label className="block">Documento<input name="alunoDocumento" className={campo} /></label>
@@ -62,19 +64,19 @@ export function RegistrarOrigemHistorica({ matriculaId, moeda, regime }: { matri
    <label className="block">Endereço<input name="pagadorEndereco" className={campo} /></label>
   </fieldset>
   <label className="block">Taxa de matrícula ({moeda})<input name="taxaValor" required inputMode="decimal" pattern="^(?:0|[1-9]\d{0,9})(?:\.\d{1,2})?$" className={campo} /></label>
-  <label className="block">Vencimento da taxa<input type="date" name="taxaVencimento" required className={campo} /></label>
-  <label className="block">Regime<select value={regimeEscolhido} onChange={e => setRegime(e.target.value as "MENSALIDADE" | "HORA_PARTICULAR")} disabled={!!regime} className={campo}><option value="MENSALIDADE">Mensalidade</option><option value="HORA_PARTICULAR">Particular por hora</option></select>{regime && <span className="ml-2 text-sm">(fixado pela preparação comercial)</span>}</label>
+  <label className="block">Vencimento da taxa<DatePicker name="taxaVencimento" required className={campo} /></label>
+  <label className="block">Regime<SeletorCampo value={regimeEscolhido} onChange={e => setRegime(e.target.value as "MENSALIDADE" | "HORA_PARTICULAR")} disabled={!!regime} className={campo}><option value="MENSALIDADE">Mensalidade</option><option value="HORA_PARTICULAR">Particular por hora</option></SeletorCampo>{regime && <span className="ml-2 text-sm">(fixado pela preparação comercial)</span>}</label>
   {regimeEscolhido === "MENSALIDADE" ? <>
    <label className="block">Valor da mensalidade ({moeda})<input name="mensalidadeValor" required inputMode="decimal" pattern="^(?:0|[1-9]\d{0,9})(?:\.\d{1,2})?$" className={campo} /></label>
-   <label className="block">Vencimento da primeira mensalidade<input type="date" name="primeiroVencimento" required className={campo} /></label>
-   <label className="block">Referência da cobertura<select name="coberturaReferencia" className={campo}><option value="MES_CIVIL">Mês civil</option><option value="CICLO_MATRICULA">Ciclo da matrícula</option></select></label>
-   <label className="block">Início da primeira cobertura<input type="date" name="coberturaInicio" required className={campo} /></label>
+   <label className="block">Vencimento da primeira mensalidade<DatePicker name="primeiroVencimento" required className={campo} /></label>
+   <label className="block">Referência da cobertura<SeletorCampo name="coberturaReferencia" className={campo}><option value="MES_CIVIL">Mês civil</option><option value="CICLO_MATRICULA">Ciclo da matrícula</option></SeletorCampo></label>
+   <label className="block">Início da primeira cobertura<DatePicker name="coberturaInicio" required className={campo} /></label>
   </> : <>
    <label className="block">Preço por hora de 60 minutos ({moeda})<input name="valorHora" required inputMode="decimal" pattern="^(?:0|[1-9]\d{0,9})(?:\.\d{1,2})?$" className={campo} /></label>
-   <label className="block"><input type="checkbox" checked={comAdiantamento} onChange={e => setComAdiantamento(e.target.checked)} /> O contrato prevê adiantamento de horas</label>
+   <label className="block"><CaixaCampo checked={comAdiantamento} onChange={e => setComAdiantamento(e.target.checked)} /> O contrato prevê adiantamento de horas</label>
    {comAdiantamento && <>
     <label className="block">Minutos do adiantamento<input name="adiantamentoMinutos" required inputMode="numeric" pattern="^[1-9]\d*$" className={campo} /></label>
-    <label className="block">Vencimento do adiantamento<input type="date" name="adiantamentoVencimento" required className={campo} /></label>
+    <label className="block">Vencimento do adiantamento<DatePicker name="adiantamentoVencimento" required className={campo} /></label>
    </>}
   </>}
   <label className="block">Motivo<CampoTexto name="motivo" required minLength={5} maxLength={2000} className="block w-full rounded border p-2" /></label>
@@ -97,7 +99,7 @@ export function DecidirOrigemHistorica({ propostaId }: { propostaId: string }) {
  <fieldset disabled={acao.ocupado || concluido} className="space-y-2">
   <label className="block">Hash SHA-256 do PDF conferido<input name="pdfHashConferido" required pattern="^[a-fA-F0-9]{64}$" className="block w-full rounded border p-2 font-mono" /></label>
   <label className="block">Hash da transcrição conferida<input name="transcricaoHashConferido" required pattern="^[a-fA-F0-9]{64}$" className="block w-full rounded border p-2 font-mono" /></label>
-  <label className="block">Decisão<select name="decisao" className={campo}><option value="aprovar">Aprovar</option><option value="rejeitar">Rejeitar</option></select></label>
+  <label className="block">Decisão<SeletorCampo name="decisao" className={campo}><option value="aprovar">Aprovar</option><option value="rejeitar">Rejeitar</option></SeletorCampo></label>
   <label className="block">Motivo<CampoTexto name="motivo" required minLength={5} maxLength={2000} className="block w-full rounded border p-2" /></label>
  </fieldset>
  <button type="submit" disabled={acao.ocupado || concluido} className={botaoClasses({ variante: "secundario", tamanho: "lg" })}>{concluido ? "Registrada" : acao.ocupado ? "Processando…" : "Registrar conferência"}</button>

@@ -10,6 +10,7 @@ import { botaoClasses } from "@/components/Botao";
 import { MSG_DECISAO_INCERTA, MSG_RESULTADO_INCERTO } from "@/lib/mensagens";
 import { CampoTexto } from "@/components/CampoTexto";
 import { EstadoVazio } from "@/components/EstadoVazio";
+import { SeletorCampo, CaixaCampo } from "@/app/(app)/secretaria/controles";
 
 type Dados = NonNullable<Extract<Awaited<ReturnType<typeof consultarCompensacoesCobertura>>, { ok: true }>["dado"]>;
 
@@ -81,7 +82,7 @@ export function CompensacaoCobertura({ matriculaId, dados: d }: { matriculaId: s
     }}>
       <fieldset disabled={ocupado} className="space-y-3">
         <legend>Propor dias de compensação</legend>
-        {!diasSelecionaveis.length ? <p role="status">Todos os dias confirmados já possuem direito reconhecido.</p> : <div className="space-y-2"><p>Selecione os dias confirmados ainda sem direito de compensação.</p>{diasSelecionaveis.map((dia) => <label key={dia} className="flex gap-2"><input type="checkbox" checked={dias.includes(dia)} onChange={(evento) => alternarDia(dia, evento.target.checked)} />{dataCivil(dia)}</label>)}</div>}
+        {!diasSelecionaveis.length ? <p role="status">Todos os dias confirmados já possuem direito reconhecido.</p> : <div className="space-y-2"><p>Selecione os dias confirmados ainda sem direito de compensação.</p>{diasSelecionaveis.map((dia) => <label key={dia} className="flex gap-2"><CaixaCampo checked={dias.includes(dia)} onChange={(evento) => alternarDia(dia, evento.target.checked)} />{dataCivil(dia)}</label>)}</div>}
         <label className="block" htmlFor="motivo">Motivo<CampoTexto id="motivo" className={classe} name="motivo" minLength={5} maxLength={2000} required /></label>
         <label className="block" htmlFor="evidencia">Evidência das condições de compensação<CampoTexto id="evidencia" className={classe} name="evidencia" minLength={5} maxLength={2000} required /></label>
         <button className={botaoClasses({ variante: "secundario", tamanho: "lg" })}>{ocupado ? "Enviando…" : "Propor direito de compensação"}</button>
@@ -122,7 +123,7 @@ export function CompensacaoCobertura({ matriculaId, dados: d }: { matriculaId: s
         }}>
           <fieldset disabled={ocupado} className="space-y-2">
             <legend>Decisão independente</legend>
-            <label className="block" htmlFor={`decisao-${proposta.id}`}>Decisão<select id={`decisao-${proposta.id}`} className={classe} name="decisao" defaultValue="" required><option value="" disabled>Selecione</option><option value="aprovar">Aprovar direito</option><option value="rejeitar">Rejeitar proposta</option></select></label>
+            <label className="block" htmlFor={`decisao-${proposta.id}`}>Decisão<SeletorCampo id={`decisao-${proposta.id}`} className={classe} name="decisao" defaultValue="" required><option value="" disabled>Selecione</option><option value="aprovar">Aprovar direito</option><option value="rejeitar">Rejeitar proposta</option></SeletorCampo></label>
             <label className="block" htmlFor={`motivo-${proposta.id}`}>Justificativa<CampoTexto id={`motivo-${proposta.id}`} className={classe} name="motivo" minLength={5} maxLength={2000} required /></label>
             <button className={botaoClasses({ variante: "secundario", tamanho: "lg" })}>Registrar decisão</button>
           </fieldset>
