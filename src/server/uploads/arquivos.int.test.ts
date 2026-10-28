@@ -17,9 +17,17 @@ import { exigirArquivoVinculavel } from "./autorizacao";
 const arquivosCriados = new Set<string>();
 const como = (u: { id: string; papeis: Papel[] }) => authMock.mockResolvedValue({ user: { id: u.id, papeis: u.papeis } });
 
+const PDF_FIXTURE = (() => {
+  const resto = new TextEncoder().encode("1.7\nCONTEUDO_PRIVADO_DO_ARQUIVO");
+  const bytes = new Uint8Array(5 + resto.byteLength);
+  bytes.set([0x25, 0x50, 0x44, 0x46, 0x2d]);
+  bytes.set(resto, 5);
+  return bytes;
+})();
+
 function requisicaoUpload(contexto: { leadId?: string; matriculaId?: string; categoriaDocumento?: CategoriaDocumento } = {}) {
   const form = new FormData();
-  form.append("file", new File(["%PDF-1.7\nCONTEUDO_PRIVADO_DO_ARQUIVO"], "documento.pdf", { type: "application/pdf" }));
+  form.append("file", new File([PDF_FIXTURE], "documento.pdf", { type: "application/pdf" }));
   for (const [chave, valor] of Object.entries(contexto)) if (valor) form.append(chave, valor);
   return new Request("http://localhost/api/upload", { method: "POST", body: form });
 }
@@ -43,7 +51,7 @@ async function arquivoLegado() {
   const arquivo = resolverCaminhoUpload([nome]);
   if (!arquivo) throw new Error("Caminho de teste inválido.");
   await mkdir(UPLOAD_DIR, { recursive: true });
-  await writeFile(arquivo, "%PDF-1.7\nCONTEUDO_PRIVADO_DO_ARQUIVO", { flag: "wx" });
+  await writeFile(arquivo, PDF_FIXTURE, { flag: "wx" });
   arquivosCriados.add(arquivo);
   return `/api/files/${nome}`;
 }
@@ -119,6 +127,7 @@ describe("arquivos privados persistidos — identidade, objeto, finalidade e con
       expect(resposta.status, `papel ${usuario.papeis[0]}`).toBe(permitido ? 200 : 403);
       if (permitido) {
         expect(await resposta.text()).toBe("%PDF-1.7\nCONTEUDO_PRIVADO_DO_ARQUIVO");
+        expect(resposta.headers.get("X-Content-Type-Options")).toBe("nosniff");
         expect(resposta.headers.get("Cache-Control")).toBe("private, no-store");
       } else expect(await resposta.text()).not.toContain("CONTEUDO_PRIVADO_DO_ARQUIVO");
     }

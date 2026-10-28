@@ -42,7 +42,7 @@ export async function GET(
 
   let bytes: Buffer;
   try {
-    bytes = await readFile(caminho);
+    bytes = await readFile(/* turbopackIgnore: true */ caminho);
   } catch {
     return NextResponse.json({ erro: "Arquivo não encontrado." }, { status: 404 });
   }
@@ -51,6 +51,7 @@ export async function GET(
     headers: {
       "Content-Type": contentType,
       "Content-Disposition": `inline; filename="${path.basename(caminho)}"`,
+      "X-Content-Type-Options": "nosniff",
       "Cache-Control": "private, no-store",
     },
   });

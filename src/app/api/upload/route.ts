@@ -12,6 +12,19 @@ export const runtime = "nodejs";
 
 const TIPOS_OK = ["application/pdf", "image/jpeg", "image/png", "image/jpg"];
 const MAX_BYTES = 10 * 1024 * 1024;
+const ASSINATURA_JPEG = Buffer.from([0xff, 0xd8, 0xff]);
+const ASSINATURAS: Record<string, Buffer> = {
+  "application/pdf": Buffer.from("%PDF-"),
+  "image/png": Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]),
+  "image/jpeg": ASSINATURA_JPEG,
+  "image/jpg": ASSINATURA_JPEG,
+};
+
+function conteudoConfereComTipo(mime: string, bytes: Buffer): boolean {
+  const assinatura = ASSINATURAS[mime];
+  if (!assinatura || bytes.length < assinatura.length) return false;
+  return bytes.subarray(0, assinatura.length).equals(assinatura);
+}
 
 export async function POST(req: Request) {
   let usuario;
@@ -51,18 +64,21 @@ export async function POST(req: Request) {
   }
 
   const bytes = Buffer.from(await file.arrayBuffer());
-  await mkdir(UPLOAD_DIR, { recursive: true });
-
   const mime = file.type.split(";")[0].trim();
+  if (!conteudoConfereComTipo(mime, bytes)) {
+    return NextResponse.json({ erro: "O conteúdo do arquivo não corresponde ao tipo declarado." }, { status: 400 });
+  }
+  await mkdir(/* turbopackIgnore: true */ UPLOAD_DIR, { recursive: true });
+
   const extensao = mime === "application/pdf" ? "pdf" : mime === "image/png" ? "png" : "jpg";
   const nomeArquivo = `${randomUUID()}.${extensao}`;
-  const arquivo = path.join( UPLOAD_DIR, nomeArquivo);
+  const arquivo = path.join(/* turbopackIgnore: true */ UPLOAD_DIR, nomeArquivo);
   const url = `/api/files/${nomeArquivo}`;
-  await writeFile(arquivo, bytes, { flag: "wx" });
+  await writeFile(/* turbopackIgnore: true */ arquivo, bytes, { flag: "wx" });
   try {
     await prisma.registroUpload.create({ data: { url, autorId: usuario.id, nome: file.name, mime, tamanho: file.size, ...contexto } });
   } catch (erro) {
-    await unlink(arquivo).catch(() => undefined);
+    await unlink(/* turbopackIgnore: true */ arquivo).catch(() => undefined);
     throw erro;
   }
 

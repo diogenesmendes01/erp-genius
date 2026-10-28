@@ -84,6 +84,11 @@ describe("Dockerfile: Prisma/OpenSSL em Alpine", () => {
     expect(estagios.filter((e) => e.imagem !== "base").map((e) => e.nome)).toEqual(["base"]);
   });
 
+  it("builder reserva o mesmo heap do CI para o next build", () => {
+    const envs = estagio("builder").instrucoes.filter((i) => i.op === "ENV").map((i) => i.args);
+    expect(envs).toContain("NODE_OPTIONS=--max-old-space-size=5120");
+  });
+
   it("builder executa o schema engine (usado pelo serviço migrate) e exige P1001", () => {
     const builder = runs("builder");
     const gerar = builder.findIndex((r) => r === "npx prisma generate");
