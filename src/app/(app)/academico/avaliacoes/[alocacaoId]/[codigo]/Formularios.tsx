@@ -10,6 +10,7 @@ import { CampoTexto } from "@/components/CampoTexto";
 import { HABILIDADE_LABEL } from "@/lib/labels";
 import { FusoInstitucionalSchema } from "@/server/operacao/fuso";
 import { CampoFuso, type SugestaoFuso } from "@/components/CampoFuso";
+import { CampoSelect, CampoCombobox, CampoInstante, Caixa, SelectItem } from "@/app/(app)/academico/controles";
 
 type Habilidade = "FALA" | "COMPREENSAO_ORAL" | "LEITURA" | "ESCRITA";
 type Nota = { habilidade: Habilidade; nota: string | null; comentarioAluno: string };
@@ -61,8 +62,8 @@ export function LancarNotas({ alocacaoId, codigoAvaliacao, versaoEsperada, habil
     <fieldset disabled={acao.ocupado} className="space-y-4"><legend className="font-medium">Registrar avaliação realizada</legend>
       <label className="block">Fuso para informar horários<CampoFuso valor={fuso} onChange={trocarFuso} sugestoes={FUSOS_SUGERIDOS_AVALIACAO} aria-invalid={!fusoValido} className="block rounded border p-2" /></label>
       <p>Use uma referência de região, como America/Sao_Paulo. Esse fuso define a entrada de data e horário; trocá-lo não apaga as notas digitadas.</p>
-      <label className="block">Data e horário da realização ({fuso})<input type="datetime-local" name="realizadaEm" step="0.001" required value={realizadaEm} onChange={e => { setRealizadaEm(e.target.value); setDataTocada(true); }} className="block rounded border p-2" /></label>
-      {!!realizadores.length && <label className="block">Quem realizou a avaliação?<select required value={realizador} onChange={e => setRealizador(e.target.value)} className="block rounded border p-2"><option value="">Selecione o professor</option>{realizadores.map(p => <option key={p.id} value={p.id}>{p.nome}{p.id === registradorId ? " (eu)" : ""}</option>)}</select></label>}
+      <label className="block">Data e horário da realização ({fuso})<CampoInstante name="realizadaEm" step="0.001" required value={realizadaEm} onChange={e => { setRealizadaEm(e.target.value); setDataTocada(true); }} className="block rounded border p-2" /></label>
+      {!!realizadores.length && <label className="block">Quem realizou a avaliação?<CampoCombobox required value={realizador} onChange={e => setRealizador(e.target.value)} className="block rounded border p-2" placeholder="Selecione o professor" vazio="Selecione o professor" opcoes={[...realizadores.map(p => ({ valor: p.id, rotulo: `${p.nome}${p.id === registradorId ? " (eu)" : ""}` }))]} /></label>}
       {realizador && realizador !== registradorId && <>
         <label className="block">Motivo da regularização<CampoTexto name="motivoRegularizacao" required minLength={5} maxLength={2000} className="block w-full rounded border p-2" /></label>
         <label className="block">Evidências utilizadas<CampoTexto name="evidenciasRegularizacao" required minLength={5} maxLength={4000} className="block w-full rounded border p-2" /></label>
@@ -73,7 +74,7 @@ export function LancarNotas({ alocacaoId, codigoAvaliacao, versaoEsperada, habil
         <label className="block">Nota de {HABILIDADE_LABEL[h]}<input name={`nota-${h}`} inputMode="decimal" maxLength={100} defaultValue={n?.nota ?? ""} className="block rounded border p-2" /></label>
         <label className="block">Comentário para o aluno — {HABILIDADE_LABEL[h]}<CampoTexto name={`comentario-${h}`} maxLength={2000} defaultValue={n?.comentarioAluno ?? ""} className="block w-full rounded border p-2" /></label>
       </div>; })}
-      <label className="block">Encaminhamento<select name="modo" required defaultValue="" className="block rounded border p-2"><option value="">Selecione</option><option value="rascunho">Salvar rascunho</option><option value="submeter">Submeter para conferência</option></select></label>
+      <label className="block">Encaminhamento<CampoSelect name="modo" required defaultValue="" className="block rounded border p-2" placeholder="Selecione"><SelectItem value={"rascunho"}>Salvar rascunho</SelectItem><SelectItem value={"submeter"}>Submeter para conferência</SelectItem></CampoSelect></label>
       <button className={botaoClasses({ tamanho: "lg" })}>{acao.ocupado ? "Registrando…" : "Registrar versão"}</button>
     </fieldset><FeedbackAcao erro={acao.erro} sucesso={acao.sucesso} />
   </form>;
@@ -88,9 +89,9 @@ export function ConferirNotas({ lancamentoId, conteudoHash, podeAprovar }: { lan
     else if (d?.tipo === "ok") router.refresh();
   }}>
     <fieldset disabled={acao.ocupado} className="space-y-3"><legend className="font-medium">Conferência independente</legend>
-      <label className="block">Decisão<select name="decisao" required defaultValue="" className="block rounded border p-2"><option value="">Selecione</option>{podeAprovar && <option value="aprovar">Oficializar notas desta versão</option>}<option value="devolver">Devolver para revisão</option></select></label>
+      <label className="block">Decisão<CampoSelect name="decisao" required defaultValue="" className="block rounded border p-2" placeholder="Selecione">{podeAprovar && <SelectItem value={"aprovar"}>Oficializar notas desta versão</SelectItem>}<SelectItem value={"devolver"}>Devolver para revisão</SelectItem></CampoSelect></label>
       <label className="block">Motivo<CampoTexto name="motivo" required minLength={5} maxLength={2000} className="block w-full rounded border p-2" /></label>
-      <label className="block"><input type="checkbox" required /> Conferi data, habilidades, notas e comentários desta versão.</label>
+      <label className="block"><Caixa required /> Conferi data, habilidades, notas e comentários desta versão.</label>
       <button className={botaoClasses({ variante: "secundario", tamanho: "lg" })}>{acao.ocupado ? "Registrando…" : "Registrar decisão"}</button>
     </fieldset><FeedbackAcao erro={acao.erro} sucesso={acao.sucesso} />
   </form>;

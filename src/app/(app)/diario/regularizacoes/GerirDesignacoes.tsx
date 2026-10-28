@@ -8,6 +8,7 @@ import { botaoClasses } from "@/components/Botao";
 import { MSG_RESULTADO_INCERTO, MSG_RESULTADO_INCERTO_SEM_CHAVE } from "@/lib/mensagens";
 import { CampoTexto } from "@/components/CampoTexto";
 import { EstadoVazio } from "@/components/EstadoVazio";
+import { CampoCombobox } from "@/app/(app)/academico/controles";
 
 type DadosDesignacoes = {
   podeGerir: boolean;
@@ -116,10 +117,7 @@ export function GerirDesignacoes({ encontroId, somenteLeitura = false, fusoExibi
         {!somenteLeitura && dados.podeGerir && <form onSubmit={designar} className="space-y-3 border-t pt-4">
           <h3 className="font-medium">Designar responsável</h3>
           <label className="block text-sm">Responsável
-            <select className="mt-1 block w-full rounded border p-2" value={responsavelId} onChange={(evento) => setResponsavelId(evento.target.value)} disabled={ocupado} required>
-              <option value="">Selecione uma pessoa</option>
-              {dados.responsaveis.map((responsavel) => <option key={responsavel.id} value={responsavel.id}>{responsavel.nome}</option>)}
-            </select>
+            <CampoCombobox className="mt-1 block w-full rounded border p-2" value={responsavelId} onChange={(evento) => setResponsavelId(evento.target.value)} disabled={ocupado} required placeholder="Selecione uma pessoa" vazio="Selecione uma pessoa" opcoes={[...dados.responsaveis.map((responsavel) => ({ valor: responsavel.id, rotulo: responsavel.nome }))]} />
           </label>
           <label className="block text-sm">Motivo
             <CampoTexto className="mt-1 block w-full rounded border p-2" value={motivo} onChange={(evento) => setMotivo(evento.target.value)} minLength={5} maxLength={2000} disabled={ocupado} required />

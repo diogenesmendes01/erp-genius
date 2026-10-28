@@ -10,6 +10,7 @@ import { PrepararPlano, DecidirPlano } from "./Formularios";
 import { AutorizarPreparacao } from "./AutorizarPreparacao";
 import { EstadoVazio } from "@/components/EstadoVazio";
 import { HABILIDADE_LABEL, rotular } from "@/lib/labels";
+import {Collapsible, CollapsibleTrigger, CollapsibleContent} from "@/app/(app)/academico/controles";
 
 function valor(f: { numerador: string; denominador: string } | null) {
   if (!f) return "Pendente";
@@ -47,7 +48,7 @@ export default async function Planos({ searchParams }: { searchParams: Promise<{
       <p>{p.decisao ? p.decisao.aprovada ? "Aprovada" : "Rejeitada" : "Aguardando decisão"}. {formatarInstanteExibicao(p.criadaEm, fusoExibicao, "UTC").texto} ({fusoExibicao}; origem UTC)</p>
       <p className="whitespace-pre-wrap">{p.motivo}</p>
       {p.atividades.map(a => <div key={a.habilidade}><h4 className="font-medium">{rotular(HABILIDADE_LABEL, a.habilidade)}</h4><p className="whitespace-pre-wrap">Estratégia: {a.estrategia}</p><p className="whitespace-pre-wrap">Avaliação: {a.avaliacaoProposta}</p></div>)}
-      <details><summary>Notas que fundamentaram esta proposta</summary><p>Média: {valor(p.base.geral)} · mínimo {p.base.minimoGeral}.</p>{p.base.habilidades.map(h => <p key={h.habilidade}>{rotular(HABILIDADE_LABEL, h.habilidade)}: {valor(h.resultado)} · mínimo {h.minimo}.</p>)}</details>
+      <Collapsible ><CollapsibleTrigger type="button" className="text-left font-medium">Notas que fundamentaram esta proposta</CollapsibleTrigger><CollapsibleContent><p>Média: {valor(p.base.geral)} · mínimo {p.base.minimoGeral}.</p>{p.base.habilidades.map(h => <p key={h.habilidade}>{rotular(HABILIDADE_LABEL, h.habilidade)}: {valor(h.resultado)} · mínimo {h.minimo}.</p>)}</CollapsibleContent></Collapsible>
       {p.fontesMudaram && <p>As notas ou suas fontes mudaram desde esta proposta. Uma decisão anterior permanece no histórico; novos avanços exigem conferência.</p>}
       {p.decisao && <p className="whitespace-pre-wrap">Decisão de {p.decisao.decisor.nome}: {p.decisao.motivo}</p>}
       {p.decisao?.aprovada && <Link className="block underline" href={`/academico/recuperacoes/planos/${encodeURIComponent(p.id)}`}>Disponibilização, tentativas e realizações</Link>}

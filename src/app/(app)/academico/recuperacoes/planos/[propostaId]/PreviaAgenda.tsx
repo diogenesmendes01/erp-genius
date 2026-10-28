@@ -5,6 +5,7 @@ import { formatarInstanteExibicao, resolverFusoExibicao } from "@/server/operaca
 import { CampoFuso } from "@/components/CampoFuso";
 import { useInicioDoPeriodo } from "@/lib/periodo-form";
 import { botaoClasses } from "@/components/Botao";
+import { CampoInstante } from "@/app/(app)/academico/controles";
 
 type RespostaPreviaAgenda = Awaited<ReturnType<typeof preverAgendaRecuperacao>>;
 type DadosPreviaAgenda = NonNullable<Extract<RespostaPreviaAgenda, { ok: true }>["dado"]>;
@@ -34,8 +35,8 @@ export function PreviaAgenda({ itemReservaId, preferenciaFusoExibicao, fusoInsti
     <h4 className="font-medium">Prévia do horário da recuperação</h4>
     <p>Esta tela mostra somente a prévia. O horário continua sem agendamento confirmado.</p>
     <fieldset disabled={consultando} className="space-y-2">
-      <label className="block">Início<input type="datetime-local" name="inicio" required {...periodo.propsInicio} className="block rounded border p-2" /></label>
-      <label className="block">Fim<input type="datetime-local" name="fim" required min={periodo.min} className="block rounded border p-2" /></label>
+      <label className="block">Início<CampoInstante name="inicio" required {...periodo.propsInicio} className="block rounded border p-2" /></label>
+      <label className="block">Fim<CampoInstante name="fim" required min={periodo.min} className="block rounded border p-2" /></label>
       <label className="block">Fuso dos horários<CampoFuso padrao={fusoInstitucional ?? ""} className="block rounded border p-2" /></label>
       <p>Exemplo: America/Sao_Paulo. Informe a data final correta se atravessar a meia-noite.</p>
       <button type="submit" className={botaoClasses({ variante: "secundario", tamanho: "lg" })}>{consultando ? "Conferindo…" : "Conferir horário"}</button>

@@ -39,7 +39,7 @@ function EscolherMatricula({ busca, r }: { busca: string; r: Awaited<ReturnType<
     <h1 className="text-2xl font-medium">Reposições individuais</h1>
     <p>Escolha a matrícula para consultar a ausência de origem e o histórico acadêmico. Também é possível abrir pela ficha do aluno, em mudanças acadêmicas.</p>
     <form method="get" action="/academico/reposicoes" role="search" aria-label="Buscar matrícula para reposições" className="flex flex-wrap items-center gap-2">
-      <input name="busca" defaultValue={busca} maxLength={100} aria-label="Buscar matrícula por aluno ou código" placeholder="Aluno ou código da matrícula…" className="w-72 rounded-md border border-gray-300 px-3 py-1.5 text-sm outline-none focus:border-brand-500" />
+      <input name="busca" defaultValue={busca} maxLength={100} aria-label="Buscar matrícula por aluno ou código" placeholder="Aluno ou código da matrícula…" className="w-72 rounded-md border border-gray-200 px-3 py-1.5 text-sm outline-none focus:border-brand-500" />
       <button type="submit" className={botaoClasses({ variante: "secundario" })}>Buscar</button>
       {busca && <Link href="/academico/reposicoes" className="text-sm text-brand-700 hover:underline">Limpar busca</Link>}
     </form>

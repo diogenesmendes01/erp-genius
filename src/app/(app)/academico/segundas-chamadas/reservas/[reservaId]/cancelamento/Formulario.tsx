@@ -8,6 +8,7 @@ import { PreviaConversao } from "@/components/PreviaConversao";
 import { botaoClasses } from "@/components/Botao";
 import { MSG_RESULTADO_INCERTO } from "@/lib/mensagens";
 import { CampoTexto } from "@/components/CampoTexto";
+import { CampoSelect, CampoInstante, SelectItem } from "@/app/(app)/academico/controles";
 type Props = { reservaId: string; estadoConferido: string; proposta?: { id: string; hash: string }; fusoInstitucional: string | null; fusoExibicao?: string };
 export function Formulario({ reservaId, estadoConferido, proposta, fusoInstitucional, fusoExibicao }: Props) {
  const router = useRouter(), trava = useRef(false), tentativa = useRef<{ entrada: string; chave: string } | null>(null);
@@ -31,10 +32,10 @@ export function Formulario({ reservaId, estadoConferido, proposta, fusoInstituci
   finally { trava.current = false; setOcupado(false); }
  }}>
  <fieldset disabled={ocupado} className="space-y-3">
- {proposta ? <label className="block">Decisão<select name="decisao" required defaultValue="" className="block border p-2"><option value="" disabled>Selecione</option><option value="aprovar">Aprovar e cancelar</option><option value="rejeitar">Rejeitar</option></select></label> : <>
+ {proposta ? <label className="block">Decisão<CampoSelect name="decisao" required defaultValue="" className="block border p-2" placeholder="Selecione"><SelectItem value={"aprovar"}>Aprovar e cancelar</SelectItem><SelectItem value={"rejeitar"}>Rejeitar</SelectItem></CampoSelect></label> : <>
  <p>Propor não cancela o encontro. Outra pessoa autorizada precisa revisar e aprovar.</p>
- <label className="block">Origem<select name="origem" required defaultValue="" className="block border p-2"><option value="" disabled>Selecione</option><option value="ESCOLA">Escola</option><option value="ALUNO">Aluno</option></select></label>
- <label className="block">Data e hora da ocorrência<input name="dataHoraLocal" type="datetime-local" step="0.001" required onChange={e => setDataHoraLocal(e.target.value)} className="block border p-2" /></label>
+ <label className="block">Origem<CampoSelect name="origem" required defaultValue="" className="block border p-2" placeholder="Selecione"><SelectItem value={"ESCOLA"}>Escola</SelectItem><SelectItem value={"ALUNO"}>Aluno</SelectItem></CampoSelect></label>
+ <label className="block">Data e hora da ocorrência<CampoInstante name="dataHoraLocal" step="0.001" required onChange={e => setDataHoraLocal(e.target.value)} className="block border p-2" /></label>
  <label className="block">Fuso da data informada<CampoFuso padrao={fusoInstitucional ?? ""} onChange={setFuso} className="block border p-2" /><span className="text-sm">Exemplo: America/Sao_Paulo ou America/Costa_Rica.</span></label>
  {fusoExibicao ? <PreviaConversao local={dataHoraLocal} fuso={fuso} fusoExibicao={fusoExibicao} /> : null}
  <label className="block">Evidência<CampoTexto name="evidencia" required minLength={5} maxLength={4000} className="block w-full border p-2" /></label>

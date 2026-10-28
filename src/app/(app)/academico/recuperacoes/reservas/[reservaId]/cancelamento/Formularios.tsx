@@ -4,6 +4,7 @@ import { Formulario } from "../../../planos/[propostaId]/Formularios";
 import { proporCancelamentoAgendaRecuperacao, decidirCancelamentoAgendaRecuperacao } from "@/server/avaliacoes/recuperacao-agenda-cancelamento";
 import { executarAcaoCliente, type DesfechoAcao } from "@/lib/acao-cliente";
 import { CampoTexto } from "@/components/CampoTexto";
+import { CampoSelect, SelectItem } from "@/app/(app)/academico/controles";
 const resposta = (d: DesfechoAcao<unknown>) => d.tipo === "ok" ? { ok: true as const } : { ok: false as const, erro: d.mensagem };
 export function Propor({ reservaId, estadoConferido }: { reservaId: string; estadoConferido: string }) {
   const chave = useRef<{ entrada: string; id: string } | null>(null);
@@ -20,7 +21,7 @@ export function Propor({ reservaId, estadoConferido }: { reservaId: string; esta
 }
 export function Decidir({ propostaId, estadoConferido, podeAprovar }: { propostaId: string; estadoConferido: string; podeAprovar: boolean }) {
   return <Formulario titulo="Decidir cancelamento" executar={async dados => resposta(await executarAcaoCliente(() => decidirCancelamentoAgendaRecuperacao({ propostaId, estadoConferido, aprovar: dados.get("decisao") === "aprovar", motivo: String(dados.get("motivo") ?? "") }), { idempotente: false }))}>
-    <label className="block">Decisão<select name="decisao" required defaultValue="" className="block rounded border p-2"><option value="" disabled>Selecione</option><option value="rejeitar">Rejeitar</option>{podeAprovar && <option value="aprovar">Aprovar e aplicar cancelamento</option>}</select></label>
+    <label className="block">Decisão<CampoSelect name="decisao" required defaultValue="" className="block rounded border p-2" placeholder="Selecione"><SelectItem value={"rejeitar"}>Rejeitar</SelectItem>{podeAprovar && <SelectItem value={"aprovar"}>Aprovar e aplicar cancelamento</SelectItem>}</CampoSelect></label>
     <label className="block">Justificativa<CampoTexto name="motivo" required minLength={5} maxLength={2000} className="block w-full rounded border p-2" /></label>
   </Formulario>;
 }

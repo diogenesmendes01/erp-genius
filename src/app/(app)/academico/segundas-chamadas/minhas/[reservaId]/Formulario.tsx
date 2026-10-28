@@ -11,6 +11,7 @@ import { useAcaoCliente } from "@/lib/acao-cliente";
 import { botaoClasses } from "@/components/Botao";
 import { CampoTexto } from "@/components/CampoTexto";
 import { HABILIDADE_LABEL } from "@/lib/labels";
+import { CampoInstante } from "@/app/(app)/academico/controles";
 
 type Habilidade = "FALA" | "COMPREENSAO_ORAL" | "LEITURA" | "ESCRITA";
 
@@ -26,7 +27,7 @@ export function FormularioRealizacao({ reservaId, fusoInstitucional }: { reserva
   }}>
     <h2 className="text-xl font-medium">Registrar realização</h2>
     <fieldset disabled={acao.ocupado} className="space-y-3">
-      <label className="block" htmlFor="data-hora">Data e horário da realização<input id="data-hora" name="dataHora" type="datetime-local" step="0.001" required className="block rounded border p-2" /></label>
+      <label className="block" htmlFor="data-hora">Data e horário da realização<CampoInstante id="data-hora" name="dataHora" step="0.001" required className="block rounded border p-2" /></label>
       <label className="block" htmlFor="fuso">Fuso da realização<CampoFuso id="fuso" padrao={fusoInstitucional ?? ""} className="block rounded border p-2" /></label>
       <p>Informe o fuso explicitamente. A data efetiva deve pertencer ao encontro; histórico e autorização aplicável são conferidos ao enviar. Horários ambíguos ou inexistentes precisam de correção.</p>
       <label className="block" htmlFor="evidencia">Evidência da realização<CampoTexto id="evidencia" name="evidencia" required minLength={5} maxLength={4000} className="block w-full rounded border p-2" /></label>

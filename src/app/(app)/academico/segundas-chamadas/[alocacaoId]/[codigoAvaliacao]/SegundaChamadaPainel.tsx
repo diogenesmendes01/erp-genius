@@ -13,6 +13,7 @@ import type { Resultado } from "@/server/_shared/resultado";
 import { CampoTexto } from "@/components/CampoTexto";
 import { EstadoVazio } from "@/components/EstadoVazio";
 import { STATUS_RESERVA_SEGUNDA_CHAMADA_LABEL, rotular } from "@/lib/labels";
+import { CampoSelect, SelectItem } from "@/app/(app)/academico/controles";
 
 type Item = {
   id: string;
@@ -103,11 +104,7 @@ export function SegundaChamadaPainel({
           }), aprovada ? "Segunda chamada autorizada." : "Segunda chamada rejeitada.");
         }}>
           <label className="block">Decisão
-            <select name="aprovada" required defaultValue="" className="block border">
-              <option value="" disabled>Selecione</option>
-              <option value="sim">Autorizar</option>
-              <option value="nao">Rejeitar</option>
-            </select>
+            <CampoSelect name="aprovada" required defaultValue="" className="block border" placeholder="Selecione"><SelectItem value={"sim"}>Autorizar</SelectItem><SelectItem value={"nao"}>Rejeitar</SelectItem></CampoSelect>
           </label>
           <label className="block">Motivo da decisão<CampoTexto name="motivoDecisao" required minLength={5} maxLength={4000} className="block w-full border" /></label>
           <button disabled={acao.ocupado} className={botaoClasses({ tamanho: "lg" })}>Registrar decisão</button>

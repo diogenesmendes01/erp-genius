@@ -17,6 +17,7 @@ vi.mock("@/server/agenda/replanejamento-rascunho", () => ({ registrarRascunhoRep
 
 import type { ReactNode } from "react";
 import { EditorRevisao } from "./EditorRevisao";
+import { CampoDia } from "@/app/(app)/academico/controles";
 import { SalvarRevisao } from "./SalvarRevisao";
 import { clicar, criarGanchos, elementos, identidadeNoReact, type No } from "@/test/tela-sem-dom";
 
@@ -34,7 +35,8 @@ const revisao = (estadoHash: string, versaoRascunho: number, ajustes: { encontro
 const inicial = revisao("a".repeat(64), 2, [{ encontroId: "encontro", data: "2026-10-01", horario: "23:30", motivo: "Ajuste de teste" }]);
 const tela = (r: Inicial = inicial) => m.ganchos!.renderizar(EditorRevisao, { inicial: r, preferenciaFusoExibicao: null });
 const salvar = (t: ReactNode): No => elementos(t).find((n) => n.type === SalvarRevisao)!;
-const mudarData = (t: ReactNode, valor: string) => (elementos(t).find((n) => n.type === "input" && n.props.type === "date")!.props.onChange as (e: { target: { value: string } }) => void)({ target: { value: valor } });
+const data = (t: ReactNode) => elementos(t).find((n) => n.type === CampoDia)!;
+const mudarData = (t: ReactNode, valor: string) => (data(t).props.onChange as (e: { target: { value: string } }) => void)({ target: { value: valor } });
 
 describe("EditorRevisao — guardar fica montado e nada remonta", () => {
   it("sem alteração, guardar está liberado; com ajuste não conferido, continua na tela, desatualizado, e com a mesma identidade", () => {
@@ -62,7 +64,7 @@ describe("EditorRevisao — guardar fica montado e nada remonta", () => {
   it("refresh com outro estado no servidor: a prévia nova aparece e os ajustes digitados ficam (para conferir de novo)", () => {
     mudarData(tela(), "2026-10-02");
     const depois = tela(revisao("c".repeat(64), 3, [{ encontroId: "encontro", data: "2026-10-01", horario: "23:30", motivo: "Ajuste de teste" }]));
-    expect(elementos(depois).find((n) => n.type === "input" && n.props.type === "date")!.props.value).toBe("2026-10-02");
+    expect(data(depois).props.value).toBe("2026-10-02");
     expect(salvar(depois).props.estadoHash).toBe("c".repeat(64));
     expect(salvar(depois).props.desatualizado).toBe(true);
   });

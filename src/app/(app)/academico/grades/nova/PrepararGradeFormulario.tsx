@@ -6,6 +6,7 @@ import { botaoClasses } from "@/components/Botao";
 import { MSG_RESULTADO_INCERTO } from "@/lib/mensagens";
 import { CampoTexto } from "@/components/CampoTexto";
 import { CampoFuso, type SugestaoFuso } from "@/components/CampoFuso";
+import { CampoCombobox } from "@/app/(app)/academico/controles";
 
 export type TurmaGrade = { id: string; codigo: string; versao: number; dataInicio: string | null; horario: string | null;
   dias: number[]; quantidade: number | null; duracao: number; frequencia: string; professor: string | null };
@@ -44,7 +45,7 @@ export function PrepararGradeFormulario({ turmas, turmaInicialId, fusoInicial }:
   return <form onSubmit={enviar} className="space-y-4">
     <fieldset disabled={ocupado} className="space-y-4">
       <legend className="font-medium">Nova proposta de grade</legend>
-      <label className="block">Turma<select required className={campo} value={turmaId} onChange={(e) => selecionar(e.target.value)}><option value="">Selecione uma turma</option>{turma && !turmas.some((t) => t.id === turma.id) && <option value={turma.id}>{turma.codigo}</option>}{turmas.map((t) => <option key={t.id} value={t.id}>{t.codigo}</option>)}</select></label>
+      <label className="block">Turma<CampoCombobox required className={campo} value={turmaId} onChange={(e) => selecionar(e.target.value)} placeholder="Selecione uma turma" vazio="Selecione uma turma" opcoes={[...(turma && !turmas.some((t) => t.id === turma.id) ? [{ valor: turma.id, rotulo: turma.codigo }] : []), ...turmas.map((t) => ({ valor: t.id, rotulo: t.codigo }))]} /></label>
       {turma && <div className="space-y-1 rounded border p-3">
         <p>Data inicial: {turma.dataInicio ?? "Não informada"} · Horário: {turma.horario ?? "Não informado"}</p>
         <p>Dias: {turma.dias.map((d) => ["domingo", "segunda", "terça", "quarta", "quinta", "sexta", "sábado"][d]).join(", ") || "Não informados"}</p>

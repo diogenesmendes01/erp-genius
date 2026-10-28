@@ -6,6 +6,7 @@ import { decidirSubstituicaoAgendaSegundaChamada, proporSubstituicaoAgendaSegund
 import { botaoClasses } from "@/components/Botao";
 import { MSG_DECISAO_INCERTA } from "@/lib/mensagens";
 import { CampoTexto } from "@/components/CampoTexto";
+import { CampoSelect, CampoCombobox, SelectItem } from "@/app/(app)/academico/controles";
 
 type Props = {
   reservaId: string;
@@ -45,8 +46,8 @@ export function Formulario({ reservaId, base, professores = [], selecionado, pre
     finally { trava.current = false; setOcupado(false); }
   }}>
     <fieldset disabled={ocupado} className="space-y-3">
-      {proposta ? <><label className="block">Decisão<select className="block border p-2" name="decisao" defaultValue="" required><option value="" disabled>Selecione</option>{proposta.podeAprovar && <option value="aprovar">Aprovar substituição</option>}<option value="rejeitar">Rejeitar</option></select></label>{!proposta.podeAprovar && <p className="text-sm" role="status">{proposta.impedimentoAprovacao ?? "A aprovação exige uma nova proposta; esta versão ainda pode ser rejeitada."}</p>}</> : <>
-        <label className="block">Professor substituto<select className="block border p-2" value={escolhido} onChange={(evento) => { const proximo = evento.target.value; setEscolhido(proximo); router.replace(proximo ? `${base}?substitutoId=${encodeURIComponent(proximo)}` : base); }}><option value="">Selecione para conferir</option>{professores.map((p) => <option key={p.id} value={p.id}>{p.nome}</option>)}</select></label>
+      {proposta ? <><label className="block">Decisão<CampoSelect className="block border p-2" name="decisao" defaultValue="" required placeholder="Selecione">{proposta.podeAprovar && <SelectItem value={"aprovar"}>Aprovar substituição</SelectItem>}<SelectItem value={"rejeitar"}>Rejeitar</SelectItem></CampoSelect></label>{!proposta.podeAprovar && <p className="text-sm" role="status">{proposta.impedimentoAprovacao ?? "A aprovação exige uma nova proposta; esta versão ainda pode ser rejeitada."}</p>}</> : <>
+        <label className="block">Professor substituto<CampoCombobox className="block border p-2" value={escolhido} onChange={(evento) => { const proximo = evento.target.value; setEscolhido(proximo); router.replace(proximo ? `${base}?substitutoId=${encodeURIComponent(proximo)}` : base); }} placeholder="Selecione para conferir" vazio="Selecione para conferir" opcoes={[...professores.map((p) => ({ valor: p.id, rotulo: p.nome }))]} /></label>
         {!escolhido ? <p>Selecione um professor para conferir a disponibilidade.</p> : !disponibilidadeConferida ? <p>Atualizando a conferência de disponibilidade do professor selecionado.</p> : <><p>Substituto em conferência: {previa.substituto!.nome}.</p>{previa.pendencias.length ? <ul className="list-disc pl-5">{previa.pendencias.map((pendencia) => <li key={pendencia}>{pendencia}</li>)}</ul> : <p>Não há pendência apontada nesta conferência.</p>}</>}
         <label className="block">Evidência<CampoTexto className="block w-full border p-2" name="evidencia" minLength={5} maxLength={4000} required /></label>
       </>}

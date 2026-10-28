@@ -22,6 +22,7 @@ vi.mock("../../../[nivelId]/ResumoRegra", () => ({ ResumoRegra: () => null }));
 
 import type { ReactNode } from "react";
 import { DecidirConferenciaRegraHistorica, PrepararConferenciaRegraHistorica, ProporConferenciaRegraHistorica } from "./ConferenciaRegraHistorica";
+import { CampoCombobox, SelectItem } from "@/app/(app)/academico/controles";
 import { MSG_DECISAO_INCERTA, MSG_RESULTADO_INCERTO } from "@/lib/mensagens";
 import { adiada, anuncios, contratoFeedbackSeparado } from "@/test/feedback-acao";
 import { FormDataFalso, criarGanchos, elementos, formularios, submeter, texto } from "@/test/tela-sem-dom";
@@ -68,7 +69,14 @@ describe("ProporConferenciaRegraHistorica", () => {
 });
 
 describe("DecidirConferenciaRegraHistorica", () => {
-  const tela = () => m.ganchos!.renderizar(DecidirConferenciaRegraHistorica, { propostaId: "proposta", estadoHash: "b".repeat(64), podeAprovar: true });
+  const tela = (podeAprovar = true) => m.ganchos!.renderizar(DecidirConferenciaRegraHistorica, { propostaId: "proposta", estadoHash: "b".repeat(64), podeAprovar });
+  const rotulos = (podeAprovar: boolean) => elementos(tela(podeAprovar)).filter((n) => n.type === SelectItem).map((n) => texto(n.props.children));
+
+  it("proposta inelegível oferece rejeição e não oferece aprovação", () => {
+    expect(rotulos(false)).toEqual(["Rejeitar"]);
+    expect(rotulos(true)).toEqual(["Aprovar", "Rejeitar"]);
+  });
+
   const decidir = () => submeter(tela(), { decisao: "aprovar", motivo: "Conferida." });
 
   contratoFeedbackSeparado({
@@ -94,7 +102,7 @@ describe("DecidirConferenciaRegraHistorica", () => {
 describe("PrepararConferenciaRegraHistorica", () => {
   const tela = () => m.ganchos!.renderizar(PrepararConferenciaRegraHistorica, { turmaId: "turma", destinos: [{ id: "regra-1", versao: 1 }, { id: "regra-2", versao: 2 }] });
   const escolher = (valor: string) =>
-    (elementos(tela()).find((n) => n.type === "select")!.props.onChange as (e: { target: { value: string } }) => void)({ target: { value: valor } });
+    (elementos(tela()).find((n) => n.type === CampoCombobox)!.props.onChange as (e: { target: { value: string } }) => void)({ target: { value: valor } });
   const revisar = () => submeter(tela());
   const dadoRevisado = { estadoHash: "a".repeat(64), versaoEsperada: 0, turma: {}, destino: { versao: 2, conteudo: { bruto: true } }, encontros: 3, diarios: 2, alocacoes: 1 };
   const temProposta = () => elementos(tela()).some((n) => n.type === ProporConferenciaRegraHistorica);

@@ -20,6 +20,7 @@ vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh: m.refresh }) })
 vi.mock("@/server/avaliacoes/recuperacao-nota", () => ({ decidirNotaRecuperacao: m.decidir, salvarNotaRecuperacao: vi.fn() }));
 
 import { ConferirNota } from "./Formularios";
+import { SelectItem } from "@/app/(app)/academico/controles";
 import { ConfirmarAcao } from "@/components/ConfirmarAcao";
 import { MSG_DECISAO_INCERTA } from "@/lib/mensagens";
 import { FormDataFalso, criarGanchos, elementos, submeter, texto, type Ganchos, type No } from "@/test/tela-sem-dom";
@@ -89,7 +90,7 @@ describe("ConferirNota — oficializar", () => {
   });
 
   it("sem alçada de aprovação, a opção de oficializar não aparece", () => {
-    const opcoes = elementos(tela(false)).filter((n: No) => n.type === "option").map((o: No) => o.props.value);
-    expect(opcoes).toEqual(["", "rejeitar"]);
+    const opcoes = elementos(tela(false)).filter((n: No) => n.type === SelectItem).map((o: No) => o.props.value);
+    expect(opcoes).toEqual(["rejeitar"]);
   });
 });

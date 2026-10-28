@@ -10,6 +10,7 @@ import { Botao, botaoClasses } from "@/components/Botao";
 import { MSG_DECISAO_INCERTA } from "@/lib/mensagens";
 import { useAcaoCliente } from "@/lib/acao-cliente";
 import { CampoTexto } from "@/components/CampoTexto";
+import { CampoSelect, CampoCombobox, Caixa, SelectItem } from "@/app/(app)/academico/controles";
 
 type Destino = { id: string; versao: number };
 type Revisao = {
@@ -34,7 +35,7 @@ export function ProporConferenciaRegraHistorica({ turmaId, revisao }: { turmaId:
     <fieldset disabled={acao.ocupado} className="space-y-3">
       <label className="block">Motivo<CampoTexto name="motivo" required minLength={5} maxLength={2000} className="block w-full rounded border p-2" /></label>
       <label className="block">Evidência<CampoTexto name="evidencia" required minLength={5} maxLength={2000} className="block w-full rounded border p-2" /></label>
-      <label><input type="checkbox" required /> Conferi o conteúdo e as contagens exibidos.</label>
+      <label><Caixa required /> Conferi o conteúdo e as contagens exibidos.</label>
       <button className={botaoClasses({ variante: "secundario", tamanho: "lg" })}>{acao.ocupado ? "Registrando…" : "Propor conferência"}</button>
     </fieldset>
     <FeedbackAcao erro={acao.erro} sucesso={acao.sucesso} />
@@ -67,10 +68,7 @@ export function PrepararConferenciaRegraHistorica({ turmaId, destinos }: { turma
       if (d.tipo === "incerto") acao.setErro("A revisão não foi confirmada.");
     }}>
       <fieldset disabled={acao.ocupado} className="flex gap-3">
-        <label>Versão publicada<select value={destinoId} onChange={e => { setDestinoId(e.target.value); setRevisao(null); acao.limpar(); }} className="ml-2 rounded border p-2">
-          <option value="">Selecione</option>
-          {destinos.map(d => <option key={d.id} value={d.id}>Versão {d.versao}</option>)}
-        </select></label>
+        <label>Versão publicada<CampoCombobox value={destinoId} onChange={e => { setDestinoId(e.target.value); setRevisao(null); acao.limpar(); }} className="ml-2 rounded border p-2" placeholder="Selecione" vazio="Selecione" opcoes={[...destinos.map(d => ({ valor: d.id, rotulo: `Versão ${d.versao}` }))]} /></label>
         <Botao type="submit" variante="secundario" tamanho="md">{acao.ocupado ? "Revisando…" : "Revisar"}</Botao>
       </fieldset>
     </form>
@@ -94,11 +92,7 @@ export function DecidirConferenciaRegraHistorica({ propostaId, estadoHash, podeA
     else if (d?.tipo === "ok") r.refresh();
   }}>
     <fieldset disabled={acao.ocupado}>
-      <select name="decisao" aria-label="Decisão da conferência" required defaultValue="">
-        <option value="">Selecione</option>
-        {podeAprovar && <option value="aprovar">Aprovar</option>}
-        <option value="rejeitar">Rejeitar</option>
-      </select>
+      <CampoSelect name="decisao" aria-label="Decisão da conferência" required defaultValue="" placeholder="Selecione">{podeAprovar && <SelectItem value={"aprovar"}>Aprovar</SelectItem>}<SelectItem value={"rejeitar"}>Rejeitar</SelectItem></CampoSelect>
       <CampoTexto name="motivo" aria-label="Motivo da decisão" required minLength={5} />
       <button className={botaoClasses({ tamanho: "lg" })}>Registrar decisão</button>
     </fieldset>

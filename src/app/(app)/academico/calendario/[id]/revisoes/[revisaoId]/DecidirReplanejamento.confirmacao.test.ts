@@ -20,6 +20,7 @@ vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh: m.refresh }) })
 vi.mock("@/server/agenda/replanejamento-decisao", () => ({ decidirEAplicarReplanejamentoConjunto: m.decidir }));
 
 import { DecidirReplanejamento } from "./DecidirReplanejamento";
+import { Caixa } from "@/app/(app)/academico/controles";
 import { ConfirmarAcao } from "@/components/ConfirmarAcao";
 import { CampoTexto } from "@/components/CampoTexto";
 import { MSG_RESULTADO_INCERTO_SEM_CHAVE } from "@/lib/mensagens";
@@ -44,7 +45,7 @@ const preencherMotivo = (motivo: string) => {
   (campo.props.onChange as (e: { target: { value: string } }) => void)({ target: { value: motivo } });
 };
 const autorizar = (i: number) => {
-  const caixas = elementos(tela()).filter((n: No) => n.type === "input" && n.props.type === "checkbox");
+  const caixas = elementos(tela()).filter((n: No) => n.type === Caixa);
   (caixas[i].props.onChange as (e: { target: { checked: boolean } }) => void)({ target: { checked: true } });
 };
 

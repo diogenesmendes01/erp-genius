@@ -7,6 +7,7 @@ import { FeedbackAcao } from "@/components/FeedbackAcao";
 import { useAcaoCliente } from "@/lib/acao-cliente";
 import { botaoClasses } from "@/components/Botao";
 import { CampoTexto } from "@/components/CampoTexto";
+import { Caixa } from "@/app/(app)/academico/controles";
 
 export function ConfirmarFechamento({ alocacaoId, estadoHash, versaoEsperada, podeFechar, resultadoSuficiente }: {
   alocacaoId: string;
@@ -49,7 +50,7 @@ export function ConfirmarFechamento({ alocacaoId, estadoHash, versaoEsperada, po
     <label className="block text-sm">Motivo da confirmação
       <CampoTexto name="motivo" required minLength={5} maxLength={3000} disabled={ocupado} className="mt-1 block w-full rounded border p-2" />
     </label>
-    <label className="flex items-start gap-2 text-sm"><input name="conferido" type="checkbox" required disabled={ocupado} />
+    <label className="flex items-start gap-2 text-sm"><Caixa name="conferido" required disabled={ocupado} />
       <span>Revisei as fontes, notas, frequência e pendências exibidas neste estado.</span>
     </label>
     <FeedbackAcao erro={acao.erro} />

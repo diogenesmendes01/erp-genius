@@ -7,6 +7,7 @@ import { DecidirReplanejamento } from "./DecidirReplanejamento";
 import { consultarPreferenciaFusoEquipe } from "@/server/preferencias/fuso-exibicao";
 import { formatarInstanteExibicao, resolverFusoExibicao } from "@/server/operacao/fuso-exibicao";
 import { VoltarPara } from "@/components/VoltarPara";
+import {Collapsible, CollapsibleTrigger, CollapsibleContent} from "@/app/(app)/academico/controles";
 
 export default async function RevisaoPage({ params }: { params: Promise<{ id: string; revisaoId: string }> }) {
   await exigirSessaoPagina(Papel.SECRETARIA_ACADEMICA, Papel.GERENTE_PEDAGOGICO);
@@ -38,11 +39,11 @@ export default async function RevisaoPage({ params }: { params: Promise<{ id: st
       </>}
     </section>
     <ConteudoRevisao r={r.snapshot} historico preferenciaFusoExibicao={preferencia.ok ? preferencia.dado?.fusoExibicao : null} />
-    {!!r.snapshot.particulares.length && <details className="rounded border p-4"><summary>Horários individuais registrados na conferência · exibidos em {fusoExibicao}; referência institucional {r.calendario.fusoInstitucional}</summary>
+    {!!r.snapshot.particulares.length && <Collapsible className="rounded border p-4"><CollapsibleTrigger type="button" className="text-left font-medium">Horários individuais registrados na conferência · exibidos em {fusoExibicao}; referência institucional {r.calendario.fusoInstitucional}</CollapsibleTrigger><CollapsibleContent>
       <ul>{r.snapshot.particulares.map((p, i) => <li key={p.id}>Encontro individual {i + 1}: {data(new Date(p.inicio))} a {data(new Date(p.fim))}</li>)}</ul>
-    </details>}
-    {!!r.snapshot.recuperacoes?.length && <details className="rounded border p-4"><summary>Recuperações registradas na conferência · exibidas em {fusoExibicao}; referência institucional {r.calendario.fusoInstitucional}</summary>
+    </CollapsibleContent></Collapsible>}
+    {!!r.snapshot.recuperacoes?.length && <Collapsible className="rounded border p-4"><CollapsibleTrigger type="button" className="text-left font-medium">Recuperações registradas na conferência · exibidas em {fusoExibicao}; referência institucional {r.calendario.fusoInstitucional}</CollapsibleTrigger><CollapsibleContent>
       <ul>{r.snapshot.recuperacoes.map((p, i) => <li key={p.id}>Recuperação {i + 1}: {data(new Date(p.inicio))} a {data(new Date(p.fim))}</li>)}</ul>
-    </details>}
+    </CollapsibleContent></Collapsible>}
   </div>;
 }

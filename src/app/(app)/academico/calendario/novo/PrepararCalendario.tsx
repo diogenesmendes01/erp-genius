@@ -6,6 +6,7 @@ import { botaoClasses } from "@/components/Botao";
 import { MSG_RESULTADO_INCERTO } from "@/lib/mensagens";
 import { CampoTexto } from "@/components/CampoTexto";
 import { useAvisoAoSair } from "@/lib/aviso-ao-sair";
+import { CampoSelect, CampoDia, SelectItem } from "@/app/(app)/academico/controles";
 
 type Periodo = { id: string; nome: string; tipo: "FERIADO" | "RECESSO" | "FERIAS"; inicio: string; fim: string };
 export function PrepararCalendario({ periodosIniciais, versaoAnterior, fusoConferido }: { periodosIniciais: Periodo[]; versaoAnterior: number; fusoConferido: string }) {
@@ -41,9 +42,9 @@ export function PrepararCalendario({ periodosIniciais, versaoAnterior, fusoConfe
       {periodos.map((p, indice) => <fieldset key={p.id} className="grid gap-3 rounded border p-4 sm:grid-cols-2">
         <legend>Período {indice + 1}</legend>
         <label>Nome<input required minLength={2} maxLength={200} value={p.nome} onChange={(e) => alterar(p.id, { nome: e.target.value })} className={campo} /></label>
-        <label>Tipo<select value={p.tipo} onChange={(e) => alterar(p.id, { tipo: e.target.value as Periodo["tipo"] })} className={campo}><option value="FERIADO">Feriado</option><option value="RECESSO">Recesso</option><option value="FERIAS">Férias</option></select></label>
-        <label>Data inicial<input required type="date" value={p.inicio} onChange={(e) => alterar(p.id, { inicio: e.target.value })} className={campo} /></label>
-        <label>Data final<input required type="date" min={p.inicio || undefined} value={p.fim} onChange={(e) => alterar(p.id, { fim: e.target.value })} className={campo} /></label>
+        <label>Tipo<CampoSelect value={p.tipo} onChange={(e) => alterar(p.id, { tipo: e.target.value as Periodo["tipo"] })} className={campo} placeholder="Selecionar"><SelectItem value={"FERIADO"}>Feriado</SelectItem><SelectItem value={"RECESSO"}>Recesso</SelectItem><SelectItem value={"FERIAS"}>Férias</SelectItem></CampoSelect></label>
+        <label>Data inicial<CampoDia required value={p.inicio} onChange={(e) => alterar(p.id, { inicio: e.target.value })} className={campo} /></label>
+        <label>Data final<CampoDia required min={p.inicio || undefined} value={p.fim} onChange={(e) => alterar(p.id, { fim: e.target.value })} className={campo} /></label>
         <button type="button" onClick={() => setPeriodos((anteriores) => anteriores.filter((a) => a.id !== p.id))} className={`${botaoClasses({ variante: "perigo", tamanho: "lg" })} justify-self-start`} aria-label={`Remover período ${indice + 1}: ${p.nome || "sem nome"}`}>Remover da proposta</button>
       </fieldset>)}
       <button type="button" disabled={periodos.length >= 10000} onClick={() => setPeriodos((anteriores) => [...anteriores, { id: crypto.randomUUID(), nome: "", tipo: "FERIADO", inicio: "", fim: "" }])} className={botaoClasses({ variante: "secundario", tamanho: "lg" })}>Adicionar período</button>

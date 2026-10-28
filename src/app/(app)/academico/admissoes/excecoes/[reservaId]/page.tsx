@@ -9,6 +9,7 @@ import { EstadoVazio } from "@/components/EstadoVazio";
 import { consultarPreferenciaFusoEquipe } from "@/server/preferencias/fuso-exibicao";
 import { formatarInstanteExibicao, resolverFusoExibicao } from "@/server/operacao/fuso-exibicao";
 import { formatarDataCivil } from "@/lib/data-civil";
+import {Collapsible, CollapsibleTrigger, CollapsibleContent} from "@/app/(app)/academico/controles";
 
 const Resumo = z.object({ turmaId: z.string(), statusReserva: z.string(), expiraEm: z.string(), criadaEm: z.string(), janelaAtual: z.object({ limiteEntrada: z.string(), fusoAdmissao: z.string() }).nullable(),
   identificacao: z.object({ aluno: z.string(), matricula: z.string().nullable(), turma: z.string().nullable() }),
@@ -17,7 +18,7 @@ function Cenario({ snapshot, fusoExibicao }: { snapshot: unknown; fusoExibicao: 
   const p = Resumo.safeParse(snapshot);
   const quando = (valor: string) => formatarInstanteExibicao(valor, fusoExibicao, "UTC").texto;
   return p.success ? <div><p>{p.data.identificacao.aluno} · {p.data.identificacao.matricula ?? "Matrícula em preparação"} · {p.data.identificacao.turma ?? "Turma sem código"}</p><p>Reserva criada em {quando(p.data.criadaEm)}; prazo {quando(p.data.expiraEm)} ({fusoExibicao}; origem UTC).</p><p>Entrada até {formatarDataCivil(p.data.janelaAtual?.limiteEntrada.slice(0, 10))} ({p.data.janelaAtual?.fusoAdmissao ?? "janela sem fuso"}). {p.data.encontros.length} encontro(s) futuro(s) conferidos.</p>
-    <details><summary>Agenda revisada ({fusoExibicao}; origem UTC)</summary><ul>{p.data.encontros.map((e) => <li key={e.id}>{quando(e.inicio)} até {quando(e.fim)}</li>)}</ul></details></div> : <p role="alert">O cenário preservado precisa de conferência.</p>;
+    <Collapsible ><CollapsibleTrigger type="button" className="text-left font-medium">Agenda revisada ({fusoExibicao}; origem UTC)</CollapsibleTrigger><CollapsibleContent><ul>{p.data.encontros.map((e) => <li key={e.id}>{quando(e.inicio)} até {quando(e.fim)}</li>)}</ul></CollapsibleContent></Collapsible></div> : <p role="alert">O cenário preservado precisa de conferência.</p>;
 }
 export default async function ExcecaoAdmissaoPage({ params, searchParams }: { params: Promise<{ reservaId: string }>; searchParams: Promise<{ pagina?: string }> }) {
   await exigirSessaoPagina(Papel.SECRETARIA_ACADEMICA, Papel.GERENTE_PEDAGOGICO);

@@ -18,6 +18,7 @@ vi.mock("@/server/avaliacoes/lancamentos", () => ({ salvarLancamentoAvaliacaoLoc
 
 import type { ReactNode } from "react";
 import { LancarNotas, ConferirNotas } from "./Formularios";
+import { CampoInstante } from "@/app/(app)/academico/controles";
 import { CampoFuso } from "@/components/CampoFuso";
 import { MSG_DECISAO_INCERTA, MSG_RESULTADO_INCERTO } from "@/lib/mensagens";
 import { anuncios, contratoFeedbackSeparado } from "@/test/feedback-acao";
@@ -100,7 +101,7 @@ describe("LancarNotas — fuso no próprio formulário (sem navegar)", () => {
     anterior: { realizadaEm: "2026-10-01T02:30:00.000", instante: "2026-10-01T02:30:00.000Z", notas: [] },
   };
   const tela = () => m.ganchos!.renderizar(LancarNotas, props);
-  const campo = (nome: string): No => elementos(tela()).find((n) => n.type === "input" && n.props.name === nome)!;
+  const campo = (nome: string): No => elementos(tela()).find((n) => (n.type === "input" || n.type === CampoInstante) && n.props.name === nome)!;
   const digitar = (nome: string, valor: string) => (campo(nome).props.onChange as (e: { target: { value: string } }) => void)({ target: { value: valor } });
   const fuso = (): No => elementos(tela()).find((n) => n.type === CampoFuso)!;
   const trocarFuso = (valor: string) => (fuso().props.onChange as (v: string) => void)(valor);

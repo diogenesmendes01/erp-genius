@@ -8,6 +8,7 @@ import { botaoClasses } from "@/components/Botao";
 import { MSG_RESULTADO_INCERTO } from "@/lib/mensagens";
 import { CampoTexto } from "@/components/CampoTexto";
 import { CampoFuso } from "@/components/CampoFuso";
+import { CampoSelect, CampoInstante, Caixa, SelectItem } from "@/app/(app)/academico/controles";
 type Props = {
  reservaId: string;
  estadoConferido: string;
@@ -43,13 +44,13 @@ export function Formulario({ reservaId, estadoConferido, proposta, fusoInicial =
  }}>
  <fieldset disabled={ocupado} className="space-y-3">
  {proposta ? <>
-  <label className="block">Decisão<select name="decisao" required defaultValue="" onChange={e => setDecisao(e.target.value)} className="block border p-2"><option value="" disabled>Selecione</option>{proposta.podeAprovar && <option value="aprovar">Aprovar e remarcar</option>}<option value="rejeitar">Rejeitar</option></select></label>
+  <label className="block">Decisão<CampoSelect name="decisao" required defaultValue="" onChange={e => setDecisao(e.target.value)} className="block border p-2" placeholder="Selecione">{proposta.podeAprovar && <SelectItem value={"aprovar"}>Aprovar e remarcar</SelectItem>}<SelectItem value={"rejeitar"}>Rejeitar</SelectItem></CampoSelect></label>
   {!proposta.podeAprovar && <p className="text-sm" role="status">{proposta.impedimentoAprovacao ?? "A aprovação exige conferência de calendário registrada na proposta; esta versão histórica ainda pode ser rejeitada."}</p>}
-  {proposta.periodosNaoLetivos.length > 0 && <label className="block"><input name="autorizarDiaNaoLetivo" type="checkbox" disabled={decisao !== "aprovar"} required={decisao === "aprovar"} /> Autorizar explicitamente a exceção para os {proposta.periodosNaoLetivos.length} período(s) não letivo(s) revisados.</label>}
+  {proposta.periodosNaoLetivos.length > 0 && <label className="block"><Caixa name="autorizarDiaNaoLetivo" disabled={decisao !== "aprovar"} required={decisao === "aprovar"} /> Autorizar explicitamente a exceção para os {proposta.periodosNaoLetivos.length} período(s) não letivo(s) revisados.</label>}
  </> : <>
  <p>A proposta mantém o horário atual até outra pessoa autorizada aprovar. O prazo da avaliação e a oportunidade reservada permanecem os mesmos.</p>
- <label className="block">Novo início<input name="inicioLocal" type="datetime-local" required {...periodo.propsInicio} className="block border p-2" /></label>
- <label className="block">Novo término<input name="fimLocal" type="datetime-local" required min={periodo.min} className="block border p-2" /></label>
+ <label className="block">Novo início<CampoInstante name="inicioLocal" required {...periodo.propsInicio} className="block border p-2" /></label>
+ <label className="block">Novo término<CampoInstante name="fimLocal" required min={periodo.min} className="block border p-2" /></label>
  <label className="block">Fuso dos horários<CampoFuso name="fusoOrigem" padrao={fusoInicial} className="block border p-2" /><span className="text-sm">Informe o fuso em que preencheu início e término.</span></label>
  <label className="block">Evidência<CampoTexto name="evidencia" required minLength={5} maxLength={4000} className="block w-full border p-2" /></label>
  <label className="block">Justificativa de exceção não letiva, se o horário a atingir<CampoTexto name="motivoExcecaoNaoLetiva" minLength={5} maxLength={2000} className="block w-full border p-2" /><span className="text-sm">Se houver período não letivo, esta justificativa será revisada e a aprovação exigirá autorização explícita.</span></label>

@@ -8,6 +8,7 @@ import { botaoClasses } from "@/components/Botao";
 import { MSG_RESULTADO_INCERTO } from "@/lib/mensagens";
 import { CampoTexto } from "@/components/CampoTexto";
 import { CampoFuso } from "@/components/CampoFuso";
+import { CampoSelect, CampoCombobox, CampoDia, CampoRelogio, SelectItem } from "@/app/(app)/academico/controles";
 type Dados = NonNullable<Extract<Awaited<ReturnType<typeof consultarRemarcacoesParticular>>, { ok: true }>["dado"]>;
 const estilo = "block rounded border p-2";
 export function RemarcacaoParticular({ encontroOriginalId, dados, fusoExibicao }: { encontroOriginalId: string; dados: Dados; fusoExibicao: string }) {
@@ -21,9 +22,9 @@ export function RemarcacaoParticular({ encontroOriginalId, dados, fusoExibicao }
       e.preventDefault(); const f = new FormData(e.currentTarget); chave.current ||= crypto.randomUUID(); const chaveIdempotencia = chave.current;
       iniciar(() => executar(() => proporRemarcacaoParticular({ encontroOriginalId, professorId: String(f.get("professor")), data: String(f.get("data")), horario: String(f.get("horario")), fuso: String(f.get("fuso")), evidenciaEscolha: String(f.get("escolha")), motivo: String(f.get("motivo")), motivoExcecaoNaoLetiva: String(f.get("excecao") ?? "").trim() || undefined, chaveIdempotencia })));
     }}><fieldset disabled={ocupado} className="space-y-2"><legend>Proposta de novo encontro</legend>
-      <label className="block">Professor<select required name="professor" className={estilo} defaultValue=""><option value="" disabled>Selecione</option>{dados.professores.map(p => <option key={p.id} value={p.id}>{p.nome}</option>)}</select></label>
-      <label className="block">Data no fuso informado<input type="date" name="data" required className={estilo} /></label>
-      <label className="block">Horário<input type="time" name="horario" required className={estilo} /></label>
+      <label className="block">Professor<CampoCombobox required name="professor" className={estilo} defaultValue="" placeholder="Selecione" opcoes={[...dados.professores.map(p => ({ valor: p.id, rotulo: p.nome }))]} /></label>
+      <label className="block">Data no fuso informado<CampoDia name="data" required className={estilo} /></label>
+      <label className="block">Horário<CampoRelogio name="horario" required className={estilo} /></label>
       <label className="block">Fuso do encontro<CampoFuso padrao={dados.fuso} className={estilo} /></label>
       <label className="block">Evidência da escolha do aluno<CampoTexto name="escolha" required minLength={5} maxLength={2000} className={estilo} /></label>
       <label className="block">Motivo<CampoTexto name="motivo" required minLength={5} maxLength={2000} className={estilo} /></label>
@@ -40,7 +41,7 @@ export function RemarcacaoParticular({ encontroOriginalId, dados, fusoExibicao }
       {p.decisao ? <p>{p.decisao.aprovada ? "Remarcação publicada" : "Proposta rejeitada"}: {p.decisao.motivo} {p.decisao.encontroNovoId && <Link className="underline" href={`/diario/encontros/${p.decisao.encontroNovoId}/cancelamento`}>Consultar novo encontro</Link>}</p> : <p>Aguardando decisão independente.</p>}
       {p.podeDecidir && <form onSubmit={e => { e.preventDefault(); const f = new FormData(e.currentTarget);
         iniciar(() => executar(() => decidirRemarcacaoParticular({ propostaId: p.id, aprovar: f.get("decisao") === "aprovar", motivo: String(f.get("motivo")) })));
-      }}><fieldset disabled={ocupado} className="space-y-2"><label className="block">Decisão<select name="decisao" required defaultValue="" className={estilo}><option value="" disabled>Selecione</option><option value="aprovar" disabled={!!p.erroConferencia || !!p.conferencia?.pendencias.length}>Aprovar e publicar, incluindo a exceção indicada</option><option value="rejeitar">Rejeitar proposta</option></select></label>
+      }}><fieldset disabled={ocupado} className="space-y-2"><label className="block">Decisão<CampoSelect name="decisao" required defaultValue="" className={estilo} placeholder="Selecione"><SelectItem value={"aprovar"} disabled={!!p.erroConferencia || !!p.conferencia?.pendencias.length}>Aprovar e publicar, incluindo a exceção indicada</SelectItem><SelectItem value={"rejeitar"}>Rejeitar proposta</SelectItem></CampoSelect></label>
         <label className="block">Justificativa da decisão<CampoTexto name="motivo" required minLength={5} maxLength={2000} className={estilo} /></label><button className={botaoClasses({ variante: "secundario", tamanho: "lg" })}>Confirmar decisão</button>
       </fieldset></form>}
     </article>)}
