@@ -3,6 +3,7 @@
 import { useEffect, useRef } from "react";
 import { IconX } from "@tabler/icons-react";
 import { useDialogo } from "@/lib/dialogo";
+import { Sheet } from "@/components/ui/sheet";
 
 export function Drawer({
   id,
@@ -29,6 +30,7 @@ export function Drawer({
   useEffect(() => { if (raiz.current) raiz.current.inert = !open; }, [open]);
 
   return (
+    <Sheet open={open} modal={false} onOpenChange={(aberto) => { if (!aberto) onClose(); }}>
     <div ref={raiz} className={"fixed inset-0 z-50 " + (open ? "" : "pointer-events-none")}>
       <div
         onClick={onClose}
@@ -57,5 +59,6 @@ export function Drawer({
         {footer && <footer className="border-t border-gray-200 px-5 py-3">{footer}</footer>}
       </aside>
     </div>
+    </Sheet>
   );
 }

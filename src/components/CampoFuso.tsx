@@ -1,6 +1,7 @@
 "use client";
-import { useId, type ChangeEvent } from "react";
+import { useId, useRef, type ChangeEvent, type ReactNode } from "react";
 import { fusoIanaValido, MSG_FUSO_NAO_RECONHECIDO, normalizarFusoIana } from "@/server/operacao/fuso";
+import { Combobox, type OpcaoCombobox } from "@/components/ui/combobox";
 
 export type SugestaoFuso = string | readonly [valor: string, rotulo: string];
 
@@ -72,8 +73,12 @@ export function CampoFuso({
     evento.currentTarget.setCustomValidity(validadeDoFuso(texto));
     onChange?.(texto);
   };
+  const opcoes: OpcaoCombobox[] = [
+    ...lista.map(([v, rotulo]) => ({ valor: v, rotulo: rotulo ?? v, palavras: [rotulo ?? "", v] })),
+    ...(todos ? todosOsFusos().filter((f) => !lista.some(([v]) => v === f)).map((f) => ({ valor: f, rotulo: f })) : []),
+  ];
   return (
-    <>
+    <BuscaFuso valor={controlado ? valor : undefined} padrao={controlado ? undefined : padrao} onChange={onChange} disabled={disabled} className={className} placeholder={placeholder} ariaLabel={ariaLabel} opcoes={opcoes} vazio={opcaoVazia}>
       <input
         id={id}
         name={name}
@@ -90,13 +95,44 @@ export function CampoFuso({
         aria-invalid={ariaInvalid}
         aria-describedby={ariaDescribedby}
         maxLength={100}
-        className={className}
+        className={`${className} sr-only`}
       />
       <datalist id={listaId}>
         {opcaoVazia !== undefined && <option value="">{opcaoVazia}</option>}
         {lista.map(([v, rotulo]) => <option key={v} value={v}>{rotulo}</option>)}
         {todos && todosOsFusos().filter((f) => !lista.some(([v]) => v === f)).map((f) => <option key={f} value={f} />)}
       </datalist>
-    </>
+    </BuscaFuso>
+  );
+}
+
+function BuscaFuso({ children, valor, padrao, onChange, disabled, className, placeholder, ariaLabel, opcoes, vazio }: {
+  children: ReactNode;
+  valor?: string;
+  padrao?: string;
+  onChange?: (valor: string) => void;
+  disabled?: boolean;
+  className: string;
+  placeholder?: string;
+  ariaLabel?: string;
+  opcoes: OpcaoCombobox[];
+  vazio?: string;
+}) {
+  const raiz = useRef<HTMLDivElement>(null);
+  function escolher(proximo: string) {
+    const campo = raiz.current?.querySelector("input");
+    if (campo) {
+      const definir = typeof window !== "undefined" ? Object.getOwnPropertyDescriptor(window.HTMLInputElement?.prototype ?? {}, "value")?.set : undefined;
+      if (definir) definir.call(campo, proximo);
+      else (campo as HTMLInputElement).value = proximo;
+      if (typeof (campo as HTMLInputElement).setCustomValidity === "function") (campo as HTMLInputElement).setCustomValidity(validadeDoFuso(proximo));
+    }
+    onChange?.(proximo);
+  }
+  return (
+    <div ref={raiz}>
+      {children}
+      <Combobox value={valor} defaultValue={padrao} onValueChange={escolher} opcoes={opcoes} disabled={disabled} placeholder={placeholder || "Buscar fuso"} busca="Buscar cidade ou fuso" vazio={vazio} className={className} aria-label={ariaLabel} />
+    </div>
   );
 }
