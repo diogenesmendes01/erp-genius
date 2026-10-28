@@ -55,6 +55,15 @@ async function gate(tx:Tx,autorId:string,id:string,numeroId:string,tipo:ComandoA
  }
  return a;
 }
+export async function motivoSemAgendadaInboxTx(tx:Tx,autorId:string,atendimentoId:string):Promise<string|null>{
+ const r=await tx.atendimentoWhatsApp.findUnique({where:{id:atendimentoId},select:{conversa:{select:{numeroId:true}}}});
+ if(!r)return "Atendimento não encontrado.";
+ try{await gate(tx,autorId,atendimentoId,r.conversa.numeroId,"CRIAR");return null;}
+ catch(e){if(e instanceof ErroRegra)return e.message;throw e;}
+}
+export function naTransacaoAtual(tx:Tx):BancoAgendadaInbox{
+ return {$transaction:((fn:(t:Tx)=>Promise<unknown>)=>fn(tx)) as BancoAgendadaInbox["$transaction"]};
+}
 async function conferirLeituraRecibo(tx:Tx,autorId:string,atendimentoId:string){
  const u=await tx.usuario.findUnique({where:{id:autorId},select:selecionarAtor});
  if(!u?.ativo||apenasPortal(u))throw new ErroRegra("Sua sessão não está mais ativa.");
@@ -171,8 +180,8 @@ export async function executarAgendadaInbox(db:BancoAgendadaInbox,autorId:string
    const ator=c.leadId||c.tarefaId||c.documentoPropostaId?await tx.usuario.findUnique({where:{id:autorId},select:selecionarAtor}):null;
    if(c.leadId&&(c.leadId!==oportunidade||inicial.finalidade!=="COMERCIAL"||!ator||!await podeVerLeadNaThread(ator,c.atendimentoId,c.leadId,Date.now(),tx)))throw new ErroRegra("Oportunidade não é desta conversa.");
    if(c.tarefaId){
-    const ligacoes:Prisma.TarefaWhereInput[]=[...(oportunidade?[{leadId:oportunidade}]:[]),...(pessoaId?[{pessoaId}]:[])];
-    const t=ator&&ligacoes.length?await tx.tarefa.findFirst({where:{AND:[{id:c.tarefaId,status:"ABERTA"},await escopoTarefas(ator,capacidadesCrm(ator.papeis).has("tarefas.equipe")),{OR:ligacoes}]},select:{id:true}}):null;
+    const ligacoes:Prisma.TarefaWhereInput[]=[{atendimentoId:c.atendimentoId},...(oportunidade?[{leadId:oportunidade}]:[]),...(pessoaId?[{pessoaId}]:[])];
+    const t=ator?await tx.tarefa.findFirst({where:{AND:[{id:c.tarefaId,status:"ABERTA"},await escopoTarefas(ator,capacidadesCrm(ator.papeis).has("tarefas.equipe")),{OR:ligacoes}]},select:{id:true}}):null;
     if(!t)throw new ErroRegra("Tarefa não encontrada ou já concluída.");
    }
    if(c.midiaUrl)anexo={midiaPath:c.midiaUrl,tipo:tipoAnexo(c.midiaUrl),nome:c.anexoNome||null};
