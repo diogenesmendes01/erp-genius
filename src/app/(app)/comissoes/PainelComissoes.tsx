@@ -5,13 +5,15 @@ import { IconCalculator } from "@tabler/icons-react";
 import { Avatar } from "@/components/Avatar";
 import { BadgeEstado, type TomEstado } from "@/components/BadgeEstado";
 import { botaoClasses } from "@/components/Botao";
-import { CONTROLE_CAMPO } from "@/components/Campo";
 import { EstadoVazio } from "@/components/EstadoVazio";
 import { LinhaCampo } from "@/components/LinhaCampo";
 import { Paginacao } from "@/components/Paginacao";
 import { STATUS_COMISSAO_LABEL, rotular } from "@/lib/labels";
 import { dataCivilInstitucional } from "@/server/operacao/fuso";
 import { EstornarComissao } from "./EstornarComissao";
+import { CampoCombobox } from "@/components/ui/combobox";
+import { CampoSelect } from "@/components/ui/select";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import type { PainelComissoes as Painel, PeriodoComissao } from "@/server/crm/comissoes-painel";
 
 const TOM_STATUS: Record<StatusComissao, TomEstado> = {
@@ -90,16 +92,12 @@ export function PainelComissoes({ painel, periodo, pagina, vendedorId, vendedore
 
       <form method="get" action="/comissoes" role="search" aria-label="Filtrar comissões" className="flex flex-wrap items-center gap-2">
         <div className="w-full sm:w-48">
-          <select name="periodo" defaultValue={periodo} aria-label="Período" className={CONTROLE_CAMPO}>
-            {(Object.keys(PERIODO_ROTULO) as PeriodoComissao[]).map((p) => <option key={p} value={p}>{PERIODO_ROTULO[p]}</option>)}
-          </select>
+          <label htmlFor="comissao-periodo" className="sr-only">Período</label>
+          <CampoSelect id="comissao-periodo" name="periodo" defaultValue={periodo} opcoes={(Object.keys(PERIODO_ROTULO) as PeriodoComissao[]).map((p) => ({ valor: p, rotulo: PERIODO_ROTULO[p] }))} />
         </div>
         {veTodos && (
           <div className="w-full sm:w-56">
-            <select name="vendedor" defaultValue={vendedorId} aria-label="Vendedor" className={CONTROLE_CAMPO}>
-              <option value="">Todos os vendedores</option>
-              {vendedores.map((v) => <option key={v.id} value={v.id}>{v.nome}</option>)}
-            </select>
+            <CampoCombobox name="vendedor" defaultValue={vendedorId} aria-label="Vendedor" vazio="Todos os vendedores" opcoes={vendedores.map((v) => ({ valor: v.id, rotulo: v.nome }))} />
           </div>
         )}
         <button type="submit" className={botaoClasses({ variante: "secundario" })}>Filtrar</button>
@@ -133,24 +131,24 @@ export function PainelComissoes({ painel, periodo, pagina, vendedorId, vendedore
         <section aria-label="Por vendedor" className="space-y-1 text-sm">
           <h2 className="font-medium">Por vendedor</h2>
           <div className="overflow-x-auto rounded-lg border border-border-soft">
-            <table className="w-full text-left text-sm">
-              <thead className="bg-surface-muted text-left text-xs text-gray-600">
-                <tr>
-                  <th scope="col" className="px-4 py-2 font-medium">Vendedor</th>
-                  <th scope="col" className="px-4 py-2 font-medium">Quantidade</th>
-                  <th scope="col" className="px-4 py-2 font-medium">Valor</th>
-                </tr>
-              </thead>
-              <tbody>
+            <Table>
+              <TableHeader className="bg-surface-muted text-left text-xs text-gray-600">
+                <TableRow className="hover:bg-transparent">
+                  <TableHead scope="col" className="px-4 py-2 font-medium">Vendedor</TableHead>
+                  <TableHead scope="col" className="px-4 py-2 font-medium">Quantidade</TableHead>
+                  <TableHead scope="col" className="px-4 py-2 font-medium">Valor</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
                 {painel.porVendedor.map((v) => (
-                  <tr key={`${v.vendedorId}-${v.moeda}`} className="border-t border-border-soft transition-colors hover:bg-surface-muted">
-                    <td className="px-4 py-2"><ComAvatar nome={v.nome}>{v.nome}</ComAvatar></td>
-                    <td className="px-4 py-2"><span className="font-mono tabular-nums">{v.quantidade}</span> {v.quantidade === 1 ? "comissão" : "comissões"}</td>
-                    <td className="px-4 py-2 font-mono font-medium tabular-nums">{moeda(v.valor, v.moeda)}</td>
-                  </tr>
+                  <TableRow key={`${v.vendedorId}-${v.moeda}`} className="transition-colors hover:bg-surface-muted">
+                    <TableCell className="px-4 py-2"><ComAvatar nome={v.nome}>{v.nome}</ComAvatar></TableCell>
+                    <TableCell className="px-4 py-2"><span className="font-mono tabular-nums">{v.quantidade}</span> {v.quantidade === 1 ? "comissão" : "comissões"}</TableCell>
+                    <TableCell className="px-4 py-2 font-mono font-medium tabular-nums">{moeda(v.valor, v.moeda)}</TableCell>
+                  </TableRow>
                 ))}
-              </tbody>
-            </table>
+              </TableBody>
+            </Table>
           </div>
         </section>
       )}
@@ -191,36 +189,36 @@ export function PainelComissoes({ painel, periodo, pagina, vendedorId, vendedore
         ) : (
           <>
             <div className="hidden overflow-x-auto rounded-lg border border-border-soft md:block">
-              <table className="hidden w-full text-left text-sm md:table">
-                <thead className="bg-surface-muted text-left text-xs text-gray-600">
-                  <tr>
-                    <th scope="col" className="px-4 py-2 font-medium">Aluno</th>
-                    <th scope="col" className="px-4 py-2 font-medium">Produto</th>
-                    <th scope="col" className="px-4 py-2 font-medium">Beneficiário</th>
-                    <th scope="col" className="px-4 py-2 font-medium">Cálculo</th>
-                    <th scope="col" className="px-4 py-2 font-medium">Valor</th>
-                    <th scope="col" className="px-4 py-2 font-medium">Situação</th>
-                    <th scope="col" className="px-4 py-2 font-medium">Competência</th>
-                    <th scope="col" className="px-4 py-2 font-medium">Previsão de pagamento</th>
-                    {podeEstornar && <th scope="col" className="px-4 py-2 font-medium">Ações</th>}
-                  </tr>
-                </thead>
-                <tbody>
+              <Table className="hidden md:table">
+                <TableHeader className="bg-surface-muted text-left text-xs text-gray-600">
+                  <TableRow className="hover:bg-transparent">
+                    <TableHead scope="col" className="px-4 py-2 font-medium">Aluno</TableHead>
+                    <TableHead scope="col" className="px-4 py-2 font-medium">Produto</TableHead>
+                    <TableHead scope="col" className="px-4 py-2 font-medium">Beneficiário</TableHead>
+                    <TableHead scope="col" className="px-4 py-2 font-medium">Cálculo</TableHead>
+                    <TableHead scope="col" className="px-4 py-2 font-medium">Valor</TableHead>
+                    <TableHead scope="col" className="px-4 py-2 font-medium">Situação</TableHead>
+                    <TableHead scope="col" className="px-4 py-2 font-medium">Competência</TableHead>
+                    <TableHead scope="col" className="px-4 py-2 font-medium">Previsão de pagamento</TableHead>
+                    {podeEstornar && <TableHead scope="col" className="px-4 py-2 font-medium">Ações</TableHead>}
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
                   {painel.linhas.map((l) => (
-                    <tr key={l.id} className="border-t border-border-soft transition-colors hover:bg-surface-muted">
-                      <td className="px-4 py-2"><ComAvatar nome={l.nome}><NomeDoAluno l={l} podeAbrirPreparacao={podeAbrirPreparacao} /></ComAvatar></td>
-                      <td className="px-4 py-2">{l.produto}</td>
-                      <td className="px-4 py-2"><ComAvatar nome={l.vendedor}>{l.vendedor}</ComAvatar></td>
-                      <td className="px-4 py-2 font-mono tabular-nums">{calculo(l)}</td>
-                      <td className="px-4 py-2 font-mono tabular-nums">{moeda(l.valor, l.moeda)}</td>
-                      <td className="px-4 py-2"><SeloStatus status={l.status} /></td>
-                      <td className="px-4 py-2 font-mono tabular-nums">{dia(l.competencia, fuso)}</td>
-                      <td className="px-4 py-2">{l.previsaoPagamento ? <span className="font-mono tabular-nums">{diaCivil(l.previsaoPagamento)}</span> : "—"}</td>
-                      {podeEstornar && <td className="px-4 py-2">{estornavel(l.status) && <EstornarComissao id={l.id} aluno={l.nome} valor={moeda(l.valor, l.moeda)} />}</td>}
-                    </tr>
+                    <TableRow key={l.id} className="transition-colors hover:bg-surface-muted">
+                      <TableCell className="px-4 py-2"><ComAvatar nome={l.nome}><NomeDoAluno l={l} podeAbrirPreparacao={podeAbrirPreparacao} /></ComAvatar></TableCell>
+                      <TableCell className="px-4 py-2">{l.produto}</TableCell>
+                      <TableCell className="px-4 py-2"><ComAvatar nome={l.vendedor}>{l.vendedor}</ComAvatar></TableCell>
+                      <TableCell className="px-4 py-2 font-mono tabular-nums">{calculo(l)}</TableCell>
+                      <TableCell className="px-4 py-2 font-mono tabular-nums">{moeda(l.valor, l.moeda)}</TableCell>
+                      <TableCell className="px-4 py-2"><SeloStatus status={l.status} /></TableCell>
+                      <TableCell className="px-4 py-2 font-mono tabular-nums">{dia(l.competencia, fuso)}</TableCell>
+                      <TableCell className="px-4 py-2">{l.previsaoPagamento ? <span className="font-mono tabular-nums">{diaCivil(l.previsaoPagamento)}</span> : "—"}</TableCell>
+                      {podeEstornar && <TableCell className="px-4 py-2">{estornavel(l.status) && <EstornarComissao id={l.id} aluno={l.nome} valor={moeda(l.valor, l.moeda)} />}</TableCell>}
+                    </TableRow>
                   ))}
-                </tbody>
-              </table>
+                </TableBody>
+              </Table>
             </div>
             <ul className="space-y-2 md:hidden">
               {painel.linhas.map((l) => (

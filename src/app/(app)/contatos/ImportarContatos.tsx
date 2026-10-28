@@ -6,12 +6,11 @@ import { Botao } from "@/components/Botao";
 import { Modal } from "@/components/Modal";
 import { Campo } from "@/components/Campo";
 import { FeedbackAcao } from "@/components/FeedbackAcao";
+import { CampoCombobox } from "@/components/ui/combobox";
 
 type Falha = { linha: number; motivo: string };
 type Previa = { modo: "previa"; novos: number; existentes: number; validas: number; invalidas: Falha[]; repetidasNaPlanilha: number };
 type Aplicada = { modo: "aplicar"; novos: number; atualizados: number; foraDaCarteira: number; invalidos: number; comOportunidade: number; repetidasNaPlanilha: number; erros: Falha[] };
-
-const CONTROLE = "w-full rounded-md border border-border-soft bg-surface-raised px-2 py-1.5 text-sm max-sm:min-h-11";
 
 export function ImportarContatos({ vendedores }: { vendedores: { id: string; nome: string }[] }) {
   const router = useRouter();
@@ -85,10 +84,7 @@ export function ImportarContatos({ vendedores }: { vendedores: { id: string; nom
             {vendedores.length > 0 && (
               <Campo rotulo="Responsável pelas oportunidades novas" dica="Sem responsável, a importação só cadastra os contatos.">
                 {(campo) => (
-                  <select {...campo} className={CONTROLE} value={donoId} disabled={enviando || !!resultado} onChange={(e) => { setDonoId(e.target.value); setPrevia(null); }}>
-                    <option value="">Nenhum</option>
-                    {vendedores.map((v) => <option key={v.id} value={v.id}>{v.nome}</option>)}
-                  </select>
+                  <CampoCombobox id={campo.id} value={donoId} disabled={enviando || !!resultado} onValueChange={(v) => { setDonoId(v); setPrevia(null); }} vazio="Nenhum" opcoes={vendedores.map((v) => ({ valor: v.id, rotulo: v.nome }))} />
                 )}
               </Campo>
             )}

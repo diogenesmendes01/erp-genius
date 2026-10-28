@@ -18,6 +18,7 @@ import type { Resultado } from "@/server/_shared/resultado";
 import { formatarCompetencia, formatarDataCivil } from "@/lib/data-civil";
 import { botaoClasses } from "@/components/Botao";
 import { EstadoVazio } from "@/components/EstadoVazio";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Aviso } from "@/components/Aviso";
 import { COBRANCA_B2B_ATIVA, MSG_COBRANCA_B2B_DESLIGADA } from "@/lib/funcionalidades";
 
@@ -104,7 +105,7 @@ export function FichaEmpresa({
         <div className="flex flex-wrap items-center gap-3">
           <h1 className="text-2xl font-medium">{empresa.nome}</h1>
           <span className="rounded-full bg-indigo-100 px-2 py-0.5 text-xs text-indigo-700">B2B</span>
-          {!empresa.ativo && <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-500">Inativa</span>}
+          {!empresa.ativo && <span className="rounded-full bg-surface-muted px-2 py-0.5 text-xs text-gray-500">Inativa</span>}
         </div>
         <p className="mt-1 text-sm text-gray-500">
           {empresa.codigo ?? "—"} · vencimento dia {empresa.diaVencimento}
@@ -123,42 +124,40 @@ export function FichaEmpresa({
         {colaboradores.length === 0 ? (
           <EstadoVazio>Nenhum contrato individual vinculado a esta empresa ainda.</EstadoVazio>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead className="bg-surface-muted text-left text-xs text-gray-500">
-                <tr>
-                  <th className="px-3 py-2 font-medium">Colaborador</th>
-                  <th className="px-3 py-2 font-medium">Matrícula</th>
-                  <th className="px-3 py-2 font-medium">Status</th>
-                  <th className="px-3 py-2 font-medium">Pagas</th>
-                  <th className="px-3 py-2 font-medium">Abertas</th>
-                  <th className="px-3 py-2 font-medium">Atrasadas</th>
-                  <th className="px-3 py-2 font-medium">Total pago</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100">
+          <Table>
+              <TableHeader className="bg-surface-muted text-left text-xs text-gray-500">
+                <TableRow className="hover:bg-transparent">
+                  <TableHead className="px-3 py-2 font-medium">Colaborador</TableHead>
+                  <TableHead className="px-3 py-2 font-medium">Matrícula</TableHead>
+                  <TableHead className="px-3 py-2 font-medium">Status</TableHead>
+                  <TableHead className="px-3 py-2 font-medium">Pagas</TableHead>
+                  <TableHead className="px-3 py-2 font-medium">Abertas</TableHead>
+                  <TableHead className="px-3 py-2 font-medium">Atrasadas</TableHead>
+                  <TableHead className="px-3 py-2 font-medium">Total pago</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
                 {colaboradores.map((c) => (
-                  <tr key={c.matriculaId}>
-                    <td className="px-3 py-2">
+                  <TableRow key={c.matriculaId}>
+                    <TableCell className="px-3 py-2">
                       <Link href={`/alunos/${c.alunoId}`} className="font-medium text-gray-800 hover:underline">
                         {c.nome}
                       </Link>
-                    </td>
-                    <td className="px-3 py-2 text-gray-500">{c.codigo ?? "—"}</td>
-                    <td className="px-3 py-2 text-gray-600">{rotular(STATUS_MATRICULA_LABEL, c.statusMatricula)}</td>
-                    <td className="px-3 py-2 text-gray-700">{c.mensalidadesPagas}</td>
-                    <td className="px-3 py-2 text-gray-700">{c.mensalidadesAbertas}</td>
-                    <td className={"px-3 py-2 " + (c.mensalidadesAtrasadas > 0 ? "font-medium text-red-600" : "text-gray-700")}>
+                    </TableCell>
+                    <TableCell className="px-3 py-2 text-gray-500">{c.codigo ?? "—"}</TableCell>
+                    <TableCell className="px-3 py-2 text-gray-600">{rotular(STATUS_MATRICULA_LABEL, c.statusMatricula)}</TableCell>
+                    <TableCell className="px-3 py-2 text-gray-700">{c.mensalidadesPagas}</TableCell>
+                    <TableCell className="px-3 py-2 text-gray-700">{c.mensalidadesAbertas}</TableCell>
+                    <TableCell className={"px-3 py-2 " + (c.mensalidadesAtrasadas > 0 ? "font-medium text-red-600" : "text-gray-700")}>
                       {c.mensalidadesAtrasadas}
-                    </td>
-                    <td className="px-3 py-2 text-gray-700">
+                    </TableCell>
+                    <TableCell className="px-3 py-2 text-gray-700">
                       {formatarMoeda(c.totalPago, c.moeda)}
-                    </td>
-                  </tr>
+                    </TableCell>
+                  </TableRow>
                 ))}
-              </tbody>
-            </table>
-          </div>
+              </TableBody>
+            </Table>
         )}
       </section>
 
@@ -171,31 +170,30 @@ export function FichaEmpresa({
             Nenhuma fatura histórica vinculada a esta empresa.
           </EstadoVazio>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead className="bg-surface-muted text-left text-xs text-gray-500">
-                <tr>
-                  <th className="px-3 py-2 font-medium">Fatura</th>
-                  <th className="px-3 py-2 font-medium">Competência</th>
-                  <th className="px-3 py-2 font-medium">Cobranças</th>
-                  <th className="px-3 py-2 font-medium">Total</th>
-                  <th className="px-3 py-2 font-medium">Vencimento</th>
-                  <th className="px-3 py-2 font-medium">Status</th>
-                  <th className="px-3 py-2 font-medium"></th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100">
+          <Table>
+              <TableHeader className="bg-surface-muted text-left text-xs text-gray-500">
+                <TableRow className="hover:bg-transparent">
+                  <TableHead className="px-3 py-2 font-medium">Fatura</TableHead>
+                  <TableHead className="px-3 py-2 font-medium">Competência</TableHead>
+                  <TableHead className="px-3 py-2 font-medium">Cobranças</TableHead>
+                  <TableHead className="px-3 py-2 font-medium">Total</TableHead>
+                  <TableHead className="px-3 py-2 font-medium">Vencimento</TableHead>
+                  <TableHead className="px-3 py-2 font-medium">Status</TableHead>
+                  <TableHead className="px-3 py-2 font-medium"></TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
                 {faturas.map((f) => (
-                  <tr key={f.id}>
-                    <td className="px-3 py-2 font-medium text-gray-800">{f.codigo ?? "—"}</td>
-                    <td className="px-3 py-2 text-gray-600">{formatarCompetencia(f.competencia)}</td>
-                    <td className="px-3 py-2 text-gray-600">{f.cobrancas}</td>
-                    <td className="px-3 py-2 text-gray-800">
+                  <TableRow key={f.id}>
+                    <TableCell className="px-3 py-2 font-medium text-gray-800">{f.codigo ?? "—"}</TableCell>
+                    <TableCell className="px-3 py-2 text-gray-600">{formatarCompetencia(f.competencia)}</TableCell>
+                    <TableCell className="px-3 py-2 text-gray-600">{f.cobrancas}</TableCell>
+                    <TableCell className="px-3 py-2 text-gray-800">
                       {formatarMoeda(f.valorTotal, f.moeda)}
-                    </td>
-                    <td className="px-3 py-2 text-gray-600">{formatarDataCivil(f.vencimento.slice(0, 10))}</td>
-                    <td className="px-3 py-2 text-gray-600">{rotular(STATUS_FATURA_B2B_LABEL, f.status)}</td>
-                    <td className="px-3 py-2">
+                    </TableCell>
+                    <TableCell className="px-3 py-2 text-gray-600">{formatarDataCivil(f.vencimento.slice(0, 10))}</TableCell>
+                    <TableCell className="px-3 py-2 text-gray-600">{rotular(STATUS_FATURA_B2B_LABEL, f.status)}</TableCell>
+                    <TableCell className="px-3 py-2">
                       {f.status === "FECHADA" && (
                         <span className="flex flex-wrap gap-3">
                           {COBRANCA_B2B_ATIVA && podePagar && (
@@ -218,12 +216,11 @@ export function FichaEmpresa({
                           )}
                         </span>
                       )}
-                    </td>
-                  </tr>
+                    </TableCell>
+                  </TableRow>
                 ))}
-              </tbody>
-            </table>
-          </div>
+              </TableBody>
+            </Table>
         )}
         {feedback("faturas")}
         {confirmarFatura?.operacao === "pagar" && (

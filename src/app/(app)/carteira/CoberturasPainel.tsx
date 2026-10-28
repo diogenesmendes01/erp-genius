@@ -13,6 +13,7 @@ import { EstadoVazio } from "@/components/EstadoVazio";
 import { ConfirmarAcao } from "@/components/ConfirmarAcao";
 import { FeedbackAcao } from "@/components/FeedbackAcao";
 import { MensagemStatus } from "@/components/MensagemStatus";
+import { CampoCombobox } from "@/components/ui/combobox";
 
 type Cobertura = { id: string; titular: string; substituto: string; inicio: string; fim: string; revogada: boolean; motivo: string };
 
@@ -46,6 +47,7 @@ export function CoberturasPainel({
   const [nota, setNota] = useState<string | null>(null);
   const [ocupado, setOcupado] = useState(false);
   const [revogando, setRevogando] = useState<Cobertura | null>(null);
+  const [formulario, setFormulario] = useState(0);
   const periodo = useInicioDoPeriodo();
   const router = useRouter();
 
@@ -68,6 +70,7 @@ export function CoberturasPainel({
       if (!resultado.ok) setErro(resultado.erro);
       else {
         form.reset();
+        setFormulario((n) => n + 1);
         setNota("Cobertura concedida.");
         router.refresh();
       }
@@ -94,16 +97,11 @@ export function CoberturasPainel({
   const estilo = "min-h-11 rounded-md border border-border-soft bg-surface-raised p-2 text-sm sm:min-h-9";
   return (
     <div className="space-y-5">
-      <form onSubmit={salvar} className="grid gap-3 rounded-lg border border-border-soft p-4 md:grid-cols-2" aria-label="Conceder cobertura">
+      <form key={formulario} onSubmit={salvar} className="grid gap-3 rounded-lg border border-border-soft p-4 md:grid-cols-2" aria-label="Conceder cobertura">
         {([["titularId", "Titular da carteira"], ["substitutoId", "Quem fará a cobertura"]] as const).map(([name, label]) => (
           <label key={name} className="grid gap-1 text-sm">
             {label}
-            <select name={name} required className={estilo}>
-              <option value="">Selecione</option>
-              {vendedores.map((v) => (
-                <option key={v.id} value={v.id}>{v.nome}</option>
-              ))}
-            </select>
+            <CampoCombobox name={name} required placeholder="Selecione" opcoes={vendedores.map((v) => ({ valor: v.id, rotulo: v.nome }))} />
           </label>
         ))}
         <label className="grid gap-1 text-sm">

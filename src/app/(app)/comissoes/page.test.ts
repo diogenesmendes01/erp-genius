@@ -82,7 +82,7 @@ describe("/comissoes (página)", () => {
     expect(html).toContain("15/11/2026");
     expect(html).toContain("previsão de pagamento 15/11/2026");
     expect(html).toContain("dia 15 do mês seguinte à competência");
-    expect(html).toContain("<td class=\"px-4 py-2\">—</td>");
+    expect(html).toContain('<td class="p-2 align-middle px-4 py-2">—</td>');
   });
 
   it("tabela vira cartões no celular", async () => {

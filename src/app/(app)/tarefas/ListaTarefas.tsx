@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Botao } from "@/components/Botao";
+import { Checkbox } from "@/components/ui/checkbox";
 import { EstadoVazio } from "@/components/EstadoVazio";
 import { FeedbackAcao } from "@/components/FeedbackAcao";
 import { useAcaoCliente } from "@/lib/acao-cliente";
@@ -123,7 +124,7 @@ function LinhaItem({ item, marcado, aoMarcar, fusoEscola, fusoExibicao, params }
   return (
     <li className="flex items-start gap-3 p-3 max-sm:min-h-11">
       {aberta ? (
-        <input type="checkbox" checked={marcado} onChange={aoMarcar} aria-label={`Selecionar ${t.titulo}`} className="mt-1 h-4 w-4 shrink-0 max-sm:h-6 max-sm:w-6" />
+        <Checkbox checked={marcado} onCheckedChange={() => aoMarcar()} aria-label={`Selecionar ${t.titulo}`} className="mt-1 max-sm:h-6 max-sm:w-6" />
       ) : (
         <span aria-hidden className="mt-1 h-4 w-4 shrink-0" />
       )}

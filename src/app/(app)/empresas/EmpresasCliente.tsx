@@ -29,6 +29,8 @@ import {
 } from "@/server/empresas/filtros";
 import { botaoClasses } from "@/components/Botao";
 import { EstadoVazio } from "@/components/EstadoVazio";
+import { CampoCombobox } from "@/components/ui/combobox";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
 const btnPri = botaoClasses();
 
@@ -96,12 +98,7 @@ export function EmpresasCliente({
           </label>
           <label className="w-64 text-sm">
             <span className="mb-1 block text-xs font-medium text-gray-600">País (moeda/vencimentos)</span>
-            <select className={CONTROLE_CAMPO} value={paisId} onChange={(e) => setPaisId(e.target.value)}>
-              <option value="">—</option>
-              {paises.map((p) => (
-                <option key={p.id} value={p.id}>{p.nome}</option>
-              ))}
-            </select>
+            <CampoCombobox value={paisId} onValueChange={setPaisId} vazio="—" opcoes={paises.map((p) => ({ valor: p.id, rotulo: p.nome }))} />
           </label>
           <button className={btnPri} disabled={acao.ocupado || nome.trim().length < 2} onClick={criar}>
             {acao.ocupado ? "Criando…" : "Criar"}
@@ -130,17 +127,10 @@ export function EmpresasCliente({
             />
           </div>
           <div className="w-48">
-            <select name="situacao" value={lista.campos.situacao} onChange={lista.mudarSelect("situacao")} aria-label="Filtrar por situação" className={CONTROLE_CAMPO}>
-              <option value="">Ativas e inativas</option>
-              <option value="ativas">Ativas</option>
-              <option value="inativas">Inativas</option>
-            </select>
+            <CampoCombobox name="situacao" value={lista.campos.situacao} onChange={lista.mudarSelect("situacao")} aria-label="Filtrar por situação" vazio="Ativas e inativas" opcoes={[{ valor: "ativas", rotulo: "Ativas" }, { valor: "inativas", rotulo: "Inativas" }]} />
           </div>
           <div className="w-56">
-            <select name="pais" value={lista.campos.pais} onChange={lista.mudarSelect("pais")} aria-label="Filtrar por país" className={CONTROLE_CAMPO}>
-              <option value="">Todos os países</option>
-              {paises.map((p) => <option key={p.id} value={p.id}>{p.nome}</option>)}
-            </select>
+            <CampoCombobox name="pais" value={lista.campos.pais} onChange={lista.mudarSelect("pais")} aria-label="Filtrar por país" vazio="Todos os países" opcoes={paises.map((p) => ({ valor: p.id, rotulo: p.nome }))} />
           </div>
           {filtros.ordem && <>
             <input type="hidden" name="ordem" value={filtros.ordem.campo} />
@@ -169,22 +159,22 @@ export function EmpresasCliente({
           </EstadoVazio>
         ) : (
           <div aria-busy={lista.buscando} className={"overflow-x-auto rounded-lg border border-gray-200 transition-opacity " + (lista.buscando ? "opacity-60" : "")}>
-            <table className="w-full min-w-[640px] text-sm">
-              <thead className="border-b border-gray-200 bg-surface-muted text-left text-xs text-gray-600">
-                <tr>
+            <Table className="min-w-[640px]">
+              <TableHeader className="bg-surface-muted text-left text-xs text-gray-600">
+                <TableRow className="hover:bg-transparent">
                   <ColunaOrdenavel campo="codigo" rotulo="Código" {...coluna} />
                   <ColunaOrdenavel campo="nome" rotulo="Empresa" {...coluna} />
-                  <th className="px-4 py-2 font-medium">País</th>
+                  <TableHead className="px-4 py-2 font-medium">País</TableHead>
                   <ColunaOrdenavel campo="colaboradores" rotulo="Colaboradores" direcaoInicial="desc" {...coluna} />
-                  <th className="px-4 py-2 font-medium">Faturas a receber</th>
+                  <TableHead className="px-4 py-2 font-medium">Faturas a receber</TableHead>
                   <ColunaOrdenavel campo="situacao" rotulo="Status" {...coluna} />
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100">
+                </TableRow>
+              </TableHeader>
+              <TableBody>
                 {empresas.map((e) => (
-                  <tr key={e.id} className="transition-colors hover:bg-surface-muted">
-                    <td className="px-4 py-2 font-mono tabular-nums text-gray-500">{e.codigo ? `#${e.codigo}` : "—"}</td>
-                    <td className="px-4 py-2">
+                  <TableRow key={e.id} className="transition-colors hover:bg-surface-muted">
+                    <TableCell className="px-4 py-2 font-mono tabular-nums text-gray-500">{e.codigo ? `#${e.codigo}` : "—"}</TableCell>
+                    <TableCell className="px-4 py-2">
                       <div className="flex items-center gap-2.5">
                         <Avatar nome={e.nome} tamanho={32} quadrado />
                         <div className="min-w-0">
@@ -194,17 +184,17 @@ export function EmpresasCliente({
                           <LinhaCampo icone={<IconBuilding size={18} />} valor={e.pais ?? "—"} rotulo="País" />
                         </div>
                       </div>
-                    </td>
-                    <td className="px-4 py-2 text-gray-500">{e.pais ?? "—"}</td>
-                    <td className="px-4 py-2 font-mono tabular-nums text-gray-700">{e.colaboradores}</td>
-                    <td className="px-4 py-2 font-mono tabular-nums text-gray-700">{e.faturasAReceber}</td>
-                    <td className="px-4 py-2">
+                    </TableCell>
+                    <TableCell className="px-4 py-2 text-gray-500">{e.pais ?? "—"}</TableCell>
+                    <TableCell className="px-4 py-2 font-mono tabular-nums text-gray-700">{e.colaboradores}</TableCell>
+                    <TableCell className="px-4 py-2 font-mono tabular-nums text-gray-700">{e.faturasAReceber}</TableCell>
+                    <TableCell className="px-4 py-2">
                       <BadgeEstado tom={e.ativo ? "sucesso" : "neutro"} ponto>{e.ativo ? "Ativa" : "Inativa"}</BadgeEstado>
-                    </td>
-                  </tr>
+                    </TableCell>
+                  </TableRow>
                 ))}
-              </tbody>
-            </table>
+              </TableBody>
+            </Table>
           </div>
         )}
 

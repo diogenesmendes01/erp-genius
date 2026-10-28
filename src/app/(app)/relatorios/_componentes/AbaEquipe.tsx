@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { EstadoVazio } from "@/components/EstadoVazio";
 import type { DesempenhoUsuario } from "@/server/relatorios/equipe";
 import { fmtInteiro, fmtMinutos, fmtMoedas, fmtPct, hrefRelatorio, variacaoTexto, type ParamsRelatorio } from "./formato";
@@ -17,40 +18,40 @@ export function AbaEquipe({ linhas, anterior, params }: { linhas: DesempenhoUsua
         20/10 a 10/11 compara outubro e novembro completos). Valor ganho usa o valor previsto das oportunidades.
       </p>
       <div className="overflow-x-auto rounded-lg border border-border-soft">
-        <table className="w-full min-w-[56rem] text-sm">
-          <thead>
-            <tr className="text-left text-gray-600">
-              <th scope="col" className="p-2">Pessoa</th>
-              <th scope="col" className="p-2">Oportunidades</th>
-              <th scope="col" className="p-2">Ganhas</th>
-              <th scope="col" className="p-2">Variação das ganhas</th>
-              <th scope="col" className="p-2">Conversão</th>
-              <th scope="col" className="p-2">Valor ganho</th>
-              <th scope="col" className="p-2">Primeira resposta</th>
-              <th scope="col" className="p-2">Tarefas concluídas</th>
-              <th scope="col" className="p-2">Comissão</th>
-              <th scope="col" className="p-2">Meta dos meses do período</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-border-soft">
+        <Table className="min-w-[56rem]">
+          <TableHeader>
+            <TableRow className="text-left text-gray-600 hover:bg-transparent">
+              <TableHead scope="col" className="p-2">Pessoa</TableHead>
+              <TableHead scope="col" className="p-2">Oportunidades</TableHead>
+              <TableHead scope="col" className="p-2">Ganhas</TableHead>
+              <TableHead scope="col" className="p-2">Variação das ganhas</TableHead>
+              <TableHead scope="col" className="p-2">Conversão</TableHead>
+              <TableHead scope="col" className="p-2">Valor ganho</TableHead>
+              <TableHead scope="col" className="p-2">Primeira resposta</TableHead>
+              <TableHead scope="col" className="p-2">Tarefas concluídas</TableHead>
+              <TableHead scope="col" className="p-2">Comissão</TableHead>
+              <TableHead scope="col" className="p-2">Meta dos meses do período</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
             {linhas.map((l) => (
-              <tr key={l.usuarioId}>
-                <th scope="row" className="p-2 text-left font-normal">
+              <TableRow key={l.usuarioId}>
+                <TableHead scope="row" className="p-2 text-left font-normal">
                   <Link href={hrefRelatorio(params, { detalhe: `responsavel:${l.usuarioId}`, busca: null })} className="text-brand-700 hover:underline max-sm:inline-flex max-sm:min-h-11 max-sm:items-center">{l.nome}</Link>
-                </th>
-                <td className="p-2">{fmtInteiro(l.oportunidades)}</td>
-                <td className="p-2">{fmtInteiro(l.ganhas)}</td>
-                <td className="p-2">{variacaoTexto(l.ganhas, antes.get(l.usuarioId)?.ganhas ?? null)}</td>
-                <td className="p-2">{fmtPct(l.conversao)}</td>
-                <td className="p-2">{fmtMoedas(l.valorGanho)}</td>
-                <td className="p-2">{fmtMinutos(l.primeiraRespostaMediaMin)}</td>
-                <td className="p-2">{fmtInteiro(l.tarefasConcluidas)}</td>
-                <td className="p-2">{fmtMoedas(l.comissao)}</td>
-                <td className="p-2">{l.meta.pct == null ? "Sem meta" : fmtPct(l.meta.pct)}</td>
-              </tr>
+                </TableHead>
+                <TableCell className="p-2">{fmtInteiro(l.oportunidades)}</TableCell>
+                <TableCell className="p-2">{fmtInteiro(l.ganhas)}</TableCell>
+                <TableCell className="p-2">{variacaoTexto(l.ganhas, antes.get(l.usuarioId)?.ganhas ?? null)}</TableCell>
+                <TableCell className="p-2">{fmtPct(l.conversao)}</TableCell>
+                <TableCell className="p-2">{fmtMoedas(l.valorGanho)}</TableCell>
+                <TableCell className="p-2">{fmtMinutos(l.primeiraRespostaMediaMin)}</TableCell>
+                <TableCell className="p-2">{fmtInteiro(l.tarefasConcluidas)}</TableCell>
+                <TableCell className="p-2">{fmtMoedas(l.comissao)}</TableCell>
+                <TableCell className="p-2">{l.meta.pct == null ? "Sem meta" : fmtPct(l.meta.pct)}</TableCell>
+              </TableRow>
             ))}
-          </tbody>
-        </table>
+          </TableBody>
+        </Table>
       </div>
     </section>
   );

@@ -16,6 +16,8 @@ import { STATUS_MENSAGEM_AGENDADA_LABEL, TIPO_TAREFA_LABEL } from "@/lib/labels"
 import { instanteDaGrade } from "@/server/agenda/grade";
 import { reagendarMensagem, reagendarTarefa } from "@/server/crm/tarefas-acoes";
 import type { ItemAgenda } from "@/server/crm/mensagens-agendadas";
+import { CampoData } from "@/components/ui/date-picker";
+import { CampoHora } from "@/components/ui/time-picker";
 import {
   chaveItem, dataCivilDoItem, deslocarData, diasDaSemana, horaNoFuso, hrefTarefas, instanteDoItem, rotuloDia, rotuloDiaCurto, textoHora,
   type ParamsTarefas,
@@ -160,7 +162,7 @@ function BlocoItem({ item, fusoEscola, fusoExibicao, params, aoReagendar, v }: {
     { rotulo: "Reagendar", desabilitado: ehTarefa ? !aberta : item.status !== "PENDENTE" && item.status !== "ADIADA", aoEscolher: () => aoReagendar(item) },
   ];
   return (
-    <div ref={setNodeRef} data-arrastando={isDragging ? "true" : undefined} className={`flex items-center gap-1 rounded-md px-1 text-xs ${ehTarefa ? "bg-brand-bg text-brand-800" : "bg-gray-100 text-gray-700"} ${isDragging ? "opacity-60" : ""}`}>
+    <div ref={setNodeRef} data-arrastando={isDragging ? "true" : undefined} className={`flex items-center gap-1 rounded-md px-1 text-xs ${ehTarefa ? "bg-brand-bg text-brand-800" : "bg-surface-muted text-gray-700"} ${isDragging ? "opacity-60" : ""}`}>
       {aberta && (
         <button ref={setActivatorNodeRef} type="button" {...attributes} {...listeners} aria-label={`Arrastar tarefa ${titulo}`} className="flex h-6 w-6 shrink-0 touch-none items-center justify-center text-gray-600 max-sm:h-11 max-sm:w-11">
           <IconGripVertical aria-hidden="true" className="h-4 w-4" />
@@ -196,8 +198,8 @@ export function ReagendarModal({ item, fusoEscola, aoFechar, aoConcluir }: { ite
   return (
     <Modal titulo="Reagendar" aoFechar={aoFechar} bloquearFechamento={acao.ocupado}>
       <div className="space-y-3">
-        <Campo rotulo="Data" obrigatorio={item.tipo === "mensagem"}>{(c) => <input {...c} type="date" value={data} onChange={(e) => setData(e.target.value)} className="w-full rounded-md border border-gray-300 px-2 py-1.5 text-sm max-sm:min-h-11" />}</Campo>
-        <Campo rotulo="Hora" dica="No horário da escola." obrigatorio={item.tipo === "mensagem"}>{(c) => <input {...c} type="time" step={1800} value={hora} onChange={(e) => setHora(e.target.value)} className="w-full rounded-md border border-gray-300 px-2 py-1.5 text-sm max-sm:min-h-11" />}</Campo>
+        <Campo rotulo="Data" obrigatorio={item.tipo === "mensagem"}>{(c) => <CampoData {...c} value={data} onChange={(e) => setData(e.target.value)} />}</Campo>
+        <Campo rotulo="Hora" dica="No horário da escola." obrigatorio={item.tipo === "mensagem"}>{(c) => <CampoHora {...c} value={hora} onChange={(e) => setHora(e.target.value)} />}</Campo>
         <FeedbackAcao erro={acao.erro} sucesso={acao.sucesso} />
         <div className="flex justify-end gap-2">
           <Botao variante="secundario" onClick={aoFechar} disabled={acao.ocupado}>Voltar</Botao>

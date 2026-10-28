@@ -59,7 +59,8 @@ describe("PainelComissoes · design system", () => {
   it("a fonte usa os primitivos e não traz borda cinza nem badge ad-hoc", () => {
     expect(fonte).toContain("Avatar");
     expect(fonte).toContain("BadgeEstado");
-    expect(fonte).toContain("CONTROLE_CAMPO");
+    expect(fonte).toContain("CampoSelect");
+    expect(fonte).toContain("CampoCombobox");
     expect(fonte).toContain("LinhaCampo");
     expect(fonte).toContain("font-mono");
     expect(fonte).toContain("tabular-nums");

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { EstadoVazio } from "@/components/EstadoVazio";
 import { ETAPA_LABEL, MOTIVO_PERDA_LABEL, rotular } from "@/lib/labels";
 import type { EtapaFunil, PerdaFunil } from "@/server/relatorios/funil";
@@ -17,21 +18,21 @@ export function AbaFunil({ dados, anterior, params }: { dados: Dados; anterior: 
         <h2 id="funil-etapas" className="font-medium">Funil por etapa</h2>
         <p className="text-xs text-gray-600">O nome da etapa abre as oportunidades que estão nela agora.</p>
         <div className="overflow-x-auto rounded-lg border border-border-soft">
-          <table className="w-full min-w-[36rem] text-sm">
-            <thead>
-              <tr className="text-left text-gray-600">
-                <th scope="col" className="p-2">Etapa</th>
-                <th scope="col" className="p-2">Chegaram</th>
-                <th scope="col" className="p-2">Variação</th>
-                <th scope="col" className="p-2">Agora</th>
-                <th scope="col" className="p-2">Conversão para a próxima</th>
-                <th scope="col" className="p-2">Tempo médio</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-border-soft">
+          <Table className="min-w-[36rem]">
+            <TableHeader>
+              <TableRow className="text-left text-gray-600 hover:bg-transparent">
+                <TableHead scope="col" className="p-2">Etapa</TableHead>
+                <TableHead scope="col" className="p-2">Chegaram</TableHead>
+                <TableHead scope="col" className="p-2">Variação</TableHead>
+                <TableHead scope="col" className="p-2">Agora</TableHead>
+                <TableHead scope="col" className="p-2">Conversão para a próxima</TableHead>
+                <TableHead scope="col" className="p-2">Tempo médio</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
               {dados.etapas.map((e) => (
-                <tr key={e.etapa}>
-                  <th scope="row" className="p-2 text-left font-normal">
+                <TableRow key={e.etapa}>
+                  <TableHead scope="row" className="p-2 text-left font-normal">
                     <Link
                       href={hrefRelatorio(params, { detalhe: "etapa:" + e.etapa, busca: null })}
                       className={link}
@@ -40,16 +41,16 @@ export function AbaFunil({ dados, anterior, params }: { dados: Dados; anterior: 
                     >
                       {rotular(ETAPA_LABEL, e.etapa)}
                     </Link>
-                  </th>
-                  <td className="p-2">{fmtInteiro(e.chegaram)}</td>
-                  <td className="p-2">{variacaoTexto(e.chegaram, antes.get(e.etapa)?.chegaram ?? null)}</td>
-                  <td className="p-2">{fmtInteiro(e.agora)}</td>
-                  <td className="p-2">{fmtPct(e.conversaoProxima)}</td>
-                  <td className="p-2">{fmtDias(e.tempoMedioDias)}</td>
-                </tr>
+                  </TableHead>
+                  <TableCell className="p-2">{fmtInteiro(e.chegaram)}</TableCell>
+                  <TableCell className="p-2">{variacaoTexto(e.chegaram, antes.get(e.etapa)?.chegaram ?? null)}</TableCell>
+                  <TableCell className="p-2">{fmtInteiro(e.agora)}</TableCell>
+                  <TableCell className="p-2">{fmtPct(e.conversaoProxima)}</TableCell>
+                  <TableCell className="p-2">{fmtDias(e.tempoMedioDias)}</TableCell>
+                </TableRow>
               ))}
-            </tbody>
-          </table>
+            </TableBody>
+          </Table>
         </div>
       </section>
       <section aria-labelledby="funil-perdas" className="space-y-1 text-sm">

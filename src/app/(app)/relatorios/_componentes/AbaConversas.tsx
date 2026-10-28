@@ -1,4 +1,5 @@
 import { EstadoVazio } from "@/components/EstadoVazio";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import type { MetricasAtendimento } from "@/server/relatorios/atendimento";
 import { fmtInteiro, fmtMinutos, variacaoTexto } from "./formato";
 import { Kpi } from "./Kpi";
@@ -27,36 +28,36 @@ export function AbaConversas({ dados, anterior, mostrarAria }: { dados: Metricas
           <EstadoVazio>Nenhuma mensagem enviada no período.</EstadoVazio>
         ) : (
           <div className="overflow-x-auto rounded-lg border border-border-soft">
-            <table className="w-full min-w-[20rem] text-sm">
-              <thead>
-                <tr className="text-left text-gray-600">
-                  <th scope="col" className="p-2">Dia</th>
+            <Table className="min-w-[20rem]">
+              <TableHeader>
+                <TableRow className="text-left text-gray-600 hover:bg-transparent">
+                  <TableHead scope="col" className="p-2">Dia</TableHead>
                   {mostrarAria ? (
                     <>
-                      <th scope="col" className="p-2">Aria</th>
-                      <th scope="col" className="p-2">Equipe</th>
+                      <TableHead scope="col" className="p-2">Aria</TableHead>
+                      <TableHead scope="col" className="p-2">Equipe</TableHead>
                     </>
                   ) : (
-                    <th scope="col" className="p-2">Enviadas</th>
+                    <TableHead scope="col" className="p-2">Enviadas</TableHead>
                   )}
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border-soft">
+                </TableRow>
+              </TableHeader>
+              <TableBody>
                 {dados.volume.map((v) => (
-                  <tr key={v.dia}>
-                    <th scope="row" className="p-2 text-left font-normal">{v.dia.split("-").reverse().join("/")}</th>
+                  <TableRow key={v.dia}>
+                    <TableHead scope="row" className="p-2 text-left font-normal">{v.dia.split("-").reverse().join("/")}</TableHead>
                     {mostrarAria ? (
                       <>
-                        <td className="p-2">{fmtInteiro(v.aria)}</td>
-                        <td className="p-2">{fmtInteiro(v.equipe)}</td>
+                        <TableCell className="p-2">{fmtInteiro(v.aria)}</TableCell>
+                        <TableCell className="p-2">{fmtInteiro(v.equipe)}</TableCell>
                       </>
                     ) : (
-                      <td className="p-2">{fmtInteiro(v.equipe)}</td>
+                      <TableCell className="p-2">{fmtInteiro(v.equipe)}</TableCell>
                     )}
-                  </tr>
+                  </TableRow>
                 ))}
-              </tbody>
-            </table>
+              </TableBody>
+            </Table>
           </div>
         )}
       </section>
@@ -67,24 +68,24 @@ export function AbaConversas({ dados, anterior, mostrarAria }: { dados: Metricas
           <EstadoVazio>Nenhuma mensagem recebida no período.</EstadoVazio>
         ) : (
           <div className="overflow-x-auto rounded-lg border border-border-soft">
-            <table className="w-full min-w-[40rem] text-center text-xs">
-              <thead>
-                <tr className="text-gray-600">
-                  <th scope="col" className="p-1 text-left">Dia</th>
-                  {dados.calor[0].map((_, i) => <th key={i} scope="col" className="p-1">{HORA_INICIAL + i}h</th>)}
-                </tr>
-              </thead>
-              <tbody>
+            <Table className="min-w-[40rem] text-center text-xs">
+              <TableHeader>
+                <TableRow className="text-gray-600 hover:bg-transparent">
+                  <TableHead scope="col" className="p-1 text-left">Dia</TableHead>
+                  {dados.calor[0].map((_, i) => <TableHead key={i} scope="col" className="p-1">{HORA_INICIAL + i}h</TableHead>)}
+                </TableRow>
+              </TableHeader>
+              <TableBody>
                 {dados.calor.map((linha, d) => (
-                  <tr key={d}>
-                    <th scope="row" className="p-1 text-left font-normal">{DIAS[d]}</th>
+                  <TableRow key={d}>
+                    <TableHead scope="row" className="p-1 text-left font-normal">{DIAS[d]}</TableHead>
                     {linha.map((n, i) => (
-                      <td key={i} className={"p-1 " + (n === 0 ? "text-gray-400" : n >= maximo * 0.75 ? "bg-brand-100 font-medium" : n >= maximo * 0.4 ? "bg-gray-100" : "")}>{n === 0 ? "·" : fmtInteiro(n)}</td>
+                      <TableCell key={i} className={"p-1 " + (n === 0 ? "text-gray-400" : n >= maximo * 0.75 ? "bg-brand-100 font-medium" : n >= maximo * 0.4 ? "bg-surface-muted" : "")}>{n === 0 ? "·" : fmtInteiro(n)}</TableCell>
                     ))}
-                  </tr>
+                  </TableRow>
                 ))}
-              </tbody>
-            </table>
+              </TableBody>
+            </Table>
           </div>
         )}
       </section>

@@ -1,4 +1,5 @@
 import { EstadoVazio } from "@/components/EstadoVazio";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import type { MetricasAriaEquipe } from "@/server/relatorios/aria";
 import { fmtInteiro, fmtMinutos, fmtPct, variacaoTexto } from "./formato";
 import { Kpi } from "./Kpi";
@@ -24,24 +25,24 @@ export function AbaAria({ dados, anterior }: { dados: MetricasAriaEquipe; anteri
         <h2 id="aria-comparacao" className="font-medium">Aria e equipe neste período</h2>
         <p className="text-xs text-gray-600">Cada atendimento conta no lado de quem deu a primeira resposta.</p>
         <div className="overflow-x-auto rounded-lg border border-border-soft">
-          <table className="w-full min-w-[28rem] text-sm">
-            <thead>
-              <tr className="text-left text-gray-600">
-                <th scope="col" className="p-2">Indicador</th>
-                <th scope="col" className="p-2">Aria</th>
-                <th scope="col" className="p-2">Equipe</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-border-soft">
+          <Table className="min-w-[28rem]">
+            <TableHeader>
+              <TableRow className="text-left text-gray-600 hover:bg-transparent">
+                <TableHead scope="col" className="p-2">Indicador</TableHead>
+                <TableHead scope="col" className="p-2">Aria</TableHead>
+                <TableHead scope="col" className="p-2">Equipe</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
               {linhas.map((l) => (
-                <tr key={l.rotulo}>
-                  <th scope="row" className="p-2 text-left font-normal">{l.rotulo}</th>
-                  <td className="p-2">{l.a}</td>
-                  <td className="p-2">{l.e}</td>
-                </tr>
+                <TableRow key={l.rotulo}>
+                  <TableHead scope="row" className="p-2 text-left font-normal">{l.rotulo}</TableHead>
+                  <TableCell className="p-2">{l.a}</TableCell>
+                  <TableCell className="p-2">{l.e}</TableCell>
+                </TableRow>
               ))}
-            </tbody>
-          </table>
+            </TableBody>
+          </Table>
         </div>
       </section>
     </div>
