@@ -8,6 +8,7 @@ const html = (etapa: "PROPOSTA" | "NOVO" | "NO_SHOW", podeMover = true, ocupado 
   renderToStaticMarkup(createElement(BarraEtapas, { etapa, podeMover, ocupado, aoEscolher: () => {} }));
 
 const botoes = (markup: string) => [...markup.matchAll(/<button\b[^>]*>/g)].map((m) => m[0]);
+const etapas = (markup: string) => botoes(markup).filter((b) => /aria-label="Etapa /.test(b));
 const desabilitado = (tag: string) => /(?:\s)disabled(?:=|\s|>)/.test(tag);
 
 describe("BarraEtapas", () => {
@@ -22,13 +23,13 @@ describe("BarraEtapas", () => {
     expect(h).toContain('name="etapaOportunidade"');
     expect(h).toContain('value="PROPOSTA"');
     expect(h.match(/<option /g)).toHaveLength(10);
-    expect(botoes(h)).toHaveLength(8);
-    expect(botoes(h).every((b) => !desabilitado(b))).toBe(true);
+    expect(etapas(h)).toHaveLength(8);
+    expect(etapas(h).every((b) => !desabilitado(b))).toBe(true);
   });
 
   it("desabilita a barra quando não pode mover ou está ocupada", () => {
     for (const h of [html("NOVO", false, false), html("NOVO", true, true)]) {
-      expect(botoes(h).every((b) => desabilitado(b))).toBe(true);
+      expect(etapas(h).every((b) => desabilitado(b))).toBe(true);
       expect(h).toMatch(/<select\b[^>]*disabled/);
     }
   });

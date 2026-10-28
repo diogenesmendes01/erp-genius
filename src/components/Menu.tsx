@@ -2,6 +2,7 @@
 
 import { Fragment, type CSSProperties, useCallback, useEffect, useId, useImperativeHandle, useLayoutEffect, useRef, useState, type ReactNode, type Ref } from "react";
 import { acaoTecladoMenu, posicaoPopover } from "@/lib/popover";
+import { DropdownMenu } from "@/components/ui/dropdown-menu";
 
 export const CLASSE_PAINEL_MENU = "min-w-[220px] rounded-[9px] border border-gray-200 bg-surface-raised py-2 shadow-popover";
 export const CLASSE_ITEM_MENU =
@@ -109,6 +110,7 @@ export function Menu({ rotulo, gatilho, itens, densidade = "padrao", classeGatil
   }, [aberto, fechar]);
 
   return (
+    <DropdownMenu open={aberto} modal={false} onOpenChange={(proximo) => { if (proximo) setAberto(true); else fechar(false); }}>
     <>
       <button
         ref={gatilhoRef}
@@ -151,5 +153,6 @@ export function Menu({ rotulo, gatilho, itens, densidade = "padrao", classeGatil
         </div>
       )}
     </>
+    </DropdownMenu>
   );
 }

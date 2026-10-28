@@ -3,6 +3,7 @@
 import { useId, useRef, useState, useSyncExternalStore, type RefObject } from "react";
 import { createPortal } from "react-dom";
 import { useDialogo } from "@/lib/dialogo";
+import { Dialog } from "@/components/ui/dialog";
 
 const semAssinatura = () => () => {};
 const noNavegador = () => true;
@@ -48,5 +49,10 @@ export function Modal({ titulo, aoFechar, bloquearFechamento = false, larga = fa
       </div>
     </div>
   );
-  return emPortal ? createPortal(conteudo, document.body) : conteudo;
+  const caixa = emPortal ? createPortal(conteudo, document.body) : conteudo;
+  return (
+    <Dialog open modal={false} onOpenChange={(aberto) => { if (!aberto && !bloquearFechamento) aoFechar(); }}>
+      {caixa}
+    </Dialog>
+  );
 }

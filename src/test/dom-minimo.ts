@@ -108,6 +108,7 @@ export class No {
   }
   addEventListener() {}
   removeEventListener() {}
+  dispatchEvent() { return true; }
 }
 
 export class Texto extends No {
@@ -232,6 +233,7 @@ export class Documento extends No {
     return this.ativo && this.ativo.isConnected ? this.ativo : this.body;
   }
   createElement(tag: string) { return new Elemento(tag, this); }
+  createElementNS(_namespace: string, tag: string) { return this.createElement(tag); }
   createTextNode(texto: string) { return new Texto(texto, this); }
   getElementById(id: string) { return this.documentElement.querySelectorAll(`[id='${id}']`)[0] ?? null; }
 }
