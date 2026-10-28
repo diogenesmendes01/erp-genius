@@ -54,7 +54,7 @@ export function PopoverTransferir({ ancora, opcoes, pessoas, destinos, temResumo
   const podeConfirmar = !!alvo && contexto.trim().length <= 1000;
   const mostraContexto = passo === "pessoas" || (passo === "equipes" && equipe !== "fila");
   return <PopoverFluxo titulo="Transferir" ancora={ancora} aoFechar={aoFechar} ocupado={ocupado}>
-    <form onSubmit={e => { e.preventDefault(); if (!ocupado && podeConfirmar && alvo) aoExecutar({ alvo, contexto: contexto.trim(), ...(alvo.tipo === "setor" ? { anexarResumoAria } : {}) }); }} className="space-y-3">
+    <form onSubmit={e => { e.preventDefault(); if (!ocupado && podeConfirmar && alvo) aoExecutar({ alvo, contexto: contexto.trim(), ...(alvo.tipo === "setor" || (alvo.tipo === "pessoa" && temResumoAria) ? { anexarResumoAria } : {}) }); }} className="space-y-3">
       {passo === "inicio" ? <div className="grid gap-2">
         {opcoes.pessoas && <Botao variante="neutro" onClick={() => setPasso("pessoas")}>Pessoas</Botao>}
         {(opcoes.setores.length > 0 || opcoes.filaDoSetor) && <Botao variante="neutro" onClick={() => setPasso("equipes")}>Equipes e filas</Botao>}
@@ -73,7 +73,7 @@ export function PopoverTransferir({ ancora, opcoes, pessoas, destinos, temResumo
         {passo === "equipes" && <Campo rotulo="Equipe ou fila" obrigatorio>{c => <select ref={campoEquipe} {...c} value={equipe} disabled={ocupado} onChange={e => { setEquipe(e.target.value as Setor | "fila"); setDestinoChave(""); }} className="w-full rounded-md border border-gray-300 p-2"><option value="">Escolha…</option>{opcoes.filaDoSetor && <option value="fila">Fila de {rotular(SETOR_ATENDIMENTO_LABEL, opcoes.filaDoSetor)}</option>}{opcoes.setores.map(s => <option key={s} value={s}>{rotular(SETOR_ATENDIMENTO_LABEL, s)}</option>)}</select>}</Campo>}
         {passo === "equipes" && exigeDestino && <Campo rotulo="Contexto do destino" obrigatorio>{c => <select {...c} disabled={ocupado} value={destinoChave} onChange={e => setDestinoChave(e.target.value)} className="w-full rounded-md border border-gray-300 p-2"><option value="">Escolha…</option>{destinosDisponiveis.map(d => <option key={d.chave} value={d.chave}>{d.nome}</option>)}</select>}</Campo>}
         {mostraContexto && <Campo rotulo="Contexto da transferência" dica="Opcional">{c => <CampoTexto {...c} disabled={ocupado} rows={3} maxLength={1000} value={contexto} onChange={e => setContexto(e.target.value)} className="w-full rounded-md border border-gray-300 p-2" />}</Campo>}
-        {passo === "equipes" && equipe !== "" && equipe !== "fila" && temResumoAria && <label className="flex items-start gap-2 text-sm"><input type="checkbox" checked={anexarResumoAria} disabled={ocupado} onChange={e => setPreferenciaResumo(e.target.checked)} />Anexar resumo da Aria como nota</label>}
+        {(passo === "pessoas" || (passo === "equipes" && equipe !== "" && equipe !== "fila")) && temResumoAria && <label className="flex items-start gap-2 text-sm"><input type="checkbox" checked={anexarResumoAria} disabled={ocupado} onChange={e => setPreferenciaResumo(e.target.checked)} />Anexar resumo da Aria como nota</label>}
         {passo === "aria" && <p ref={resumoAria} tabIndex={-1} className="text-sm text-gray-600">A Aria retoma este atendimento pelas regras atuais.</p>}
       </>}
       <FeedbackAcao erro={erro} />

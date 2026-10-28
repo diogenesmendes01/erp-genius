@@ -22,7 +22,7 @@ it("fechar invalida handler retido; nova abertura não reutiliza token antigo",a
 it("uma entrada diferente não reutiliza a chave de resultado incerto de outro alvo",async()=>{executar.mockResolvedValue({ok:false,erro:"Tente novamente"});await montar();await act(async()=>controle.abrir());await act(async()=>controle.confirmar(entrada));await act(async()=>controle.confirmar({...entrada,alvo:{tipo:"pessoa",usuarioId:"c"}}));expect(executar.mock.calls[0][0].chaveIdempotencia===executar.mock.calls[1][0].chaveIdempotencia).toBe(false);});
 it("369 checkbox diferente usa outra chave, retry do mesmo checkbox conserva a chave",async()=>{executar.mockResolvedValue({ok:false,erro:"Tente novamente"});await montar();await act(async()=>controle.abrir());const alvo={tipo:"setor" as const,setor:"SECRETARIA" as const,destinoChave:null};await act(async()=>controle.confirmar({alvo,contexto:"",anexarResumoAria:true}));await act(async()=>controle.confirmar({alvo,contexto:"",anexarResumoAria:true}));await act(async()=>controle.confirmar({alvo,contexto:"",anexarResumoAria:false}));expect(executar.mock.calls[0][0].chaveIdempotencia).toBe(executar.mock.calls[1][0].chaveIdempotencia);expect(executar.mock.calls[1][0].chaveIdempotencia===executar.mock.calls[2][0].chaveIdempotencia).toBe(false);});
 for(const [alvo,texto] of [
- [{tipo:"pessoa",usuarioId:"b"},"Atendimento atribuído."],
+ [{tipo:"pessoa",usuarioId:"b"},"Atendimento transferido."],
  [{tipo:"setor",setor:"SECRETARIA",destinoChave:null},"Atendimento transferido para Secretaria."],
  [{tipo:"fila"},"Devolvido para a fila."],
  [{tipo:"aria"},"Atendimento devolvido para a Aria."],

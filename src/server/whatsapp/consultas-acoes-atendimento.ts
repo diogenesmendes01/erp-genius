@@ -41,7 +41,7 @@ export async function contatosParaCartao(atendimentoId: string): Promise<Contato
   return contatosCompartilhaveis(u, IdSchema.parse(atendimentoId));
 }
 
-export async function listarPessoasParaAtendimento(atendimentoId:string,para:"atribuir"|"convidar"):Promise<{id:string;nome:string}[]>{
+export async function listarPessoasParaAtendimento(atendimentoId:string,para:"atribuir"|"convidar"|"transferir"):Promise<{id:string;nome:string}[]>{
   const u=await exigirSessao(),id=IdSchema.parse(atendimentoId);
   return(await contextoPessoas(u,id,para))?.pessoas??[];
 }
@@ -49,7 +49,7 @@ const CargaIdsSchema=z.array(IdSchema).max(200);
 export async function cargaDasPessoas(atendimentoId:string,usuarioIds:string[]):Promise<Record<string,number>>{
   const u=await exigirSessao(),id=IdSchema.parse(atendimentoId);
   const pedidos=[...new Set(CargaIdsSchema.parse(usuarioIds))];if(!pedidos.length)return{};
-  const c=await contextoPessoas(u,id,"atribuir");if(!c||c.a.conversa?.grupoId)return{};
+  const c=await contextoPessoas(u,id,"transferir");if(!c||c.a.conversa?.grupoId)return{};
   const listados=new Set(c.pessoas.map(p=>p.id));
   const ids=pedidos.filter(p=>listados.has(p)&&p!==c.a.responsavelId&&p!==u.id);if(!ids.length)return{};
   const papeis=papeisDoSetor(c.a.finalidade);
@@ -60,7 +60,7 @@ export async function cargaDasPessoas(atendimentoId:string,usuarioIds:string[]):
   const fresco=await prisma.usuario.findUnique({where:{id:u.id},select:{id:true,nome:true,papeis:true,ativo:true}});
   if(!fresco?.ativo||apenasPortal(fresco))return{};
   const atual=await atendimentoVisivel(fresco,id);
-  if(!atual||atual.encerradoEm||atual.conversa?.grupoId||atual.finalidade!==c.a.finalidade||!podeExecutar(fresco,"atribuir",{setor:atual.finalidade,responsavelId:atual.responsavelId}))return{};
+  if(!atual||atual.encerradoEm||atual.conversa?.grupoId||atual.finalidade!==c.a.finalidade||!podeExecutar(fresco,"transferir",{setor:atual.finalidade,responsavelId:atual.responsavelId}))return{};
   const validos=await prisma.usuario.findMany({where:{id:{in:ids,notIn:[fresco.id,...(atual.responsavelId?[atual.responsavelId]:[])]},ativo:true,papeis:{hasSome:papeis}},select:{id:true}});
   const porPessoa=new Map(grupos.flatMap(g=>g.responsavelId?[[g.responsavelId,g._count._all] as const]:[]));
   const autorizados=new Set(ids);

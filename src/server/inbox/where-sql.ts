@@ -3,7 +3,7 @@ import { EtapaLead, FinalidadeAtendimentoWhatsApp, FinalidadeNumero, Prisma, Sta
 type Coluna = { tipo: "texto" | "booleano" | "inteiro" | "data"; nulo?: boolean; busca?: boolean; enum?: { nome: string; valores: readonly string[] } };
 type Relacao = { modelo: Modelo; local: string; remoto: string; muitos?: boolean; nulo?: boolean };
 type Tabela = { tabela: string; colunas: Record<string, Coluna>; relacoes: Record<string, Relacao> };
-type Modelo = "atendimento" | "conversa" | "numero" | "contato" | "lead" | "aluno" | "responsavel" | "participante" | "preferencia" | "setor";
+type Modelo = "atendimento" | "conversa" | "numero" | "contato" | "lead" | "aluno" | "responsavel" | "participante" | "acessoTransferido" | "preferencia" | "setor";
 const texto = (nulo = false, busca = false): Coluna => ({ tipo: "texto", nulo, busca });
 const data = (nulo = false): Coluna => ({ tipo: "data", nulo });
 const enumerado = (nome: string, valores: readonly string[]): Coluna => ({ tipo: "texto", enum: { nome, valores } });
@@ -18,6 +18,7 @@ const tabelas: Record<Modelo, Tabela> = {
     lead: { modelo: "lead", local: "leadId", remoto: "id", nulo: true },
     aluno: { modelo: "aluno", local: "alunoId", remoto: "id", nulo: true },
     participantes: { modelo: "participante", local: "id", remoto: "atendimentoId", muitos: true },
+    acessosTransferidos: { modelo: "acessoTransferido", local: "id", remoto: "atendimentoId", muitos: true },
   } },
   conversa: { tabela: "ConversaWhatsApp", colunas: { id: texto(), numeroId: texto(), contatoId: texto(true), grupoId: texto(true) }, relacoes: {
     numero: { modelo: "numero", local: "numeroId", remoto: "id" }, contato: { modelo: "contato", local: "contatoId", remoto: "id", nulo: true },
@@ -33,6 +34,7 @@ const tabelas: Record<Modelo, Tabela> = {
   aluno: { tabela: "Aluno", colunas: { id: texto(), primeiroNome: texto(false, true), sobrenome: texto(true, true) }, relacoes: {} },
   responsavel: { tabela: "Responsavel", colunas: { id: texto(), nome: texto(false, true) }, relacoes: {} },
   participante: { tabela: "ParticipanteAtendimentoWhatsApp", colunas: { atendimentoId: texto(), usuarioId: texto(), inicio: data(), fim: data(), revogadoEm: data(true), podeEnviar: { tipo: "booleano" } }, relacoes: {} },
+  acessoTransferido: { tabela: "AtendimentoAcessoTransferido", colunas: { atendimentoId: texto(), usuarioId: texto(), revogadoEm: data(true) }, relacoes: {} },
   preferencia: { tabela: "PreferenciaConversaUsuario", colunas: { conversaId: texto(), usuarioId: texto(), fixadaEm: data(true), marcadaNaoLida: { tipo: "booleano" }, lidaAte: data(true) }, relacoes: {} },
   setor: { tabela: "NumeroSetorWhatsApp", colunas: { numeroId: texto(), finalidade: enumerado("FinalidadeAtendimentoWhatsApp", Object.values(FinalidadeAtendimentoWhatsApp)) }, relacoes: {} },
 };

@@ -1,4 +1,4 @@
-import type { Papel, Prisma } from "@prisma/client";
+import type { Evento, Papel, Prisma } from "@prisma/client";
 import { ErroPermissao, ErroRegra, registrarEvento, type UsuarioSessao } from "@/server/_shared";
 import { repeticaoIdempotente, type MarcaIdempotencia } from "@/server/_shared/idempotencia";
 import { podeExecutar } from "@/server/inbox/permissoes";
@@ -74,33 +74,59 @@ export async function lerAutorTransferencia(tx: Tx, autorId: string): Promise<Us
   if (!u?.ativo) throw new ErroPermissao("Sua sessão não está mais ativa.");
   return u;
 }
-export async function atribuirAtendimentoTx(tx: Tx, u: UsuarioSessao, id: string, usuarioId: string, inbox?: { contexto: string; marca: MarcaIdempotencia }) {
+async function concederAcessoTransferido(tx: Tx, id: string, concedenteId: string, alvo: { id: string; papeis: Papel[] }): Promise<boolean> {
+  if (await tx.atendimentoWhatsApp.count({ where: { AND: [{ id }, await escopoAtendimentos(alvo, { db: tx })] } }) === 1) return false;
+  const a = await tx.atendimentoWhatsApp.findUnique({ where: { id }, select: { finalidade: true, encerradoEm: true, conversa: { select: { numero: { select: { finalidade: true } } } } } });
+  if (!a || a.encerradoEm || a.finalidade !== "COMERCIAL" || ehLinhaComercial(a.conversa.numero)) return false;
+  await tx.atendimentoAcessoTransferido.create({ data: { atendimentoId: id, usuarioId: alvo.id, concedenteId } });
+  return true;
+}
+
+async function lerDestinoDoSetor(tx: Tx, usuarioId: string, setor: Setor) {
+  const alvo = await tx.usuario.findUnique({ where: { id: usuarioId }, select: { id: true, ativo: true, papeis: true } });
+  const doSetor = papeisDoSetor(setor);
+  if (!alvo || !alvo.ativo || !alvo.papeis.some((p) => doSetor.includes(p))) throw new ErroRegra("A pessoa escolhida não atende este setor.");
+  return alvo;
+}
+async function confirmarRepeticaoDaTransferencia(tx: Tx, autor: UsuarioSessao, id: string, usuarioId: string, repetido: Evento, marca: MarcaIdempotencia) {
+  const recibo = (repetido.payload ?? {}) as Record<string, unknown>;
+  if (repetido.agregadoId !== id || recibo.para !== usuarioId) throw new ErroRegra("Recibo de transferência incompatível com esta conversa.");
+  const a = await tx.atendimentoWhatsApp.findUnique({ where: { id }, select: { finalidade: true, encerradoEm: true, responsavelId: true } });
+  if (!a) throw new ErroRegra(MSG_FORA_DO_ESCOPO);
+  if (a.encerradoEm) throw new ErroRegra("Atendimento encerrado.");
+  if (!podeExecutar(autor, "transferir", { setor: a.finalidade, responsavelId: typeof recibo.de === "string" ? recibo.de : null })) throw new ErroRegra(MSG_SEM_ALCADA);
+  const alvo = await lerDestinoDoSetor(tx, usuarioId, a.finalidade);
+  await exigirResponsavelEnxerga(tx, id, alvo);
+  if (a.responsavelId !== usuarioId || !await ultimoEventoEhDoAutor(tx, { agregadoId: id, tipos: ["AtendimentoAssumido", "AtendimentoDevolvido", "AtendimentoAtribuido", "AriaHandoff", "AtendimentoEncerrado", "AtendimentoTransferido"], tipo: "AtendimentoAtribuido", autorId: autor.id, payload: { para: usuarioId, chaveIdempotencia: marca.chaveIdempotencia } })) throw new ErroRegra("O responsável mudou depois desta tentativa. Reabra a transferência.");
+}
+
+export interface TransferenciaPessoaInbox { contexto: string; marca: MarcaIdempotencia; anexarResumoAria?: boolean }
+export async function atribuirAtendimentoTx(tx: Tx, u: UsuarioSessao, id: string, usuarioId: string, inbox?: TransferenciaPessoaInbox) {
       const repetido = inbox ? await repeticaoIdempotente(tx, { tipo: "AtendimentoAtribuido", agregadoTipo: "AtendimentoWhatsApp", autorId: u.id, marca: inbox.marca, mensagemConflito: "Esta tentativa já foi usada com outra transferência. Confira a conversa antes de repetir." }) : null;
       await tx.$queryRaw`SELECT id FROM "AtendimentoWhatsApp" WHERE id = ${id} FOR UPDATE`;
       const autor = inbox ? await lerAutorTransferencia(tx, u.id) : u;
+      if (repetido) return confirmarRepeticaoDaTransferencia(tx, autor, id, usuarioId, repetido, inbox!.marca);
       const a = await atendimentoVisivel(autor, id, false, tx);
       if (!a) throw new ErroRegra(MSG_FORA_DO_ESCOPO);
       if (a.encerradoEm) throw new ErroRegra("Atendimento encerrado.");
-      if (!podeExecutar(autor, "atribuir", { setor: a.finalidade, responsavelId: a.responsavelId })) throw new ErroRegra(MSG_SEM_ALCADA);
-      const alvo = await tx.usuario.findUnique({ where: { id: usuarioId }, select: { id: true, ativo: true, papeis: true } });
-      const doSetor = papeisDoSetor(a.finalidade);
-      if (!alvo || !alvo.ativo || !alvo.papeis.some((p) => doSetor.includes(p))) throw new ErroRegra("A pessoa escolhida não atende este setor.");
+      if (!podeExecutar(autor, inbox ? "transferir" : "atribuir", { setor: a.finalidade, responsavelId: a.responsavelId })) throw new ErroRegra(MSG_SEM_ALCADA);
+      if (inbox && usuarioId === autor.id) throw new ErroRegra("Escolha outra pessoa para receber a conversa.");
+      const alvo = await lerDestinoDoSetor(tx, usuarioId, a.finalidade);
       const atual = await tx.atendimentoWhatsApp.findUniqueOrThrow({ where: { id }, select: { status: true, responsavelId: true } });
       const anterior = atual.responsavelId;
-      if (repetido) {
-        await exigirResponsavelEnxerga(tx, id, alvo);
-        if (anterior !== usuarioId || !await ultimoEventoEhDoAutor(tx, { agregadoId: id, tipos: ["AtendimentoAssumido", "AtendimentoDevolvido", "AtendimentoAtribuido", "AriaHandoff", "AtendimentoEncerrado", "AtendimentoTransferido"], tipo: "AtendimentoAtribuido", autorId: autor.id, payload: { para: usuarioId, chaveIdempotencia: inbox!.marca.chaveIdempotencia } })) throw new ErroRegra("O responsável mudou depois desta tentativa. Reabra a transferência.");
-        return;
-      }
       if (anterior === usuarioId) {
         if (inbox) throw new ErroRegra("Esta pessoa já é responsável pelo atendimento.");
         return;
       }
       await tx.atendimentoWhatsApp.update({ where: { id }, data: { responsavelId: usuarioId, status: proximoStatus(atual.status, "ASSUMIDO", true) } });
+      const acessoContextual = !!inbox && anterior === autor.id && await concederAcessoTransferido(tx, id, autor.id, alvo);
       await exigirResponsavelEnxerga(tx, id, alvo);
       await cancelarIntencoesDoResponsavel(tx, id, anterior);
-      await registrarEvento(tx, { tipo: "AtendimentoAtribuido", agregadoTipo: "AtendimentoWhatsApp", agregadoId: id, autorId: autor.id, payload: { de: anterior, para: usuarioId, ...(inbox?.marca ?? {}) } });
+      const resumo = inbox?.anexarResumoAria ? await lerResumoDaAriaParaNota(tx, id) : null;
+      const detalhes = inbox ? { via: "transferencia", contexto: inbox.contexto || null, acessoContextual, ...inbox.marca } : {};
+      await registrarEvento(tx, { tipo: "AtendimentoAtribuido", agregadoTipo: "AtendimentoWhatsApp", agregadoId: id, autorId: autor.id, payload: { de: anterior, para: usuarioId, ...detalhes } });
       if (inbox?.contexto) await registrarEvento(tx, { tipo: "NotaInterna", agregadoTipo: "AtendimentoWhatsApp", agregadoId: id, autorId: autor.id, payload: { nota: inbox.contexto } });
+      if (resumo) await registrarEvento(tx, { tipo: "NotaInterna", agregadoTipo: "AtendimentoWhatsApp", agregadoId: id, autorId: autor.id, payload: { nota: resumo.nota, origem: "resumoAria", acaoAgenteIAId: resumo.acaoId } });
 }
 
 export interface DadosTransferirSetor { atendimentoId: string; destino: Setor; destinoChave: string | null; contexto: string }

@@ -91,3 +91,10 @@ it("376 presença opcional informa status sem mudar seleção/contexto/payload o
  executar.mockReset();await montar(false,false,[{id:"b",nome:"Beatriz",carga:2,presenca:"ausente"} as PessoaTransferir]);await clicar("Pessoas");expect(doc.body.textContent).toContain("Ausente");await mudar('input[type="radio"]',"b");await mudar("textarea","Meu contexto");
  await montar(false,false,[{id:"b",nome:"Beatriz",carga:2}]);expect(doc.body.textContent).toContain("Presença indisponível");expect(doc.body.textContent).not.toContain("Online");expect((doc.body.querySelector("textarea") as unknown as {value:string}).value).toBe("Meu contexto");await confirmar();expect(executar).toHaveBeenCalledExactlyOnceWith({alvo:{tipo:"pessoa",usuarioId:"b"},contexto:"Meu contexto"});
 });
+
+it("D5 pessoa com resumo disponível oferece o checkbox e envia o booleano; sem resumo não envia",async()=>{
+ executar.mockReset();await montar(false,true);await clicar("Pessoas");await mudar('input[type="radio"]',"b");
+ const checkbox=doc.body.querySelector('input[type="checkbox"]');expect(checkbox!==null).toBe(true);
+ await confirmar();expect(executar).toHaveBeenLastCalledWith({alvo:{tipo:"pessoa",usuarioId:"b"},contexto:"",anexarResumoAria:true});
+ await act(async()=>props(checkbox!).onChange({target:{checked:false}}));await confirmar();expect(executar).toHaveBeenLastCalledWith({alvo:{tipo:"pessoa",usuarioId:"b"},contexto:"",anexarResumoAria:false});
+});

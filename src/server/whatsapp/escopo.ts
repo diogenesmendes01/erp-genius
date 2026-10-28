@@ -38,6 +38,13 @@ export function ramoFilaDoSetor(setor: Setor): Prisma.AtendimentoWhatsAppWhereIn
   return { finalidade: setor, responsavelId: null, encerradoEm: null, conversa: { numero: whereNumeroServeSetor(setor) } };
 }
 
+export function ramoAcessoTransferido(usuarioId: string): Prisma.AtendimentoWhatsAppWhereInput {
+  return {
+    encerradoEm: null, responsavelId: usuarioId, conversa: { numero: { finalidade: { not: "VENDAS" } } },
+    acessosTransferidos: { some: { usuarioId, revogadoEm: null } },
+  };
+}
+
 export async function escopoAtendimentos(
   usuario: Pick<UsuarioSessao, "id" | "papeis">,
   opcoes: { enviar?: boolean; agora?: Date; db?: Db } = {},
@@ -59,6 +66,7 @@ export async function escopoAtendimentos(
       { lead: { is: await escopoComercialAtual({ ...usuario, nome: "" }, db) } },
       { leadId: null, responsavelId: usuario.id, conversa: { numero: { finalidade: { not: "VENDAS" } } } },
       participante,
+      ramoAcessoTransferido(usuario.id),
     ] });
     const donos = await donosDeLinhaVisiveis(usuario, db);
     if (donos.length) ors.push(whereLinhasDosDonos(donos));

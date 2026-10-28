@@ -31,6 +31,10 @@ describe("escopoAtendimentos × linha comercial", () => {
     expect(comercial.OR).toContainEqual({ lead: { is: CARTEIRA } });
     expect(comercial.OR).toContainEqual({ leadId: null, responsavelId: "v1", conversa: { numero: { finalidade: { not: "VENDAS" } } } });
     expect(comercial.OR).not.toContainEqual({ leadId: null, responsavelId: "v1" });
+    expect(comercial.OR).toContainEqual({
+      encerradoEm: null, responsavelId: "v1", conversa: { numero: { finalidade: { not: "VENDAS" } } },
+      acessosTransferidos: { some: { usuarioId: "v1", revogadoEm: null } },
+    });
     expect(db.usuario.findMany).not.toHaveBeenCalled();
   });
 
@@ -45,6 +49,7 @@ describe("escopoAtendimentos × linha comercial", () => {
       const r = await ramos("u", papel);
       expect(JSON.stringify(r)).not.toContain('"VENDAS"');
       expect(r.some((x) => x.finalidade === "COMERCIAL")).toBe(false);
+      expect(JSON.stringify(r)).not.toContain("acessosTransferidos");
     }
   });
 

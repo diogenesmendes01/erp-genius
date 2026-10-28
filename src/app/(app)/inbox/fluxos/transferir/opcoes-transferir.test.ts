@@ -10,8 +10,16 @@ const base = {
   ariaPodeDevolver: false,
 };
 describe("Transferir unificado — capacidades atuais #360", () => {
-  it("responsável transfere setor e devolve à fila, sem atribuição antecipada da #370", () => {
-    expect(opcoesTransferir(base)).toEqual({ visivel: true, pessoas: false, setores: ["SECRETARIA"], filaDoSetor: "COMERCIAL", aria: false });
+  it("D5: vendedor responsável vê Pessoas, transfere setor e devolve à fila", () => {
+    expect(opcoesTransferir(base)).toEqual({ visivel: true, pessoas: true, setores: ["SECRETARIA"], filaDoSetor: "COMERCIAL", aria: false });
+  });
+  it("D5: na linha de vendas o responsável comum não recebe Pessoas; o gerente continua atribuindo", () => {
+    const linha = { ...base, atendimento: { ...base.atendimento, linhaComercial: true, donoLinhaId: "eu" } };
+    expect(opcoesTransferir(linha).pessoas).toBe(false);
+    expect(opcoesTransferir({ ...linha, usuario: { id: "g", papeis: [Papel.GERENTE_COMERCIAL] } }).pessoas).toBe(true);
+  });
+  it("D5: responsável de outro setor também transfere para colega do próprio setor", () => {
+    expect(opcoesTransferir({ ...base, usuario: { id: "eu", papeis: [Papel.SECRETARIA_ACADEMICA] }, atendimento: { ...base.atendimento, finalidade: "SECRETARIA" } }).pessoas).toBe(true);
   });
   it("gerente atribui pessoas e não oferece devolver uma conversa já na fila", () => {
     expect(opcoesTransferir({ ...base, usuario: { id: "g", papeis: [Papel.GERENTE_COMERCIAL] }, atendimento: { ...base.atendimento, responsavelId: null } })).toMatchObject({ pessoas: true, filaDoSetor: null });
