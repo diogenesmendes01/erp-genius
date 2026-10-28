@@ -3,9 +3,14 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { IconBuilding } from "@tabler/icons-react";
 import type { EmpresaResumo } from "@/server/empresas/consultas";
 import { salvarEmpresa } from "@/server/empresas/acoes";
+import { Avatar } from "@/components/Avatar";
+import { BadgeEstado } from "@/components/BadgeEstado";
+import { CONTROLE_CAMPO } from "@/components/Campo";
 import { FeedbackAcao } from "@/components/FeedbackAcao";
+import { LinhaCampo } from "@/components/LinhaCampo";
 import { useAcaoCliente } from "@/lib/acao-cliente";
 import { useChaveIdempotencia } from "@/lib/chave-idempotencia";
 import { useFiltrosUrl } from "@/lib/filtros-url";
@@ -26,8 +31,6 @@ import { botaoClasses } from "@/components/Botao";
 import { EstadoVazio } from "@/components/EstadoVazio";
 
 const btnPri = botaoClasses();
-const inputCls = "rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:border-brand-500";
-const campoFiltro = "rounded-md border border-gray-300 px-2 py-1.5 text-sm outline-none focus:border-brand-500";
 
 const hrefPagina = (f: FiltrosEmpresas, pagina: number) => {
   const q = filtrosEmpresasParaQuery({ ...f, pagina });
@@ -87,13 +90,13 @@ export function EmpresasCliente({
 
       {podeEditar && criando && (
         <div className="flex flex-wrap items-end gap-3 rounded-lg border border-gray-200 bg-surface p-4">
-          <label className="text-sm">
+          <label className="w-72 text-sm">
             <span className="mb-1 block text-xs font-medium text-gray-600">Nome da empresa</span>
-            <input className={inputCls + " w-72"} value={nome} onChange={(e) => setNome(e.target.value)} />
+            <input className={CONTROLE_CAMPO} value={nome} onChange={(e) => setNome(e.target.value)} />
           </label>
-          <label className="text-sm">
+          <label className="w-64 text-sm">
             <span className="mb-1 block text-xs font-medium text-gray-600">País (moeda/vencimentos)</span>
-            <select className={inputCls} value={paisId} onChange={(e) => setPaisId(e.target.value)}>
+            <select className={CONTROLE_CAMPO} value={paisId} onChange={(e) => setPaisId(e.target.value)}>
               <option value="">—</option>
               {paises.map((p) => (
                 <option key={p.id} value={p.id}>{p.nome}</option>
@@ -115,24 +118,30 @@ export function EmpresasCliente({
           role="search"
           aria-label="Filtrar empresas"
         >
-          <input
-            name="busca"
-            value={lista.campos.busca}
-            onChange={lista.mudarTexto("busca")}
-            maxLength={100}
-            aria-label="Buscar empresa por nome ou código"
-            placeholder="Buscar por nome ou código…"
-            className={campoFiltro + " w-64 px-3"}
-          />
-          <select name="situacao" value={lista.campos.situacao} onChange={lista.mudarSelect("situacao")} aria-label="Filtrar por situação" className={campoFiltro}>
-            <option value="">Ativas e inativas</option>
-            <option value="ativas">Ativas</option>
-            <option value="inativas">Inativas</option>
-          </select>
-          <select name="pais" value={lista.campos.pais} onChange={lista.mudarSelect("pais")} aria-label="Filtrar por país" className={campoFiltro}>
-            <option value="">Todos os países</option>
-            {paises.map((p) => <option key={p.id} value={p.id}>{p.nome}</option>)}
-          </select>
+          <div className="w-64">
+            <input
+              name="busca"
+              value={lista.campos.busca}
+              onChange={lista.mudarTexto("busca")}
+              maxLength={100}
+              aria-label="Buscar empresa por nome ou código"
+              placeholder="Buscar por nome ou código…"
+              className={CONTROLE_CAMPO}
+            />
+          </div>
+          <div className="w-48">
+            <select name="situacao" value={lista.campos.situacao} onChange={lista.mudarSelect("situacao")} aria-label="Filtrar por situação" className={CONTROLE_CAMPO}>
+              <option value="">Ativas e inativas</option>
+              <option value="ativas">Ativas</option>
+              <option value="inativas">Inativas</option>
+            </select>
+          </div>
+          <div className="w-56">
+            <select name="pais" value={lista.campos.pais} onChange={lista.mudarSelect("pais")} aria-label="Filtrar por país" className={CONTROLE_CAMPO}>
+              <option value="">Todos os países</option>
+              {paises.map((p) => <option key={p.id} value={p.id}>{p.nome}</option>)}
+            </select>
+          </div>
           {filtros.ordem && <>
             <input type="hidden" name="ordem" value={filtros.ordem.campo} />
             <input type="hidden" name="dir" value={filtros.ordem.dir} />
@@ -161,7 +170,7 @@ export function EmpresasCliente({
         ) : (
           <div aria-busy={lista.buscando} className={"overflow-x-auto rounded-lg border border-gray-200 transition-opacity " + (lista.buscando ? "opacity-60" : "")}>
             <table className="w-full min-w-[640px] text-sm">
-              <thead className="bg-gray-100 text-left text-xs text-gray-500">
+              <thead className="border-b border-gray-200 bg-surface-muted text-left text-xs text-gray-600">
                 <tr>
                   <ColunaOrdenavel campo="codigo" rotulo="Código" {...coluna} />
                   <ColunaOrdenavel campo="nome" rotulo="Empresa" {...coluna} />
@@ -173,20 +182,24 @@ export function EmpresasCliente({
               </thead>
               <tbody className="divide-y divide-gray-100">
                 {empresas.map((e) => (
-                  <tr key={e.id} className="hover:bg-gray-50">
-                    <td className="px-4 py-2 text-gray-500">{e.codigo ?? "—"}</td>
+                  <tr key={e.id} className="transition-colors hover:bg-surface-muted">
+                    <td className="px-4 py-2 font-mono tabular-nums text-gray-500">{e.codigo ? `#${e.codigo}` : "—"}</td>
                     <td className="px-4 py-2">
-                      <Link href={`/empresas/${e.id}`} className="font-medium text-gray-800 hover:underline">
-                        {e.nome}
-                      </Link>
+                      <div className="flex items-center gap-2.5">
+                        <Avatar nome={e.nome} tamanho={32} quadrado />
+                        <div className="min-w-0">
+                          <Link href={`/empresas/${e.id}`} className="font-medium text-gray-800 hover:underline">
+                            {e.nome}
+                          </Link>
+                          <LinhaCampo icone={<IconBuilding size={18} />} valor={e.pais ?? "—"} rotulo="País" />
+                        </div>
+                      </div>
                     </td>
                     <td className="px-4 py-2 text-gray-500">{e.pais ?? "—"}</td>
-                    <td className="px-4 py-2 text-gray-700">{e.colaboradores}</td>
-                    <td className="px-4 py-2 text-gray-700">{e.faturasAReceber}</td>
+                    <td className="px-4 py-2 font-mono tabular-nums text-gray-700">{e.colaboradores}</td>
+                    <td className="px-4 py-2 font-mono tabular-nums text-gray-700">{e.faturasAReceber}</td>
                     <td className="px-4 py-2">
-                      <span className={"rounded-full px-2 py-0.5 text-xs " + (e.ativo ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-500")}>
-                        {e.ativo ? "Ativa" : "Inativa"}
-                      </span>
+                      <BadgeEstado tom={e.ativo ? "sucesso" : "neutro"} ponto>{e.ativo ? "Ativa" : "Inativa"}</BadgeEstado>
                     </td>
                   </tr>
                 ))}

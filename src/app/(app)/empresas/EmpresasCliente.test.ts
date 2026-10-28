@@ -1,6 +1,9 @@
+import { readFileSync } from "node:fs";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
+import { CLASSES_TOM } from "@/components/BadgeEstado";
+import { CONTROLE_CAMPO } from "@/components/Campo";
 
 vi.mock("next/navigation", () => ({ useRouter: () => ({ push: vi.fn(), refresh: vi.fn() }) }));
 vi.mock("@/server/empresas/acoes", () => ({ salvarEmpresa: vi.fn() }));
@@ -139,4 +142,47 @@ describe("EmpresasCliente: com JavaScript, o clique de cada link vai para o MESM
       for (const texto of esperados) expect(daLista.some((l) => l.texto === texto), texto).toBe(true);
     });
   }
+});
+
+describe("EmpresasCliente · design system", () => {
+  it("a fonte usa os primitivos e não traz borda cinza nem badge ad-hoc", () => {
+    const fonte = readFileSync("src/app/(app)/empresas/EmpresasCliente.tsx", "utf8");
+    expect(fonte).toContain("Avatar");
+    expect(fonte).toContain("BadgeEstado");
+    expect(fonte).toContain("CONTROLE_CAMPO");
+    expect(fonte).toContain("LinhaCampo");
+    expect(fonte).toContain("font-mono");
+    expect(fonte).toContain("tabular-nums");
+    expect(fonte).not.toContain("border-gray-300");
+    for (const cor of ["bg-green-100", "bg-amber-100", "bg-blue-100", "bg-red-100", "bg-yellow-100"]) {
+      expect(fonte).not.toContain(cor);
+    }
+  });
+
+  it("filtros, código, empresa e status usam controle, avatar, badge e mono", () => {
+    const html = render({
+      empresas: [
+        { ...empresa(1), nome: "Acme Brasil", codigo: "E-9", ativo: true, colaboradores: 12, faturasAReceber: 3, pais: "Costa Rica" },
+        { ...empresa(2), nome: "Beta Leste", codigo: null, ativo: false, colaboradores: 0, faturasAReceber: 1, pais: null },
+      ],
+      total: 2,
+      totalBase: 2,
+    });
+    expect(html).toContain(CONTROLE_CAMPO);
+    expect(html).toContain("font-mono");
+    expect(html).toContain("tabular-nums");
+    expect(html).toContain(">AB<");
+    expect(html).toContain(">BL<");
+    expect(html).toContain("#E-9");
+    expect(html).toContain(CLASSES_TOM.sucesso);
+    expect(html).toContain(CLASSES_TOM.neutro);
+    expect(html).toContain("Ativa");
+    expect(html).toContain("Inativa");
+    expect(html).toContain("País");
+    expect(html).toContain('href="/empresas/e1"');
+    expect(html).toContain("bg-surface-muted");
+    expect(html).toContain("hover:bg-surface-muted");
+    expect(html).not.toContain("border-gray-300");
+    expect(html).not.toContain("bg-green-100");
+  });
 });
