@@ -10,6 +10,7 @@ import { EstadoVazio } from "@/components/EstadoVazio";
 import { PaginacaoFila } from "@/components/PaginacaoFila";
 import { hrefLista, type ParametrosUrl } from "@/lib/pagina-url";
 import { cursorDaLeitura, lerNavegacao } from "@/lib/cursor-fila";
+import {Collapsible, CollapsibleTrigger, CollapsibleContent} from "@/app/(app)/academico/controles";
 
 export default async function ExcecoesPage({ searchParams }: { searchParams: Promise<ParametrosUrl> }) {
   await exigirSessaoPagina(Papel.PROFESSOR, Papel.GERENTE_PEDAGOGICO);
@@ -27,9 +28,9 @@ export default async function ExcecoesPage({ searchParams }: { searchParams: Pro
     {r.ok && r.dado?.itens.map((p) => <article key={p.id} className="space-y-3 rounded border bg-[var(--surface)] p-4">
       {(() => { const exibicao = formatarInstanteExibicao(p.inicio, preferencia.ok ? preferencia.dado?.fusoExibicao : null, p.fusoOrigem); return <><h2 className="font-medium">{p.professor} · {exibicao.texto}</h2><p className="text-sm">{exibicao.fuso}</p></>; })()}<p className="whitespace-pre-wrap">{p.motivo}</p>
       {p.decisao && <p>{p.decisao.aprovada ? "Exceção aprovada" : "Solicitação rejeitada"}: {p.decisao.motivo}</p>}
-      {p.diarioParaRevisao && <details><summary>Conferir diário atual</summary><p className="my-2 whitespace-pre-wrap">{p.diarioParaRevisao.conteudo}</p>
+      {p.diarioParaRevisao && <Collapsible ><CollapsibleTrigger type="button" className="text-left font-medium">Conferir diário atual</CollapsibleTrigger><CollapsibleContent><p className="my-2 whitespace-pre-wrap">{p.diarioParaRevisao.conteudo}</p>
         <ul className="space-y-1">{p.diarioParaRevisao.registros.map((r, i) => <li key={i}>{r.nomeAluno}: {r.participacao === "IMPEDIDO_POR_RESTRICAO" ? "Impedido por restrição" : r.presente === null ? "Não informado" : r.presente ? "Presente" : "Ausente"}{r.observacao ? ` — ${r.observacao}` : ""}</li>)}</ul>
-      </details>}
+      </CollapsibleContent></Collapsible>}
       {p.podeDecidir && <DecidirExcecao id={p.id} diarioCorresponde={p.diarioCorresponde} />}
     </article>)}
     {r.ok && r.dado && <PaginacaoFila anterior={r.dado.anterior} proxima={r.dado.proxima} href={(cursor) => hrefLista("/diario/excecoes-gravacao", { ...filtro, ...cursor })} rotulo="Navegação da fila de exceções de gravação" />}

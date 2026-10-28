@@ -8,6 +8,7 @@ import { MSG_DECISAO_INCERTA, MSG_RESULTADO_INCERTO } from "@/lib/mensagens";
 import { botaoClasses } from "@/components/Botao";
 import { CampoTexto } from "@/components/CampoTexto";
 import { HABILIDADE_LABEL } from "@/lib/labels";
+import { CampoSelect, Caixa, SelectItem } from "@/app/(app)/academico/controles";
 type Habilidade = typeof HABILIDADES[number];
 
 export function PrepararPlano({ alocacaoId, versaoEsperada, obrigatorias, selecionaveis, autorizacaoPreparacaoId }: { alocacaoId: string; versaoEsperada: number; obrigatorias: Habilidade[]; selecionaveis: Habilidade[]; autorizacaoPreparacaoId?: string }) {
@@ -28,7 +29,7 @@ export function PrepararPlano({ alocacaoId, versaoEsperada, obrigatorias, seleci
     <p>Inclua todas as habilidades abaixo do mínimo. Se faltar apenas a média geral, escolha as habilidades a trabalhar. A proposta precisa de aprovação independente.</p>
     <fieldset disabled={enviando} className="space-y-4">
       {selecionaveis.map(h => <div key={h} className="space-y-2 rounded border p-3">
-        <label><input type="checkbox" checked={selecionadas.includes(h)} disabled={obrigatorias.includes(h)} onChange={e => setSelecionadas(s => e.target.checked ? [...s, h] : s.filter(v => v !== h))} /> {HABILIDADE_LABEL[h]}{obrigatorias.includes(h) ? " (obrigatória)" : ""}</label>
+        <label><Caixa checked={selecionadas.includes(h)} disabled={obrigatorias.includes(h)} onChange={e => setSelecionadas(s => e.target.checked ? [...s, h] : s.filter(v => v !== h))} /> {HABILIDADE_LABEL[h]}{obrigatorias.includes(h) ? " (obrigatória)" : ""}</label>
         {selecionadas.includes(h) && <>
           <label className="block">Estratégia pedagógica<CampoTexto name={`estrategia-${h}`} required minLength={5} maxLength={2000} className="block w-full rounded border p-2" /></label>
           <label className="block">Avaliação proposta<CampoTexto name={`avaliacao-${h}`} required minLength={5} maxLength={2000} className="block w-full rounded border p-2" /></label>
@@ -52,7 +53,7 @@ export function DecidirPlano({ propostaId, propostaHash, podeAprovar }: { propos
     finally { setEnviando(false); }
   }}>
     <fieldset disabled={enviando} className="space-y-2">
-      <label className="block">Decisão<select name="decisao" required defaultValue="" className="ml-2 rounded border p-2"><option value="" disabled>Selecione</option>{podeAprovar && <option value="aprovar">Aprovar plano</option>}<option value="rejeitar">Rejeitar plano</option></select></label>
+      <label className="block">Decisão<CampoSelect name="decisao" required defaultValue="" className="ml-2 rounded border p-2" placeholder="Selecione">{podeAprovar && <SelectItem value={"aprovar"}>Aprovar plano</SelectItem>}<SelectItem value={"rejeitar"}>Rejeitar plano</SelectItem></CampoSelect></label>
       <label className="block">Motivo<CampoTexto name="motivo" required minLength={5} maxLength={2000} className="block w-full rounded border p-2" /></label>
       <button type="submit" className={botaoClasses({ variante: "secundario", tamanho: "lg" })}>{enviando ? "Registrando…" : "Registrar decisão"}</button>
     </fieldset>{erro && <p role="alert">{erro}</p>}

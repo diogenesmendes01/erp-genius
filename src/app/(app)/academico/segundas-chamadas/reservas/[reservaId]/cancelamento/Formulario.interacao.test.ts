@@ -14,6 +14,7 @@ vi.mock("@/server/avaliacoes/segunda-chamada-cancelamento-local", () => ({ propo
 vi.mock("@/server/avaliacoes/segunda-chamada-cancelamento", () => ({ decidirCancelamentoAgendaSegundaChamada: vi.fn() }));
 
 import { Formulario } from "./Formulario";
+import { CampoInstante } from "@/app/(app)/academico/controles";
 import { CampoFuso } from "@/components/CampoFuso";
 import { PreviaConversao, textoPreviaConversao } from "@/components/PreviaConversao";
 import { criarGanchos, elementos, type No } from "@/test/tela-sem-dom";
@@ -27,7 +28,7 @@ const previa = () => {
   return p ? textoPreviaConversao(String(p.props.local), String(p.props.fuso), String(p.props.fusoExibicao)) : undefined;
 };
 const digitarData = (valor: string) => {
-  const campo = elementos(tela("America/Sao_Paulo")).find((n) => n.type === "input" && n.props.name === "dataHoraLocal")!;
+  const campo = elementos(tela("America/Sao_Paulo")).find((n) => n.type === CampoInstante && n.props.name === "dataHoraLocal")!;
   (campo.props.onChange as (e: { target: { value: string } }) => void)({ target: { value: valor } });
 };
 const trocarFuso = (valor: string) => ((achar(CampoFuso) as No).props.onChange as (v: string) => void)(valor);

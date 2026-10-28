@@ -8,6 +8,7 @@ import { botaoClasses } from "@/components/Botao";
 import { MSG_DECISAO_INCERTA } from "@/lib/mensagens";
 import { useAcaoCliente } from "@/lib/acao-cliente";
 import { CampoTexto } from "@/components/CampoTexto";
+import { CampoSelect, Caixa, SelectItem } from "@/app/(app)/academico/controles";
 
 export function AcoesEquivalencia({
   propostaId,
@@ -61,16 +62,12 @@ export function AcoesEquivalencia({
       <h2 className="text-xl font-medium">Registrar decisão independente</h2>
       <p>A pessoa que preparou a proposta não pode decidir. A ação confere novamente as fontes, regras e vínculo antes de autorizar.</p>
       <label className="block">Decisão
-        <select name="decisao" required defaultValue="" disabled={pendente} className="mt-1 block rounded border p-2">
-          <option value="" disabled>Selecione</option>
-          <option value="APROVAR">Autorizar para execução</option>
-          <option value="REJEITAR">Rejeitar proposta</option>
-        </select>
+        <CampoSelect name="decisao" required defaultValue="" disabled={pendente} className="mt-1 block rounded border p-2" placeholder="Selecione"><SelectItem value={"APROVAR"}>Autorizar para execução</SelectItem><SelectItem value={"REJEITAR"}>Rejeitar proposta</SelectItem></CampoSelect>
       </label>
       <label className="block">Motivo da decisão
         <CampoTexto name="motivo" required minLength={5} maxLength={2000} disabled={pendente} className="mt-1 block min-h-24 w-full rounded border p-2" />
       </label>
-      <label className="block"><input type="checkbox" required disabled={pendente} /> Conferi o mapeamento e seus efeitos antes de registrar a decisão.</label>
+      <label className="block"><Caixa required disabled={pendente} /> Conferi o mapeamento e seus efeitos antes de registrar a decisão.</label>
       <button disabled={pendente} className={botaoClasses({ tamanho: "lg" })}>{decisao.ocupado ? "Registrando…" : "Registrar decisão"}</button>
     </form>}
     <FeedbackAcao erro={decisao.erro} sucesso={decisao.sucesso} />
@@ -81,7 +78,7 @@ export function AcoesEquivalencia({
       <label className="block">Motivo da execução
         <CampoTexto name="motivoExecucao" required minLength={5} maxLength={4000} disabled={pendente} className="mt-1 block min-h-24 w-full rounded border p-2" />
       </label>
-      <label className="block"><input type="checkbox" required disabled={pendente} /> Confirmei a compatibilidade de horário com o aluno.</label>
+      <label className="block"><Caixa required disabled={pendente} /> Confirmei a compatibilidade de horário com o aluno.</label>
       <button disabled={pendente} className={botaoClasses({ tamanho: "lg" })}>{execucao.ocupado ? "Efetivando…" : "Efetivar transferência"}</button>
     </form>}
     <FeedbackAcao erro={execucao.erro} sucesso={execucao.sucesso} />

@@ -13,7 +13,9 @@ import { OperacaoEntregaReposicao, type OperacaoEntrega } from "./OperacaoEntreg
 import { CampoDataHoraLocal } from "@/components/CampoDataHoraLocal";
 
 type No = { type?: unknown; props?: Record<string, unknown> };
-function todos(no: unknown, tipo: string): No[] { if (Array.isArray(no)) return no.flatMap(n => todos(n, tipo)); if (!no || typeof no !== "object") return []; const n = no as No; if (typeof n.type === "function") return todos((n.type as (p: Record<string, unknown>) => unknown)(n.props ?? {}), tipo); const filhos = n.props?.children; return [...(n.type === tipo ? [n] : []), ...todos(Array.isArray(filhos) ? filhos : [filhos], tipo)]; }
+const SEM_ENTRAR = new Set(["CampoSelect", "CampoCombobox", "CampoInstante", "CampoDia", "CampoRelogio", "Caixa", "Collapsible", "CollapsibleTrigger", "CollapsibleContent", "SelectItem"]);
+const entra = (tipo: unknown) => typeof tipo === "function" && !SEM_ENTRAR.has((tipo as { name?: string }).name ?? "");
+function todos(no: unknown, tipo: string): No[] { if (Array.isArray(no)) return no.flatMap(n => todos(n, tipo)); if (!no || typeof no !== "object") return []; const n = no as No; if (entra(n.type)) return todos((n.type as (p: Record<string, unknown>) => unknown)(n.props ?? {}), tipo); const filhos = n.props?.children; return [...(n.type === tipo ? [n] : []), ...todos(Array.isArray(filhos) ? filhos : [filhos], tipo)]; }
 function texto(no: unknown): string { if (typeof no === "string" || typeof no === "number") return String(no); if (Array.isArray(no)) return no.map(texto).join(""); if (!no || typeof no !== "object") return ""; return texto((no as No).props?.children); }
 const operacao: OperacaoEntrega = { reposicaoId: "repo", matriculaStatus: "ATIVA", fuso: "UTC", material: null, etapa: { correcaoId: null, prazoAte: null, prazoInicialAte: null }, liberacao: { podeLiberar: false, expiraEm: null }, indisponibilidade: null, relatosAbertos: [], avaliador: { professorId: "prof-a", nome: "Professor A", inicio: "2026-09-17T00:00:00.000Z", motivo: "Designação anterior" }, avaliadoresDisponiveis: [{ id: "prof-a", nome: "Professor A" }, { id: "prof-b", nome: "Professor B" }] };
 
@@ -97,7 +99,7 @@ function comNome(no: unknown, nome: string): No | undefined {
   if (!no || typeof no !== "object") return undefined;
   const n = no as No;
   if (n.props?.name === nome) return n;
-  if (typeof n.type === "function") return comNome((n.type as (p: Record<string, unknown>) => unknown)(n.props ?? {}), nome);
+  if (entra(n.type)) return comNome((n.type as (p: Record<string, unknown>) => unknown)(n.props ?? {}), nome);
   return comNome(n.props?.children, nome);
 }
 function renderComTentativa(temTentativa: boolean) {

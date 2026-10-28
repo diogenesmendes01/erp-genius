@@ -9,6 +9,7 @@ import { FeedbackAcao } from "@/components/FeedbackAcao";
 import { useAcaoCliente } from "@/lib/acao-cliente";
 import { useChaveIdempotencia } from "@/lib/chave-idempotencia";
 import { confirmarResolucaoImpedimentoSegundaChamada } from "@/server/avaliacoes/segunda-chamada-resolucao-impedimento";
+import { CampoSelect, SelectItem } from "@/app/(app)/academico/controles";
 
 const CONTROLE = "block w-full rounded border p-2";
 
@@ -31,10 +32,7 @@ export function ResolverImpedimento({ reservaImpedidaId, realizacoes }: { reserv
     <h3 className="font-medium">Confirmar resolução do impedimento</h3>
     <fieldset disabled={acao.ocupado} className="space-y-3">
       <Campo rotulo="Realização posterior com nota oficial" obrigatorio>{(campo) => (
-        <select {...campo} className={CONTROLE} required value={realizacaoId} onChange={(e) => setRealizacaoId(e.target.value)}>
-          <option value="" disabled>Selecione a realização</option>
-          {realizacoes.map((z) => <option key={z.id} value={z.id}>{z.rotulo}</option>)}
-        </select>
+        <CampoSelect {...campo} className={CONTROLE} required value={realizacaoId} onChange={(e) => setRealizacaoId(e.target.value)} placeholder="Selecione a realização">{realizacoes.map((z) => <SelectItem key={z.id} value={z.id}>{z.rotulo}</SelectItem>)}</CampoSelect>
       )}</Campo>
       <Campo rotulo="Justificativa" obrigatorio>{(campo) => (
         <CampoTexto {...campo} className={CONTROLE} minLength={5} maxLength={2000} required value={motivo} onChange={(e) => setMotivo(e.target.value)} />

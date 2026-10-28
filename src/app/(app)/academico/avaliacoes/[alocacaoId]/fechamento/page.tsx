@@ -7,6 +7,7 @@ import { consultarPreferenciaFusoEquipe } from "@/server/preferencias/fuso-exibi
 import { formatarInstanteExibicao, resolverFusoExibicao } from "@/server/operacao/fuso-exibicao";
 import { VoltarPara } from "@/components/VoltarPara";
 import { HABILIDADE_LABEL, rotular } from "@/lib/labels";
+import { Table, TableHeader, TableBody, TableHead, TableRow, TableCell, TableCaption } from "@/components/ui/table";
 
 const pendencias: Record<string, string> = {
   NOTAS_INCOMPLETAS: "Notas obrigatórias ainda não estão completas e oficializadas",
@@ -70,7 +71,7 @@ export default async function FechamentoAcademicoPage({ params }: { params: Prom
       <h2 className="text-lg font-medium">Resultado e frequência revisados</h2>
       <p className="mt-2">Resultado geral: {razao(resultado.geral)}. Mínimo geral: {resultado.minimoGeral}.</p>
       <p className="text-sm">Notas: {resultado.atendeRequisitosNotas === null ? "incompletas" : resultado.atendeRequisitosNotas ? "atingem os mínimos" : "não atingem todos os mínimos"}.</p>
-      <div className="mt-3 overflow-x-auto"><table className="w-full text-left text-sm"><caption className="sr-only">Mínimos e resultados por habilidade</caption><thead><tr><th>Habilidade</th><th>Resultado</th><th>Mínimo</th><th>Situação</th></tr></thead><tbody>{resultado.habilidades.map((habilidade) => <tr key={habilidade.habilidade}><th scope="row">{rotular(HABILIDADE_LABEL, habilidade.habilidade)}</th><td>{razao(habilidade.resultado)}</td><td>{habilidade.minimo}</td><td>{habilidade.atendeMinimo === null ? "Pendente" : habilidade.atendeMinimo ? "Mínimo atingido" : "Abaixo do mínimo"}</td></tr>)}</tbody></table></div>
+      <div className="mt-3 overflow-x-auto"><Table className="w-full text-left text-sm"><TableCaption className="sr-only">Mínimos e resultados por habilidade</TableCaption><TableHeader><TableRow><TableHead>Habilidade</TableHead><TableHead>Resultado</TableHead><TableHead>Mínimo</TableHead><TableHead>Situação</TableHead></TableRow></TableHeader><TableBody>{resultado.habilidades.map((habilidade) => <TableRow key={habilidade.habilidade}><TableHead scope="row">{rotular(HABILIDADE_LABEL, habilidade.habilidade)}</TableHead><TableCell>{razao(habilidade.resultado)}</TableCell><TableCell>{habilidade.minimo}</TableCell><TableCell>{habilidade.atendeMinimo === null ? "Pendente" : habilidade.atendeMinimo ? "Mínimo atingido" : "Abaixo do mínimo"}</TableCell></TableRow>)}</TableBody></Table></div>
       <p className="mt-3">Frequência real: {frequencia.atendeMinimo === null ? "ainda não apurada" : frequencia.atendeMinimo ? "atinge o mínimo" : "abaixo do mínimo"}.</p>
       <p className="text-sm">Percentual: {razao(frequencia.percentual)}%. Mínimo: {frequencia.minimoPercentual}%.</p>
       <p className="text-sm">Base: {frequencia.base} aulas · presenças: {frequencia.presencas} · regularizações: {frequencia.regularizadas} · faltas: {frequencia.faltas} · impedimentos: {frequencia.impedimentos}.</p>

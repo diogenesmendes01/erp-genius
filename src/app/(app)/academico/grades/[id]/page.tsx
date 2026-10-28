@@ -6,6 +6,7 @@ import { consultarPreferenciaFusoEquipe } from "@/server/preferencias/fuso-exibi
 import { formatarInstanteExibicao, resolverFusoExibicao } from "@/server/operacao/fuso-exibicao";
 import { formatarDataCivil } from "@/lib/data-civil";
 import { VoltarPara } from "@/components/VoltarPara";
+import {Collapsible, CollapsibleTrigger, CollapsibleContent} from "@/app/(app)/academico/controles";
 
 export default async function GradePage({ params }: { params: Promise<{ id: string }> }) {
   await exigirSessaoPagina(Papel.SECRETARIA_ACADEMICA, Papel.GERENTE_PEDAGOGICO);
@@ -38,7 +39,7 @@ export default async function GradePage({ params }: { params: Promise<{ id: stri
       {d.indisponibilidades.map((c, i) => <p key={i}>Encontro {c.indiceEncontro + 1}: professor indisponível de {data(c.inicio)} a {data(c.fim)}.</p>)}
       {podePublicar && <p>Sem conflitos nos encontros e indisponibilidades cadastrados. A aprovação confere novamente a disponibilidade.</p>}
     </section>}
-    <details open><summary className="font-medium">Encontros da proposta</summary><ol className="mt-2 list-inside list-decimal space-y-1">{g.encontros.map((e) => <li key={e.inicio}>{data(e.inicio)} a {data(e.fim)}</li>)}</ol></details>
+    <Collapsible defaultOpen><CollapsibleTrigger type="button" className="text-left font-medium">Encontros da proposta</CollapsibleTrigger><CollapsibleContent><ol className="mt-2 list-inside list-decimal space-y-1">{g.encontros.map((e) => <li key={e.inicio}>{data(e.inicio)} a {data(e.fim)}</li>)}</ol></CollapsibleContent></Collapsible>
     {p.decisao && <p>Motivo da decisão: {p.decisao.motivo}</p>}
     {p.podeDecidir ? <DecidirGrade id={p.id} podePublicar={podePublicar} /> : !p.decisao && <p>A decisão exige outra pessoa da Gerência Pedagógica/Administração.</p>}
   </div>;

@@ -8,6 +8,7 @@ import { useAcaoCliente } from "@/lib/acao-cliente";
 import { botaoClasses } from "@/components/Botao";
 import { CampoTexto } from "@/components/CampoTexto";
 import { STATUS_ENCONTRO_LABEL, rotular } from "@/lib/labels";
+import { CampoSelect, SelectItem } from "@/app/(app)/academico/controles";
 
 type Resposta = Awaited<ReturnType<typeof consultarCancelamentoParticular>>;
 type Dados = Extract<Resposta, { ok: true }>["dado"];
@@ -27,7 +28,7 @@ export function CancelamentoParticular({ encontroId, dados, fusoExibicao }: { en
       if (d?.tipo === "ok") { chave.current = null; router.refresh(); }
     }}>
       <label className="block">Motivo do cancelamento<CampoTexto name="motivo" className="block w-full border p-2" required minLength={5} maxLength={2000} onChange={() => { chave.current = null; }} /></label>
-      <label className="block">Quem cancelou?<select name="origem" required defaultValue="" className="block border p-2" onChange={() => { chave.current = null; }}><option value="" disabled>Selecione</option><option value="ESCOLA">Escola</option><option value="ALUNO">Aluno</option></select></label>
+      <label className="block">Quem cancelou?<CampoSelect name="origem" required defaultValue="" className="block border p-2" onChange={() => { chave.current = null; }} placeholder="Selecione"><SelectItem value={"ESCOLA"}>Escola</SelectItem><SelectItem value={"ALUNO"}>Aluno</SelectItem></CampoSelect></label>
       <FeedbackAcao erro={proposta.erro} />
       <button disabled={pendente} className={botaoClasses({ variante: "secundario", tamanho: "lg" })}>Solicitar cancelamento</button>
     </form>}
@@ -41,7 +42,7 @@ export function CancelamentoParticular({ encontroId, dados, fusoExibicao }: { en
         const d = await decisao.executar(() => decidirCancelamentoParticular({ propostaId: p.id, motivo, aprovar }));
         if (d?.tipo === "ok") router.refresh();
       }}>
-        <label className="block">Decisão<select name="decisao" required defaultValue="" className="block border p-2"><option value="" disabled>Selecione</option><option value="aprovar">Aprovar cancelamento</option><option value="rejeitar">Rejeitar solicitação</option></select></label>
+        <label className="block">Decisão<CampoSelect name="decisao" required defaultValue="" className="block border p-2" placeholder="Selecione"><SelectItem value={"aprovar"}>Aprovar cancelamento</SelectItem><SelectItem value={"rejeitar"}>Rejeitar solicitação</SelectItem></CampoSelect></label>
         <label className="block">Justificativa da decisão<CampoTexto name="motivo" className="block w-full border p-2" required minLength={5} maxLength={2000} /></label>
         <FeedbackAcao erro={alvo === p.id ? decisao.erro : null} />
         <button disabled={pendente} className={botaoClasses({ variante: "secundario", tamanho: "lg" })}>Confirmar decisão</button>

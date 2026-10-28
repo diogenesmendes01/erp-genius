@@ -7,6 +7,7 @@ import { SalvarRevisao } from "./SalvarRevisao";
 import { MensagemStatus } from "@/components/MensagemStatus";
 import { botaoClasses } from "@/components/Botao";
 import { CampoTexto } from "@/components/CampoTexto";
+import { CampoSelect, CampoDia, CampoRelogio, SelectItem } from "@/app/(app)/academico/controles";
 
 type Revisao = NonNullable<Extract<Awaited<ReturnType<typeof preverReplanejamentoCalendario>>, { ok: true }>["dado"]>;
 export function EditorRevisao({ inicial, preferenciaFusoExibicao = null }: { inicial: Revisao; preferenciaFusoExibicao?: string | null }) {
@@ -40,11 +41,9 @@ export function EditorRevisao({ inicial, preferenciaFusoExibicao = null }: { ini
       <fieldset disabled={ocupado} className="space-y-3">
         {ajustes.map((a, i) => <fieldset key={i} className="grid gap-3 rounded border p-3 sm:grid-cols-2">
           <legend>Ajuste {i + 1}</legend>
-          <label>Encontro<select required value={a.encontroId} onChange={(e) => mudar(i, { encontroId: e.target.value })} className={campo}>
-            <option value="">Escolha o encontro</option>{opcoes.map((o) => <option key={o.id} value={o.id}>{o.nome}</option>)}
-          </select></label>
-          <label>Data no fuso da turma<input required type="date" value={a.data} onChange={(e) => mudar(i, { data: e.target.value })} className={campo} /></label>
-          <label>Horário no fuso da turma<input required type="time" value={a.horario} onChange={(e) => mudar(i, { horario: e.target.value })} className={campo} /></label>
+          <label>Encontro<CampoSelect required value={a.encontroId} onChange={(e) => mudar(i, { encontroId: e.target.value })} className={campo} placeholder="Escolha o encontro">{opcoes.map((o) => <SelectItem key={o.id} value={o.id}>{o.nome}</SelectItem>)}</CampoSelect></label>
+          <label>Data no fuso da turma<CampoDia required value={a.data} onChange={(e) => mudar(i, { data: e.target.value })} className={campo} /></label>
+          <label>Horário no fuso da turma<CampoRelogio required value={a.horario} onChange={(e) => mudar(i, { horario: e.target.value })} className={campo} /></label>
           <label>Motivo do ajuste<CampoTexto required minLength={5} maxLength={2000} value={a.motivo} onChange={(e) => mudar(i, { motivo: e.target.value })} className={campo} /></label>
           <button type="button" className={`${botaoClasses({ variante: "perigo", tamanho: "lg" })} justify-self-start`} onClick={() => setAjustes((v) => v.filter((_, j) => i !== j))}>Remover ajuste {i + 1}</button>
         </fieldset>)}

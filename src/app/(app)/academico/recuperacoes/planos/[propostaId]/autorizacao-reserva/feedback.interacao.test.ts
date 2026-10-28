@@ -18,6 +18,7 @@ vi.mock("@/server/avaliacoes/recuperacao-autorizacao-reserva-local", () => ({ au
 vi.mock("@/server/avaliacoes/recuperacao-reserva", () => ({ reservarTentativaRecuperacao: m.reservar }));
 
 import { AutorizarReservaEspecial, ReservarComAutorizacao } from "./Formulario";
+import { CampoSelect } from "@/app/(app)/academico/controles";
 import { MSG_RESULTADO_INCERTO } from "@/lib/mensagens";
 import { contratoFeedbackSeparado } from "@/test/feedback-acao";
 import { FormDataFalso, criarGanchos, elementos, submeter, texto } from "@/test/tela-sem-dom";
@@ -36,7 +37,7 @@ describe("AutorizarReservaEspecial", () => {
   const tela = () => m.ganchos!.renderizar(AutorizarReservaEspecial, { propostaId: "proposta-1", habilidades: ["FALA", "LEITURA"], fusoInstitucional: "America/Sao_Paulo" });
   const valores = { motivo: "Aluno com atestado médico", prazoLocal: "2026-10-20T18:00:00", fuso: "America/Sao_Paulo" };
   const escolherHabilidade = () => {
-    const select = elementos(tela()).find((n) => n.type === "select");
+    const select = elementos(tela()).find((n) => n.type === CampoSelect);
     (select!.props.onChange as (e: unknown) => void)({ target: { value: "FALA" } });
   };
   contratoFeedbackSeparado({

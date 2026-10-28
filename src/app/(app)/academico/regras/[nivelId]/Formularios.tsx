@@ -7,6 +7,7 @@ import { nomesHabilidades, type ConteudoRegra } from "./ResumoRegra";
 import { botaoClasses } from "@/components/Botao";
 import { MSG_DECISAO_INCERTA, MSG_RESULTADO_INCERTO } from "@/lib/mensagens";
 import { CampoTexto } from "@/components/CampoTexto";
+import { CampoSelect, Caixa, SelectItem } from "@/app/(app)/academico/controles";
 
 const habilidades = Object.keys(nomesHabilidades) as (keyof typeof nomesHabilidades)[];
 const campo = "block w-full rounded border p-2";
@@ -55,11 +56,11 @@ export function ProporRegra({ nivelId, versaoEsperada, inicial }: { nivelId: str
         <div className="grid gap-3 sm:grid-cols-2">
           <label>Código<input className={campo} name={`a${i}-codigo`} required maxLength={100} defaultValue={a?.codigo} /></label>
           <label>Título<input className={campo} name={`a${i}-titulo`} required minLength={3} maxLength={200} defaultValue={a?.titulo} /></label>
-          <label>Etapa<select className={campo} name={`a${i}-etapa`} required defaultValue={a?.etapa ?? ""}><option value="">Selecione</option><option value="INTERMEDIARIA">Intermediária</option><option value="FINAL">Final</option></select></label>
+          <label>Etapa<CampoSelect className={campo} name={`a${i}-etapa`} required defaultValue={a?.etapa ?? ""} placeholder="Selecione"><SelectItem value={"INTERMEDIARIA"}>Intermediária</SelectItem><SelectItem value={"FINAL"}>Final</SelectItem></CampoSelect></label>
           <label>Peso da avaliação<input className={campo} name={`a${i}-peso`} required maxLength={100} inputMode="decimal" defaultValue={a?.peso} /></label>
           <label>Limite de segundas chamadas<input className={campo} name={`a${i}-limite`} type="number" required min={0} max={2147483647} step={1} defaultValue={a?.limiteSegundasChamadas} /></label>
         </div>
-        <div className="flex flex-wrap gap-4">{habilidades.map(h => <label key={h}><input type="checkbox" name={`a${i}-${h}`} defaultChecked={a?.habilidades.includes(h)} /> {nomesHabilidades[h]}</label>)}</div>
+        <div className="flex flex-wrap gap-4">{habilidades.map(h => <label key={h}><Caixa name={`a${i}-${h}`} defaultChecked={a?.habilidades.includes(h)} /> {nomesHabilidades[h]}</label>)}</div>
       </fieldset>; })}
       <div className="flex gap-3"><button type="button" className={botaoClasses({ variante: "secundario", tamanho: "lg" })} disabled={quantidade >= 1000} onClick={() => { mudou(); setQuantidade(q => q + 1); }}>Adicionar avaliação</button><button type="button" className={botaoClasses({ variante: "perigo", tamanho: "lg" })} disabled={quantidade <= 2} onClick={() => { mudou(); setQuantidade(q => q - 1); }}>Remover última avaliação</button></div>
       {[{ chave: "rec", titulo: "Recuperação", valor: inicial?.recuperacao }, { chave: "seg", titulo: "Segunda chamada", valor: inicial?.segundaChamada }].map(c => <fieldset key={c.chave} className="grid gap-3 rounded border p-3 sm:grid-cols-2"><legend>{c.titulo}</legend>
@@ -84,10 +85,10 @@ export function DecidirRegra({ regraId, conteudoHash, podeAprovar }: { regraId: 
     finally { setOcupado(false); }
   }} className="space-y-3">
     <fieldset disabled={ocupado} className="space-y-3"><legend className="font-medium">Decisão sobre esta versão</legend>
-      <label className="block">Decisão<select className={campo} name="decisao" required defaultValue=""><option value="">Selecione</option>{podeAprovar && <option value="aprovar">Aprovar e publicar</option>}<option value="rejeitar">Rejeitar para revisão</option></select></label>
+      <label className="block">Decisão<CampoSelect className={campo} name="decisao" required defaultValue="" placeholder="Selecione">{podeAprovar && <SelectItem value={"aprovar"}>Aprovar e publicar</SelectItem>}<SelectItem value={"rejeitar"}>Rejeitar para revisão</SelectItem></CampoSelect></label>
       {!podeAprovar && <p>Existe proposta mais recente; esta versão pode ser rejeitada, mas não publicada.</p>}
       <label className="block">Justificativa<CampoTexto className={campo} name="motivo" required minLength={5} maxLength={2000} /></label>
-      <label className="block"><input type="checkbox" required /> Conferi todos os critérios desta versão.</label>
+      <label className="block"><Caixa required /> Conferi todos os critérios desta versão.</label>
       <button className={botaoClasses({ variante: "secundario", tamanho: "lg" })}>{ocupado ? "Registrando…" : "Registrar decisão"}</button>
     </fieldset>{erro && <p role="alert" className="text-red-700">{erro}</p>}
   </form>;

@@ -8,6 +8,7 @@ import { useAcaoCliente } from "@/lib/acao-cliente";
 import { botaoClasses } from "@/components/Botao";
 import { CampoTexto } from "@/components/CampoTexto";
 import { ConfirmarAcao } from "@/components/ConfirmarAcao";
+import { Caixa } from "@/app/(app)/academico/controles";
 
 type Excecao = { encontroId: string; codigo: string | null; inicio: string; fusoOrigem: string | null; motivoProposto: string | null };
 export type ResumoReplanejamento = { turmas: number; encontros: number };
@@ -22,7 +23,7 @@ export function DecidirReplanejamento({ calendarioId, revisaoId, podeAprovar, po
  const autorizadas = excecoes.filter((e) => autorizar.includes(e.encontroId));
  return <form className="space-y-3" action={(f) => { if (f.get("acao") === "aprovar") pedirAprovacao(); else void rejeitar(); }}>
    <label className="block">Motivo da decisão<CampoTexto required minLength={5} maxLength={2000} value={motivo} onChange={(e) => setMotivo(e.target.value)} className="mt-1 block w-full rounded border p-2" disabled={pendente} /></label>
-   {excecoes.map((e) => { const origem = e.fusoOrigem ?? "UTC", exibicao = formatarInstanteExibicao(e.inicio, preferenciaFusoExibicao, origem); return <label className="flex gap-2" key={e.encontroId}><input type="checkbox" disabled={pendente || !e.motivoProposto} checked={autorizar.includes(e.encontroId)} onChange={(x) => setAutorizar((v) => x.target.checked ? [...v, e.encontroId] : v.filter((id) => id !== e.encontroId))} />Autorizar exceção de {e.codigo ?? "turma identificada"} em {exibicao.texto} ({exibicao.fuso}; origem {origem}){e.motivoProposto ? `: ${e.motivoProposto}` : " (sem justificativa)"}</label>; })}
+   {excecoes.map((e) => { const origem = e.fusoOrigem ?? "UTC", exibicao = formatarInstanteExibicao(e.inicio, preferenciaFusoExibicao, origem); return <label className="flex gap-2" key={e.encontroId}><Caixa disabled={pendente || !e.motivoProposto} checked={autorizar.includes(e.encontroId)} onChange={(x) => setAutorizar((v) => x.target.checked ? [...v, e.encontroId] : v.filter((id) => id !== e.encontroId))} />Autorizar exceção de {e.codigo ?? "turma identificada"} em {exibicao.texto} ({exibicao.fuso}; origem {origem}){e.motivoProposto ? `: ${e.motivoProposto}` : " (sem justificativa)"}</label>; })}
    <FeedbackAcao erro={acao.erro} />
    {(podeAprovar || podeRejeitar) ? <div className="flex gap-2">{podeAprovar && <button name="acao" value="aprovar" disabled={pendente} className={botaoClasses({ tamanho: "lg" })}>{pendente ? "Registrando…" : "Aprovar e aplicar conjunto"}</button>}{podeRejeitar && <button name="acao" value="rejeitar" disabled={pendente} className={botaoClasses({ variante: "perigo", tamanho: "lg" })}>Rejeitar revisão</button>}</div> : <p>Esta pessoa não pode decidir o conjunto na situação atual.</p>}
    {confirmando && <ConfirmarAcao

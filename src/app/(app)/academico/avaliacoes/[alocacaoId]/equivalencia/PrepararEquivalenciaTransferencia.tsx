@@ -10,6 +10,7 @@ import { MSG_RESULTADO_INCERTO } from "@/lib/mensagens";
 import { CampoTexto } from "@/components/CampoTexto";
 import { EstadoVazio } from "@/components/EstadoVazio";
 import { HABILIDADE_LABEL } from "@/lib/labels";
+import { CampoCombobox, Caixa } from "@/app/(app)/academico/controles";
 
 type Habilidade = typeof HABILIDADES[number];
 type Revisao = NonNullable<Extract<Awaited<ReturnType<typeof revisarEquivalenciaTransferencia>>, { ok: true }>["dado"]>;
@@ -147,10 +148,7 @@ export function PrepararEquivalenciaTransferencia({
       <h2 className="text-xl font-medium">1. Escolher destino e conferir requisitos</h2>
       <p>Esta preparação usa somente registros já oficializados na turma de origem. Ela não cria notas, não reserva vaga e não transfere a matrícula.</p>
       <label className="block">Turma de destino
-        <select required value={turmaDestinoId} disabled={ocupado || registrada} onChange={(e) => alterarDestino(e.target.value)} className="mt-1 block w-full rounded border p-2">
-          <option value="">Selecione uma turma equivalente</option>
-          {destinos.map((destino) => <option key={destino.id} value={destino.id}>{destino.label}{destino.diasHorario ? ` · ${destino.diasHorario}` : ""} · {destino.vagas} vaga(s)</option>)}
-        </select>
+        <CampoCombobox required value={turmaDestinoId} disabled={ocupado || registrada} onChange={(e) => alterarDestino(e.target.value)} className="mt-1 block w-full rounded border p-2" placeholder="Selecione uma turma equivalente" vazio="Selecione uma turma equivalente" opcoes={[...destinos.map((destino) => ({ valor: destino.id, rotulo: `${destino.label}${destino.diasHorario ? ` · ${destino.diasHorario}` : ""} · ${destino.vagas} vaga(s)` }))]} />
       </label>
       <button type="button" disabled={ocupado || registrada || !turmaDestinoId} onClick={() => void revisar()} className={botaoClasses({ variante: "secundario", tamanho: "lg" })}>
         {ocupado ? "Conferindo…" : base ? "Atualizar requisitos" : "Carregar requisitos e fontes"}
@@ -166,10 +164,7 @@ export function PrepararEquivalenciaTransferencia({
         return <fieldset key={chave} className="space-y-2 rounded border p-3" disabled={ocupado || registrada}>
           <legend className="font-medium">Avaliação de destino {requisito.codigoAvaliacao} · {HABILIDADE_LABEL[requisito.habilidade]} · peso {nota(requisito.pesoAvaliacao)}</legend>
           <label className="block">Fonte oficial da mesma habilidade
-            <select value={selecoes[chave] ?? ""} onChange={(e) => alterarSelecao(chave, e.target.value)} className="mt-1 block w-full rounded border p-2">
-              <option value="">Manter pendente</option>
-              {fontes.map((fonte) => <option key={fonte.referenciaId} value={fonte.referenciaId}>{fonte.rotulo}</option>)}
-            </select>
+            <CampoCombobox value={selecoes[chave] ?? ""} onChange={(e) => alterarSelecao(chave, e.target.value)} className="mt-1 block w-full rounded border p-2" placeholder="Manter pendente" vazio="Manter pendente" opcoes={[...fontes.map((fonte) => ({ valor: fonte.referenciaId, rotulo: fonte.rotulo }))]} />
           </label>
           {!fontes.length && <EstadoVazio role="status">Nenhum registro oficial desta habilidade está disponível para indicar.</EstadoVazio>}
         </fieldset>;
@@ -197,7 +192,7 @@ export function PrepararEquivalenciaTransferencia({
       <label className="block">Motivo da proposta
         <CampoTexto name="motivo" required minLength={5} maxLength={4000} disabled={ocupado || registrada} className="mt-1 block min-h-24 w-full rounded border p-2" />
       </label>
-      <label className="block"><input type="checkbox" required disabled={ocupado || registrada} /> Conferi a prévia e compreendo que a decisão e a execução são etapas separadas.</label>
+      <label className="block"><Caixa required disabled={ocupado || registrada} /> Conferi a prévia e compreendo que a decisão e a execução são etapas separadas.</label>
       <button disabled={ocupado || registrada || !revisao} className={botaoClasses({ tamanho: "lg" })}>{ocupado ? "Registrando…" : "Registrar proposta para decisão"}</button>
     </section>
     {erro && <p role="alert">{erro}</p>}

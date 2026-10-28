@@ -11,6 +11,7 @@ vi.mock("@/server/avaliacoes/recuperacao-reserva", () => ({ reservarTentativaRec
 vi.mock("@/server/avaliacoes/recuperacao-cancelamento", () => ({ cancelarReservaRecuperacaoPelaEscola: vi.fn() }));
 
 import { Horario } from "./Formularios";
+import { CampoInstante } from "@/app/(app)/academico/controles";
 import { CampoFuso } from "@/components/CampoFuso";
 import { PreviaConversao, textoPreviaConversao } from "@/components/PreviaConversao";
 import { criarGanchos, elementos, type No } from "@/test/tela-sem-dom";
@@ -25,7 +26,7 @@ const previa = () => {
 
 describe("Horario das recuperações — prévia da conversão", () => {
   it("digitar a hora no fuso da escola mostra o equivalente no fuso de exibição; trocar o fuso muda a prévia", () => {
-    const data = elementos(tela()).find((n) => n.type === "input" && n.props.name === "dataHora")!;
+    const data = elementos(tela()).find((n) => n.type === CampoInstante && n.props.name === "dataHora")!;
     (data.props.onChange as (e: { target: { value: string } }) => void)({ target: { value: "2026-09-22T14:00:00.000" } });
     expect(previa()).toBe("Isso será 22/09/2026, 17:00 em UTC, o fuso em que a tela exibe os horários.");
     ((elementos(tela()).find((n) => n.type === CampoFuso) as No).props.onChange as (v: string) => void)("America/Costa_Rica");

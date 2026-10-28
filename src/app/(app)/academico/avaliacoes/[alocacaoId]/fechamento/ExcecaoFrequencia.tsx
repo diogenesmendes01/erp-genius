@@ -7,6 +7,7 @@ import { MSG_DECISAO_INCERTA, MSG_RESULTADO_INCERTO } from "@/lib/mensagens";
 import { MensagemStatus } from "@/components/MensagemStatus";
 import { botaoClasses } from "@/components/Botao";
 import { CampoTexto } from "@/components/CampoTexto";
+import { CampoSelect, Caixa, SelectItem } from "@/app/(app)/academico/controles";
 
 type PropostaExcecao = {
   id: string;
@@ -111,7 +112,7 @@ export function ExcecaoFrequencia({
     {!frequenciaAbaixo && proposta?.decisao?.aprovada && <p role="status">A frequência atual já não está abaixo do mínimo. A autorização permanece no histórico, mas a revisão usa o estado atual.</p>}
     {frequenciaAbaixo && temPendencias && <p role="status" className="text-amber-700">Há chamadas ou registros históricos de frequência a conferir. Regularize-os antes de propor uma exceção.</p>}
 
-    {proposta && <section className="space-y-1 rounded border bg-gray-50 p-3 text-sm">
+    {proposta && <section className="space-y-1 rounded border bg-surface-muted p-3 text-sm">
       <h3 className="font-medium">Proposta registrada · versão {proposta.versao}</h3>
       <p>Motivo: {proposta.motivo}</p>
       <p>Evidências: {proposta.evidencias}</p>
@@ -131,7 +132,7 @@ export function ExcecaoFrequencia({
       <label className="block text-sm">Evidências
         <CampoTexto name="evidencias" required minLength={5} maxLength={4000} disabled={ocupado} className="mt-1 block min-h-24 w-full rounded border p-2" />
       </label>
-      <label className="flex items-start gap-2 text-sm"><input type="checkbox" required disabled={ocupado} />
+      <label className="flex items-start gap-2 text-sm"><Caixa required disabled={ocupado} />
         <span>Reconheço que a proposta não altera a frequência real nem dispensa os mínimos de nota.</span>
       </label>
       <button type="submit" disabled={ocupado} className={botaoClasses({ tamanho: "lg" })}>{ocupado ? "Registrando…" : proposta ? "Registrar nova proposta" : "Registrar proposta"}</button>
@@ -141,16 +142,12 @@ export function ExcecaoFrequencia({
       <h3 className="font-medium">Registrar decisão independente</h3>
       <p className="text-sm">A ação confere novamente a autoria, a frequência e o contexto acadêmico antes de decidir. {propostaObsoleta ? "Como a fonte mudou, esta proposta só pode ser rejeitada; a aprovação exige uma nova proposta." : ""}</p>
       <label className="block text-sm">Decisão
-        <select name="decisao" required defaultValue="" disabled={ocupado} className="mt-1 block rounded border p-2">
-          <option value="" disabled>Selecione</option>
-          <option value="APROVAR" disabled={propostaObsoleta}>Autorizar exceção de frequência</option>
-          <option value="REJEITAR">Rejeitar proposta</option>
-        </select>
+        <CampoSelect name="decisao" required defaultValue="" disabled={ocupado} className="mt-1 block rounded border p-2" placeholder="Selecione"><SelectItem value={"APROVAR"} disabled={propostaObsoleta}>Autorizar exceção de frequência</SelectItem><SelectItem value={"REJEITAR"}>Rejeitar proposta</SelectItem></CampoSelect>
       </label>
       <label className="block text-sm">Motivo da decisão
         <CampoTexto name="motivoDecisao" required minLength={5} maxLength={3000} disabled={ocupado} className="mt-1 block min-h-24 w-full rounded border p-2" />
       </label>
-      <label className="flex items-start gap-2 text-sm"><input type="checkbox" required disabled={ocupado} />
+      <label className="flex items-start gap-2 text-sm"><Caixa required disabled={ocupado} />
         <span>Conferi a frequência real, as evidências e a independência desta decisão.</span>
       </label>
       <button type="submit" disabled={ocupado} className={botaoClasses({ tamanho: "lg" })}>{ocupado ? "Registrando…" : "Registrar decisão"}</button>

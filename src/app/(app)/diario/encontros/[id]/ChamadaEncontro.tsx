@@ -7,6 +7,7 @@ import { MensagemStatus } from "@/components/MensagemStatus";
 import { botaoClasses } from "@/components/Botao";
 import { MSG_RESULTADO_INCERTO_SEM_CHAVE } from "@/lib/mensagens";
 import { CampoTexto } from "@/components/CampoTexto";
+import { CampoSelect, SelectItem } from "@/app/(app)/academico/controles";
 
 type Dados = { encontroId: string; turmaId: string | null; ocorridaEm: string; diarioId: string | null; conteudo: string; estadoAnterior: string | null;
   alunos: { alunoId: string; nomeAluno: string; presente: boolean | null; observacao: string | null; podeEditar: boolean; podeClassificar: boolean; participacao: "PRESENTE" | "FALTA" | "IMPEDIDO_POR_RESTRICAO" | null }[] };
@@ -36,7 +37,7 @@ export function ChamadaEncontro({ dados }: { dados: Dados }) {
     <fieldset disabled={ocupado} className="space-y-4">
       <label className="block">Conteúdo ministrado<CampoTexto name="conteudo" defaultValue={dados.conteudo} required maxLength={10000} className="mt-1 block w-full rounded border p-2" /></label>
       {dados.alunos.map((a) => <div key={a.alunoId} className="space-y-2 rounded border p-3"><label className="flex flex-wrap items-center justify-between gap-2">{a.nomeAluno}
-        <select name={a.alunoId} disabled={!a.podeEditar} defaultValue={a.participacao === "IMPEDIDO_POR_RESTRICAO" ? "impedido" : a.presente === true ? "presente" : a.presente === false ? "ausente" : "pendente"} className="rounded border p-2"><option value="pendente">Não informado</option><option value="presente">Presente</option><option value="ausente">Falta</option>{(a.podeClassificar || a.participacao === "IMPEDIDO_POR_RESTRICAO") && <option value="impedido">Impedido por restrição</option>}</select>
+        <CampoSelect name={a.alunoId} disabled={!a.podeEditar} defaultValue={a.participacao === "IMPEDIDO_POR_RESTRICAO" ? "impedido" : a.presente === true ? "presente" : a.presente === false ? "ausente" : "pendente"} className="rounded border p-2" placeholder="Selecionar"><SelectItem value={"pendente"}>Não informado</SelectItem><SelectItem value={"presente"}>Presente</SelectItem><SelectItem value={"ausente"}>Falta</SelectItem>{(a.podeClassificar || a.participacao === "IMPEDIDO_POR_RESTRICAO") && <SelectItem value={"impedido"}>Impedido por restrição</SelectItem>}</CampoSelect>
       </label><label className="block text-sm">Observação de {a.nomeAluno}<CampoTexto name={`obs-${a.alunoId}`} defaultValue={a.observacao ?? ""} disabled={!a.podeEditar} maxLength={2000} className="mt-1 block w-full rounded border p-2" /></label>
         {!a.podeEditar && <p className="text-sm text-gray-500">Registro histórico em leitura.</p>}
       </div>)}

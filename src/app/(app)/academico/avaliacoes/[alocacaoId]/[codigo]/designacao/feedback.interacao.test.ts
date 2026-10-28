@@ -18,6 +18,7 @@ vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh: m.refresh, push
 vi.mock("@/server/avaliacoes/designacao", () => ({ designarAvaliador: m.designar }));
 
 import { FormularioDesignacao } from "./Formulario";
+import { CampoCombobox } from "@/app/(app)/academico/controles";
 import { CampoTexto } from "@/components/CampoTexto";
 import { MSG_RESULTADO_INCERTO } from "@/lib/mensagens";
 import { anuncios, contratoFeedbackSeparado } from "@/test/feedback-acao";
@@ -33,8 +34,9 @@ const props = {
 const tela = () => m.ganchos!.renderizar(FormularioDesignacao, props);
 type AoMudar = (e: { target: { value: string } }) => void;
 
+const combo = (t: ReactNode) => elementos(t).find((n) => n.type === CampoCombobox)!;
 function escolher(professor = "prof-2", motivo = "Designação independente.") {
-  (elementos(tela()).find((n) => n.type === "select")!.props.onChange as AoMudar)({ target: { value: professor } });
+  (combo(tela()).props.onChange as AoMudar)({ target: { value: professor } });
   (elementos(tela()).find((n) => n.type === CampoTexto)!.props.onChange as AoMudar)({ target: { value: motivo } });
 }
 const botao = () => elementos(tela()).find((n) => n.type === "button" && n.props.type !== "button")!;
@@ -79,7 +81,10 @@ describe("FormularioDesignacao — buscar não apaga o motivo", () => {
   const comBusca = { ...props, professores: [{ id: "prof-1", nome: "Ana" }, { id: "prof-2", nome: "Bia" }, { id: "prof-3", nome: "Bruno" }], busca: "", refinarBusca: false };
   const telaBusca = (p = comBusca) => m.ganchos!.renderizar(FormularioDesignacao, p);
   const busca = (t = telaBusca()) => elementos(t).find((n) => n.type === "input" && n.props.type === "search")!;
-  const opcoes = (t = telaBusca()) => elementos(elementos(t).find((n) => n.type === "select") as unknown as ReactNode).filter((n) => n.type === "option").map((n) => texto(n.props.children));
+  const opcoes = (t = telaBusca()) => {
+    const campo = combo(t);
+    return [campo.props.placeholder, ...(campo.props.opcoes as { rotulo: string }[]).map((o) => o.rotulo)];
+  };
   const digitarBusca = (v: string) => (busca().props.onChange as AoMudar)({ target: { value: v } });
 
   it("com a lista completa, filtra em memória enquanto digita — sem ir ao servidor", () => {
@@ -89,27 +94,27 @@ describe("FormularioDesignacao — buscar não apaga o motivo", () => {
   });
 
   it("Buscar consulta o servidor sem remontar: motivo e professor escolhidos continuam, mesmo fora da lista nova", () => {
-    (elementos(telaBusca()).find((n) => n.type === "select")!.props.onChange as AoMudar)({ target: { value: "prof-2" } });
+    (combo(telaBusca()).props.onChange as AoMudar)({ target: { value: "prof-2" } });
     (elementos(telaBusca()).find((n) => n.type === CampoTexto)!.props.onChange as AoMudar)({ target: { value: "Motivo digitado antes da busca." } });
     digitarBusca("Car");
     (elementos(telaBusca()).find((n) => n.type === "button" && texto(n.props.children) === "Buscar")!.props.onClick as () => void)();
     expect(m.replace).toHaveBeenCalledWith("?busca=Car", { scroll: false });
     const depois = telaBusca({ ...comBusca, professores: [{ id: "prof-4", nome: "Carla" }], busca: "Car" });
     expect(elementos(depois).find((n) => n.type === CampoTexto)!.props.value).toBe("Motivo digitado antes da busca.");
-    expect(elementos(depois).find((n) => n.type === "select")!.props.value).toBe("prof-2");
+    expect(combo(depois).props.value).toBe("prof-2");
     expect(opcoes(depois)).toEqual(["Selecione uma opção", "Revogar a designação atual", "Bia", "Carla"]);
     expect(busca(depois).props.value).toBe("Car");
   });
 
   it("registrada a designação, professor e motivo voltam ao vazio (a busca digitada fica)", async () => {
     digitarBusca("Bi");
-    (elementos(telaBusca()).find((n) => n.type === "select")!.props.onChange as AoMudar)({ target: { value: "prof-2" } });
+    (combo(telaBusca()).props.onChange as AoMudar)({ target: { value: "prof-2" } });
     (elementos(telaBusca()).find((n) => n.type === CampoTexto)!.props.onChange as AoMudar)({ target: { value: "Designação conferida." } });
     m.designar.mockResolvedValueOnce({ ok: true });
     await submeter(telaBusca());
     expect(m.designar).toHaveBeenCalledWith(expect.objectContaining({ professorId: "prof-2", motivo: "Designação conferida." }));
     const depois = telaBusca();
-    expect(elementos(depois).find((n) => n.type === "select")!.props.value).toBe("");
+    expect(combo(depois).props.value).toBe("");
     expect(elementos(depois).find((n) => n.type === CampoTexto)!.props.value).toBe("");
     expect(busca(depois).props.value).toBe("Bi");
     expect(m.refresh).toHaveBeenCalledTimes(1);
