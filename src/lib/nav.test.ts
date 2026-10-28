@@ -12,6 +12,15 @@ describe("NAV", () => {
   });
 });
 
+describe("menu de matrículas", () => {
+  it("vendedor e gerente comercial não veem /secretaria", () => {
+    expect(navParaPapeis([Papel.VENDEDOR]).some((i) => i.href === "/secretaria")).toBe(false);
+    expect(navParaPapeis([Papel.GERENTE_COMERCIAL]).some((i) => i.href === "/secretaria")).toBe(false);
+    expect(navParaPapeis([Papel.ADMINISTRADOR]).some((i) => i.href === "/secretaria")).toBe(true);
+    expect(navParaPapeis([Papel.SECRETARIA_ACADEMICA]).some((i) => i.href === "/secretaria")).toBe(true);
+  });
+});
+
 describe("menu da Aria", () => {
   it("nav_aria_so_admin_e_gerente", () => {
     expect(navParaPapeis([Papel.VENDEDOR]).some((i) => i.href === "/aria")).toBe(false);

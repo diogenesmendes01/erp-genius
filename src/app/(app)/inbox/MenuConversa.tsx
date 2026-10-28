@@ -29,5 +29,5 @@ export function itensDoMenuConversa(o: { pode(a: AcaoInbox): boolean; fixada: bo
  ];
 }
 export function MenuConversa({ itens,refDoGatilho }: { itens: ItemMenuConversa[];refDoGatilho?:Ref<HTMLButtonElement> }) {
- return <Menu refDoGatilho={refDoGatilho} rotulo="Mais ações da conversa" gatilho={<IconDotsVertical size={17} />} itens={itens} densidade="compacta" folhaNoCelular classeGatilho="h-9 w-9 shrink-0 rounded-full text-gray-600 aria-expanded:bg-gray-100" />;
+ return <Menu refDoGatilho={refDoGatilho} rotulo="Mais ações da conversa" gatilho={<IconDotsVertical size={17} />} itens={itens} densidade="compacta" folhaNoCelular classeGatilho="h-9 w-9 shrink-0 rounded-full text-gray-600 aria-expanded:bg-highlight" />;
 }

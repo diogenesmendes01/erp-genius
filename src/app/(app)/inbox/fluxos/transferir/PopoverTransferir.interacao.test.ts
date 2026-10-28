@@ -7,14 +7,16 @@ let root: Root, host: Elemento, doc: Documento;
 const fechar = vi.fn();
 const teclas: { tipo: string; fn: (e: unknown) => void }[] = [];
 let gatilho: Elemento;
-function props(el: Elemento) { const key = Object.keys(el).find(k => k.startsWith("__reactProps"))!; return (el as unknown as Record<string, { onClick(): void; onChange(e: unknown): void; onSubmit(e: unknown): void }>)[key]; }
+function props(el: Elemento) { const key = Object.keys(el).find(k => k.startsWith("__reactProps"))!; return (el as unknown as Record<string, { onClick(): void; onChange(e: unknown): void; onSubmit(e: unknown): void; onCheckedChange?(v: boolean): void; onValueChange?(v: string): void }>)[key]; }
+function disparar(el: Elemento, nome: string, arg?: unknown) { const direto = props(el) as unknown as Record<string, unknown>; if (typeof direto[nome] === "function") { (direto[nome] as (a?: unknown) => void)(arg); return; } const fk = Object.keys(el).find(k => k.startsWith("__reactFiber")); let f = fk ? (el as unknown as Record<string, { return?: unknown; memoizedProps?: Record<string, unknown> }>)[fk] : undefined; while (f) { const fn = f.memoizedProps?.[nome]; if (typeof fn === "function") { (fn as (a?: unknown) => void)(arg); return; } f = f.return as typeof f; } throw new Error("sem " + nome); }
+const marcado = (el: Elemento | null) => el?.getAttribute("aria-checked") === "true";
 const executar = vi.fn();
 async function montar(ocupado = false, temResumoAria = false, pessoas:PessoaTransferir[]|null=[{id:"b",nome:"Beatriz"}]) {
  await act(async () => root.render(createElement(PopoverTransferir, { atendimentoId: "a", ancora: { current: gatilho as unknown as HTMLButtonElement }, opcoes: { visivel: true, pessoas: true, setores: ["SECRETARIA"], filaDoSetor: "COMERCIAL", aria: true }, pessoas, destinos: [], ocupado, temResumoAria, aoFechar: fechar, aoExecutar: executar })));
 }
 const botao = (texto: string) => doc.body.querySelectorAll("button").find(b => b.textContent === texto)!;
 async function clicar(texto: string) { await act(async () => props(botao(texto)).onClick()); }
-async function mudar(tag: string, valor: string) { await act(async () => props(doc.body.querySelector(tag)!).onChange({target:{value:valor}})); }
+async function mudar(tag: string, valor: string) { const el = doc.body.querySelector(tag)!; await act(async () => { const p = props(el); if (typeof p.onChange === "function" && tag === "textarea") p.onChange({target:{value:valor}}); else disparar(el, "onValueChange", valor); }); }
 async function confirmar() { await act(async () => props(doc.body.querySelector("form")!).onSubmit({preventDefault(){}})); }
 beforeEach(async () => {
   fechar.mockReset(); teclas.length = 0;
@@ -33,18 +35,18 @@ afterEach(async () => { await act(async () => root.unmount()); desligarObservado
 it("pessoa exige seleção, conserva contexto ao voltar e só confirma por submit", async () => {
  executar.mockReset(); await montar(); await clicar("Pessoas");
  expect(botao("Transferir").hasAttribute("disabled")).toBe(true);
- await mudar('input[type="radio"]', "b"); await mudar("textarea", "  Contexto preservado  ");
+ await mudar('[role="radio"]', "b"); await mudar("textarea", "  Contexto preservado  ");
  await clicar("Voltar"); await clicar("Pessoas");
  expect((doc.body.querySelector("textarea") as unknown as {value:string}).value).toBe("  Contexto preservado  ");
  expect(executar).not.toHaveBeenCalled(); await confirmar();
  expect(executar).toHaveBeenCalledWith({alvo:{tipo:"pessoa",usuarioId:"b"},contexto:"Contexto preservado"});
 });
 it("369 setor aceita contexto curto; fila preserva action sem contexto adicional", async () => {
- executar.mockReset(); await montar(); await clicar("Equipes e filas"); await mudar("select", "SECRETARIA");
+ executar.mockReset(); await montar(); await clicar("Equipes e filas"); await mudar('button[aria-label="Equipe ou fila"]', "SECRETARIA");
  await mudar("textarea", "curto"); await confirmar(); expect(executar).toHaveBeenLastCalledWith({alvo:{tipo:"setor",setor:"SECRETARIA",destinoChave:null},contexto:"curto",anexarResumoAria:false});
  await mudar("textarea", "Contexto suficiente"); await confirmar();
  expect(executar).toHaveBeenLastCalledWith({alvo:{tipo:"setor",setor:"SECRETARIA",destinoChave:null},contexto:"Contexto suficiente",anexarResumoAria:false});
- await mudar("select", "fila"); await confirmar(); expect(executar).toHaveBeenLastCalledWith({alvo:{tipo:"fila"},contexto:"Contexto suficiente"});
+ await mudar('button[aria-label="Equipe ou fila"]', "fila"); await confirmar(); expect(executar).toHaveBeenLastCalledWith({alvo:{tipo:"fila"},contexto:"Contexto suficiente"});
 });
 it("Aria exige confirmação deliberada e ocupado impede handler de submit", async () => {
  executar.mockReset(); await montar(); await clicar("Devolver para a Aria"); expect(executar).not.toHaveBeenCalled();
@@ -54,22 +56,22 @@ it("Aria exige confirmação deliberada e ocupado impede handler de submit", asy
 
 
 it("a mudança de passo mantém foco num campo da mesma abertura", async () => {
- await montar(); await clicar("Pessoas"); expect(doc.activeElement === doc.body.querySelector('input[type="radio"]')).toBe(true);
+ await montar(); await clicar("Pessoas"); expect(doc.activeElement === doc.body.querySelector('[role="radio"]')).toBe(true);
  await clicar("Voltar"); expect(doc.body.contains(doc.activeElement)).toBe(true);
 });
 it("369 resumo disponível começa marcado, permite desmarcar e só envia booleano de conteúdo",async()=>{
- executar.mockReset();await montar(false,true);await clicar("Equipes e filas");await mudar("select","SECRETARIA");
- const checkbox=doc.body.querySelector('input[type="checkbox"]');expect(checkbox!==null).toBe(true);expect((checkbox as unknown as {checked:boolean}).checked).toBe(true);
+ executar.mockReset();await montar(false,true);await clicar("Equipes e filas");await mudar('button[aria-label="Equipe ou fila"]',"SECRETARIA");
+ const checkbox=doc.body.querySelector('[role="checkbox"]');expect(checkbox!==null).toBe(true);expect(marcado(checkbox)).toBe(true);
  await confirmar();expect(executar).toHaveBeenLastCalledWith({alvo:{tipo:"setor",setor:"SECRETARIA",destinoChave:null},contexto:"",anexarResumoAria:true});
- await act(async()=>props(checkbox!).onChange({target:{checked:false}}));await confirmar();expect(executar).toHaveBeenLastCalledWith({alvo:{tipo:"setor",setor:"SECRETARIA",destinoChave:null},contexto:"",anexarResumoAria:false});
+ await act(async()=>disparar(checkbox!,"onCheckedChange",false));await confirmar();expect(executar).toHaveBeenLastCalledWith({alvo:{tipo:"setor",setor:"SECRETARIA",destinoChave:null},contexto:"",anexarResumoAria:false});
 });
 it("369 sem resumo o setor confirma vazio sem checkbox, e dado tardio não desfaz escolha humana",async()=>{
- executar.mockReset();await montar(false,false);await clicar("Equipes e filas");await mudar("select","SECRETARIA");expect(doc.body.querySelector('input[type="checkbox"]')).toBeNull();await confirmar();expect(executar).toHaveBeenLastCalledWith({alvo:{tipo:"setor",setor:"SECRETARIA",destinoChave:null},contexto:"",anexarResumoAria:false});
- await montar(false,true);const checkbox=doc.body.querySelector('input[type="checkbox"]')!;expect((checkbox as unknown as {checked:boolean}).checked).toBe(true);await act(async()=>props(checkbox).onChange({target:{checked:false}}));await montar(false,true);expect((doc.body.querySelector('input[type="checkbox"]') as unknown as {checked:boolean}).checked).toBe(false);
+ executar.mockReset();await montar(false,false);await clicar("Equipes e filas");await mudar('button[aria-label="Equipe ou fila"]',"SECRETARIA");expect(doc.body.querySelector('[role="checkbox"]')).toBeNull();await confirmar();expect(executar).toHaveBeenLastCalledWith({alvo:{tipo:"setor",setor:"SECRETARIA",destinoChave:null},contexto:"",anexarResumoAria:false});
+ await montar(false,true);const checkbox=doc.body.querySelector('[role="checkbox"]')!;expect(marcado(checkbox)).toBe(true);await act(async()=>disparar(checkbox,"onCheckedChange",false));await montar(false,true);expect(marcado(doc.body.querySelector('[role="checkbox"]'))).toBe(false);
 });
 
 it("371 Pessoas usa radios nativos e carga indisponível não vira zero",async()=>{
- await montar();await clicar("Pessoas");const campo=doc.body.querySelector('input[type="radio"]');
+ await montar();await clicar("Pessoas");const campo=doc.body.querySelector('[role="radio"]');
  expect(campo).not.toBeNull();expect(doc.body.querySelector("fieldset")).not.toBeNull();expect(doc.body.querySelector("legend")?.textContent).toContain("Pessoa");
  expect(campo?.getAttribute("required")).not.toBeNull();expect(doc.body.textContent).toContain("Carga indisponível");expect(doc.body.textContent).not.toContain("0 conversas abertas");
 });
@@ -77,24 +79,24 @@ it("371 Pessoas usa radios nativos e carga indisponível não vira zero",async()
 it("371 carga0/1/2 em duas linhas e grupo único preservam alvo e foco",async()=>{
  executar.mockReset();await montar(false,false,[{id:"b",nome:"Beatriz",carga:0},{id:"c",nome:"Carla",carga:1},{id:"d",nome:"Diana",carga:2}]);await clicar("Pessoas");
  expect(doc.body.textContent).toContain("0 conversas abertas neste setor");expect(doc.body.textContent).toContain("1 conversa aberta neste setor");expect(doc.body.textContent).toContain("2 conversas abertas neste setor");
- const radios=doc.body.querySelectorAll('input[type="radio"]');expect(radios).toHaveLength(3);expect(new Set(radios.map(r=>(r as unknown as {name:string}).name)).size).toBe(1);
- expect(doc.activeElement).toBe(radios[0]);await act(async()=>props(radios[2]).onChange({target:{value:"d"}}));await clicar("Voltar");await clicar("Pessoas");
- expect(doc.activeElement).toBe(doc.body.querySelectorAll('input[type="radio"]')[2]);await confirmar();expect(executar).toHaveBeenCalledExactlyOnceWith({alvo:{tipo:"pessoa",usuarioId:"d"},contexto:""});
+ const radios=doc.body.querySelectorAll('[role="radio"]');expect(radios).toHaveLength(3);expect(new Set(radios.map(r=>(r as unknown as {name:string}).name)).size).toBe(1);
+ expect(doc.activeElement).toBe(radios[0]);await act(async()=>disparar(radios[2],"onValueChange","d"));await clicar("Voltar");await clicar("Pessoas");
+ expect(doc.activeElement).toBe(doc.body.querySelectorAll('[role="radio"]')[2]);await confirmar();expect(executar).toHaveBeenCalledExactlyOnceWith({alvo:{tipo:"pessoa",usuarioId:"d"},contexto:""});
 });
 it("371 carregando e ocupado não fabricam carga ou seleção; chegada foca o radio local",async()=>{
  await montar(false,false,null);await clicar("Pessoas");expect(doc.body.textContent).toContain("Carregando pessoas");expect(botao("Transferir").hasAttribute("disabled")).toBe(true);
- await montar(false,false,[{id:"b",nome:"Beatriz",carga:2}]);expect(doc.activeElement).toBe(doc.body.querySelector('input[type="radio"]'));
- await montar(true,false,[{id:"b",nome:"Beatriz",carga:2}]);expect(doc.body.querySelector('input[type="radio"]')?.hasAttribute("disabled")).toBe(true);
+ await montar(false,false,[{id:"b",nome:"Beatriz",carga:2}]);expect(doc.activeElement).toBe(doc.body.querySelector('[role="radio"]'));
+ await montar(true,false,[{id:"b",nome:"Beatriz",carga:2}]);expect(doc.body.querySelector('[role="radio"]')?.hasAttribute("disabled")).toBe(true);
 });
 
 it("376 presença opcional informa status sem mudar seleção/contexto/payload ou inventar online",async()=>{
- executar.mockReset();await montar(false,false,[{id:"b",nome:"Beatriz",carga:2,presenca:"ausente"} as PessoaTransferir]);await clicar("Pessoas");expect(doc.body.textContent).toContain("Ausente");await mudar('input[type="radio"]',"b");await mudar("textarea","Meu contexto");
+ executar.mockReset();await montar(false,false,[{id:"b",nome:"Beatriz",carga:2,presenca:"ausente"} as PessoaTransferir]);await clicar("Pessoas");expect(doc.body.textContent).toContain("Ausente");await mudar('[role="radio"]',"b");await mudar("textarea","Meu contexto");
  await montar(false,false,[{id:"b",nome:"Beatriz",carga:2}]);expect(doc.body.textContent).toContain("Presença indisponível");expect(doc.body.textContent).not.toContain("Online");expect((doc.body.querySelector("textarea") as unknown as {value:string}).value).toBe("Meu contexto");await confirmar();expect(executar).toHaveBeenCalledExactlyOnceWith({alvo:{tipo:"pessoa",usuarioId:"b"},contexto:"Meu contexto"});
 });
 
 it("D5 pessoa com resumo disponível oferece o checkbox e envia o booleano; sem resumo não envia",async()=>{
- executar.mockReset();await montar(false,true);await clicar("Pessoas");await mudar('input[type="radio"]',"b");
- const checkbox=doc.body.querySelector('input[type="checkbox"]');expect(checkbox!==null).toBe(true);
+ executar.mockReset();await montar(false,true);await clicar("Pessoas");await mudar('[role="radio"]',"b");
+ const checkbox=doc.body.querySelector('[role="checkbox"]');expect(checkbox!==null).toBe(true);
  await confirmar();expect(executar).toHaveBeenLastCalledWith({alvo:{tipo:"pessoa",usuarioId:"b"},contexto:"",anexarResumoAria:true});
- await act(async()=>props(checkbox!).onChange({target:{checked:false}}));await confirmar();expect(executar).toHaveBeenLastCalledWith({alvo:{tipo:"pessoa",usuarioId:"b"},contexto:"",anexarResumoAria:false});
+ await act(async()=>disparar(checkbox!,"onCheckedChange",false));await confirmar();expect(executar).toHaveBeenLastCalledWith({alvo:{tipo:"pessoa",usuarioId:"b"},contexto:"",anexarResumoAria:false});
 });

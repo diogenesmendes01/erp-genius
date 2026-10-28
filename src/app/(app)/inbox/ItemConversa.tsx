@@ -22,10 +22,10 @@ export function ItemConversa({ item, selecionado, agora, aoSelecionar, usuarioId
       type="button"
       aria-current={selecionado ? "true" : undefined}
       onClick={aoSelecionar}
-      className={"flex w-full gap-3 rounded-lg px-2.5 py-[11px] text-left " + (selecionado ? "bg-gray-100" : "hover:bg-surface-muted")}
+      className={"flex w-full gap-3 rounded-lg px-2.5 py-[11px] text-left " + (selecionado ? "bg-highlight" : "hover:bg-surface-muted")}
     >
       {item.grupo
-        ? <span data-testid="icone-grupo" className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-gray-100 text-gray-600"><IconUsersGroup size={20} aria-label="Grupo" /></span>
+        ? <span data-testid="icone-grupo" className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-surface-muted text-gray-600"><IconUsersGroup size={20} aria-label="Grupo" /></span>
         : <Avatar nome={item.contatoNome} tamanho={44} tom={visual.avatarTom} selo={visual.seloIa ? "ia" : undefined} />}
       <span className="flex min-w-0 flex-1 flex-col gap-[3px]">
         <span className="flex items-baseline gap-2">

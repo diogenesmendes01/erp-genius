@@ -5,6 +5,9 @@ import { useEffect, useRef, useState } from "react";
 import type { Papel, StatusAtendimentoWhatsApp } from "@prisma/client";
 import { Botao } from "@/components/Botao";
 import { Campo } from "@/components/Campo";
+import { Combobox } from "@/components/ui/combobox";
+import { Checkbox } from "@/components/ui/checkbox";
+import { garantirEstilo } from "@/app/(app)/inbox/garantir-estilo";
 import { CampoTexto } from "@/components/CampoTexto";
 import { ConfirmarAcao } from "@/components/ConfirmarAcao";
 import { EstadoVazio } from "@/components/EstadoVazio";
@@ -54,7 +57,7 @@ export interface PropsAcoesAtendimento {
 }
 
 const SILENCIO_HORAS = 8;
-const CLASSE_CONTROLE = "w-full rounded-md border border-gray-300 px-2 py-1.5 text-sm";
+const CLASSE_CONTROLE = "w-full rounded-md border border-gray-200 px-2 py-1.5 text-sm";
 
 export function validarQuando(quando:string,fuso:string,agora:Date=new Date()):string|null {
   const erro=validarQuandoAgendar(quando,fuso,agora);
@@ -158,6 +161,7 @@ function Rodape({ ocupado, aoFechar, children }: { ocupado: boolean; aoFechar: (
 }
 
 export function DialogoTransferir({ atendimentoId, finalidade, setoresDoNumero, destinos = [], aoFechar, aoConcluir }: PropsDialogo & { atendimentoId: string; finalidade: Setor; setoresDoNumero: Setor[]; destinos?: DestinoTransferencia[] }) {
+  garantirEstilo();
   const acao = useAcaoCliente({ idempotente: true });
   const tentativa = useChaveIdempotencia();
   const setores = setoresParaTransferir(setoresDoNumero, finalidade);
@@ -183,18 +187,13 @@ export function DialogoTransferir({ atendimentoId, finalidade, setoresDoNumero, 
           <>
             <Campo rotulo="Setor de destino" obrigatorio>
               {(c) => (
-                <select {...c} className={CLASSE_CONTROLE} value={destino} onChange={(e) => { setDestino(e.target.value as Setor); setChave(""); }}>
-                  {setores.map((s) => <option key={s} value={s}>{rotular(SETOR_ATENDIMENTO_LABEL, s)}</option>)}
-                </select>
+                <Combobox id={c.id} className={CLASSE_CONTROLE} value={destino} onValueChange={(valor) => { setDestino(valor as Setor); setChave(""); }} opcoes={setores.map((s) => ({ valor: s, rotulo: rotular(SETOR_ATENDIMENTO_LABEL, s) }))} />
               )}
             </Campo>
             {exigeChave && (
               <Campo rotulo="Contexto do destino" obrigatorio dica={opcoes.length === 0 ? "Nenhuma matrícula ou aluno disponível para este setor." : undefined}>
                 {(c) => (
-                  <select {...c} className={CLASSE_CONTROLE} value={chave} onChange={(e) => setChave(e.target.value)}>
-                    <option value="">Escolha…</option>
-                    {opcoes.map((o) => <option key={o.chave} value={o.chave}>{o.nome}</option>)}
-                  </select>
+                  <Combobox id={c.id} className={CLASSE_CONTROLE} value={chave} vazio="Escolha…" onValueChange={setChave} opcoes={opcoes.map((o) => ({ valor: o.chave, rotulo: o.nome }))} />
                 )}
               </Campo>
             )}
@@ -211,6 +210,7 @@ export function DialogoTransferir({ atendimentoId, finalidade, setoresDoNumero, 
 }
 
 export function DialogoPessoa({ atendimentoId, modo, aoFechar, aoConcluir }: PropsDialogo & { atendimentoId: string; modo: "atribuir" | "convidar" }) {
+  garantirEstilo();
   const acao = useAcaoCliente({ idempotente: true });
   const tentativa = useChaveIdempotencia();
   const fimDaTentativa = useRef<{ chave: string; dias: number; fim: string } | null>(null);
@@ -247,10 +247,7 @@ export function DialogoPessoa({ atendimentoId, modo, aoFechar, aoConcluir }: Pro
       <form onSubmit={(e) => void enviar(e)} className="space-y-3">
         <Campo rotulo="Pessoa" obrigatorio dica={pessoas && pessoas.length === 0 ? "Ninguém disponível." : undefined}>
           {(c) => (
-            <select {...c} className={CLASSE_CONTROLE} value={usuarioId} onChange={(e) => setUsuarioId(e.target.value)} disabled={!pessoas}>
-              <option value="">{pessoas ? "Escolha…" : "Carregando…"}</option>
-              {(pessoas ?? []).map((p) => <option key={p.id} value={p.id}>{p.nome}</option>)}
-            </select>
+            <Combobox id={c.id} aria-label="Pessoa" className={CLASSE_CONTROLE} value={usuarioId} onValueChange={setUsuarioId} disabled={!pessoas} vazio={pessoas ? "Escolha…" : "Carregando…"} busca="Buscar pessoa" opcoes={(pessoas ?? []).map((p) => ({ valor: p.id, rotulo: p.nome }))} />
           )}
         </Campo>
         {modo === "convidar" && (
@@ -258,7 +255,7 @@ export function DialogoPessoa({ atendimentoId, modo, aoFechar, aoConcluir }: Pro
             <Campo rotulo="Duração do convite (dias)" obrigatorio dica={`No máximo ${PRAZO_MAXIMO_CONVITE_DIAS} dias; começa agora.`}>
               {(c) => <input {...c} type="number" min={1} max={PRAZO_MAXIMO_CONVITE_DIAS} className={CLASSE_CONTROLE} value={dias} onChange={(e) => setDias(Math.min(PRAZO_MAXIMO_CONVITE_DIAS, Math.max(1, Number(e.target.value) || 1)))} />}
             </Campo>
-            <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={podeEnviar} onChange={(e) => setPodeEnviar(e.target.checked)} /> Pode enviar mensagens</label>
+            <label className="flex items-center gap-2 text-sm"><Checkbox checked={podeEnviar} onCheckedChange={(valor) => setPodeEnviar(valor === true)} /> Pode enviar mensagens</label>
             <Campo rotulo="Motivo do convite" obrigatorio>
               {(c) => <CampoTexto {...c} className={CLASSE_CONTROLE} rows={3} minLength={10} maxLength={500} value={motivo} onChange={(e) => setMotivo(e.target.value)} />}
             </Campo>

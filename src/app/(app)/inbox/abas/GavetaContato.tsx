@@ -4,6 +4,10 @@ import { useEffect, useLayoutEffect, useId, useRef, useState, type MouseEvent } 
 import { Drawer } from "@/components/Drawer";
 import { Botao } from "@/components/Botao";
 import { Campo } from "@/components/Campo";
+import { Combobox } from "@/components/ui/combobox";
+import { Checkbox } from "@/components/ui/checkbox";
+import { CampoData } from "@/components/ui/date-picker";
+import { garantirEstilo } from "@/app/(app)/inbox/garantir-estilo";
 import { FeedbackAcao } from "@/components/FeedbackAcao";
 import { useAcaoCliente } from "@/lib/acao-cliente";
 import { ORIGEM_CANAL_LABEL } from "@/lib/labels";
@@ -17,8 +21,9 @@ export type PropsGavetaContato = {
   aoFechar(): void; aoSalvo(): void; aoRecarregar?(): void;
 };
 export function GavetaContato(props: PropsGavetaContato) { return <EdicaoDoAtendimento key={props.atendimentoId} {...props} />; }
-const CONTROLE = "min-h-11 w-full rounded border border-gray-300 bg-surface px-3 py-2 text-sm disabled:text-disabled";
+const CONTROLE = "min-h-11 w-full rounded border border-gray-200 bg-surface px-3 py-2 text-sm disabled:text-disabled";
 function EdicaoDoAtendimento({ atendimentoId, dados, erro, podeVerFicha = false, aoFechar, aoSalvo, aoRecarregar }: PropsGavetaContato) {
+  garantirEstilo();
   const [snapshot, setSnapshot] = useState(dados);
   const [form, setForm] = useState(() => dados ? formDoContato(dados) : null);
   if (!snapshot && dados) { setSnapshot(dados); setForm(formDoContato(dados)); }
@@ -65,15 +70,13 @@ function EdicaoDoAtendimento({ atendimentoId, dados, erro, podeVerFicha = false,
       : !snapshot.pessoa || !form ? <p role="status" className="text-sm text-gray-600">Nenhuma pessoa disponível para edição neste atendimento.</p>
       : <form id={id} onSubmit={e => void salvar(e)} className="space-y-4">
         {([['nome', 'Nome', 200], ['email', 'E-mail', 200], ['cidade', 'Cidade', 120], ['cargo', 'Cargo', 120], ['linkedin', 'LinkedIn', 300]] as const).map(([nome, rotulo, maxLength]) => <Campo key={nome} rotulo={rotulo} obrigatorio={nome === "nome"}>{ligacao => <input {...ligacao} name={nome} value={form[nome]} maxLength={maxLength} type={nome === "email" ? "email" : "text"} disabled={acao.ocupado} onChange={e => mudar(nome, e.target.value)} className={CONTROLE} />}</Campo>)}
-        <Campo rotulo="Origem do contato">{ligacao => <select {...ligacao} name="origemCanal" value={form.origemCanal} disabled={acao.ocupado} onChange={e => mudar("origemCanal", e.target.value as FormContato["origemCanal"])} className={CONTROLE}>
-          <option value="">Sem origem</option>{Object.entries(ORIGEM_CANAL_LABEL).map(([valor,rotulo]) => <option key={valor} value={valor}>{rotulo}</option>)}
-        </select>}</Campo>
+        <Campo rotulo="Origem do contato">{ligacao => <Combobox id={ligacao.id} name="origemCanal" value={form.origemCanal} disabled={acao.ocupado} onValueChange={valor => mudar("origemCanal", valor as FormContato["origemCanal"])} vazio="Sem origem" className={CONTROLE} opcoes={Object.entries(ORIGEM_CANAL_LABEL).map(([valor,rotulo]) => ({ valor, rotulo }))} />}</Campo>
         {podeEditarCadastro&&form.cadastro&&<fieldset className="space-y-4">
           <legend className="text-sm font-medium">Cadastro pessoal</legend>
           <Campo rotulo="Documento pessoal">{ligacao=><input {...ligacao} name="documento" maxLength={DOCUMENTO_PESSOA_MAX} value={form.cadastro!.documento} disabled={acao.ocupado} onChange={e=>mudarCadastro("documento",e.target.value)} className={CONTROLE}/>}</Campo>
-          <Campo rotulo="Tipo de documento">{ligacao=><select {...ligacao} name="tipoDocumentoId" value={form.cadastro!.tipoDocumentoId} disabled={acao.ocupado} onChange={e=>mudarCadastro("tipoDocumentoId",e.target.value)} className={CONTROLE}><option value="">Sem tipo</option>{snapshot.informacoesCadastro?.catalogo?.map(t=><option key={t.id} value={t.id}>{t.pais.nome} · {t.nome}</option>)}</select>}</Campo>
+          <Campo rotulo="Tipo de documento">{ligacao=><Combobox id={ligacao.id} name="tipoDocumentoId" value={form.cadastro!.tipoDocumentoId} disabled={acao.ocupado} onValueChange={valor=>mudarCadastro("tipoDocumentoId",valor)} vazio="Sem tipo" busca="Buscar tipo" className={CONTROLE} opcoes={(snapshot.informacoesCadastro?.catalogo??[]).map(t=>({valor:t.id, rotulo:`${t.pais.nome} · ${t.nome}`}))} />}</Campo>
           <Campo rotulo="País emissor (ISO)">{ligacao=><input {...ligacao} name="documentoPaisEmissor" value={form.cadastro!.documentoPaisEmissor} maxLength={2} disabled={acao.ocupado} onChange={e=>mudarCadastro("documentoPaisEmissor",e.target.value)} className={CONTROLE}/>}</Campo>
-          <Campo rotulo="Nascimento">{ligacao=><input {...ligacao} name="nascimento" type="date" value={form.cadastro!.nascimento} min="0001-01-01" max="9999-12-31" disabled={acao.ocupado} onChange={e=>mudarCadastro("nascimento",e.target.value)} className={CONTROLE}/>}</Campo>
+          <Campo rotulo="Nascimento">{ligacao=><CampoData {...ligacao} name="nascimento" value={form.cadastro!.nascimento} min="0001-01-01" max="9999-12-31" disabled={acao.ocupado} onChange={e=>mudarCadastro("nascimento",e.target.value)} className={CONTROLE}/>}</Campo>
           <p className="text-sm text-gray-600">Documento e nascimento são opcionais. Confira o tipo e o país emissor.</p>
         </fieldset>}
         {snapshot.campos.map(campo => <CampoPersonalizado key={campo.id} campo={campo} valor={form.campos[campo.id]} ocupado={acao.ocupado} aoMudar={valor => mudarCampo(campo.id, valor)} />)}
@@ -84,7 +87,8 @@ function EdicaoDoAtendimento({ atendimentoId, dados, erro, podeVerFicha = false,
 }
 
 function CampoPersonalizado({ campo, valor, ocupado, aoMudar }: { campo: CampoPainel; valor: ValorCampo; ocupado: boolean; aoMudar(valor: ValorCampo): void }) {
-  if (campo.tipo === "BOOLEANO") return <Campo rotulo={campo.nome} obrigatorio={campo.obrigatorio}>{ligacao => <input {...ligacao} name={campo.id} type="checkbox" checked={valor === true} disabled={ocupado} onChange={e => aoMudar(e.target.checked)} className="h-5 w-5 accent-brand-700" />}</Campo>;
-  if (campo.tipo === "SELECAO") return <Campo rotulo={campo.nome} obrigatorio={campo.obrigatorio}>{ligacao => <select {...ligacao} name={campo.id} value={String(valor ?? "")} disabled={ocupado} onChange={e => aoMudar(e.target.value || null)} className={CONTROLE}><option value="">Sem valor</option>{campo.opcoes.map(opcao => <option key={opcao} value={opcao}>{opcao}</option>)}</select>}</Campo>;
-  return <Campo rotulo={campo.nome} obrigatorio={campo.obrigatorio}>{ligacao => <input {...ligacao} name={campo.id} type={campo.tipo === "NUMERO" ? "number" : campo.tipo === "DATA" ? "date" : "text"} value={String(valor ?? "")} step={campo.tipo === "NUMERO" ? "any" : undefined} disabled={ocupado} onChange={e => aoMudar(e.target.value === "" ? null : campo.tipo === "NUMERO" ? Number(e.target.value) : e.target.value)} className={CONTROLE} />}</Campo>;
+  if (campo.tipo === "BOOLEANO") return <Campo rotulo={campo.nome} obrigatorio={campo.obrigatorio}>{ligacao => <Checkbox id={ligacao.id} name={campo.id} checked={valor === true} disabled={ocupado} onCheckedChange={marcado => aoMudar(marcado === true)} />}</Campo>;
+  if (campo.tipo === "SELECAO") return <Campo rotulo={campo.nome} obrigatorio={campo.obrigatorio}>{ligacao => <Combobox id={ligacao.id} name={campo.id} value={String(valor ?? "")} disabled={ocupado} onValueChange={proximo => aoMudar(proximo || null)} vazio="Sem valor" className={CONTROLE} opcoes={campo.opcoes.map(opcao => ({ valor: opcao, rotulo: opcao }))} />}</Campo>;
+  if (campo.tipo === "DATA") return <Campo rotulo={campo.nome} obrigatorio={campo.obrigatorio}>{ligacao => <CampoData {...ligacao} name={campo.id} value={String(valor ?? "")} disabled={ocupado} onChange={e => aoMudar(e.target.value || null)} className={CONTROLE} />}</Campo>;
+  return <Campo rotulo={campo.nome} obrigatorio={campo.obrigatorio}>{ligacao => <input {...ligacao} name={campo.id} type={campo.tipo === "NUMERO" ? "number" : "text"} value={String(valor ?? "")} step={campo.tipo === "NUMERO" ? "any" : undefined} disabled={ocupado} onChange={e => aoMudar(e.target.value === "" ? null : campo.tipo === "NUMERO" ? Number(e.target.value) : e.target.value)} className={CONTROLE} />}</Campo>;
 }

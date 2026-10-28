@@ -2,6 +2,8 @@
 import { useEffect, useRef, useState, type ChangeEvent } from "react";
 import { IconCalendarTime, IconPencil, IconTrash } from "@tabler/icons-react";
 import { Botao } from "@/components/Botao";
+import { Checkbox } from "@/components/ui/checkbox";
+import { garantirEstilo } from "@/app/(app)/inbox/garantir-estilo";
 import { CampoTexto } from "@/components/CampoTexto";
 import { EstadoVazio } from "@/components/EstadoVazio";
 import { FeedbackAcao } from "@/components/FeedbackAcao";
@@ -17,6 +19,7 @@ import type { Resultado } from "@/server/_shared/resultado";
 type Props={atendimentoId:string;tarefas:TarefaPainel[];fusoEscola:string;fuso:string|null;podeCriar:boolean;aoNova?():void;aoEditar?(t:TarefaPainel):void;aoMudar():void};
 const VERSAO="Esta tarefa foi alterada por outra pessoa. Recarregue.";
 export function TarefasOportunidade(props:Props){
+ garantirEstilo();
  return <SessaoTarefas key={props.atendimentoId} {...props}/>;
 }
 function SessaoTarefas({atendimentoId,tarefas,fusoEscola,podeCriar,aoNova,aoEditar,aoMudar}:Props){
@@ -43,7 +46,7 @@ function SessaoTarefas({atendimentoId,tarefas,fusoEscola,podeCriar,aoNova,aoEdit
  return <section aria-label="Tarefas da oportunidade" className="space-y-2 border-t border-border-soft pt-4">
   <header className="flex flex-wrap items-center justify-between gap-2"><h3 className="text-sm font-medium">Tarefas · {tarefas.filter(t=>t.status==="ABERTA").length} aberta(s)</h3>{podeCriar&&aoNova&&<Botao variante="fantasma" tamanho="sm" onClick={aoNova}>+ Nova tarefa</Botao>}</header>
   {!tarefas.length?<EstadoVazio>Nenhuma tarefa para esta oportunidade.</EstadoVazio>:<ul className="space-y-2">{tarefas.map(t=><li key={t.id} className="flex min-w-0 items-start gap-2 rounded-md border border-border-soft bg-surface-muted p-2">
-   {(t.podeAgir||t.status==="CONCLUIDA")&&<input type="checkbox" title={t.status==="CONCLUIDA"?"Reabrir":"Concluir"} aria-label={(t.status==="CONCLUIDA"?"Reabrir ":"Concluir ")+t.titulo} checked={t.status==="CONCLUIDA"} disabled={exec.ocupado} className="mt-1 h-[18px] w-[18px] shrink-0 accent-brand-600" onChange={()=>{if(t.status==="CONCLUIDA")void executar(t,()=>reabrirTarefaNoInbox(atendimentoId,t.id,t.versao));else if(t.mensagemAgendada)setConcluindo(t);else void executar(t,()=>concluirTarefaNoInbox(atendimentoId,t.id,t.versao));}}/>}
+   {(t.podeAgir||t.status==="CONCLUIDA")&&<Checkbox title={t.status==="CONCLUIDA"?"Reabrir":"Concluir"} aria-label={(t.status==="CONCLUIDA"?"Reabrir ":"Concluir ")+t.titulo} checked={t.status==="CONCLUIDA"} disabled={exec.ocupado} className="mt-1" onCheckedChange={()=>{if(t.status==="CONCLUIDA")void executar(t,()=>reabrirTarefaNoInbox(atendimentoId,t.id,t.versao));else if(t.mensagemAgendada)setConcluindo(t);else void executar(t,()=>concluirTarefaNoInbox(atendimentoId,t.id,t.versao));}}/>}
    <div className="min-w-0 flex-1"><p className={"text-[13.5px] [overflow-wrap:anywhere]"+(t.status==="CONCLUIDA"?" line-through":"")}>{t.titulo}</p><p className={"text-xs [overflow-wrap:anywhere] "+(t.atrasada?"text-red-700":"text-gray-600")}>{t.dataCivil?t.dataCivil.split("-").reverse().join("/")+(t.hora?" "+t.hora:"")+" ("+t.fusoOrigem+")":"Sem prazo"} · {t.responsavel?.nome??"Sem responsável"} · {rotular(TIPO_TAREFA_LABEL,t.tipo)}</p>{t.mensagemAgendada&&<p className="text-xs font-medium text-brand-700">{textoSeloMensagemAgendada(t.mensagemAgendada.quando)}<span className="mt-0.5 block font-normal text-gray-600">{AVISO_REMARCACAO_MENSAGEM}</span></p>}{t.ia&&<span aria-label="Criada pela IA" title="Criada pela IA" className="text-xs text-gray-600">✦</span>}</div>
    {t.podeAgir&&<div className="flex shrink-0 flex-wrap gap-1"><Botao variante="fantasma" tamanho="sm" title="Reagendar para amanhã 09:00" aria-label="Reagendar para amanhã 09:00" disabled={exec.ocupado||!amanha} onClick={()=>{const atual=atalhosDeHorario(new Date(),fusoEscola).find(a=>a.id==="amanha9");if(atual)void executar(t,()=>reagendarTarefaNoInbox(atendimentoId,t.id,t.versao,{...partesDoValorLocal(atual.valorLocal),fusoEscolaEsperado:fusoEscola}));}}><IconCalendarTime size={16}/></Botao>{aoEditar&&<Botao variante="fantasma" tamanho="sm" title="Editar" aria-label={"Editar "+t.titulo} disabled={exec.ocupado} onClick={()=>aoEditar(t)}><IconPencil size={16}/></Botao>}<Botao variante="perigo" tamanho="sm" title="Cancelar tarefa" aria-label={"Cancelar tarefa "+t.titulo} disabled={exec.ocupado} onClick={()=>{setDecisaoMensagem(null);setCancelando({...t,token:++geracao.current,invalidada:false});setMotivo("");}}><IconTrash size={16}/></Botao></div>}
   </li>)}</ul>}

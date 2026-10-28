@@ -6,6 +6,9 @@ import type {RespostaDoCompositor} from "@/components/conversa/respostas-rapidas
 import type {AnexoAgendamento,ComandoAgendamento,EntradaAgendamento,IntencaoAgendamento,VinculoAgendamento} from "./intencao-agendamento";
 import {PopoverFluxo} from "../PopoverFluxo";
 import {Botao} from "@/components/Botao";
+import {Checkbox} from "@/components/ui/checkbox";
+import {RadioGroup,RadioGroupItem} from "@/components/ui/radio-group";
+import {garantirEstilo} from "@/app/(app)/inbox/garantir-estilo";
 import {Campo} from "@/components/Campo";
 import {CampoTexto} from "@/components/CampoTexto";
 import {CampoDataHoraLocal} from "@/components/CampoDataHoraLocal";
@@ -33,6 +36,7 @@ export interface PropsPopoverAgendar {
 }
 function agoraReal(){return new Date();}
 export function PopoverAgendar({atendimentoId,fuso,nomeContato,textoInicial,ancora,agendadas,respostas,variaveisResposta,intencao,executar,podeAgendar,podeRecuperar,motivoBloqueio,editar,relogio=agoraReal,podeSalvarRascunho=true,insightsAplicaveis=false,versaoInsights=0,opcoes,subirArquivo,estadoLeitura="ok",erroLeitura=null,aoTentarLeitura,aoSalvarRascunho,aoFechar,aoConcluir}:PropsPopoverAgendar){
+ garantirEstilo();
  const estado=useSyncExternalStore(intencao.assinar,intencao.ler,intencao.ler);
  const modoEditar=!!editar||estado.comando?.tipo==="EDITAR";
  const [agoraAtual,setAgoraAtual]=useState(relogio);
@@ -90,7 +94,7 @@ export function PopoverAgendar({atendimentoId,fuso,nomeContato,textoInicial,anco
    <fieldset className="space-y-2"><legend className="text-sm font-medium">Quando</legend><div className="flex flex-wrap gap-1">{atalhosDeAgendamento(agoraAtual,fusoEfetivo).map(a=><Botao key={a.id} aria-pressed={quando===a.valorLocal} variante={quando===a.valorLocal?"secundario":"fantasma"} tamanho="sm" disabled={bloqueado} onClick={()=>mudarQuando(a.valorLocal)}>{a.rotulo}</Botao>)}</div>
     <Campo rotulo="Data e hora" obrigatorio erro={quando?validacao:null}>{c=><CampoDataHoraLocal {...c} name="quandoLocal" fuso={fusoEfetivo} className="w-full rounded-lg border border-border-soft bg-surface p-2" value={quando} disabled={bloqueado} onChange={e=>mudarQuando(e.target.value)}/>}</Campo>
    </fieldset>
-   {!modoEditar&&<label className="flex items-start gap-2 text-sm"><input type="checkbox" name="perguntarSeResponder" checked={perguntar} disabled={bloqueado} className="mt-0.5 h-4 w-4 shrink-0 accent-brand-600" onChange={e=>{if(!viva.current||bloqueado)return;intencao.reiniciar();setPerguntar(e.target.checked);setErroLocal(null);}}/>Perguntar antes de enviar se o contato responder</label>}
+   {!modoEditar&&<label className="flex items-start gap-2 text-sm"><Checkbox name="perguntarSeResponder" checked={perguntar} disabled={bloqueado} onCheckedChange={valor=>{if(!viva.current||bloqueado)return;intencao.reiniciar();setPerguntar(valor===true);setErroLocal(null);}}/>Perguntar antes de enviar se o contato responder</label>}
    {!modoEditar&&<fieldset className="space-y-2"><legend className="text-sm font-medium">Anexar</legend>
     <div className="flex flex-wrap gap-1">
      <Botao variante={anexo?.tipo==="proposta"||painelProposta?"secundario":"fantasma"} tamanho="sm" aria-pressed={anexo?.tipo==="proposta"} aria-expanded={painelProposta} disabled={bloqueado||subindo} onClick={()=>setPainelProposta(v=>!v)}><IconFileCheck size={14} aria-hidden/>Proposta</Botao>
@@ -103,7 +107,7 @@ export function PopoverAgendar({atendimentoId,fuso,nomeContato,textoInicial,anco
    </fieldset>}
    {!modoEditar&&<div><Botao variante="fantasma" tamanho="sm" aria-expanded={maisOpcoes} disabled={bloqueado} onClick={()=>setMaisOpcoes(v=>!v)}>{maisOpcoes?<IconChevronUp size={14} aria-hidden/>:<IconChevronDown size={14} aria-hidden/>}Mais opções</Botao>
     {maisOpcoes&&<fieldset className="mt-2 space-y-1"><legend className="text-sm font-medium">Vincular a</legend>
-     {[{valor:"",rotulo:"Nenhum"},...(oportunidadeVinculo?[{valor:"oportunidade",rotulo:"Oportunidade"}]:[]),...tarefasVinculo.map(t=>({valor:"tarefa:"+t.id,rotulo:"Tarefa · "+t.titulo}))].map(o=><label key={o.valor} className="flex min-h-8 items-center gap-2 text-sm"><input type="radio" name="vinculo" value={o.valor} checked={valorVinculo===o.valor} disabled={bloqueado} className="h-4 w-4 shrink-0 accent-brand-600" onChange={()=>mudarVinculo(o.valor)}/><span className="min-w-0 truncate">{o.rotulo}</span></label>)}
+     <RadioGroup name="vinculo" value={valorVinculo||"__nenhum__"} disabled={bloqueado} onValueChange={valor=>mudarVinculo(valor==="__nenhum__"?"":valor)}>{[{valor:"",rotulo:"Nenhum"},...(oportunidadeVinculo?[{valor:"oportunidade",rotulo:"Oportunidade"}]:[]),...tarefasVinculo.map(t=>({valor:"tarefa:"+t.id,rotulo:"Tarefa · "+t.titulo}))].map(o=><label key={o.valor||"nenhum"} className="flex min-h-8 items-center gap-2 text-sm"><RadioGroupItem value={o.valor||"__nenhum__"} disabled={bloqueado}/><span className="min-w-0 truncate">{o.rotulo}</span></label>)}</RadioGroup>
     </fieldset>}
    </div>}
    {conflito&&<p className="rounded-lg bg-amber-50 p-2 text-sm text-amber-700">Já existe uma mensagem agendada para {nomeContato} {quandoAgendada(conflito.agendadaPara,fusoEfetivo,agoraAtual)}, perto desse horário.</p>}

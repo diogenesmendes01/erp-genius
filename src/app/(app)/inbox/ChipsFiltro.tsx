@@ -19,7 +19,7 @@ export function ChipsFiltro({ chips, ativo, filtros }: { chips: ChipFiltroInbox[
  const router = useRouter(); const caminho = usePathname() ?? "/inbox";
  return <div role="group" aria-label="Filtros rápidos" className="flex flex-wrap gap-1.5 px-[18px] pb-2.5">
   {chips.map((c) => <button key={c.id} type="button" aria-pressed={ativo === c.id}
-   className={"flex h-7 items-center gap-1.5 whitespace-nowrap rounded-[20px] border px-2.5 text-[12.5px] font-medium " + (ativo === c.id ? "border-transparent bg-gray-100 text-gray-800" : "border-gray-200 text-gray-600 hover:bg-surface-muted")}
+   className={"flex h-7 items-center gap-1.5 whitespace-nowrap rounded-[20px] border px-2.5 text-[12.5px] font-medium " + (ativo === c.id ? "border-transparent bg-highlight text-gray-800" : "border-gray-200 text-gray-600 hover:bg-surface-muted")}
    onClick={() => router.replace(c.href !== undefined ? c.href : hrefDosFiltros(caminho, filtrosDoChip(c.id, filtros)))}>
    <span aria-hidden="true" className={"h-[7px] w-[7px] rounded-full " + PONTO_TOM[c.tom]} />
    {c.rotulo}<span className="font-mono tabular-nums text-[11px] opacity-70">{c.total}</span>

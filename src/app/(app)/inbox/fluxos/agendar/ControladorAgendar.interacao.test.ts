@@ -14,6 +14,7 @@ function props(p:Partial<PropsControladorAgendar>={}):PropsControladorAgendar{re
 function Tela(p:PropsControladorAgendar){const c=useControladorAgendar(p);useEffect(()=>{controle=c;});return createElement("div",null,createElement("button",{ref:c.refDoMenu,"aria-label":"Mais363"},"…"),c.dialogo,c.feedback);}
 function atual(){expect(controle).not.toBeNull();return controle!;}
 function eventos(el:Elemento){const k=Object.keys(el).find(k=>k.startsWith("__reactProps"))!;return (el as unknown as Record<string,{value?:string;disabled?:boolean;onChange(e:unknown):void;onSubmit(e:unknown):void;onClick():void}>)[k];}
+function disparar(el:Elemento,nome:string,arg?:unknown){const direto=eventos(el) as unknown as Record<string,unknown>;if(typeof direto[nome]==="function"){(direto[nome] as (a?:unknown)=>void)(arg);return;}const fk=Object.keys(el).find(k=>k.startsWith("__reactFiber"));let f=fk?(el as unknown as Record<string,{return?:unknown;memoizedProps?:Record<string,unknown>}>)[fk]:undefined;while(f){const fn=f.memoizedProps?.[nome];if(typeof fn==="function"){(fn as (a?:unknown)=>void)(arg);return;}f=f.return as typeof f;}throw new Error("sem "+nome);}
 function campo(nome:string){const e=doc.body.querySelector(`[name="${nome}"]`);expect(e).not.toBeNull();return e!;}
 async function montar(p:Partial<PropsControladorAgendar>={}){await act(async()=>root.render(createElement(Tela,props(p))));}
 async function abrir(){await act(async()=>atual().abrir());}
@@ -66,7 +67,7 @@ it("carrega propostas e tarefas da conversa e repassa anexo e vínculo na criaç
  await montar();await abrir();expect(m.propostas).toHaveBeenCalledWith("a");expect(m.tarefas).toHaveBeenCalledWith("a");
  const botao=(t:string)=>{const b=doc.body.querySelectorAll("button").find(e=>e.textContent===t);expect(b,`botão ${t}`).toBeDefined();return b!;};
  await act(async()=>eventos(botao("Proposta")).onClick());await act(async()=>eventos(botao("Proposta anual.pdf")).onClick());
- await act(async()=>eventos(botao("Mais opções")).onClick());const r=doc.body.querySelectorAll('[name="vinculo"]').find(e=>eventos(e).value==="tarefa:t1");expect(r).toBeDefined();await act(async()=>eventos(r!).onChange({target:{checked:true}}));
+ await act(async()=>eventos(botao("Mais opções")).onClick());const r=doc.body.querySelectorAll('[role="radio"]').find(e=>e.getAttribute("value")==="tarefa:t1");expect(r).toBeDefined();await act(async()=>disparar(r!,"onValueChange","tarefa:t1"));
  await submeter();expect(m.criar).toHaveBeenCalledExactlyOnceWith({atendimentoId:"a",texto:"DraftA",quandoLocal:"2026-10-23T09:00",fuso:"America/Sao_Paulo",perguntarSeResponder:true,chaveIdempotencia:"chave-controller363",documentoPropostaId:"d1",tarefaId:"t1"});
 });
 it("falha ao carregar opções não impede agendar só com texto",async()=>{m.propostas.mockRejectedValue(new Error("infra"));m.tarefas.mockRejectedValue(new Error("infra"));await montar();await abrir();await submeter();expect(m.criar).toHaveBeenCalledOnce();});

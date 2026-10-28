@@ -4,7 +4,9 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { EtapaLead, OrigemCanal } from "@prisma/client";
 import { Modal } from "@/components/Modal";
-import { Campo } from "@/components/Campo";
+import { Campo, CONTROLE_CAMPO } from "@/components/Campo";
+import { Combobox } from "@/components/ui/combobox";
+import { CampoSelect } from "@/components/ui/select";
 import { Botao } from "@/components/Botao";
 import { FeedbackAcao } from "@/components/FeedbackAcao";
 import { useAcaoCliente } from "@/lib/acao-cliente";
@@ -29,7 +31,7 @@ const CAMINHO: Record<EtapaEntrada, EtapaLead[]> = {
 const ESPERA_BUSCA_MS = 400;
 const MIN_LETRAS = 3;
 const MIN_DIGITOS = 8;
-const CONTROLE = "w-full rounded-md border border-gray-300 px-2 py-1.5 text-sm max-sm:min-h-11";
+const CONTROLE = CONTROLE_CAMPO;
 
 export function buscaLiberada(nome: string, telefone: string): boolean {
   return nome.trim().length >= MIN_LETRAS || telefone.replace(/\D/g, "").length >= MIN_DIGITOS;
@@ -202,31 +204,23 @@ export function NovaOportunidade({ etapaInicial = "NOVO", podeAtribuir, vendedor
 
         <Campo rotulo="País">
           {(c) => (
-            <select {...c} className={CONTROLE} value={paisId} disabled={acao.ocupado || !!criadaId} onChange={(e) => setPaisId(e.target.value)}>
-              {[<option key="" value="">Não informado</option>, ...paises.map((p) => <option key={p.id} value={p.id}>{p.nome}</option>)]}
-            </select>
+            <Combobox id={c.id} className={CONTROLE} value={paisId} disabled={acao.ocupado || !!criadaId} onValueChange={setPaisId} vazio="Não informado" busca="Buscar país" opcoes={paises.map((p) => ({ valor: p.id, rotulo: p.nome }))} />
           )}
         </Campo>
         <Campo rotulo="Origem">
           {(c) => (
-            <select {...c} className={CONTROLE} value={origem} disabled={acao.ocupado || !!criadaId} onChange={(e) => setOrigem(e.target.value as OrigemCanal | "")}>
-              {[<option key="" value="">Não informada</option>, ...Object.values(OrigemCanal).map((o) => <option key={o} value={o}>{ORIGEM_CANAL_LABEL[o]}</option>)]}
-            </select>
+            <Combobox id={c.id} className={CONTROLE} value={origem} disabled={acao.ocupado || !!criadaId} onValueChange={(valor) => setOrigem(valor as OrigemCanal | "")} vazio="Não informada" opcoes={Object.values(OrigemCanal).map((o) => ({ valor: o, rotulo: ORIGEM_CANAL_LABEL[o] }))} />
           )}
         </Campo>
         <Campo rotulo="Etapa">
           {(c) => (
-            <select {...c} className={CONTROLE} value={etapa} disabled={acao.ocupado} onChange={(e) => setEtapa(e.target.value as EtapaEntrada)}>
-              {ETAPAS.map((e) => <option key={e.valor} value={e.valor}>{e.rotulo}</option>)}
-            </select>
+            <CampoSelect id={c.id} className={CONTROLE} value={etapa} disabled={acao.ocupado} onValueChange={(valor) => setEtapa(valor as EtapaEntrada)} opcoes={ETAPAS.map((e) => ({ valor: e.valor, rotulo: e.rotulo }))} />
           )}
         </Campo>
         {podeAtribuir && (
           <Campo rotulo="Responsável">
             {(c) => (
-              <select {...c} className={CONTROLE} value={donoId} disabled={acao.ocupado || !!criadaId} onChange={(e) => setDonoId(e.target.value)}>
-                {[<option key="" value="">Sem responsável</option>, ...vendedores.map((v) => <option key={v.id} value={v.id}>{v.nome}</option>)]}
-              </select>
+              <Combobox id={c.id} className={CONTROLE} value={donoId} disabled={acao.ocupado || !!criadaId} onValueChange={setDonoId} vazio="Sem responsável" busca="Buscar responsável" opcoes={vendedores.map((v) => ({ valor: v.id, rotulo: v.nome }))} />
             )}
           </Campo>
         )}

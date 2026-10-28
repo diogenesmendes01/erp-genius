@@ -110,7 +110,7 @@ describe("ListaFunil", () => {
     );
     expect(html).toContain("<table");
     expect(html).toContain('aria-label="Selecionar Maria Souza"');
-    expect(html).toMatch(/aria-label="Selecionar Maria Souza"[^>]*checked/);
+    expect(html).toMatch(/data-state="checked"[^>]*aria-label="Selecionar Maria Souza"|aria-label="Selecionar Maria Souza"[^>]*data-state="checked"/);
     expect(html).toContain('aria-label="Selecionar todas as oportunidades"');
     expect(html).toContain("#L-000001");
     expect(html).toContain(">MS<");

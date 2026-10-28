@@ -64,6 +64,7 @@ export type DetalheOportunidade = {
     linkPagamento: string | null;
     linkEnviadoEm: Date | null;
   } | null;
+  matriculaId?: string | null;
 };
 
 type Payload = Record<string, unknown> | null;
@@ -184,6 +185,7 @@ export async function obterOportunidade(id: string, usuario: UsuarioSessao): Pro
       },
       matricula: {
         select: {
+          id: true,
           secretariaAssumiuEm: true,
           cobrancas: {
             where: { tipo: "MATRICULA" },
@@ -262,6 +264,7 @@ export async function obterOportunidade(id: string, usuario: UsuarioSessao): Pro
     taxaMatricula: taxa
       ? { cobrancaId: taxa.id, status: taxa.status, linkPagamento: taxa.linkPagamento, linkEnviadoEm: taxa.linkEnviadoEm }
       : null,
+    matriculaId: l.matricula?.id ?? null,
   };
 }
 

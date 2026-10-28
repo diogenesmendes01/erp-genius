@@ -13,7 +13,7 @@ it("cinco agregados do servidor mantêm ordem/rótulo/tom e não vêm do tamanho
 });
 it("aria-pressed e cor cinza identificam somente chip ativo; contagem mono e pontos semânticos",()=>{
  const h=renderToStaticMarkup(createElement(ChipsFiltro,{chips:chipsDaColuna({todas:123,minhas:3,naoLidas:2,prazo:4,fila:9}),ativo:"todas",filtros:{}}));
- expect(h).toMatch(/aria-pressed="true"[^>]*class="[^"]*bg-gray-100/);expect(h.match(/aria-pressed="true"/g)).toHaveLength(1);
+ expect(h).toMatch(/aria-pressed="true"[^>]*class="[^"]*bg-highlight/);expect(h.match(/aria-pressed="true"/g)).toHaveLength(1);
  for(const c of ['rounded-[20px]','text-[12.5px]','h-[7px]','bg-amber-600','bg-brand-solid','font-mono','123'])expect(h).toContain(c);
  expect(h).toMatch(/<span class="(?=[^"]*font-mono)(?=[^"]*tabular-nums)[^"]*">123<\/span>/);
  expect(renderToStaticMarkup(createElement(ChipsFiltro,{chips:chipsDaColuna(),ativo:null,filtros:{responsavel:"u9"}}))).not.toContain('aria-pressed="true"');

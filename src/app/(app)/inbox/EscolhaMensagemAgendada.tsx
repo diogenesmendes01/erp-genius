@@ -1,6 +1,8 @@
 "use client";
-import { useId, useRef, type ChangeEvent } from "react";
+import { useId, useRef } from "react";
 import { Botao } from "@/components/Botao";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { garantirEstilo } from "@/app/(app)/inbox/garantir-estilo";
 import { Modal } from "@/components/Modal";
 import { textoSeloMensagemAgendada, type DecisaoMensagemAgendada, type MensagemAgendadaDaTarefa } from "@/lib/selo-mensagem-agendada";
 
@@ -10,14 +12,17 @@ export function OpcoesMensagemAgendada({ valor, aoMudar, desabilitado = false }:
   desabilitado?: boolean;
 }) {
   const nome = useId();
+  garantirEstilo();
   return <fieldset className="space-y-2">
     <legend className="text-sm">O que fazer com a mensagem agendada?</legend>
-    {([["cancelar", "Cancelar a mensagem agendada"], ["manter", "Manter o envio agendado"]] as const).map(([v, rotulo]) => (
-      <label key={v} className="flex items-center gap-2 text-sm">
-        <input type="radio" name={nome} value={v} checked={valor === v} disabled={desabilitado} onChange={(e: ChangeEvent<HTMLInputElement>) => { if (e.target.checked) aoMudar(v); }} />
-        {rotulo}
-      </label>
-    ))}
+    <RadioGroup name={nome} value={valor ?? ""} disabled={desabilitado} onValueChange={(proximo) => aoMudar(proximo as DecisaoMensagemAgendada)}>
+      {([["cancelar", "Cancelar a mensagem agendada"], ["manter", "Manter o envio agendado"]] as const).map(([v, rotulo]) => (
+        <label key={v} className="flex items-center gap-2 text-sm">
+          <RadioGroupItem value={v} disabled={desabilitado} />
+          {rotulo}
+        </label>
+      ))}
+    </RadioGroup>
   </fieldset>;
 }
 

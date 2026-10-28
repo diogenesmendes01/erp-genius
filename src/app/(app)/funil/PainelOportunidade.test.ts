@@ -61,7 +61,8 @@ describe("PainelOportunidade", () => {
   });
   it("modal de perda: 9 motivos do ERP; Outro exige observação", () => {
     const html = renderPerda();
-    expect(html.match(/name="motivoPerda"/g)).toHaveLength(9);
+    expect(html.match(/role="radio"/g)).toHaveLength(9);
+    expect(html).toContain('name="motivoPerda"');
     expect(clicarConfirmar({ motivoPerda: "OUTRO", observacao: "" }).erro).toBe("Observação obrigatória quando o motivo é Outro");
     expect(clicarConfirmar({ motivoPerda: "PRECO", observacao: "" }).input).toEqual({ motivoPerda: "PRECO", observacao: undefined });
     expect(clicarConfirmar({ motivoPerda: "", observacao: "" }).input).toBeNull();
@@ -155,7 +156,7 @@ describe("PainelOportunidade: design system", () => {
     expect(html).toContain('aria-label="Temperatura: Morno"');
     expect(html).toContain('aria-label="Etapas da oportunidade"');
     expect(html).toContain("bg-surface-muted");
-    expect(html).toMatch(/role="tab"[^>]*border-brand-600[^>]*text-brand-700[^>]*>Oportunidade</);
+    expect(html).toMatch(/role="tab"[^>]*data-state="active"[^>]*>Oportunidade</);
     expect(html).toMatch(/role="tab"[^>]*>Oportunidade</);
   });
 

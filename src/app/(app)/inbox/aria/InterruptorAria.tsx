@@ -32,7 +32,7 @@ export function InterruptorAria({ pausada, aoMudar }: { pausada: boolean; aoMuda
     {aberto && <Modal titulo="Pausar a Aria em todas as conversas" aoFechar={() => setAberto(false)} bloquearFechamento={acao.ocupado} focoInicial={campo}>
       <p className="mb-3 text-sm text-gray-600">A pausa é global. Novas conversas vão para a equipe. O motivo fica no histórico de auditoria.</p>
       <Campo rotulo="Motivo da pausa" obrigatorio>
-        {props => <input {...props} ref={campo} type="text" maxLength={500} value={motivo} disabled={acao.ocupado} onChange={e => setMotivo(e.target.value)} className="w-full rounded-md border border-gray-300 px-2 py-1.5 text-sm" />}
+        {props => <input {...props} ref={campo} type="text" maxLength={500} value={motivo} disabled={acao.ocupado} onChange={e => setMotivo(e.target.value)} className="w-full rounded-md border border-gray-200 px-2 py-1.5 text-sm" />}
       </Campo>
       <FeedbackAcao erro={acao.erro} />
       <div className="mt-4 flex justify-end gap-2">
