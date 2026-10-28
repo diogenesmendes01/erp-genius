@@ -58,7 +58,7 @@ export function permitidos(ctx: Pick<ContextoTurno, "precos" | "respostasRapidas
   };
 }
 
-async function urlDocumentoEnviavel(tx: Tx, documentoId: string): Promise<string | null> {
+export async function urlDocumentoEnviavel(tx: Tx, documentoId: string): Promise<string | null> {
   const fonte = await tx.fonteConhecimento.findUnique({
     where: { id: documentoId },
     select: {

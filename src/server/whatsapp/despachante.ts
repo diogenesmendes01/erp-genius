@@ -9,7 +9,7 @@ import { driverMotor } from "./drivers/motor";
 import { lerMidiaParaEnvio } from "./midia";
 import { snapshotCobranca } from "./elegibilidade";
 import { atendimentoVisivel } from "./atendimentos";
-import { DriverWhatsApp, Papel, type EstadoPolitica } from "@prisma/client";
+import { DriverWhatsApp, Papel, type EstadoPolitica, type IntencaoMensagem, type Prisma } from "@prisma/client";
 import { destinatarioAtualDoAtendimento } from "./destinatario-atual";
 import { suspensaoPorConferencia } from "@/server/cobrancas/conferencia";
 import { claimAvisoAgendaTx, motivoAvisoAgendaInvalido, registrarResultadoAvisoAgendaTx } from "@/server/comunicacoes-agenda/whatsapp";
@@ -22,6 +22,9 @@ import { candidatosDaGrade } from "@/server/agenda/grade";
 import { fusoDaEscola } from "@/server/relatorios/atendimento";
 import { dentroDaJanelaEnvio, type JanelaEnvio } from "./janela-envio";
 import { abrirAtendimentoDaAgendada, autorAindaPodeEnviarAgendada, esperaAtendimento } from "@/server/crm/mensagens-agendadas";
+import { MOTIVO_AGUARDA_CONFIRMACAO, respondeuDepoisDeAgendar } from "@/server/crm/mensagens-agendadas-regras";
+
+export { MOTIVO_AGUARDA_CONFIRMACAO };
 
 const DRIVERS: Partial<Record<DriverWhatsApp, CanalWhatsApp>> = {
   MOTOR: driverMotor,
@@ -92,6 +95,10 @@ export function decidirEnvio(e: EntradaShadow & { envioAgendaHabilitado: boolean
 }
 
 const CLAIM_STALE_MS = 15 * 60_000;
+
+export function vigente(it: Pick<IntencaoMensagem, "id" | "status" | "agendadaPara" | "corpoRenderizado">): Prisma.IntencaoMensagemWhereInput {
+  return { id: it.id, status: it.status, agendadaPara: it.agendadaPara, corpoRenderizado: it.corpoRenderizado };
+}
 
 export interface OpcoesDespacho {
   intencaoId?: string;
@@ -209,6 +216,13 @@ export async function despacharFila(
       continue;
     }
 
+    if (respondeuDepoisDeAgendar(it, conversa?.ultimoInboundEm)) {
+      const retencao = await reterParaConfirmar(it);
+      if (retencao === "retida") r.adiadas += 1;
+      else if (retencao === "cancelada") r.canceladas += 1;
+      continue;
+    }
+
     const inboundSilenciador = conversa?.ultimoInboundEm ?? null;
     const inboundNaoTratado =
       !!inboundSilenciador &&
@@ -277,7 +291,7 @@ export async function despacharFila(
     }
     if (decisao === "SIMULAR") {
       await prisma.intencaoMensagem.updateMany({
-        where: { id: it.id, status: it.status },
+        where: vigente(it),
         data: { status: "SIMULADA", despachadaEm: agora, motivoFalha: live ? null : "ambiente_sem_live" },
       });
       r.simuladas += 1;
@@ -295,7 +309,7 @@ export async function despacharFila(
     try {
       await prisma.$transaction(confirmarTransacao(async (tx) => {
         const claim = await tx.intencaoMensagem.updateMany({
-          where: { id: it.id, status: it.status },
+          where: vigente(it),
           data: { status: "ENVIANDO", despacharAposEm: new Date(agora.getTime() + CLAIM_STALE_MS), clientMessageId },
         });
         if (claim.count !== 1) return;
@@ -597,6 +611,20 @@ async function adiar(id: string, ate: Date, motivo: string): Promise<boolean> {
     if (!erroGuardaPedagogica(erro)) throw erro;
     await marcar(id, "CANCELADA", "autorizacao_academica_revogada");
     return false;
+  }
+}
+
+async function reterParaConfirmar(it: Pick<IntencaoMensagem, "id" | "status" | "agendadaPara" | "corpoRenderizado" | "confirmadaAposRespostaEm">): Promise<"retida" | "mudou" | "cancelada"> {
+  try {
+    const { count } = await prisma.intencaoMensagem.updateMany({
+      where: { ...vigente(it), confirmadaAposRespostaEm: it.confirmadaAposRespostaEm },
+      data: { status: "ADIADA", despacharAposEm: null, motivoFalha: MOTIVO_AGUARDA_CONFIRMACAO },
+    });
+    return count === 1 ? "retida" : "mudou";
+  } catch (erro) {
+    if (!erroGuardaPedagogica(erro)) throw erro;
+    await marcar(it.id, "CANCELADA", "autorizacao_academica_revogada");
+    return "cancelada";
   }
 }
 

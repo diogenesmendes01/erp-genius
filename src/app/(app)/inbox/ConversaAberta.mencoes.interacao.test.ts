@@ -20,8 +20,8 @@ vi.mock("./AcoesMensagem", () => ({ AcoesMensagem: () => null }));
 vi.mock("@/components/conversa/VirtualList", () => ({ VirtualList: () => null }));
 vi.mock("@/components/conversa/agora-thread", () => ({ useAgoraDaThread: () => Date.UTC(2026, 9, 24, 12) }));
 vi.mock("@/server/whatsapp/acoes", () => ({ enviarMidiaInbox: vi.fn(), enviarTextoInbox: vi.fn() }));
-vi.mock("@/server/whatsapp/acoes-conversa", () => ({ registrarNotaAtendimento: vi.fn() }));
-vi.mock("@/server/whatsapp/consultas-acoes-atendimento", () => ({ origemVisivelDaTransferencia: vi.fn() }));
+vi.mock("@/server/whatsapp/acoes-conversa", () => ({ registrarNotaAtendimento: vi.fn(), enviarPropostaNoAtendimento: vi.fn(), enviarMaterialDoCatalogo: vi.fn() }));
+vi.mock("@/server/whatsapp/consultas-acoes-atendimento", () => ({ origemVisivelDaTransferencia: vi.fn(), propostasDoAtendimento: vi.fn(async () => ({ oportunidadeId: null, propostas: [] })), catalogoDoAtendimento: vi.fn(async () => []) }));
 vi.mock("@/server/crm-config/acoes-respostas", () => ({ respostasRapidasDoCompositor: async () => [] }));
 
 vi.mock("./fluxos/transferir/ControladorTransferir",async original=>{

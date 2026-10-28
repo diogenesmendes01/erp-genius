@@ -6,6 +6,9 @@ import type { Papel } from "@prisma/client";
 import { useRouter, useSearchParams } from "next/navigation";
 import { PopoverNovaConversa } from "./fluxos/nova-conversa/PopoverNovaConversa";
 import { criarIntencaoNovaConversa } from "./fluxos/nova-conversa/intencao-nova-conversa";
+import {criarIntencoesAgendamento} from "./fluxos/agendar/intencao-agendamento";
+import {avisoRecarregaAgendadas,useAgendadas} from "./fluxos/agendar/useAgendadas";
+import {CartaoAgendada} from "./fluxos/agendar/CartaoAgendada";
 import { PainelContato, abasDoPainel, type IdAbaPainel } from "./PainelContato";
 import { LinhaCampo } from "./LinhaCampo";
 import { TagsContato } from "./abas/TagsContato";
@@ -64,6 +67,7 @@ export interface PropsInboxNovo {
   inicial: { itens: ItemListaInbox[]; proximo: string | null };
   filtros: FiltrosInbox;
   selecionado: string | null;
+  agendarAoAbrir?:boolean;
   usuario: { id: string; nome?: string; papeis: Papel[] };
   podeAbrirFunil?: boolean;
   podeCriarOportunidade?: boolean;
@@ -148,7 +152,7 @@ const ouNulo = <T,>(l: T[] | null): T[] | null => (l?.length ? l : null);
 const COLUNA_LISTA = "min-[960px]:flex min-[960px]:w-[300px] min-[960px]:shrink-0 min-[1100px]:w-[372px]";
 const COLUNA_CONVERSA = "min-[960px]:flex min-[960px]:min-w-0 min-[960px]:flex-1";
 
-export function InboxNovo({ inicial, filtros, selecionado: selecionadoInicial, usuario, fuso, fusoEscola, destinos, triagem: triagemBruta = null, revisoes: revisoesBrutas = null, opcoesFiltro, contagens: contagensIniciais, resumo: resumoInicial, abrirPainelPadrao, opcoesNovaConversa, sino, agoraInicial, podeAbrirFunil = false, podeCriarOportunidade = false }: PropsInboxNovo) {
+export function InboxNovo({ inicial, filtros, selecionado: selecionadoInicial, usuario, fuso, fusoEscola, destinos, triagem: triagemBruta = null, revisoes: revisoesBrutas = null, opcoesFiltro, contagens: contagensIniciais, resumo: resumoInicial, abrirPainelPadrao, opcoesNovaConversa, sino, agoraInicial, podeAbrirFunil = false, podeCriarOportunidade = false,agendarAoAbrir=false }: PropsInboxNovo) {
   const parametrosDaRota = useSearchParams();
   const router = useRouter();
   const selecionadoDaRota = parametrosDaRota === null ? selecionadoInicial : (parametrosDaRota.get("c") || null);
@@ -162,10 +166,16 @@ export function InboxNovo({ inicial, filtros, selecionado: selecionadoInicial, u
   const [intencaoPorAtor, setIntencaoPorAtor] = useState(() => ({ atorId: usuario.id, controle: criarIntencaoNovaConversa() }));
   if (intencaoPorAtor.atorId !== usuario.id) setIntencaoPorAtor({ atorId: usuario.id, controle: criarIntencaoNovaConversa() });
   const intencaoNovaConversa = intencaoPorAtor.controle;
+  const [agendamentosPorAtor,setAgendamentosPorAtor]=useState(()=>({atorId:usuario.id,controle:criarIntencoesAgendamento()}));
+  if(agendamentosPorAtor.atorId!==usuario.id)setAgendamentosPorAtor({atorId:usuario.id,controle:criarIntencoesAgendamento()});
+  const agendarNaRota=parametrosDaRota===null?agendarAoAbrir:parametrosDaRota.get("agendar")==="1";
+  const chavePedidoAgendar=JSON.stringify([selecionadoDaRota,agendarNaRota]);
+  const [pedidoAgendar,setPedidoAgendar]=useState(()=>({chave:chavePedidoAgendar,ativo:agendarNaRota&&!!selecionadoDaRota}));
+  if(pedidoAgendar.chave!==chavePedidoAgendar)setPedidoAgendar({chave:chavePedidoAgendar,ativo:agendarNaRota&&!!selecionadoDaRota});
   const possuiContagensRef = useRef(contagensIniciais !== undefined || resumoInicial !== undefined);
   const [proximo, setProximo] = useState(inicial.proximo);
   const interagirPresenca = usePresencaInbox(usuario.id);
-  const [avisoTransferencia, setAvisoTransferencia] = useState<string | null>(null);
+  const [avisoSucesso, setAvisoSucesso] = useState<string | null>(null);
   const [selecionado, setSelecionado] = useState(selecionadoInicial);
   const [selecionadoRecebido, setSelecionadoRecebido] = useState(selecionadoInicial);
   const [versaoNavegacao, setVersaoNavegacao] = useState(0);
@@ -231,6 +241,7 @@ export function InboxNovo({ inicial, filtros, selecionado: selecionadoInicial, u
   const atualizadorListaRef = useRef<ReturnType<typeof criarAtualizadorEmLote> | null>(null);
   const navegacaoDaListaRef = useRef(versaoNavegacao);
   useEffect(() => { selecionadoRef.current = selecionado; }, [selecionado]);
+  const { agendadas: agendadasNoFio, recarregar: recarregarAgendadas } = useAgendadas(selecionado);
   useEffect(() => {
     if (paramsDosFiltros(filtrosRef.current) !== chaveFiltros || navegacaoDaListaRef.current !== versaoNavegacao) atualizadorListaRef.current?.cancelarPendentes();
     else atualizadorListaRef.current?.invalidarSnapshotEmVoo();
@@ -351,8 +362,9 @@ export function InboxNovo({ inicial, filtros, selecionado: selecionadoInicial, u
 
   const recarregarLista = useCallback(() => {
     setVersaoPainel((v) => v + 1);
+    recarregarAgendadas();
     carregarLista();
-  }, [carregarLista]);
+  }, [carregarLista, recarregarAgendadas]);
   const aoAviso = useCallback((a: AvisoInbox) => {
     if (a.tipo !== "aria.global") setEventoRecente(a);
     if (avisoMarcaLida(a, selecionadoRef.current)) {
@@ -364,13 +376,21 @@ export function InboxNovo({ inicial, filtros, selecionado: selecionadoInicial, u
       else if (!repetida && leituraRef.current.id === a.atendimentoId) leituraRef.current.ultimaContagem++;
     }
     if (avisoRecarregaPainel(a, selecionadoRef.current)) setVersaoPainel((v) => v + 1);
+    if (avisoRecarregaAgendadas(a, selecionadoRef.current)) recarregarAgendadas();
     carregarLista();
-  }, [carregarLista, pedirLeitura]);
+  }, [carregarLista, pedirLeitura, recarregarAgendadas]);
   const { conectado } = useEventosInbox(aoAviso);
   const conversa = useConversa(selecionado, eventoRecente);
 
   const painelDoAberto = painelSetor && painelSetor.id === selecionado ? painelSetor : null;
   const podeEnviar = painelDoAberto?.dado ? painelDoAberto.dado.podeEnviar === true : null;
+  const consumirPedidoAgendamento=()=>{
+    if(selecionadoRef.current!==selecionadoDaRota)return;
+    setPedidoAgendar(p=>p.chave===chavePedidoAgendar?{...p,ativo:false}:p);
+    if(typeof window==="undefined")return;const url=new URL(window.location.href);
+    if(url.searchParams.get("c")!==selecionadoDaRota)return;url.searchParams.delete("agendar");
+    router.replace(url.pathname+(url.search?url.search:"")+url.hash,{scroll:false});
+  };
   const tentarPainelDeNovo = useCallback(() => { setPainelSetor((ant) => ant?.acessoRevogado ? ant : null); setVersaoPainel((v) => v + 1); }, []);
   const falhaPermissao = painelDoAberto && !painelDoAberto.dado ? tentarPainelDeNovo : undefined;
 
@@ -542,7 +562,7 @@ export function InboxNovo({ inicial, filtros, selecionado: selecionadoInicial, u
 
   return (
     <div onPointerDownCapture={interagirPresenca} onKeyDownCapture={interagirPresenca} onTouchStartCapture={interagirPresenca} onWheelCapture={interagirPresenca} data-vista={vista} data-conectado={conectado ? "1" : "0"} className="relative flex min-h-0 flex-1 flex-col overflow-hidden">
-      <MensagemStatus texto={avisoTransferencia} tom="sucesso" className="shrink-0 px-3 py-2" />
+      <MensagemStatus texto={avisoSucesso} tom="sucesso" className="shrink-0 px-3 py-2" />
       <div className="relative flex min-h-0 flex-1 overflow-hidden">
       <section ref={regiaoLista} aria-label="Conversas" className={`${vista === "lista" ? "flex" : "hidden"} w-full min-h-0 flex-col overflow-hidden border-gray-200 bg-surface min-[960px]:border-r ${COLUNA_LISTA}`}>
         <ColunaConversas filtros={filtros} opcoesFiltro={opcoesFiltro} contagens={contagens} resumo={resumo} sino={sino}
@@ -566,7 +586,12 @@ export function InboxNovo({ inicial, filtros, selecionado: selecionadoInicial, u
         ) : (
           <ConversaAberta
             item={atual}
+            intencoesAgendamento={agendamentosPorAtor.controle}
+            pedidoAgendamento={pedidoAgendar.chave===chavePedidoAgendar&&pedidoAgendar.ativo&&selecionado===selecionadoDaRota?pedidoAgendar.chave:null}
+            aoPedidoAgendamentoConsumido={consumirPedidoAgendamento}
+            podeLerAgendamento={!!painelDoAberto?.dado&&!painelDoAberto.acessoRevogado}
             tarefasNoFio={painelDoAberto?.acessoRevogado?undefined:painelDoAberto?.dado?.tarefasNoFio}
+            cartoesNoFio={selecionado&&!painelDoAberto?.acessoRevogado&&agendadasNoFio.length?({agora,aoEditar})=>agendadasNoFio.map(a=><CartaoAgendada key={a.id} agendada={a} atendimentoId={selecionado} nomeContato={atual?.contatoNome} fuso={fuso??"UTC"} agora={agora} aoEditar={aoEditar?origem=>aoEditar(a,origem):undefined} aoMudar={mensagem=>{if(selecionadoRef.current!==selecionado)return;setAvisoSucesso(mensagem);recarregarLista();}}/>):undefined}
             aoCriarTarefa={podeTarefas?()=>abrirTarefa({tipo:"nova"},"fio"):undefined}
             aoEditarTarefa={podeTarefas?t=>abrirTarefa({tipo:"editar",tarefa:{id:t.id,versao:t.versao}},"fio"):undefined}
             pedidoNota={notaSolicitada?.id===selecionado?notaSolicitada.pedido:undefined}
@@ -589,7 +614,7 @@ export function InboxNovo({ inicial, filtros, selecionado: selecionadoInicial, u
             painelAberto={painelVisivel ?? undefined}
             painelAuto={painelAberto === null}
             aoMudar={recarregarLista}
-            aoTransferirConcluido={() => setAvisoTransferencia("Transferência concluída.")}
+            aoTransferirConcluido={() => setAvisoSucesso("Transferência concluída.")}
           />
         )}
       </section>

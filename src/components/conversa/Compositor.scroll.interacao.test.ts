@@ -5,7 +5,7 @@ import { criarDomMinimo, desligarObservadores, type Elemento } from "@/test/dom-
 import { useRevisoesRascunhos } from "./rascunhos-conversa";
 import type { PropsCompositor } from "./Compositor";
 
-vi.mock("@tabler/icons-react", () => Object.fromEntries(["IconCalendarEvent", "IconMicrophone", "IconMoodSmile", "IconPaperclip", "IconPlayerStop", "IconSend", "IconTrash", "IconBolt", "IconCamera", "IconFileCheck", "IconFileText", "IconListCheck", "IconMapPin", "IconPhoto", "IconUser"].map(k => [k, () => null])));
+vi.mock("@tabler/icons-react", () => Object.fromEntries(["IconCalendarEvent", "IconMicrophone", "IconMoodSmile", "IconPaperclip", "IconPlayerStop", "IconSend", "IconTrash", "IconBolt", "IconCamera", "IconFileCheck","IconBook", "IconFileText", "IconListCheck", "IconMapPin", "IconPhoto", "IconUser"].map(k => [k, () => null])));
 let root: Root, host: Elemento;
 let Compositor: typeof import("./Compositor").Compositor;
 const storage = new Map<string, string>();
