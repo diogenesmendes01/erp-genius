@@ -14,6 +14,8 @@ import { Papel } from "@prisma/client";
 import { resumoDaAriaParaNota } from "@/server/aria/resumo-nota";
 import { lerAgendadasDoAtendimento, type AgendadaNoFio } from "@/server/inbox/agendadas-leitura";
 import { propostasVisiveis, type PropostaAnexavel } from "./proposta-atendimento";
+import { contatosCompartilhaveis, type ContatoCartao } from "./contatos-cartao";
+import { catalogoVisivel, type MaterialCatalogo } from "./catalogo-atendimento";
 
 const IdSchema = z.string().min(1);
 
@@ -27,6 +29,16 @@ export async function propostasDoAtendimento(atendimentoId: string): Promise<{ o
   const u = await exigirSessao();
   const { oportunidadeId, propostas } = await propostasVisiveis(u, IdSchema.parse(atendimentoId));
   return { oportunidadeId, propostas: propostas.map(({ id, nome, criadoEm }) => ({ id, nome, criadoEm })) };
+}
+
+export async function catalogoDoAtendimento(atendimentoId: string): Promise<MaterialCatalogo[]> {
+  const u = await exigirSessao();
+  return catalogoVisivel(u, IdSchema.parse(atendimentoId));
+}
+
+export async function contatosParaCartao(atendimentoId: string): Promise<ContatoCartao[]> {
+  const u = await exigirSessao();
+  return contatosCompartilhaveis(u, IdSchema.parse(atendimentoId));
 }
 
 export async function listarPessoasParaAtendimento(atendimentoId:string,para:"atribuir"|"convidar"):Promise<{id:string;nome:string}[]>{

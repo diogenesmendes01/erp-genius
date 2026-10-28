@@ -4,7 +4,7 @@ import type {PublicarPortaRascunhoAgendamento} from "./porta-rascunho-agendament
 
 import Link from "next/link";
 import { Suspense, lazy, useCallback, useEffect, useId, useLayoutEffect, useRef, useState, type ChangeEvent, type KeyboardEvent } from "react";
-import { IconCalendarEvent, IconChevronLeft, IconFileCheck, IconMicrophone, IconMoodSmile, IconPaperclip, IconPlayerStop, IconSend, IconTrash } from "@tabler/icons-react";
+import { IconBook, IconCalendarEvent, IconChevronLeft, IconFileCheck, IconUser, IconMicrophone, IconMoodSmile, IconPaperclip, IconPlayerStop, IconSend, IconTrash } from "@tabler/icons-react";
 import { comandoDaNota, consultaMencaoNoCursor, tokensAposEdicao, type CandidatoMencao, type TokenMencao } from "@/lib/mencoes-nota";
 import type { Resultado } from "@/server/_shared/resultado";
 import { executarAcaoCliente } from "@/lib/acao-cliente";
@@ -18,6 +18,8 @@ import { AVISO_RECURSO_MOTOR, mimeVozAceito, type RecursoMotor } from "./recurso
 import { ITENS_ANEXO, type IdItemAnexo } from "./itens-anexo";
 import type { PropostaAnexavel } from "@/server/whatsapp/proposta-atendimento";
 import type { ConteudoEspecial } from "@/server/whatsapp/canal";
+import type { ContatoCartao } from "@/server/whatsapp/contatos-cartao";
+import type { MaterialCatalogo } from "@/server/whatsapp/catalogo-atendimento";
 import { FormEnquete } from "./anexos/FormEnquete";
 import { FormLocalizacao } from "./anexos/FormLocalizacao";
 import { formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
@@ -32,6 +34,9 @@ export const FALHA_PERMISSAO_ENVIO = "Não foi possível verificar se você pode
 export const AVISO_NOTA = "Nota interna: fica só para a equipe e não é enviada ao contato.";
 export const AVISO_ANEXO_EM_BREVE = "O envio deste tipo pelo Inbox ainda não está disponível.";
 export const SEM_PROPOSTAS = "Nenhuma proposta anexada a esta oportunidade.";
+export const SEM_CONTATOS_CARTAO = "Nenhum número da escola disponível para compartilhar.";
+export const ERRO_CONTATOS_CARTAO = "Não foi possível carregar os números da escola.";
+export const CARREGANDO_CONTATOS_CARTAO = "Carregando números…";
 const MAX_BYTES_MIDIA = 10 * 1024 * 1024;
 
 export interface PropsCompositor {
@@ -56,12 +61,16 @@ export interface PropsCompositor {
   respostas?: readonly RespostaDoCompositor[];
   propostas?: { oportunidadeId: string | null; itens: readonly PropostaAnexavel[]; fuso?: string | null };
   aoEnviarProposta?(documentoId: string, chaveIdempotencia?: string): Promise<Resultado<unknown>>;
+  catalogo?: readonly MaterialCatalogo[];
+  aoEnviarCatalogo?(fonteId: string, chaveIdempotencia?: string): Promise<Resultado<unknown>>;
   aoEnviarConteudo?(c: ConteudoEspecial): Promise<Resultado<unknown>>;
+  aoListarContatosCartao?(): Promise<ContatoCartao[]>;
   variaveisResposta?: { nome?: string | null; responsavel?: string | null; curso?: string | null };
 }
 
 type FormConteudo = "enquete" | "localizacao";
 const ehFormConteudo = (id: IdItemAnexo): id is FormConteudo => id === "enquete" || id === "localizacao";
+type ListaContatos = { estado: "carregando" } | { estado: "erro" } | { estado: "pronta"; itens: ContatoCartao[]; erroEnvio?: string };
 
 const chaveRascunho = (id: string, modo: string) => `conversa-rascunho:${id}:${modo}`;
 function lerRascunho(id: string, modo: string): string {
@@ -78,7 +87,7 @@ function formatoDeVoz(): string | null {
   return ["audio/ogg;codecs=opus", "audio/mp4"].find((t) => mimeVozAceito(t) && MediaRecorder.isTypeSupported(t)) ?? null;
 }
 
-export function Compositor({ atendimentoId, pedidoFoco, aoCampoResponder, modo, bloqueioExterno = false, podeEnviar, falhaPermissao, capacidades, aoEnviarTexto, aoEnviarMidia, aoNota, buscarMencoes, respostas = [], propostas, aoEnviarProposta, aoEnviarConteudo, variaveisResposta = {}, tentativasNota, revisoesRascunhos, aoAgendar, aoPortaRascunhoInsight, aoPortaRascunhoAgendamento, contido = false }: PropsCompositor) {
+export function Compositor({ atendimentoId, pedidoFoco, aoCampoResponder, modo, bloqueioExterno = false, podeEnviar, falhaPermissao, capacidades, aoEnviarTexto, aoEnviarMidia, aoNota, buscarMencoes, respostas = [], propostas, aoEnviarProposta, catalogo, aoEnviarCatalogo, aoEnviarConteudo, aoListarContatosCartao, variaveisResposta = {}, tentativasNota, revisoesRascunhos, aoAgendar, aoPortaRascunhoInsight, aoPortaRascunhoAgendamento, contido = false }: PropsCompositor) {
   const idAvisosAnexos = useId();
   const [texto, setTexto] = useState(() => lerRascunho(atendimentoId, modo));
   const [arquivo, setArquivo] = useState<File | null>(null);
@@ -87,7 +96,10 @@ export function Compositor({ atendimentoId, pedidoFoco, aoCampoResponder, modo, 
   const [emoji, setEmoji] = useState(false);
   const [anexos, setAnexos] = useState(false);
   const [listaPropostas, setListaPropostas] = useState(false);
+  const [listaCatalogo, setListaCatalogo] = useState(false);
   const [formConteudo, setFormConteudo] = useState<FormConteudo | null>(null);
+  const [listaContatos, setListaContatos] = useState<ListaContatos | null>(null);
+  const pedidoContatos = useRef(0);
   const [gravando, setGravando] = useState(false);
   const entrada = useRef<HTMLTextAreaElement | null>(null);
   const focoAtendido=useRef<{atendimentoId:string;pedido:number}|null>(null);
@@ -111,6 +123,8 @@ export function Compositor({ atendimentoId, pedidoFoco, aoCampoResponder, modo, 
   const tentativas = tentativasNota ?? tentativasLocais;
   const tentativasPropostas = useChavesPorAlvo();
   const propostaDisponivel = !!propostas?.oportunidadeId && typeof aoEnviarProposta === "function";
+  const tentativasCatalogo = useChavesPorAlvo();
+  const catalogoDisponivel = !!catalogo?.length && typeof aoEnviarCatalogo === "function";
   const revisoesLocais = useRevisoesRascunhos();
   const revisoes = revisoesRascunhos ?? revisoesLocais;
 
@@ -132,7 +146,9 @@ export function Compositor({ atendimentoId, pedidoFoco, aoCampoResponder, modo, 
     setEmoji(false);
     setAnexos(false);
     setListaPropostas(false);
+    setListaCatalogo(false);
     setFormConteudo(null);
+    setListaContatos(null);
     setGravando(false);
   }
   useLayoutEffect(() => {
@@ -419,6 +435,24 @@ export function Compositor({ atendimentoId, pedidoFoco, aoCampoResponder, modo, 
     }
   }
 
+  async function enviarMaterialCatalogo(fonteId: string) {
+    if (!contextoVigente() || !saidaPermitida() || nota || podeEnviar !== true || !aoEnviarCatalogo || enviando || emCurso.current.has(contexto)) return;
+    emCurso.current.add(contexto);
+    setEnviando(true);
+    setErro("");
+    try {
+      const tentativa = tentativasCatalogo.para(JSON.stringify([atendimentoId, fonteId]));
+      const desfecho = await executarAcaoCliente(() => aoEnviarCatalogo(fonteId, tentativa.atual), { idempotente: true });
+      tentativa.depoisDo(desfecho);
+      if (!contextoVigente()) return;
+      if (desfecho.tipo === "ok") setListaCatalogo(false);
+      else setErro(desfecho.mensagem);
+    } finally {
+      emCurso.current.delete(contexto);
+      if (contextoVigente()) setEnviando(false);
+    }
+  }
+
   async function enviarConteudo(c: ConteudoEspecial): Promise<Resultado<unknown>> {
     if (!contextoVigente() || !saidaPermitida() || nota || podeEnviar !== true || !aoEnviarConteudo) return { ok: false, erro: MOTIVO_SEM_ENVIO };
     return aoEnviarConteudo(c);
@@ -428,8 +462,42 @@ export function Compositor({ atendimentoId, pedidoFoco, aoCampoResponder, modo, 
   }
   const conteudoAtivo = (id: IdItemAnexo) => {
     const item = ITENS_ANEXO.find((i) => i.id === id);
-    return ehFormConteudo(id) && !!item?.recurso && capacidades.includes(item.recurso) && typeof aoEnviarConteudo === "function";
+    if (!item?.recurso || !capacidades.includes(item.recurso) || typeof aoEnviarConteudo !== "function") return false;
+    return ehFormConteudo(id) || (id === "contato" && typeof aoListarContatosCartao === "function");
   };
+  function fecharContatos() {
+    pedidoContatos.current += 1;
+    setListaContatos(null);
+  }
+  async function abrirContatos() {
+    if (!aoListarContatosCartao) return;
+    const pedido = ++pedidoContatos.current;
+    const vigente = () => contextoVigente() && pedidoContatos.current === pedido;
+    setListaContatos({ estado: "carregando" });
+    try {
+      const itens = await aoListarContatosCartao();
+      if (vigente()) setListaContatos({ estado: "pronta", itens });
+    } catch {
+      if (vigente()) setListaContatos({ estado: "erro" });
+    }
+  }
+  async function enviarCartao(contatoJid: string) {
+    if (!contextoVigente() || !saidaPermitida() || nota || podeEnviar !== true || !aoEnviarConteudo || enviando || emCurso.current.has(contexto)) return;
+    const pedido = pedidoContatos.current;
+    const marcarErro = (erroEnvio?: string) => setListaContatos((l) => (l?.estado === "pronta" ? { ...l, erroEnvio } : l));
+    emCurso.current.add(contexto);
+    setEnviando(true);
+    marcarErro();
+    try {
+      const desfecho = await executarAcaoCliente(() => enviarConteudo({ tipo: "CONTATO", contatoJid }), { idempotente: false });
+      if (!contextoVigente() || pedidoContatos.current !== pedido) return;
+      if (desfecho.tipo === "ok") fecharContatos();
+      else marcarErro(desfecho.mensagem);
+    } finally {
+      emCurso.current.delete(contexto);
+      if (contextoVigente()) setEnviando(false);
+    }
+  }
 
   function selecionarAnexo(item: IdItemAnexo) {
     if (!contextoVigente() || !saidaPermitida() || nota || podeEnviar !== true) return;
@@ -443,11 +511,23 @@ export function Compositor({ atendimentoId, pedidoFoco, aoCampoResponder, modo, 
       entrada.current?.focus();
     } else if (item === "proposta" && propostaDisponivel) {
       setAnexos(false);
+      setListaCatalogo(false);
       setListaPropostas(true);
+    } else if (item === "catalogo" && catalogoDisponivel) {
+      setAnexos(false);
+      setListaPropostas(false);
+      setListaCatalogo(true);
     } else if (ehFormConteudo(item) && conteudoAtivo(item)) {
       setAnexos(false);
       setListaPropostas(false);
+      setListaCatalogo(false);
       setFormConteudo(item);
+    } else if (item === "contato" && conteudoAtivo(item)) {
+      setAnexos(false);
+      setListaPropostas(false);
+      setListaCatalogo(false);
+      setFormConteudo(null);
+      void abrirContatos();
     }
   }
   const vazio = !texto.trim() && !arquivo;
@@ -502,13 +582,14 @@ export function Compositor({ atendimentoId, pedidoFoco, aoCampoResponder, modo, 
         )}
         {!nota && (
           <>
-            <button type="button" aria-label="Anexar" aria-haspopup="menu" aria-expanded={anexos} onClick={() => { setListaPropostas(false); setFormConteudo(null); setAnexos(!anexos); }} className="grid h-11 w-11 shrink-0 place-items-center rounded-full text-gray-600 hover:bg-highlight">
+            <button type="button" aria-label="Anexar" aria-haspopup="menu" aria-expanded={anexos} onClick={() => { setListaPropostas(false); setListaCatalogo(false); setFormConteudo(null); fecharContatos(); setAnexos(!anexos); }} className="grid h-11 w-11 shrink-0 place-items-center rounded-full text-gray-600 hover:bg-highlight">
               <IconPaperclip size={20} aria-hidden />
             </button>
             {anexos && (
               <div role="menu" aria-label="Anexar" className={`absolute bottom-12 left-0 z-20 grid w-[340px] max-w-[calc(100vw-32px)] grid-cols-3 gap-1 ${CLASSE_PAINEL_MENU}`}>
                 {ITENS_ANEXO.filter(i => i.id !== "resposta" || respostas.length > 0)
                   .filter(i => i.id !== "proposta" || propostaDisponivel)
+                  .filter(i => i.id !== "catalogo" || catalogoDisponivel)
                   .map(i => {
                     const Icone = i.icone;
                     const inativo = !!i.recurso && !conteudoAtivo(i.id);
@@ -526,6 +607,56 @@ export function Compositor({ atendimentoId, pedidoFoco, aoCampoResponder, modo, 
             )}
             {formConteudo === "enquete" && conteudoAtivo("enquete") && <FormEnquete aoEnviar={enviarConteudo} aoFechar={fecharConteudo} />}
             {formConteudo === "localizacao" && conteudoAtivo("localizacao") && <FormLocalizacao aoEnviar={enviarConteudo} aoFechar={fecharConteudo} />}
+            {listaContatos && conteudoAtivo("contato") && (
+              <div role="dialog" aria-label="Enviar contato" className={`absolute bottom-12 left-0 z-20 w-[340px] max-w-[calc(100vw-32px)] ${CLASSE_PAINEL_MENU}`}>
+                <div className="flex items-center gap-1 px-1 pb-1">
+                  <button type="button" aria-label="Voltar para anexos" onClick={() => { fecharContatos(); setAnexos(true); }} className="grid h-9 w-9 shrink-0 place-items-center rounded-full text-gray-600 hover:bg-highlight"><IconChevronLeft size={18} aria-hidden /></button>
+                  <p className="text-sm font-medium text-gray-800">Números da escola</p>
+                </div>
+                {listaContatos.estado === "carregando" ? <p role="status" className="px-3 pb-3 text-sm text-gray-600">{CARREGANDO_CONTATOS_CARTAO}</p>
+                  : listaContatos.estado === "erro" ? (
+                    <div className="flex items-center justify-between gap-2 px-3 pb-3">
+                      <p role="alert" className="text-sm text-red-700">{ERRO_CONTATOS_CARTAO}</p>
+                      <Botao variante="secundario" tamanho="sm" onClick={() => void abrirContatos()}>Tentar de novo</Botao>
+                    </div>
+                  ) : listaContatos.itens.length ? (
+                  <>
+                  {listaContatos.erroEnvio && <p role="alert" className="px-3 pb-2 text-sm text-red-700">{listaContatos.erroEnvio}</p>}
+                  <ul aria-label="Números da escola" className="max-h-64 overflow-y-auto">
+                    {listaContatos.itens.map((c) => (
+                      <li key={c.id}>
+                        <button type="button" aria-label={`Enviar contato ${c.rotulo} (${c.telefoneE164})`} disabled={enviando} aria-busy={enviando || undefined} onClick={() => void enviarCartao(c.contatoJid)} className={`${CLASSE_ITEM_MENU} w-full text-left text-gray-800 disabled:cursor-not-allowed disabled:opacity-50`}>
+                          <span aria-hidden className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-blue-100 text-blue-700"><IconUser size={18} /></span>
+                          <span className="min-w-0 flex-1">
+                            <span className="block truncate text-sm font-medium">{c.rotulo}</span>
+                            <span className="block truncate text-xs text-gray-600">{c.telefoneE164}</span>
+                          </span>
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                  </>
+                ) : <EstadoVazio role="status" className="mx-1 mb-1">{SEM_CONTATOS_CARTAO}</EstadoVazio>}
+              </div>
+            )}
+            {listaCatalogo && catalogoDisponivel && catalogo && (
+              <div role="dialog" aria-label="Enviar material do catálogo" className={`absolute bottom-12 left-0 z-20 w-[340px] max-w-[calc(100vw-32px)] ${CLASSE_PAINEL_MENU}`}>
+                <div className="flex items-center gap-1 px-1 pb-1">
+                  <button type="button" aria-label="Voltar para anexos" onClick={() => { setListaCatalogo(false); setAnexos(true); }} className="grid h-9 w-9 shrink-0 place-items-center rounded-full text-gray-600 hover:bg-highlight"><IconChevronLeft size={18} aria-hidden /></button>
+                  <p className="text-sm font-medium text-gray-800">Catálogo</p>
+                </div>
+                <ul aria-label="Materiais do catálogo" className="max-h-64 overflow-y-auto">
+                  {catalogo.map((m) => (
+                    <li key={m.id}>
+                      <button type="button" aria-label={`Enviar ${m.nome}`} disabled={enviando} aria-busy={enviando || undefined} onClick={() => void enviarMaterialCatalogo(m.id)} className={`${CLASSE_ITEM_MENU} w-full text-left text-gray-800 disabled:cursor-not-allowed disabled:opacity-50`}>
+                        <span aria-hidden className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-orange-100 text-orange-700"><IconBook size={18} /></span>
+                        <span className="min-w-0 flex-1 truncate text-sm font-medium">{m.nome}</span>
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
             {listaPropostas && propostaDisponivel && propostas?.oportunidadeId && (
               <div role="dialog" aria-label="Enviar proposta" className={`absolute bottom-12 left-0 z-20 w-[340px] max-w-[calc(100vw-32px)] ${CLASSE_PAINEL_MENU}`}>
                 <div className="flex items-center gap-1 px-1 pb-1">

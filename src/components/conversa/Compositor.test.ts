@@ -17,7 +17,7 @@ vi.mock("react", async (original) => {
   };
 });
 
-import { Compositor, MOTIVO_SEM_ENVIO, AVISO_NOTA, CARREGANDO_ENVIO, FALHA_PERMISSAO_ENVIO, AVISO_ANEXO_EM_BREVE, type PropsCompositor } from "./Compositor";
+import { Compositor, MOTIVO_SEM_ENVIO, AVISO_NOTA, CARREGANDO_ENVIO, FALHA_PERMISSAO_ENVIO, AVISO_ANEXO_EM_BREVE, SEM_CONTATOS_CARTAO, ERRO_CONTATOS_CARTAO, CARREGANDO_CONTATOS_CARTAO, type PropsCompositor } from "./Compositor";
 import { SeletorEmoji, buscarEmoji, type EntradaEmoji } from "./SeletorEmoji";
 import { AVISO_RECURSO_MOTOR, type RecursoMotor } from "./recursos-canal";
 import { criarChavesPorAlvo } from "@/lib/chave-idempotencia";
@@ -494,8 +494,8 @@ function esperarAnexoInativo365(raiz: ReactNode, rotulo: string, aviso: string) 
 }
 const RESPOSTA365={id:"r365",atalho:"/preco",titulo:"Preço",corpo:"Olá {nome}"};
 describe("Compositor: itens de anexo (#365 E4.6)",()=>{
- it("ordem do protótipo com Enquete e sem Catálogo",()=>{
-  expect(ITENS_ANEXO.map(i=>i.rotulo)).toEqual(["Documento","Fotos e vídeos","Câmera","Áudio","Localização","Contato","Enquete","Proposta","Resposta rápida"]);
+ it("ordem do protótipo com Enquete e Catálogo depois da Proposta",()=>{
+  expect(ITENS_ANEXO.map(i=>i.rotulo)).toEqual(["Documento","Fotos e vídeos","Câmera","Áudio","Localização","Contato","Enquete","Proposta","Catálogo","Resposta rápida"]);
  });
  it("apresenta nove ícones em quadrados arredondados de 40px com tokens por categoria",()=>{
   m.g=criarGanchos();const p=props({respostas:[RESPOSTA365],propostas:{oportunidadeId:"op365",itens:[]},aoEnviarProposta:vi.fn(async()=>({ok:true as const}))}),tela=()=>m.g!.renderizar(Compositor,p);abrirAnexos365(tela());
@@ -702,4 +702,177 @@ describe("Compositor: enquete e localização pelo motor (#367 E4.8)", () => {
     expect(elementos(tela()).some(n => n.props["aria-label"] === "Anexar")).toBe(false);
     expect(formsAbertos367(tela())).toHaveLength(0);
   });
+});
+
+const CONTATOS368 = [
+  { id: "n1", rotulo: "Comercial", telefoneE164: "+5511999990001", contatoJid: "5511999990001@s.whatsapp.net" },
+  { id: "n2", rotulo: "Comercial", telefoneE164: "+5511999990002", contatoJid: "5511999990002@s.whatsapp.net" },
+];
+const dialogoContato368 = (raiz: ReactNode) => elementos(raiz).find(n => n.props.role === "dialog" && n.props["aria-label"] === "Enviar contato");
+const botoesContato368 = (raiz: ReactNode) => elementos(raiz).filter(n => n.type === "button" && String(n.props["aria-label"] ?? "").startsWith("Enviar contato "));
+describe("Compositor: cartão de contato com os números da escola (#368 E4.9)", () => {
+  it("Compositor: Contato lista os números e envia { tipo: 'CONTATO', contatoJid }", async () => {
+    m.g = criarGanchos();
+    const aoEnviarConteudo = vi.fn(async () => ({ ok: true as const }));
+    const aoListarContatosCartao = vi.fn(async () => CONTATOS368);
+    const p = props({ capacidades: CAPACIDADES367, aoEnviarConteudo, aoListarContatosCartao });
+    const tela = () => m.g!.renderizar(Compositor, p);
+    abrirAnexos365(tela());
+    const item = elementos(tela()).find(n => n.props.role === "menuitem" && n.props["aria-label"] === "Contato")!;
+    expect(item.props.disabled).toBe(false);
+    expect(item.props["aria-describedby"]).toBeUndefined();
+    clicarBotao(tela(), "Contato");
+    expect(elementos(tela()).some(n => n.props.role === "menu")).toBe(false);
+    expect(dialogoContato368(tela())).toBeDefined();
+    expect(elementos(tela()).some(n => n.props.role === "status" && n.props.children === CARREGANDO_CONTATOS_CARTAO)).toBe(true);
+    await esvaziar();
+    expect(aoListarContatosCartao).toHaveBeenCalledOnce();
+    expect(botoesContato368(tela()).map(b => b.props["aria-label"])).toEqual(["Enviar contato Comercial (+5511999990001)", "Enviar contato Comercial (+5511999990002)"]);
+    (botoesContato368(tela())[1].props.onClick as () => void)();
+    await esvaziar();
+    expect(aoEnviarConteudo).toHaveBeenCalledExactlyOnceWith({ tipo: "CONTATO", contatoJid: "5511999990002@s.whatsapp.net" });
+    expect(dialogoContato368(tela())).toBeUndefined();
+    expect(p.aoEnviarTexto).not.toHaveBeenCalled();
+  });
+
+  it("falha ao listar: Tentar de novo busca a lista outra vez", async () => {
+    m.g = criarGanchos();
+    let falhar = true;
+    const aoListarContatosCartao = vi.fn(async () => { if (falhar) throw new Error("falhou"); return CONTATOS368; });
+    const p = props({ capacidades: CAPACIDADES367, aoEnviarConteudo: vi.fn(async () => ({ ok: true as const })), aoListarContatosCartao });
+    const tela = () => m.g!.renderizar(Compositor, p);
+    abrirAnexos365(tela());
+    clicarBotao(tela(), "Contato");
+    await esvaziar();
+    expect(elementos(tela()).some(n => n.props.role === "alert" && n.props.children === ERRO_CONTATOS_CARTAO)).toBe(true);
+    falhar = false;
+    clicarBotao(tela(), "Tentar de novo");
+    await esvaziar();
+    expect(aoListarContatosCartao).toHaveBeenCalledTimes(2);
+    expect(botoesContato368(tela())).toHaveLength(2);
+    expect(elementos(tela()).some(n => n.props.role === "alert")).toBe(false);
+  });
+
+  it("sem números: estado vazio; falha ao listar: alerta", async () => {
+    m.g = criarGanchos();
+    let p = props({ capacidades: CAPACIDADES367, aoEnviarConteudo: vi.fn(async () => ({ ok: true as const })), aoListarContatosCartao: vi.fn(async () => []) });
+    const tela = () => m.g!.renderizar(Compositor, p);
+    abrirAnexos365(tela());
+    clicarBotao(tela(), "Contato");
+    await esvaziar();
+    const vazio = elementos(tela()).find(n => n.type === EstadoVazio);
+    expect(vazio?.props.children).toBe(SEM_CONTATOS_CARTAO);
+    m.g = criarGanchos();
+    p = { ...p, aoListarContatosCartao: vi.fn(async () => { throw new Error("falhou"); }) };
+    abrirAnexos365(tela());
+    clicarBotao(tela(), "Contato");
+    await esvaziar();
+    expect(elementos(tela()).some(n => n.props.role === "alert" && n.props.children === ERRO_CONTATOS_CARTAO)).toBe(true);
+  });
+
+  it("erro do servidor no envio mantém a lista e mostra o motivo", async () => {
+    m.g = criarGanchos();
+    const aoEnviarConteudo = vi.fn(async () => ({ ok: false as const, erro: "Este canal não envia esse tipo de conteúdo." }));
+    const p = props({ capacidades: CAPACIDADES367, aoEnviarConteudo, aoListarContatosCartao: vi.fn(async () => CONTATOS368) });
+    const tela = () => m.g!.renderizar(Compositor, p);
+    abrirAnexos365(tela());
+    clicarBotao(tela(), "Contato");
+    await esvaziar();
+    (botoesContato368(tela())[0].props.onClick as () => void)();
+    await esvaziar();
+    expect(aoEnviarConteudo).toHaveBeenCalledOnce();
+    const motivo = (raiz: ReactNode) => elementos(raiz).filter(n => n.props.role === "alert" && n.props.children === "Este canal não envia esse tipo de conteúdo.");
+    expect(motivo(dialogoContato368(tela()) as ReactNode)).toHaveLength(1);
+    expect(motivo(tela())).toHaveLength(1);
+    (elementos(tela()).find(n => n.props["aria-label"] === "Voltar para anexos")!.props.onClick as () => void)();
+    expect(dialogoContato368(tela())).toBeUndefined();
+    expect(motivo(tela())).toHaveLength(0);
+  });
+
+  it("sem aoListarContatosCartao ou sem motor, Contato segue desabilitado", () => {
+    m.g = criarGanchos();
+    let p = props({ capacidades: CAPACIDADES367, aoEnviarConteudo: vi.fn(async () => ({ ok: true as const })) });
+    const tela = () => m.g!.renderizar(Compositor, p);
+    abrirAnexos365(tela());
+    esperarAnexoInativo365(tela(), "Contato", AVISO_ANEXO_EM_BREVE);
+    m.g = criarGanchos();
+    p = props({ capacidades: [], aoEnviarConteudo: vi.fn(async () => ({ ok: true as const })), aoListarContatosCartao: vi.fn(async () => CONTATOS368) });
+    abrirAnexos365(tela());
+    esperarAnexoInativo365(tela(), "Contato", AVISO_RECURSO_MOTOR);
+  });
+
+  it("lista que chega depois da troca de conversa não aparece na conversa nova", async () => {
+    m.g = criarGanchos();
+    let liberar: (v: typeof CONTATOS368) => void = () => {};
+    const aoListarContatosCartao = vi.fn(() => new Promise<typeof CONTATOS368>((r) => { liberar = r; }));
+    let p = props({ capacidades: CAPACIDADES367, aoEnviarConteudo: vi.fn(async () => ({ ok: true as const })), aoListarContatosCartao });
+    const tela = () => m.g!.renderizar(Compositor, p);
+    abrirAnexos365(tela());
+    clicarBotao(tela(), "Contato");
+    p = { ...p, atendimentoId: "at2" };
+    tela(); tela();
+    liberar(CONTATOS368);
+    await esvaziar();
+    expect(dialogoContato368(tela())).toBeUndefined();
+    expect(botoesContato368(tela())).toHaveLength(0);
+  });
+});
+
+const CATALOGO378=[{id:"fonte-a",nome:"Catálogo de cursos 2026.pdf"},{id:"fonte-b",nome:"Tabela de horários.pdf"}];
+describe("Compositor: catálogo no menu de anexos (#378 D22)",()=>{
+ it("sem materiais ou sem porta de envio, o Catálogo não aparece",()=>{
+  m.g=criarGanchos();let p=props({catalogo:[],aoEnviarCatalogo:vi.fn(async()=>({ok:true as const}))});const tela=()=>m.g!.renderizar(Compositor,p);abrirAnexos365(tela());
+  expect(elementos(tela()).some(n=>n.props.role==="menuitem"&&n.props["aria-label"]==="Catálogo")).toBe(false);
+  p=props({catalogo:CATALOGO378});expect(elementos(tela()).some(n=>n.props.role==="menuitem"&&n.props["aria-label"]==="Catálogo")).toBe(false);
+ });
+ it("Catálogo lista os materiais e o clique chama aoEnviarCatalogo(fonteId) com chave, fechando a lista",async()=>{
+  m.g=criarGanchos();const enviar=vi.fn<(id:string,chave?:string)=>Promise<{ok:true}>>(async()=>({ok:true}));
+  const p=props({catalogo:CATALOGO378,aoEnviarCatalogo:enviar}),tela=()=>m.g!.renderizar(Compositor,p);
+  abrirAnexos365(tela());
+  expect(elementos(tela()).filter(n=>n.props.role==="menuitem").map(n=>n.props["aria-label"])).toContain("Catálogo");
+  clicarBotao(tela(),"Catálogo");
+  expect(elementos(tela()).some(n=>n.props.role==="menu")).toBe(false);
+  expect(elementos(tela()).some(n=>n.props.role==="dialog"&&n.props["aria-label"]==="Enviar material do catálogo")).toBe(true);
+  expect(elementos(tela()).find(n=>n.type==="ul"&&n.props["aria-label"]==="Materiais do catálogo")).toBeDefined();
+  const botoes=elementos(tela()).filter(n=>n.type==="button"&&String(n.props["aria-label"]).startsWith("Enviar "));
+  expect(botoes.map(b=>b.props["aria-label"])).toEqual(["Enviar Catálogo de cursos 2026.pdf","Enviar Tabela de horários.pdf"]);
+  clicarRotulo366(tela(),"Enviar Tabela de horários.pdf");await esvaziar();
+  expect(enviar).toHaveBeenCalledOnce();expect(enviar.mock.calls[0][0]).toBe("fonte-b");expect(typeof enviar.mock.calls[0][1]).toBe("string");
+  expect(p.aoEnviarTexto).not.toHaveBeenCalled();expect(p.aoEnviarMidia).not.toHaveBeenCalled();
+  expect(elementos(tela()).some(n=>n.props.role==="dialog")).toBe(false);
+ });
+ it("falha mantém a lista aberta, mostra o erro e repete com a mesma chave",async()=>{
+  m.g=criarGanchos();const enviar=vi.fn<(id:string,chave?:string)=>Promise<{ok:false;erro:string}>>(async()=>({ok:false,erro:"Este material não está mais disponível no catálogo."}));
+  const p=props({catalogo:CATALOGO378,aoEnviarCatalogo:enviar}),tela=()=>m.g!.renderizar(Compositor,p);
+  abrirAnexos365(tela());clicarBotao(tela(),"Catálogo");
+  clicarRotulo366(tela(),"Enviar Catálogo de cursos 2026.pdf");await esvaziar();
+  expect(elementos(tela()).some(n=>n.props.role==="dialog")).toBe(true);
+  expect(elementos(tela()).find(n=>n.props.role==="alert")?.props.children).toBe("Este material não está mais disponível no catálogo.");
+  clicarRotulo366(tela(),"Enviar Catálogo de cursos 2026.pdf");await esvaziar();
+  expect(enviar).toHaveBeenCalledTimes(2);expect(enviar.mock.calls[1][1]).toBe(enviar.mock.calls[0][1]);
+ });
+ it("material diferente usa outra chave",async()=>{
+  m.g=criarGanchos();const enviar=vi.fn<(id:string,chave?:string)=>Promise<{ok:false;erro:string}>>(async()=>({ok:false,erro:"Falhou."}));
+  const p=props({catalogo:CATALOGO378,aoEnviarCatalogo:enviar}),tela=()=>m.g!.renderizar(Compositor,p);
+  abrirAnexos365(tela());clicarBotao(tela(),"Catálogo");
+  clicarRotulo366(tela(),"Enviar Catálogo de cursos 2026.pdf");await esvaziar();
+  clicarRotulo366(tela(),"Enviar Tabela de horários.pdf");await esvaziar();
+  expect(enviar.mock.calls[1][1]).not.toBe(enviar.mock.calls[0][1]);
+ });
+ it("Voltar reabre o menu de anexos; Anexar fecha a lista; Proposta troca a lista",()=>{
+  m.g=criarGanchos();const p=props({catalogo:CATALOGO378,aoEnviarCatalogo:vi.fn(async()=>({ok:true as const})),propostas:{oportunidadeId:"op378",itens:[]},aoEnviarProposta:vi.fn(async()=>({ok:true as const}))}),tela=()=>m.g!.renderizar(Compositor,p);
+  abrirAnexos365(tela());clicarBotao(tela(),"Catálogo");clicarRotulo366(tela(),"Voltar para anexos");
+  expect(elementos(tela()).some(n=>n.props.role==="dialog")).toBe(false);expect(elementos(tela()).some(n=>n.props.role==="menu")).toBe(true);
+  clicarBotao(tela(),"Catálogo");abrirAnexos365(tela());
+  expect(elementos(tela()).some(n=>n.props.role==="dialog")).toBe(false);
+  clicarBotao(tela(),"Catálogo");abrirAnexos365(tela());clicarBotao(tela(),"Proposta");
+  expect(elementos(tela()).filter(n=>n.props.role==="dialog").map(n=>n.props["aria-label"])).toEqual(["Enviar proposta"]);
+ });
+ it("lista de outra conversa não envia depois da troca",async()=>{
+  m.g=criarGanchos();const enviar=vi.fn(async()=>({ok:true as const}));let p=props({catalogo:CATALOGO378,aoEnviarCatalogo:enviar});const tela=()=>m.g!.renderizar(Compositor,p);
+  abrirAnexos365(tela());clicarBotao(tela(),"Catálogo");
+  const retido=elementos(tela()).find(n=>n.type==="button"&&n.props["aria-label"]==="Enviar Tabela de horários.pdf")!;
+  p={...p,atendimentoId:"at2"};tela();tela();(retido.props.onClick as ()=>void)();await esvaziar();
+  expect(enviar).not.toHaveBeenCalled();expect(elementos(tela()).some(n=>n.props.role==="dialog")).toBe(false);
+ });
 });

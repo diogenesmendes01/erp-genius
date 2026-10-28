@@ -9,7 +9,7 @@ vi.mock("../midia", async (orig) => ({ ...(await orig<typeof import("../midia")>
 
 import { prisma } from "@/lib/prisma";
 import { criarUsuario, truncarBanco } from "@/test/integracao";
-import { seedCanal } from "@/test/integracao-whatsapp";
+import { criarNumeroSetor, seedCanal } from "@/test/integracao-whatsapp";
 import { driverMotor } from "../drivers/motor";
 import { garantirAtendimento } from "../atendimentos";
 import { despacharFila } from "../despachante";
@@ -49,10 +49,24 @@ describe("conteúdo especial pelo motor", () => {
   it("localização grava resumo com 📍 e contato grava corpo vazio", async () => {
     const { at } = await cenario();
     await enviarConteudoInbox({ atendimentoId: at.id, conteudo: { tipo: "LOCALIZACAO", latitude: 9.93, longitude: -84.08, nome: "Escola" } });
-    await enviarConteudoInbox({ atendimentoId: at.id, conteudo: { tipo: "CONTATO", contatoJid: "50688880000@s.whatsapp.net" } });
+    await criarNumeroSetor({ telefoneE164: "+5511999990100", setores: ["COMERCIAL"] });
+    await enviarConteudoInbox({ atendimentoId: at.id, conteudo: { tipo: "CONTATO", contatoJid: "5511999990100@s.whatsapp.net" } });
     const is = await prisma.intencaoMensagem.findMany({ orderBy: { criadaEm: "asc" } });
     expect(is.map((i) => [i.tipo, i.corpoRenderizado])).toEqual([["LOCALIZACAO", "📍 Escola"], ["CONTATO", ""]]);
     expect(enviarConteudo).toHaveBeenCalledTimes(2);
+  });
+
+  it("contato só aceita JID de número da escola que pode ser compartilhado", async () => {
+    const { at } = await cenario();
+    const vendedor = await criarUsuario([Papel.VENDEDOR], "Vendedor");
+    await criarNumeroSetor({ telefoneE164: "+5511999990101", setores: ["COMERCIAL"], donoId: vendedor.id });
+    await criarNumeroSetor({ telefoneE164: "+5511999990102", setores: ["COMERCIAL"], finalidade: "AGENDA" });
+    for (const contatoJid of ["50688880000@s.whatsapp.net", "5511999990101@s.whatsapp.net", "5511999990102@s.whatsapp.net", "5511999990000@s.whatsapp.net"]) {
+      expect(await enviarConteudoInbox({ atendimentoId: at.id, conteudo: { tipo: "CONTATO", contatoJid } }))
+        .toEqual({ ok: false, erro: "Escolha um dos números da escola para enviar como contato." });
+    }
+    expect(await prisma.intencaoMensagem.count()).toBe(0);
+    expect(enviarConteudo).not.toHaveBeenCalled();
   });
 
   it("figurinha exige webp do próprio autor; GIF exige mp4", async () => {
