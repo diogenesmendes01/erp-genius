@@ -25,7 +25,7 @@ function percentualMeta(meta: Meta) {
 }
 
 function Moldura({ children }: { children: ReactNode }) {
-  return <article className="rounded-lg border border-gray-200 bg-surface p-4">{children}</article>;
+  return <article className="min-w-0 rounded-lg border border-gray-200 bg-surface p-4">{children}</article>;
 }
 
 function Termometro({ meta }: { meta: Meta }) {
@@ -78,7 +78,10 @@ function Valores({ itens, vazio }: { itens: Valor[]; vazio: string }) {
 function LinhaTrabalho({ href, nome, detalhe, badge }: { href: string; nome: string; detalhe?: string; badge: ReactNode }) {
   return (
     <li>
-      <Link href={href} className="flex min-h-[52px] items-center justify-between gap-2.5 rounded-lg px-2.5 py-2 transition-colors hover:bg-surface-muted">
+      <Link
+        href={href}
+        className="flex min-h-[52px] min-w-0 items-center justify-between gap-2.5 rounded-lg px-2.5 py-2 transition-colors hover:bg-surface-muted"
+      >
         <Avatar nome={nome} tamanho={32} />
         <div className="min-w-0 flex-1">
           <div className="truncate text-sm font-medium text-gray-900">{nome}</div>
@@ -148,7 +151,7 @@ export function HomeVendedor({ nome, dados }: { nome: string; dados: Dados }) {
         </Moldura>
       </section>
 
-      <section aria-label="Próximas ações" className="grid gap-6 md:grid-cols-3">
+      <section aria-label="Próximas ações" className="grid gap-6 lg:grid-cols-3">
         <CartaoFila
           titulo="Retornos pendentes"
           contagem={dados.retornos.total}
@@ -212,7 +215,11 @@ export function HomeVendedor({ nome, dados }: { nome: string; dados: Dados }) {
                   href={o.href}
                   nome={o.nome}
                   detalhe={o.motivo}
-                  badge={<BadgeEstado tom="brand" ponto>{o.motivo}</BadgeEstado>}
+                  badge={(
+                    <BadgeEstado tom="brand" ponto className="max-w-[140px] truncate">
+                      <span className="truncate">{o.motivo}</span>
+                    </BadgeEstado>
+                  )}
                 />
               ))}
             </ul>

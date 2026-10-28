@@ -91,7 +91,7 @@ export function HomeGerente({ nome, dados }: { nome: string; dados: Dados }) {
       )}
 
       <div className="grid gap-6 md:grid-cols-2">
-        <section className="rounded-lg border border-gray-200 bg-surface p-4">
+        <section className="min-w-0 rounded-lg border border-gray-200 bg-surface p-4">
           <h2 className="mb-3 font-medium">Gargalos do funil</h2>
           {funil.length === 0 ? (
             <EstadoVazio>Nenhuma oportunidade no escopo.</EstadoVazio>
@@ -122,7 +122,7 @@ export function HomeGerente({ nome, dados }: { nome: string; dados: Dados }) {
           )}
         </section>
 
-        <section className="rounded-lg border border-gray-200 bg-surface p-4">
+        <section className="min-w-0 rounded-lg border border-gray-200 bg-surface p-4">
           <h2 className="mb-1 font-medium">Indicadores da equipe</h2>
           <p className="mb-3 text-xs text-gray-500">SLA e retornos do inbox, experimentais realizadas que viraram matrícula no mês, e oportunidades paradas.</p>
           {indicadores.length === 0 ? (
