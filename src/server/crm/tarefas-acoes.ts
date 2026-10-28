@@ -1,6 +1,7 @@
 "use server";
 
 import type { Resultado } from "@/server/_shared/resultado";
+import type { DecisaoMensagemAgendada } from "@/lib/selo-mensagem-agendada";
 import { reagendarMensagem as reagendarMensagemDominio } from "./mensagens-agendadas";
 import { marcarNotificacaoLida as marcarNotificacaoLidaDominio } from "./notificacoes";
 import {
@@ -20,8 +21,8 @@ export async function criarTarefa(i: TarefaInput): Promise<Resultado<{ id: strin
 export async function editarTarefa(id: string, versao: number, i: Partial<TarefaInput>): Promise<Resultado> {
   return editarTarefaDominio(id, versao, i);
 }
-export async function concluirTarefa(id: string, versao: number, resultado?: string): Promise<Resultado> {
-  return concluirTarefaDominio(id, versao, resultado);
+export async function concluirTarefa(id: string, versao: number, resultado?: string, mensagemAgendada?: DecisaoMensagemAgendada): Promise<Resultado> {
+  return concluirTarefaDominio(id, versao, resultado, mensagemAgendada);
 }
 export async function reabrirTarefa(id: string, versao: number): Promise<Resultado> {
   return reabrirTarefaDominio(id, versao);
@@ -29,8 +30,8 @@ export async function reabrirTarefa(id: string, versao: number): Promise<Resulta
 export async function reagendarTarefa(id: string, versao: number, q: { dataCivil: string | null; hora: string | null }): Promise<Resultado> {
   return reagendarTarefaDominio(id, versao, q);
 }
-export async function cancelarTarefa(id: string, versao: number, motivo: string): Promise<Resultado> {
-  return cancelarTarefaDominio(id, versao, motivo);
+export async function cancelarTarefa(id: string, versao: number, motivo: string, mensagemAgendada?: DecisaoMensagemAgendada): Promise<Resultado> {
+  return cancelarTarefaDominio(id, versao, motivo, mensagemAgendada);
 }
 export async function assumirTarefa(id: string): Promise<Resultado> {
   return assumirTarefaDominio(id);

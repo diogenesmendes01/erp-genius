@@ -101,6 +101,16 @@ it.each([403,404])("revogação %s desmonta a sessão e ACK antigo não reconcil
 it("resultado incerto após refresh preserva motivo sem converter em sucesso",async()=>{
  let falhar!:(e:Error)=>void;cancelar.mockImplementation(()=>new Promise((_r,reject)=>falhar=reject));await render();await abrir();await revisar("Motivo incerto");await clicar("Confirmar cancelamento");await renderLista([]);await act(async()=>falhar(Error("rede")));expect(mudar).not.toHaveBeenCalled();expect((pagina.querySelector("textarea")! as unknown as {value:string}).value).toBe("Motivo incerto");expect(btn("Confirmar cancelamento").hasAttribute("disabled")).toBe(true);
 });
+it("concluir com mensagem pergunta e envia manter; cancelar exige a escolha",async()=>{
+ const com={...tarefa,mensagemAgendada:{id:"m",status:"ADIADA" as const,agendadaPara:"2026-10-29T13:00:00.000Z",quando:"29/10 10:00"}};
+ await render("a330",com);expect(host.textContent).toContain("Mensagem agendada · 29/10 10:00");
+ await act(async()=>prop(host.querySelector("input")!,"onChange"));expect(concluir).not.toHaveBeenCalled();
+ const manter=pagina.querySelectorAll("button").find(b=>b.textContent==="Manter o envio agendado")!;await act(async()=>prop(manter,"onClick"));
+ expect(concluir).toHaveBeenCalledExactlyOnceWith("a330","t330",1,"manter");
+ await render("a330",com);await abrir();await revisar("Cliente pediu");expect(btn("Confirmar cancelamento").hasAttribute("disabled")).toBe(true);
+ const radio=pagina.querySelectorAll("input").find(e=>(e as unknown as {value:string}).value==="cancelar")!;await act(async()=>prop(radio,"onChange",{target:{checked:true}}));
+ await clicar("Confirmar cancelamento");expect(cancelar).toHaveBeenCalledExactlyOnceWith("a330","t330",1,"Cliente pediu","cancelar");
+});
 it("fechar superfície e reabrir mesma conversa invalida o ACK da abertura anterior",async()=>{
  let fim!:(r:{ok:true})=>void;cancelar.mockImplementation(()=>new Promise(r=>fim=r));await render();await abrir();await revisar("Tentativa antiga");await clicar("Confirmar cancelamento");await act(async()=>root.render(null));await render();await abrir();await revisar("Abertura nova");await act(async()=>fim({ok:true}));expect(mudar).not.toHaveBeenCalled();expect((pagina.querySelector("textarea")! as unknown as {value:string}).value).toBe("Abertura nova");expect(pagina.querySelector('[role="alertdialog"]')).toBeTruthy();
 });

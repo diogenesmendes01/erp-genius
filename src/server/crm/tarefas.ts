@@ -5,6 +5,7 @@ import {CamposAdicionaisTarefaD10Schema,LembreteTarefaD10Schema,PrioridadeTarefa
 import { TituloTarefaHumanaSchema } from "../_shared/efeitos-humanos-schema";
 import { criarTarefaTx, editarTarefaTx, agendamentoTarefa } from "./tarefas-escrita";
 import { concluirTarefaTx, reabrirTarefaTx, reagendarTarefaTx, cancelarTarefaTx } from "./tarefas-transicoes";
+import type { DecisaoMensagemAgendada } from "@/lib/selo-mensagem-agendada";
 import { revalidatePath } from "next/cache";
 import { Papel, type Prisma, type PrioridadeTarefa, type TipoTarefa } from "@prisma/client";
 import { z } from "zod";
@@ -142,14 +143,16 @@ export async function editarTarefa(id: string, versao: number, i: Partial<Tarefa
   });
 }
 
-export async function concluirTarefa(id: string, versao: number, resultado?: string): Promise<Resultado> {
+const DecisaoMensagem = z.enum(["cancelar", "manter"]).optional();
+export async function concluirTarefa(id: string, versao: number, resultado?: string, mensagemAgendada?: DecisaoMensagemAgendada): Promise<Resultado> {
   return executarAcao(async () => {
     const autor = await exigirSessao();
     exigirCapacidadeCrm(autor, "tarefas.ver");
     const texto = z.string().trim().max(2000, "O resultado deve ter até 2000 caracteres.").optional().parse(resultado) || null;
+    const decisao = DecisaoMensagem.parse(mensagemAgendada);
     await prisma.$transaction(async (tx) => {
       const t = await carregarVisivel(tx, autor, id);
-      await concluirTarefaTx({ tx, autor, tarefa: t, versao }, texto);
+      await concluirTarefaTx({ tx, autor, tarefa: t, versao }, texto, decisao);
     });
     revalidar();
   });
@@ -183,15 +186,16 @@ export async function reagendarTarefa(id: string, versao: number, q: { dataCivil
   });
 }
 
-export async function cancelarTarefa(id: string, versao: number, motivo: string): Promise<Resultado> {
+export async function cancelarTarefa(id: string, versao: number, motivo: string, mensagemAgendada?: DecisaoMensagemAgendada): Promise<Resultado> {
   return executarAcao(async () => {
     const autor = await exigirSessao();
     exigirCapacidadeCrm(autor, "tarefas.ver");
     const m = z.string().trim().min(1, "Informe o motivo do cancelamento.").max(500, "O motivo deve ter até 500 caracteres.").parse(motivo);
+    const decisao = DecisaoMensagem.parse(mensagemAgendada);
     await prisma.$transaction(async (tx) => {
       await tx.$queryRaw`SELECT id FROM "Tarefa" WHERE id = ${id} FOR UPDATE`;
       const t = await carregarVisivel(tx, autor, id);
-      await cancelarTarefaTx({ tx, autor, tarefa: t, versao }, m);
+      await cancelarTarefaTx({ tx, autor, tarefa: t, versao }, m, decisao);
     });
     revalidar();
   });
