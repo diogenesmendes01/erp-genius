@@ -22,6 +22,8 @@ describe("HomeGerente · KPI de matrículas", () => {
   it("sem_meta_mostra_so_as_matriculas_ativadas", () => {
     const c = cartaoMatriculas(render(dados(null)));
     expect(c).toContain(">7<");
+    expect(c).toContain("font-mono");
+    expect(c).toContain("tabular-nums");
     expect(c).not.toContain("data-kpi-detalhe");
     expect(c).not.toContain("Meta");
   });
@@ -49,5 +51,37 @@ describe("HomeGerente · KPI de matrículas", () => {
     expect(html).toContain('href="/inbox?responsavel=v1"');
     expect(html).toContain('href="/funil?donoId=v1"');
     expect(html).toContain("4 → 1 (25%)");
+    expect(html).toContain("font-mono");
+    expect(html).toContain("tabular-nums");
+    expect(html).toContain("bg-brand-solid");
+    expect(html).toContain("bg-surface-muted");
+    expect(html).toContain("hover:bg-surface-muted");
+    expect(html).toContain("rounded-[6px]");
+    expect(html).toContain("bg-brand-bg");
+    expect(html).toContain(">Vera<");
+    expect(html).toContain("Requer atenção");
+    expect(html).toContain("border-border-soft");
+    expect(html).toContain('style="width:100%"');
+    expect(html).not.toContain("border-gray-300");
+    expect(html).not.toContain("bg-green-100");
+    expect(html).not.toContain("bg-red-100");
+    expect(html).not.toContain("bg-amber-100");
+    expect(html).not.toContain("bg-yellow-100");
+  });
+
+  it("aprovacao_em_dia_e_estados_vazios_sem_borda_pesada", () => {
+    const html = render(dados(null, {
+      kpis: { leadsHoje: 0, conversao: 0, matriculasMes: 7, receitaMes: [], alertasSla: 0, checkInsVencidos: 2, aprovacoesPendentes: 0, metaMatriculasMes: null },
+    }));
+    expect(html).toContain("Em dia");
+    expect(html).not.toContain("Requer atenção");
+    expect(html).toContain("Nenhuma oportunidade no escopo.");
+    expect(html).toContain("Sem vendedores ativos.");
+    expect(html).toContain("Check-in vencido");
+    expect(html).toContain('href="/financeiro/aprovacoes"');
+    expect(html).not.toContain("border-gray-300");
+    expect(html).not.toContain("bg-red-100");
+    expect(html).not.toContain("bg-amber-100");
+    expect(html).not.toContain("bg-green-100");
   });
 });

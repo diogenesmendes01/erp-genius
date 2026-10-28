@@ -34,5 +34,66 @@ describe("HomeVendedor", () => {
     expect(html).toContain('href="/funil?o=o1"');
     expect(html).not.toMatch(/ranking/i);
     expect(html).not.toContain("refinar (P10)");
+    expect(html).toContain("40% da meta");
+    expect(html).toContain("font-mono");
+    expect(html).toContain("tabular-nums");
+    expect(html).toContain("bg-brand-solid");
+    expect(html).toContain("bg-surface-muted");
+    expect(html).toContain("min-h-[52px]");
+    expect(html).toContain("hover:bg-surface-muted");
+    expect(html).toContain("rounded-[6px]");
+    expect(html).toContain("bg-brand-bg");
+    expect(html).toContain("Aguardando retorno");
+    expect(html).toContain("atrasada");
+    expect(html).toContain("Experimental hoje");
+    expect(html).toContain("Ver extrato completo →");
+    expect(html).toContain("Ver inbox →");
+    expect(html).toContain("Ver todas as tarefas →");
+    expect(html).toContain("Ver funil →");
+    expect(html).toContain('style="width:40%"');
+    expect(html).not.toContain("border-gray-300");
+    expect(html).not.toContain("bg-green-100");
+    expect(html).not.toContain("bg-red-100");
+    expect(html).not.toContain("bg-amber-100");
+    expect(html).not.toContain("bg-yellow-100");
+  });
+
+  it("meta_atingida_quando_nao_falta_nada", () => {
+    const html = renderToStaticMarkup(createElement(HomeVendedor, {
+      nome: "Vera Souza",
+      dados: { ...dados, metaMes: [{ metrica: "MATRICULAS", meta: 10, realizado: 10, faltam: 0, pct: 1, moeda: null }] },
+    }));
+    expect(html).toContain("10 de 10");
+    expect(html).toContain("meta atingida");
+    expect(html).toContain("100% da meta");
+    expect(html).not.toContain("faltam 0");
+  });
+
+  it("estados_vazios_compactos_sem_borda_pesada", () => {
+    const html = renderToStaticMarkup(createElement(HomeVendedor, {
+      nome: "Vera Souza",
+      dados: {
+        ...dados,
+        metaMes: [],
+        comissoesConfirmadas: [],
+        comissoesPendentesLiquidacao: [],
+        comissoesPipelineAberto: [],
+        retornos: { total: 0, itens: [] },
+        tarefas: { total: 0, itens: [] },
+        oportunidadesPrioritarias: [],
+      },
+    }));
+    expect(html).toContain("Nenhuma meta pessoal neste mês.");
+    expect(html).toContain("Nenhuma comissão confirmada neste mês.");
+    expect(html).toContain("Nenhuma comissão aguardando pagamento da taxa.");
+    expect(html).toContain("Nenhuma comissão prevista no pipeline.");
+    expect(html).toContain("Nenhuma conversa aguardando a sua resposta.");
+    expect(html).toContain("Nada para hoje.");
+    expect(html).toContain("Nenhuma oportunidade pedindo ação agora.");
+    expect(html).toContain("rounded-item bg-surface-muted");
+    expect(html).not.toContain("border-gray-300");
+    expect(html).not.toContain("bg-green-100");
+    expect(html).not.toContain("bg-red-100");
+    expect(html).not.toContain("bg-amber-100");
   });
 });
