@@ -16,11 +16,21 @@ const horarioValido = (v: unknown) => {
 export default async function Pagina() {
   const usuario = await exigirSessaoPagina(Papel.ADMINISTRADOR, Papel.GERENTE_COMERCIAL);
   const setores = setoresEditaveis(usuario.papeis);
-  const [prazos, usuarios, fuso] = await Promise.all([
+  const agora = new Date();
+  const [prazos, usuarios, fuso, coberturasAtivas] = await Promise.all([
     prisma.prazoRespostaSetor.findMany(),
     prisma.usuario.findMany({ where: { ativo: true }, select: { id: true, nome: true, papeis: true }, orderBy: { nome: "asc" } }),
     fusoDaEscola(),
+    prisma.coberturaCarteira.findMany({
+      where: { inicio: { lte: agora }, fim: { gt: agora }, revogadaEm: null },
+      orderBy: [{ criadoEm: "desc" }],
+      select: { titularId: true, fim: true, substituto: { select: { nome: true } } },
+    }),
   ]);
+  const coberturaPorTitular = new Map<string, { substitutoNome: string; ate: string }>();
+  for (const c of coberturasAtivas) {
+    if (!coberturaPorTitular.has(c.titularId)) coberturaPorTitular.set(c.titularId, { substitutoNome: c.substituto.nome, ate: c.fim.toISOString() });
+  }
   const horarios = prazos.flatMap((c) => {
     const horario = horarioValido(c.horario);
     return horario ? [{ finalidade: c.finalidade, rotulo: SETOR_ATENDIMENTO_LABEL[c.finalidade], horario }] : [];
@@ -37,7 +47,9 @@ export default async function Pagina() {
             participantesIds={c?.participantesIds ?? []} prazo={prazo}
             alertarResponsavel={c?.alertarResponsavel ?? true} alertarGerente={c?.alertarGerente ?? false} contarSoNoHorario={c?.contarSoNoHorario ?? true}
             horario={horarioValido(c?.horario)} fuso={fuso} outrosHorarios={horarios.filter((h) => h.finalidade !== s)}
-            candidatos={usuarios.filter((u) => setoresDoUsuario(u.papeis).includes(s)).map((u) => ({ id: u.id, nome: u.nome }))} />;
+            candidatos={usuarios.filter((u) => setoresDoUsuario(u.papeis).includes(s)).map((u) => ({
+              id: u.id, nome: u.nome, coberturaAtiva: s === "COMERCIAL" ? (coberturaPorTitular.get(u.id) ?? null) : null,
+            }))} />;
         })}
       </div>
     </section>

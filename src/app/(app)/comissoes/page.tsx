@@ -36,6 +36,7 @@ export default async function ComissoesPage({ searchParams }: { searchParams?: P
       veTodos={veTodos}
       podeFecharMes={papeis.includes(Papel.FINANCEIRO)}
       podeEstornar={capacidadesCrm(papeis).has("comissoes.estornar")}
+      podeAbrirPreparacao={papeis.includes(Papel.ADMINISTRADOR) || papeis.includes(Papel.VENDEDOR) || papeis.includes(Papel.GERENTE_COMERCIAL) || papeis.includes(Papel.SECRETARIA_ACADEMICA)}
       fuso={config?.fusoInstitucional ?? "America/Sao_Paulo"}
       hrefPagina={(p) => hrefLista("/comissoes", { periodo: periodo === "mes" ? null : periodo, vendedor: vendedorId, pagina: p })}
     />

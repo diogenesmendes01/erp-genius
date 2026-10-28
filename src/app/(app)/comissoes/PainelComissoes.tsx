@@ -22,6 +22,18 @@ function calculo(l: Painel["linhas"][number]) {
 
 const estornavel = (status: string) => status === "PENDENTE" || status === "APROVADA";
 
+function hrefDoAluno(l: { matriculaId?: string; oportunidadeId?: string | null }, podeAbrirPreparacao: boolean) {
+  if (l.matriculaId) return podeAbrirPreparacao ? `/matriculas/${encodeURIComponent(l.matriculaId)}/preparacao` : null;
+  if (l.oportunidadeId) return `/funil?o=${encodeURIComponent(l.oportunidadeId)}`;
+  return null;
+}
+
+function NomeDoAluno({ l, podeAbrirPreparacao }: { l: Painel["linhas"][number]; podeAbrirPreparacao: boolean }) {
+  const href = hrefDoAluno(l, podeAbrirPreparacao);
+  if (!href) return l.nome;
+  return <Link href={href} className="font-medium text-brand-700 hover:underline">{l.nome}</Link>;
+}
+
 function diaCivil(data: string | null) {
   if (!data) return "—";
   const [a, m, d] = data.split("-");
@@ -33,7 +45,7 @@ function dia(data: Date, fuso: string) {
   return `${d}/${m}/${a}`;
 }
 
-export function PainelComissoes({ painel, periodo, pagina, vendedorId, vendedores, veTodos, podeFecharMes, podeEstornar = false, fuso, hrefPagina }: {
+export function PainelComissoes({ painel, periodo, pagina, vendedorId, vendedores, veTodos, podeFecharMes, podeEstornar = false, podeAbrirPreparacao = true, fuso, hrefPagina }: {
   painel: Painel;
   periodo: PeriodoComissao;
   pagina: number;
@@ -42,6 +54,7 @@ export function PainelComissoes({ painel, periodo, pagina, vendedorId, vendedore
   veTodos: boolean;
   podeFecharMes: boolean;
   podeEstornar?: boolean;
+  podeAbrirPreparacao?: boolean;
   fuso: string;
   hrefPagina: (pagina: number) => string;
 }) {
@@ -157,7 +170,7 @@ export function PainelComissoes({ painel, periodo, pagina, vendedorId, vendedore
                 <tbody>
                   {painel.linhas.map((l) => (
                     <tr key={l.id} className="border-t border-border-soft">
-                      <td className="px-4 py-2">{l.nome}</td>
+                      <td className="px-4 py-2"><NomeDoAluno l={l} podeAbrirPreparacao={podeAbrirPreparacao} /></td>
                       <td className="px-4 py-2">{l.produto}</td>
                       <td className="px-4 py-2">{l.vendedor}</td>
                       <td className="px-4 py-2">{calculo(l)}</td>
@@ -174,7 +187,7 @@ export function PainelComissoes({ painel, periodo, pagina, vendedorId, vendedore
             <ul className="space-y-2 md:hidden">
               {painel.linhas.map((l) => (
                 <li key={l.id} className="space-y-1 rounded-lg border border-border-soft p-3 text-sm">
-                  <p className="font-medium">{l.nome}</p>
+                  <p className="font-medium"><NomeDoAluno l={l} podeAbrirPreparacao={podeAbrirPreparacao} /></p>
                   <p className="text-gray-600">{l.produto} · {l.vendedor}</p>
                   <p>{calculo(l)}</p>
                   <p className="flex flex-wrap justify-between gap-2"><span className="font-medium">{moeda(l.valor, l.moeda)}</span><span>{rotular(STATUS_COMISSAO_LABEL, l.status)}</span></p>

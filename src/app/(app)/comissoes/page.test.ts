@@ -114,6 +114,20 @@ describe("/comissoes (página)", () => {
     expect(html).toContain("Pendências de todos os períodos");
   });
 
+  it("financeiro puro vê o aluno sem link de preparação; vendedor abre a preparação", async () => {
+    const comMatricula = { ...painel, linhas: [{ ...painel.linhas[0], matriculaId: "m1", oportunidadeId: "o1" }] };
+    const htmlDe = async (usuario: typeof vendedor) => {
+      mocks.usuario.valor = usuario;
+      mocks.carregar.mockResolvedValue(comMatricula);
+      return renderToStaticMarkup(await Page({ searchParams: Promise.resolve({}) }));
+    };
+    const financeiroHtml = await htmlDe(financeiro);
+    expect(financeiroHtml).toContain("Ana Souza");
+    expect(financeiroHtml).not.toContain("/matriculas/m1/preparacao");
+    expect(await htmlDe(vendedor)).toContain('href="/matriculas/m1/preparacao"');
+    expect(await htmlDe(com(["FINANCEIRO", "SECRETARIA_ACADEMICA"]))).toContain('href="/matriculas/m1/preparacao"');
+  });
+
   it("período e vendedor da URL chegam ao carregamento", async () => {
     await renderPagina(gerente, { periodo: "ano", vendedor: "v1", pagina: "2" });
     expect(mocks.carregar).toHaveBeenCalledWith(gerente, { periodo: "ano", vendedorId: "v1", produtoId: undefined, pagina: 2 });
