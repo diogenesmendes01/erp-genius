@@ -10,8 +10,8 @@ type PropsEstadoVazio = {
 };
 
 const VISUAL = {
-  compacto: "rounded-md border border-dashed border-gray-300 px-3 py-2 text-sm text-gray-500",
-  bloco: "rounded-lg border border-dashed border-gray-300 p-8 text-center text-sm text-gray-500",
+  compacto: "rounded-item bg-surface-muted px-3 py-3 text-sm text-gray-500",
+  bloco: "rounded-lg border border-dashed border-gray-200 bg-surface-muted px-6 py-8 text-center text-sm text-gray-500",
 };
 
 export function EstadoVazio({ children, acao, bloco = false, className, ...atributos }: PropsEstadoVazio) {
