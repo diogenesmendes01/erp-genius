@@ -91,7 +91,7 @@ it("SQL leitor real lista DTO do fio e retira podeAlterar após perda de Assumir
  const c=await fixture();const nova=await executarAgendadaInbox(prisma,c.dono.id,criar(c));
  const lista=await lerAgendadasDoAtendimento(prisma,c.dono.id,c.atendimento.id);
  expect(lista).toHaveLength(1);expect(lista[0]).toMatchObject({id:nova.id,podeAlterar:true,autor:"voce"});
- expect(Object.keys(lista[0]!).sort()).toEqual(["id","texto","agendadaPara","status","tipo","temAnexo","autor","autorNome","podeAlterar"].sort());
+ expect(Object.keys(lista[0]!).sort()).toEqual(["id","texto","agendadaPara","status","tipo","temAnexo","autor","autorNome","podeAlterar","perguntaPendente"].sort());
  await prisma.atendimentoWhatsApp.update({where:{id:c.atendimento.id},data:{responsavelId:null}});
  expect(await lerAgendadasDoAtendimento(prisma,c.dono.id,c.atendimento.id)).toEqual([expect.objectContaining({id:nova.id,podeAlterar:false})]);
  expect(await lerAgendadasDoAtendimento(prisma,c.outro.id,c.atendimento.id)).toEqual([]);

@@ -20,3 +20,11 @@ it("ACK A→B→A não anuncia nem atualiza nova sessão",async()=>{let fim!:(r:
 it.each(["ok","erro","incerto"])("404 e200 fresco invalidam resultado antigo %s",async caso=>{let fim!:(r:unknown)=>void,rejeitar!:(e:Error)=>void;concluir.mockImplementation(()=>new Promise((r,j)=>{fim=r;rejeitar=j;}));await render();await act(async()=>props(botao()).onClick());await render("a332",tarefa,true);await render();await act(async()=>{if(caso==="incerto")rejeitar(Error("rede"));else fim(caso==="ok"?{ok:true}:{ok:false,erro:"Erro antigo"});});expect(mudar).not.toHaveBeenCalled();expect(host.textContent).not.toContain("Erro antigo");expect(host.textContent).not.toContain("Tarefa concluída.");});
 it("handler de versão antiga não chama action e editar recebe snapshot atual",async()=>{await render();const antigo=props(botao()).onClick;await render("a332",{...tarefa,versao:2});await act(async()=>antigo());expect(concluir).not.toHaveBeenCalled();const e=host.querySelectorAll("button").find(b=>b.getAttribute("aria-label")==="Editar")!;await act(async()=>props(e).onClick());expect(editar).toHaveBeenCalledExactlyOnceWith({...tarefa,versao:2});});
 it("falha de transporte não faz retry nem anuncia sucesso",async()=>{concluir.mockRejectedValue(Error("rede"));await render();await act(async()=>props(botao()).onClick());expect(concluir).toHaveBeenCalledOnce();expect(mudar).not.toHaveBeenCalled();expect(host.textContent).not.toContain("Tarefa concluída.");expect(host.textContent).toContain(MSG_RESULTADO_INCERTO_SEM_CHAVE);});
+it("com mensagem agendada pergunta antes e envia a decisão escolhida",async()=>{
+ const com={...tarefa,mensagemAgendada:{id:"m",status:"PENDENTE" as const,agendadaPara:"2026-10-29T13:00:00.000Z",quando:"29/10 10:00"}};
+ await render("a332",com);expect(host.textContent).toContain("Mensagem agendada · 29/10 10:00");
+ await act(async()=>props(botao()).onClick());expect(concluir).not.toHaveBeenCalled();
+ const manter=Array.from(document.body.querySelectorAll("button")).find(b=>b.textContent==="Manter o envio agendado") as unknown as Elemento;
+ expect(manter).toBeTruthy();await act(async()=>props(manter).onClick());
+ expect(concluir).toHaveBeenCalledExactlyOnceWith("a332","t332",1,"manter");
+});

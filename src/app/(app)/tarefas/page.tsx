@@ -12,6 +12,7 @@ import { listarItensAgenda } from "@/server/crm/mensagens-agendadas";
 import { listarNotificacoes } from "@/server/crm/notificacoes";
 import { capacidadesCrm } from "@/server/crm/permissoes";
 import { fusoExibicaoDoUsuario, listarItensLista, listarResponsaveisPossiveis, obterTarefa } from "@/server/crm/tarefas-consulta";
+import { resumoMensagemAgendadaDaTarefa } from "@/server/inbox/mensagem-agendada-tarefa";
 import { AgendaTarefas } from "./AgendaTarefas";
 import { CalendarioTarefas } from "./CalendarioTarefas";
 import { ListaTarefas } from "./ListaTarefas";
@@ -52,6 +53,7 @@ export default async function TarefasPage({ searchParams }: { searchParams: Prom
   ]);
 
   const conversa = tarefaAberta ? await atendimentoParaAbrir(usuario, { atendimentoId: tarefaAberta.atendimentoId, leadId: tarefaAberta.leadId, pessoaId: tarefaAberta.pessoaId }) : null;
+  const mensagemAgendada = tarefaAberta ? await resumoMensagemAgendadaDaTarefa(prisma, tarefaAberta.id, tarefaAberta.fusoOrigem) : null;
   const url = { visao, data: visao === "lista" ? undefined : data, escopo: equipe ? "equipe" : undefined };
   return (
     <>
@@ -83,7 +85,7 @@ export default async function TarefasPage({ searchParams }: { searchParams: Prom
 
       {idAberto && !novo && !tarefaAberta && <Aviso tom="atencao" className="mt-3">Tarefa não encontrada ou fora do seu escopo.</Aviso>}
       {(novo || tarefaAberta) && (
-        <PainelTarefa conversa={conversa} tarefa={tarefaAberta} responsaveis={responsaveis} fusoEscola={fusoEscola} fusoExibicao={fusoExibicao} dataInicial={hoje} params={url} />
+        <PainelTarefa conversa={conversa} tarefa={tarefaAberta} mensagemAgendada={mensagemAgendada} responsaveis={responsaveis} fusoEscola={fusoEscola} fusoExibicao={fusoExibicao} dataInicial={hoje} params={url} />
       )}
     </>
   );

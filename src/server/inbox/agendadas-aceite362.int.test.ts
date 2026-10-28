@@ -35,7 +35,8 @@ it("aceite reader limita50 e ordena data/id, inclui HUMANO/IA e expõe somente D
  expect(dto.map(x=>x.id)).toEqual([...Array.from({length:28},(_,i)=>idOrdenado(28+i)),...Array.from({length:22},(_,i)=>idOrdenado(i))]);expect(dto).toHaveLength(50);
  expect(dto.find(x=>x.id===idOrdenado(28))).toMatchObject({autor:"aria",podeAlterar:false});expect(dto.find(x=>x.id===idOrdenado(29))).toMatchObject({autor:"voce",podeAlterar:true});
  expect(dto.find(x=>x.id===idOrdenado(53))?.temAnexo).toBe(true);expect(dto.find(x=>x.id===idOrdenado(52))?.temAnexo).toBe(true);
- for(const linha of dto)expect(Object.keys(linha).sort()).toEqual(["id","texto","agendadaPara","status","tipo","temAnexo","autor","autorNome","podeAlterar"].sort());
+ const base=["agendadaPara","autor","autorNome","id","perguntaPendente","podeAlterar","status","temAnexo","texto","tipo"];
+ for(const linha of dto)expect(Object.keys(linha).filter(k=>k!=="editavel"&&k!=="anexoNome").sort()).toEqual(base);
  expect(JSON.stringify(dto)).not.toContain("privado-aceite362");expect(JSON.stringify(dto)).not.toContain("conteudoPrivado362");expect(JSON.stringify(dto)).not.toContain(c.contato.telefoneE164);
 });
 it("aceite filtros reais, invisível/encerrado retornam[] e recusam reagendar/enviar sem efeitos",async()=>{

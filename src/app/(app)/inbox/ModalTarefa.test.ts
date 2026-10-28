@@ -7,7 +7,7 @@ const {dados,criar,editar,cancelar,prever}=vi.hoisted(()=>({dados:vi.fn(),criar:
 vi.mock("@/server/inbox/acoes-painel",()=>({dadosModalTarefaNoInbox:dados,criarTarefaNoInbox:criar,editarTarefaNoInbox:editar,cancelarTarefaNoInbox:cancelar,preverNotificadosTarefaNoInbox:prever}));
 import {ModalTarefa} from "./ModalTarefa";
 import type {DadosModalTarefa} from "@/server/inbox/tarefas-edicao";
-const dto:DadosModalTarefa={contatoNome:"Contato fictício331",oportunidade:{id:"op",titulo:"Oportunidade fictícia"},responsaveis:[],notificadosPossiveis:[{id:"u",nome:"Você autorizado"}],podeAtribuirResponsavel:false,fusoEscola:"America/Sao_Paulo",usuarioId:"u",contextoEsperado:"contexto331",contextoIdentidadeEsperada:"identidade331",podeAgendarMensagem:true,motivoSemMensagem:null,tarefa:null};
+const dto:DadosModalTarefa={contatoNome:"Contato fictício331",oportunidade:{id:"op",titulo:"Oportunidade fictícia"},responsaveis:[],notificadosPossiveis:[{id:"u",nome:"Você autorizado"}],podeAtribuirResponsavel:false,fusoEscola:"America/Sao_Paulo",usuarioId:"u",contextoEsperado:"contexto331",contextoIdentidadeEsperada:"identidade331",podeAgendarMensagem:true,motivoSemMensagem:null,janelaEnvio:{inicio:9,fim:20,diasSemana:[1,2,3,4,5]},mensagemAgendada:null,tarefa:null};
 let root:Root,host:Elemento,pagina:Elemento;const fechar=vi.fn(),salvo=vi.fn();
 function prop(e:Elemento,n:string,arg?:unknown){const k=Object.keys(e).find(k=>k.startsWith("__reactProps"))!;(e as unknown as Record<string,Record<string,(a?:unknown)=>unknown>>)[k][n](arg);}
 const btn=(s:string)=>pagina.querySelectorAll("button").find(e=>e.textContent===s)!;
@@ -91,4 +91,14 @@ it("D11 sem ter assumido a conversa a caixa fica desabilitada e explica",async()
 it("D11 caixa desabilitada mostra o motivo devolvido pelo servidor",async()=>{dados.mockResolvedValue({ok:true,dado:{...dto,podeAgendarMensagem:false,motivoSemMensagem:"Contato pediu para não receber mensagens."}});await render();expect(caixa("Enviar mensagem nesta data").hasAttribute("disabled")).toBe(true);expect(pagina.textContent).toContain("Contato pediu para não receber mensagens.");expect(pagina.textContent).not.toContain("Assuma a conversa");});
 it("D11 tarefa já feita não agenda mensagem",async()=>{await render();await alterar("Título da tarefa","Feita");await marcar("Enviar mensagem nesta data");await act(async()=>prop(mensagemAoContato()!,"onChange",{target:{value:"Texto"}}));await marcar("Já foi feita");expect(caixa("Enviar mensagem nesta data").hasAttribute("disabled")).toBe(true);expect(pagina.textContent).toContain("Tarefa já feita não agenda mensagem.");await submeter();expect(criar.mock.calls[0][1]).toMatchObject({jaFeita:true});expect(criar.mock.calls[0][1]).not.toHaveProperty("mensagem");});
 it("D11 avisa quando a tarefa não tem data e horário futuros",async()=>{await render();await marcar("Enviar mensagem nesta data");expect(pagina.textContent).not.toContain("só é agendada");await act(async()=>prop(btn("Sem prazo"),"onClick"));expect(pagina.textContent).toContain("A mensagem só é agendada quando a tarefa tem data e horário no futuro.");});
+it("D11 avisa horário fora da janela antes de salvar",async()=>{await render();await marcar("Enviar mensagem nesta data");await alterar("Data da tarefa","2026-11-01");await alterar("Horário da tarefa","22:00");expect(pagina.textContent).toContain("Fora da janela de envio");expect(pagina.textContent).toContain('desmarque "Enviar mensagem nesta data"');});
+it("cancelar tarefa com mensagem exige a escolha e envia cancelar",async()=>{
+ dados.mockResolvedValue({ok:true,dado:{...snapshot(),mensagemAgendada:{id:"m",status:"PENDENTE",agendadaPara:"2026-11-02T13:00:00.000Z",quando:"02/11 10:00"}}});
+ await render("a",{tipo:"editar",tarefa:{id:"t",versao:2}});expect(pagina.textContent).toContain("Mensagem agendada · 02/11 10:00");
+ await act(async()=>prop(btn("Cancelar tarefa"),"onClick"));await act(async()=>prop(pagina.querySelector("textarea")!,"onChange",{target:{value:"Cliente pediu"}}));
+ expect(btn("Confirmar cancelamento").hasAttribute("disabled")).toBe(true);
+ const radio=pagina.querySelectorAll("input").find(e=>(e as unknown as {value:string}).value==="cancelar")!;await act(async()=>prop(radio,"onChange",{target:{checked:true}}));
+ await act(async()=>prop(btn("Confirmar cancelamento"),"onClick"));
+ expect(cancelar).toHaveBeenCalledExactlyOnceWith("a","t",2,"Cliente pediu","cancelar");
+});
 it("D11 edição não oferece mensagem nesta data",async()=>{dados.mockResolvedValue({ok:true,dado:snapshot()});await render("a",{tipo:"editar",tarefa:{id:"t",versao:2}});expect(pagina.textContent).not.toContain("Enviar mensagem nesta data");});
