@@ -51,6 +51,9 @@ from pathlib import Path
 mock = Path(os.environ["MOCK_DIR"])
 calls = mock / "calls.log"
 args = sys.argv[1:]
+if os.environ.get("LEAK_PROBE"):
+    sys.stderr.write("ambiente herdado vazou\\n")
+    sys.exit(1)
 gh_token = os.environ.get("GH_TOKEN", "")
 forbidden = ("DATABASE_URL", "SMOKE_COOKIE", "COOLIFY_TOKEN", "MIGRATE_DATABASE_URL", "DEPLOY_NOTIFY_TOKEN", "GHCR_TOKEN")
 if not gh_token or any(os.environ.get(name) for name in forbidden):
@@ -149,6 +152,9 @@ import os, sys, time
 from pathlib import Path
 mock = Path(os.environ["MOCK_DIR"])
 calls = mock / "calls.log"
+if os.environ.get("LEAK_PROBE"):
+    sys.stderr.write("ambiente herdado vazou\\n")
+    sys.exit(1)
 forbidden = ("DATABASE_URL", "SMOKE_COOKIE", "COOLIFY_TOKEN", "MIGRATE_DATABASE_URL", "DEPLOY_NOTIFY_TOKEN", "GHCR_TOKEN", "GH_TOKEN")
 if any(os.environ.get(name) for name in forbidden):
     sys.stderr.write("curl com variavel fora da allowlist\\n")
@@ -277,6 +283,9 @@ import os, sys
 from pathlib import Path
 mock = Path(os.environ["MOCK_DIR"])
 args = sys.argv[1:]
+if os.environ.get("LEAK_PROBE"):
+    sys.stderr.write("ambiente herdado vazou\\n")
+    sys.exit(1)
 forbidden = ("SMOKE_COOKIE", "COOLIFY_TOKEN", "MIGRATE_DATABASE_URL", "DEPLOY_NOTIFY_TOKEN", "GHCR_TOKEN", "GH_TOKEN")
 if any(os.environ.get(name) for name in forbidden):
     sys.stderr.write("docker com variavel fora da allowlist\\n")
@@ -321,6 +330,9 @@ sys.exit(1)
 import os, sys
 from pathlib import Path
 mock = Path(os.environ["MOCK_DIR"])
+if os.environ.get("LEAK_PROBE"):
+    sys.stderr.write("ambiente herdado vazou\\n")
+    sys.exit(1)
 if os.environ.get("DATABASE_URL") or os.environ.get("SMOKE_COOKIE") or os.environ.get("COOLIFY_TOKEN") or os.environ.get("GH_TOKEN"):
     sys.stderr.write("pg_dump com variavel fora da allowlist\\n")
     sys.exit(1)
@@ -345,6 +357,9 @@ Path(target).write_text("PGDMP", encoding="utf-8")
 import os, sys
 from pathlib import Path
 mock = Path(os.environ["MOCK_DIR"])
+if os.environ.get("LEAK_PROBE"):
+    sys.stderr.write("ambiente herdado vazou\\n")
+    sys.exit(1)
 if os.environ.get("DATABASE_URL") or os.environ.get("SMOKE_COOKIE") or os.environ.get("COOLIFY_TOKEN"):
     sys.stderr.write("pg_restore com variavel fora da allowlist\\n")
     sys.exit(1)
@@ -1377,6 +1392,53 @@ os.execv("${join(bin, "curl.real")}", ["curl.real", *args])
     expect(callsOf(ctx.mock)).toContain("notify-auth-ok");
     expect(callsOf(ctx.mock).some((line) => line.includes("hooks.example.test"))).toBe(true);
     expect(JSON.parse(readFileSync(ctx.failed, "utf8")).sha).toBe(SHA_NEW);
+  });
+
+  it("guard que falha notifica pelo mark_and_stop", () => {
+    const ctx = arrange({ contract: true });
+    ctx.envValues.DEPLOY_NOTIFY_URL = "https://hooks.example.test/deploy";
+    ctx.envValues.DEPLOY_NOTIFY_TOKEN = NOTIFY_TOKEN;
+    materializeEnv(ctx.envFile, ctx.envValues);
+    const result = run(ctx.env);
+    expect(result.status).not.toBe(0);
+    expect(result.stderr).toContain("deploy manual");
+    const lines = callsOf(ctx.mock);
+    expect(lines).toContain("notify-auth-ok");
+    expect(lines.some((line) => line.includes("hooks.example.test") && line.includes('"event":"contract"'))).toBe(true);
+    expect(lines.some((line) => line.startsWith("pg_dump"))).toBe(false);
+    const fn = readFileSync(DEPLOY, "utf8");
+    const body = fn.slice(fn.indexOf("mark_and_stop()"), fn.indexOf("\nmain()"));
+    expect(body).toContain('notify_line "$LAST_LOG"');
+  });
+
+  it("backup que falha notifica pelo mark_and_stop", () => {
+    const ctx = arrange({ listFail: true });
+    ctx.envValues.DEPLOY_NOTIFY_URL = "https://hooks.example.test/deploy";
+    ctx.envValues.DEPLOY_NOTIFY_TOKEN = NOTIFY_TOKEN;
+    materializeEnv(ctx.envFile, ctx.envValues);
+    const result = run(ctx.env);
+    expect(result.status).not.toBe(0);
+    expect(result.stderr).toContain("pg_restore --list falhou");
+    const lines = callsOf(ctx.mock);
+    expect(lines).toContain("notify-auth-ok");
+    expect(lines.some((line) => line.includes("hooks.example.test") && line.includes('"event":"backup"'))).toBe(true);
+    expect(lines.some((line) => line.startsWith("pg_dump"))).toBe(true);
+    expect(lines.some((line) => line.startsWith("docker run"))).toBe(false);
+  });
+
+  it("run_allow não entrega o ambiente herdado aos filhos", () => {
+    const ctx = arrange();
+    ctx.env.LEAK_PROBE = "vazamento-do-ambiente-herdado";
+    const result = run(ctx.env);
+    expect(result.status).toBe(0);
+    expect(result.stderr).not.toContain("ambiente herdado vazou");
+    expect(result.stderr).not.toContain("vazamento-do-ambiente-herdado");
+    const lines = callsOf(ctx.mock);
+    expect(lines.some((line) => line.startsWith("gh "))).toBe(true);
+    expect(lines.some((line) => line.startsWith("pg_dump"))).toBe(true);
+    expect(lines.some((line) => line.startsWith("docker run"))).toBe(true);
+    expect(lines.join("\n")).not.toContain("vazamento-do-ambiente-herdado");
+    expect(readFileSync(join(ROOT, "lib/common.sh"), "utf8")).toContain("env -i PATH=");
   });
 
   it("o runbook é de produção, restaura por env-file e deixa o BLOCK-12 pendente", () => {
