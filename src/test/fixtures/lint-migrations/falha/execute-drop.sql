@@ -1,0 +1,1 @@
+EXECUTE 'DROP TABLE "Legado"';

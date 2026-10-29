@@ -3,6 +3,7 @@ name: CI
 on:
   pull_request:
     branches: [main]
+    types: [opened, synchronize, reopened, labeled, unlabeled]
   push:
     branches: [main]
 
@@ -53,6 +54,9 @@ jobs:
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event_name == 'pull_request' && format('refs/pull/{0}/merge', github.event.pull_request.number) || github.sha }}
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version-file: .nvmrc
@@ -61,6 +65,8 @@ jobs:
         run: npm ci
       - name: ESLint (eslint . --max-warnings 40)
         run: npx eslint . --max-warnings 40
+      - name: Lint de migrations (expand-only)
+        run: npx tsx scripts/lint-migrations.ts
 
   test:
     name: test (${{ matrix.tz }})
