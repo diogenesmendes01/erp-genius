@@ -74,6 +74,10 @@ for (const arq of ["docker-compose.coolify.yml", "docker-compose.prod.yml"]) {
     it.each(producao)("%s está no environment do app", (v) => {
       expect(env).toMatch(new RegExp(`^      ${v}:`, "m"));
     });
+    it("APP_BASE_URL entra na lista environment do app, sem env_file", () => {
+      expect(env).toMatch(/^      APP_BASE_URL: \$\{APP_BASE_URL\}$/m);
+      expect(app).not.toMatch(/^\s*env_file:/m);
+    });
     it("flags *_ENABLED repassadas com padrão seguro \"false\"", () => {
       for (const v of producao.filter((x) => x.endsWith("_ENABLED"))) {
         expect(env).toContain(`${v}: \${${v}:-false}`);
