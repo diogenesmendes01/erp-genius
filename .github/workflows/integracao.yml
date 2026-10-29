@@ -52,6 +52,8 @@ jobs:
       - name: Instalar dependências (npm ci)
         timeout-minutes: 15
         run: npm ci
+      - name: Reconstruir binários (prisma, @prisma/engines, esbuild)
+        run: npm rebuild prisma @prisma/engines esbuild --ignore-scripts=false
       - name: Gerar o client do Prisma
         timeout-minutes: 5
         run: npx prisma generate
