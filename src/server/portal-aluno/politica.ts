@@ -1,4 +1,5 @@
 import { createHash, randomBytes, timingSafeEqual } from "crypto";
+import { z } from "zod";
 
 export const COOKIE_SESSAO_PORTAL_ALUNO = "portal_aluno_session";
 
@@ -75,57 +76,42 @@ export function cookieSessaoPortalAluno(valor: string, expiraEm: Date) {
   };
 }
 
-const PROTOCOLOS_HTTP = new Set(["http:", "https:"]);
+type AmbienteApp = {
+  NODE_ENV?: string;
+  APP_BASE_URL?: string;
+};
 
-function protocoloHttp(valor: string): "http:" | "https:" | null {
-  if (valor === "http" || valor === "http:") return "http:";
-  if (valor === "https" || valor === "https:") return "https:";
-  return null;
-}
-
-function hostDeCabecalho(valor: string, protocolo: "http:" | "https:"): string | null {
-  const primeiro = valor.split(",")[0]?.trim();
-  if (!primeiro) return null;
+const appBaseUrlSchema = z.string().trim().min(1).refine((valor) => {
   try {
-    return new URL(`${protocolo}//${primeiro}`).host.toLowerCase();
-  } catch {
-    return null;
-  }
-}
-
-/** `request.url` no `next start` usa o bind do processo (`0.0.0.0:3000`, `app`), não o host público. */
-function hostDeBindInterno(hostname: string): boolean {
-  const nome = hostname.toLowerCase();
-  if (nome === "localhost" || nome === "0.0.0.0" || nome === "127.0.0.1" || nome === "::1" || nome === "[::1]") return true;
-  if (!nome.includes(".")) return true;
-  return /^\d{1,3}(\.\d{1,3}){3}$/.test(nome);
-}
-
-function protocoloEncaminhado(request: Request): "http:" | "https:" | null {
-  const partes = request.headers.get("x-forwarded-proto")?.split(",").map((p) => p.trim().toLowerCase()).filter(Boolean) ?? [];
-  const ultimo = partes.at(-1);
-  return ultimo ? protocoloHttp(ultimo) : null;
-}
-
-export function origemPortalAlunoPermitida(request: Request): boolean {
-  const bruto = request.headers.get("origin");
-  if (!bruto) return false;
-  try {
-    const origem = new URL(bruto);
-    const canonica = new URL(request.url);
-    if (!PROTOCOLOS_HTTP.has(origem.protocol) || !PROTOCOLOS_HTTP.has(canonica.protocol)) return false;
-    if (origem.origin === canonica.origin) return true;
-    if (origem.hostname.toLowerCase() === canonica.hostname.toLowerCase()) {
-      return origem.protocol === canonica.protocol || (origem.protocol === "https:" && canonica.protocol === "http:");
-    }
-    if (!hostDeBindInterno(canonica.hostname)) return false;
-    const protocoloPublico = protocoloEncaminhado(request);
-    if (protocoloPublico && origem.protocol !== protocoloPublico) return false;
-    if (!protocoloPublico && origem.protocol === "http:" && canonica.protocol === "https:") return false;
-    const publico = request.headers.get("x-forwarded-host") ?? request.headers.get("host");
-    if (!publico) return false;
-    return hostDeCabecalho(publico, origem.protocol as "http:" | "https:") === origem.host.toLowerCase();
+    const url = new URL(valor);
+    return url.protocol === "https:" && url.hostname.length > 0 && url.username === "" && url.password === "";
   } catch {
     return false;
   }
+}, "APP_BASE_URL precisa ser uma URL https.");
+
+export function lerAppBaseUrl(env: AmbienteApp = process.env): URL | null {
+  const parsed = appBaseUrlSchema.safeParse(env.APP_BASE_URL);
+  return parsed.success ? new URL(parsed.data) : null;
+}
+
+export function validarAppBaseUrlNoBoot(env: AmbienteApp = process.env): void {
+  if (env.NODE_ENV !== "production") return;
+  if (!lerAppBaseUrl(env)) throw new Error("APP_BASE_URL precisa ser uma URL https em produção.");
+}
+
+/** Origin tem de coincidir com APP_BASE_URL. Host, X-Forwarded-* e request.url não participam. */
+export function origemPortalAlunoPermitida(request: Request, env: AmbienteApp = process.env): boolean {
+  const bruto = request.headers.get("origin");
+  if (!bruto) return false;
+  let origem: URL;
+  try {
+    origem = new URL(bruto);
+  } catch {
+    return false;
+  }
+  const base = lerAppBaseUrl(env);
+  if (base && origem.origin === base.origin) return true;
+  if (env.NODE_ENV === "production") return false;
+  return origem.protocol === "http:" && origem.hostname === "localhost";
 }

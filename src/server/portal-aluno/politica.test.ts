@@ -8,6 +8,7 @@ import {
   gerarSegredoPortalAluno,
   normalizarEmailPortalAluno,
   origemPortalAlunoPermitida,
+  validarAppBaseUrlNoBoot,
 } from "./politica";
 
 const prazos = {
@@ -42,66 +43,73 @@ describe("política do portal do aluno", () => {
     expect(cookie.path).toBe("/");
   });
 
-  it("aceita apenas Origin idêntico ao URL canônico e ignora host encaminhado forjado", () => {
-    const aceito = new Request("https://portal.geniusidiomas.com/api/portal-aluno/sessao", {
-      method: "POST", headers: { origin: "https://portal.geniusidiomas.com", host: "atacante.example" },
+  it("aceita a origem exata de APP_BASE_URL, com scheme, host e porta", () => {
+    const producao = { NODE_ENV: "production", APP_BASE_URL: "https://erp.geniusidiomas.com" };
+    const noBind = new Request("https://0.0.0.0:3000/api/portal-aluno/token", {
+      method: "POST",
+      headers: { origin: "https://erp.geniusidiomas.com", host: "app:3000", "x-forwarded-host": "atacante.example" },
     });
-    const hostForjado = new Request("https://portal.geniusidiomas.com/api/portal-aluno/sessao", {
-      method: "POST", headers: { origin: "https://atacante.example", host: "portal.geniusidiomas.com", "x-forwarded-host": "atacante.example" },
-    });
-    const protocoloDiferente = new Request("https://portal.geniusidiomas.com/api/portal-aluno/sessao", {
-      method: "POST", headers: { origin: "http://portal.geniusidiomas.com" },
-    });
-    const semOrigin = new Request("https://portal.geniusidiomas.com/api/portal-aluno/sessao", { method: "POST" });
-    expect(origemPortalAlunoPermitida(aceito)).toBe(true);
-    expect(origemPortalAlunoPermitida(hostForjado)).toBe(false);
-    expect(origemPortalAlunoPermitida(protocoloDiferente)).toBe(false);
-    expect(origemPortalAlunoPermitida(semOrigin)).toBe(false);
+    expect(origemPortalAlunoPermitida(noBind, producao)).toBe(true);
+    const comPorta = { NODE_ENV: "production", APP_BASE_URL: "https://erp.geniusidiomas.com:8443" };
+    expect(origemPortalAlunoPermitida(pedido("https://erp.geniusidiomas.com:8443"), comPorta)).toBe(true);
+    expect(origemPortalAlunoPermitida(pedido("https://erp.geniusidiomas.com"), comPorta)).toBe(false);
   });
 
-  it("atrás do proxy, o bind interno não rejeita o Origin que coincide com o host público", () => {
-    const caddyReescreveHost = new Request("https://0.0.0.0:3000/api/portal-aluno/token", {
-      method: "POST",
-      headers: {
-        origin: "https://uat.geniusidiomas.com",
-        host: "app:3000",
-        "x-forwarded-host": "uat.geniusidiomas.com",
-        "x-forwarded-proto": "https",
-      },
-    });
-    const caddyPreservaHost = new Request("http://127.0.0.1:3000/api/portal-aluno/token", {
-      method: "POST",
-      headers: { origin: "https://uat.geniusidiomas.com", host: "uat.geniusidiomas.com" },
-    });
-    const soProtocoloInterno = new Request("http://uat.geniusidiomas.com:3000/api/portal-aluno/token", {
-      method: "POST",
-      headers: { origin: "https://uat.geniusidiomas.com", host: "uat.geniusidiomas.com" },
-    });
-    expect(origemPortalAlunoPermitida(caddyReescreveHost)).toBe(true);
-    expect(origemPortalAlunoPermitida(caddyPreservaHost)).toBe(true);
-    expect(origemPortalAlunoPermitida(soProtocoloInterno)).toBe(true);
-  });
-
-  it("no bind interno, Origin de outro site continua negado mesmo com host encaminhado", () => {
-    const csrf = new Request("https://0.0.0.0:3000/api/portal-aluno/token", {
+  it("nega Origin forjado mesmo quando X-Forwarded-Host e Host repetem o golpe", () => {
+    const producao = { NODE_ENV: "production", APP_BASE_URL: "https://erp.geniusidiomas.com" };
+    const forjado = new Request("https://atacante.example/api/portal-aluno/token", {
       method: "POST",
       headers: {
         origin: "https://atacante.example",
-        host: "app:3000",
-        "x-forwarded-host": "uat.geniusidiomas.com",
+        host: "atacante.example",
+        "x-forwarded-host": "atacante.example",
         "x-forwarded-proto": "https",
       },
     });
-    const rebaixa = new Request("https://0.0.0.0:3000/api/portal-aluno/token", {
+    expect(origemPortalAlunoPermitida(forjado, producao)).toBe(false);
+  });
+
+  it("em produção, env ausente ou inválida nega e não usa request.url", () => {
+    const mesmaUrl = pedido("https://erp.geniusidiomas.com");
+    expect(origemPortalAlunoPermitida(mesmaUrl, { NODE_ENV: "production" })).toBe(false);
+    const espelhaRequest = new Request("https://erp.geniusidiomas.com/api/portal-aluno/token", {
       method: "POST",
-      headers: {
-        origin: "http://uat.geniusidiomas.com",
-        host: "app:3000",
-        "x-forwarded-host": "uat.geniusidiomas.com",
-        "x-forwarded-proto": "https",
-      },
+      headers: { origin: "https://erp.geniusidiomas.com", host: "erp.geniusidiomas.com" },
     });
-    expect(origemPortalAlunoPermitida(csrf)).toBe(false);
-    expect(origemPortalAlunoPermitida(rebaixa)).toBe(false);
+    expect(origemPortalAlunoPermitida(espelhaRequest, { NODE_ENV: "production" })).toBe(false);
+    expect(origemPortalAlunoPermitida(mesmaUrl, { NODE_ENV: "production", APP_BASE_URL: "" })).toBe(false);
+    expect(origemPortalAlunoPermitida(pedido("http://erp.geniusidiomas.com"), { NODE_ENV: "production", APP_BASE_URL: "http://erp.geniusidiomas.com" })).toBe(false);
+    expect(origemPortalAlunoPermitida(mesmaUrl, { NODE_ENV: "production", APP_BASE_URL: "nao-e-url" })).toBe(false);
+  });
+
+  it("nega requisição sem Origin", () => {
+    const semOrigin = new Request("https://erp.geniusidiomas.com/api/portal-aluno/sessao", { method: "POST" });
+    expect(origemPortalAlunoPermitida(semOrigin, { NODE_ENV: "production", APP_BASE_URL: "https://erp.geniusidiomas.com" })).toBe(false);
+  });
+
+  it("nega downgrade para http", () => {
+    expect(origemPortalAlunoPermitida(pedido("http://erp.geniusidiomas.com"), {
+      NODE_ENV: "production", APP_BASE_URL: "https://erp.geniusidiomas.com",
+    })).toBe(false);
+  });
+
+  it("fora de produção também aceita http://localhost em qualquer porta", () => {
+    const dev = { NODE_ENV: "development" };
+    expect(origemPortalAlunoPermitida(pedido("http://localhost:3000"), dev)).toBe(true);
+    expect(origemPortalAlunoPermitida(pedido("http://localhost:4317"), dev)).toBe(true);
+    expect(origemPortalAlunoPermitida(pedido("https://escola.example"), dev)).toBe(false);
+    expect(origemPortalAlunoPermitida(pedido("https://localhost:3000"), dev)).toBe(false);
+    expect(origemPortalAlunoPermitida(pedido("http://127.0.0.1:3000"), dev)).toBe(false);
+  });
+});
+
+const pedido = (origin: string) => new Request("https://0.0.0.0:3000/api/portal-aluno/token", { method: "POST", headers: { origin } });
+
+describe("APP_BASE_URL no boot", () => {
+  it("em produção exige URL https e fora de produção não exige", () => {
+    expect(() => validarAppBaseUrlNoBoot({ NODE_ENV: "production" })).toThrow(/APP_BASE_URL/);
+    expect(() => validarAppBaseUrlNoBoot({ NODE_ENV: "production", APP_BASE_URL: "http://erp.geniusidiomas.com" })).toThrow(/APP_BASE_URL/);
+    expect(() => validarAppBaseUrlNoBoot({ NODE_ENV: "production", APP_BASE_URL: "https://erp.geniusidiomas.com" })).not.toThrow();
+    expect(() => validarAppBaseUrlNoBoot({ NODE_ENV: "development" })).not.toThrow();
   });
 });

@@ -34,6 +34,7 @@ services:
       DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/erp?schema=public
       AUTH_SECRET: ${AUTH_SECRET:?defina no Coolify}
       NEXTAUTH_URL: https://${DOMINIO_APP:?defina no Coolify}
+      APP_BASE_URL: ${APP_BASE_URL:?defina no Coolify}
       AUTH_TRUST_HOST: "true"
       CRON_SECRET: ${CRON_SECRET:?defina no Coolify}
       WHATSAPP_LIVE: ${WHATSAPP_LIVE:-}

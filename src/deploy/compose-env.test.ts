@@ -8,6 +8,7 @@ const ler = (arq: string) => readFileSync(resolve(raiz, arq), "utf8").replace(/\
 const SO_TESTE_EXATAS = new Set(["FAKE_PRISMA", "GUARD", "GUARD_GRADES", "TZ", "PRISMA_TESTE_TIMEOUT_MS"]);
 const SO_TESTE_PREFIXOS = ["HOMOLOGACAO_UI_", "QA_"];
 const DA_IMAGEM = ["NODE_ENV", "GIT_SHA"];
+const DO_NEXT = ["NEXT_RUNTIME"];
 const DERIVADAS_NO_COMPOSE = ["DATABASE_URL", "NEXTAUTH_URL", "MOTOR_URL"];
 const DO_COMPOSE = ["APP_IMAGE", "APP_MIGRATE_IMAGE", "MOTOR_IMAGE"];
 
@@ -45,7 +46,7 @@ function secao(texto: string, nome: string): string {
 }
 
 const lidas = lidasPeloCodigo();
-const producao = [...lidas.keys()].filter((v) => !soTeste(v) && !DA_IMAGEM.includes(v) && !DO_COMPOSE.includes(v)).sort();
+const producao = [...lidas.keys()].filter((v) => !soTeste(v) && !DA_IMAGEM.includes(v) && !DO_COMPOSE.includes(v) && !DO_NEXT.includes(v)).sort();
 
 describe("variáveis lidas pelo código", () => {
   it("a varredura encontra as variáveis conhecidas (o regex não quebrou)", () => {
