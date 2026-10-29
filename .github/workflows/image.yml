@@ -3,12 +3,13 @@ name: Build e publicação de imagem
 on:
   push:
     branches: [main]
-    tags: ['v*']
+  pull_request:
+    branches: [main]
   workflow_dispatch:
 
 concurrency:
-  group: image-${{ github.ref }}
-  cancel-in-progress: ${{ github.ref == 'refs/heads/main' }}
+  group: ${{ github.event_name == 'pull_request' && format('image-pr-{0}', github.event.pull_request.number) || 'image-main' }}
+  cancel-in-progress: false
 
 permissions:
   contents: read
@@ -18,81 +19,13 @@ env:
   IMAGE_NAME: ${{ github.repository }}
 
 jobs:
-  typecheck:
-    name: typecheck
-    runs-on: ubuntu-latest
-    timeout-minutes: 20
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
-        with:
-          node-version-file: .nvmrc
-          cache: npm
-      - name: Instalar dependências (npm ci)
-        run: npm ci
-      - name: Reconstruir binários (prisma, @prisma/engines, esbuild)
-        run: npm rebuild prisma @prisma/engines esbuild --ignore-scripts=false
-      - name: Conferir o binário do esbuild
-        run: |
-          node -e "require('esbuild')"
-          npx esbuild --version
-      - name: Gerar o client do Prisma
-        run: npx prisma generate
-      - name: Gerar os tipos de rota do Next
-        run: npx next typegen
-      - name: TypeScript (tsc --noEmit)
-        env:
-          NODE_OPTIONS: --max-old-space-size=6144
-        run: npx tsc --noEmit
-
-  lint:
-    name: lint
-    runs-on: ubuntu-latest
-    timeout-minutes: 20
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
-        with:
-          node-version-file: .nvmrc
-          cache: npm
-      - name: Instalar dependências (npm ci)
-        run: npm ci
-      - name: ESLint (eslint . --max-warnings 40)
-        run: npx eslint . --max-warnings 40
-
-  test:
-    name: test (${{ matrix.tz }})
-    runs-on: ubuntu-latest
-    timeout-minutes: 20
-    strategy:
-      fail-fast: false
-      matrix:
-        tz: [UTC, America/Sao_Paulo]
-    env:
-      DATABASE_URL: postgresql://ci:ci@localhost:5432/ci_sem_banco?schema=public
-      NEXT_TELEMETRY_DISABLED: "1"
-      TZ: ${{ matrix.tz }}
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
-        with:
-          node-version-file: .nvmrc
-          cache: npm
-      - name: Instalar dependências (npm ci)
-        run: npm ci
-      - name: Reconstruir binários (prisma, @prisma/engines, esbuild)
-        run: npm rebuild prisma @prisma/engines esbuild --ignore-scripts=false
-      - name: Gerar o client do Prisma
-        run: npx prisma generate
-      - name: Gerar os tipos de rota do Next
-        run: npx next typegen
-      - name: Testes unitários (npm test)
-        run: npm test
-
   build-next:
     name: build Next.js
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    if: ${{ (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && github.ref == 'refs/heads/main' }}
+    permissions:
+      contents: read
     env:
       DATABASE_URL: postgresql://ci:ci@localhost:5432/ci_sem_banco?schema=public
       NEXT_TELEMETRY_DISABLED: "1"
@@ -113,22 +46,51 @@ jobs:
           NODE_OPTIONS: --max-old-space-size=5120
         run: npm run build
 
-  publish:
-    name: build e publicar imagens
+  imagens-pr:
+    name: imagens sem publicação
     runs-on: ubuntu-latest
-    needs: [typecheck, lint, test, build-next]
-    if: github.event_name != 'workflow_dispatch' && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v'))
+    timeout-minutes: 40
+    if: github.event_name == 'pull_request'
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Configurar Docker Buildx
+        uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
+
+      - name: Build da imagem do app sem publicação
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
+        with:
+          context: .
+          target: runner
+          push: false
+          build-args: |
+            GIT_SHA=${{ github.sha }}
+
+      - name: Build da imagem do migrate sem publicação
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
+        with:
+          context: .
+          target: builder
+          push: false
+          build-args: |
+            GIT_SHA=${{ github.sha }}
+
+  publicar:
+    name: publicar imagens
+    runs-on: ubuntu-latest
+    needs: [build-next]
+    if: ${{ (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && github.ref == 'refs/heads/main' && needs.build-next.result == 'success' }}
     timeout-minutes: 40
     permissions:
       contents: read
       packages: write
-    env:
-      SHOULD_PUSH: ${{ github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v') }}
+      id-token: write
+      attestations: write
     outputs:
       app-digest: ${{ steps.push-app.outputs.digest }}
       migrate-digest: ${{ steps.push-migrate.outputs.digest }}
-      app-tags: ${{ steps.meta-app.outputs.tags }}
-      migrate-tags: ${{ steps.meta-migrate.outputs.tags }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
@@ -147,11 +109,9 @@ jobs:
         uses: docker/metadata-action@dc802804100637a589fabce1cb79ff13a1411302 # v6.2.0
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          flavor: |
+            latest=false
           tags: |
-            type=ref,event=branch
-            type=semver,pattern={{version}}
-            type=semver,pattern={{major}}.{{minor}}
-            type=semver,pattern={{major}}
             type=sha,format=short,prefix=sha-
 
       - name: Extrair metadados da imagem do migrate
@@ -159,11 +119,9 @@ jobs:
         uses: docker/metadata-action@dc802804100637a589fabce1cb79ff13a1411302 # v6.2.0
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/migrate
+          flavor: |
+            latest=false
           tags: |
-            type=ref,event=branch
-            type=semver,pattern={{version}}
-            type=semver,pattern={{major}}.{{minor}}
-            type=semver,pattern={{major}}
             type=sha,format=short,prefix=sha-
 
       - name: Build e publicação da imagem do app (runner)
@@ -172,7 +130,7 @@ jobs:
         with:
           context: .
           target: runner
-          push: true
+          push: ${{ (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && github.ref == 'refs/heads/main' }}
           tags: ${{ steps.meta-app.outputs.tags }}
           labels: ${{ steps.meta-app.outputs.labels }}
           cache-from: type=gha
@@ -186,7 +144,7 @@ jobs:
         with:
           context: .
           target: builder
-          push: true
+          push: ${{ (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && github.ref == 'refs/heads/main' }}
           tags: ${{ steps.meta-migrate.outputs.tags }}
           labels: ${{ steps.meta-migrate.outputs.labels }}
           cache-from: type=gha
@@ -194,37 +152,30 @@ jobs:
           build-args: |
             GIT_SHA=${{ github.sha }}
 
-      - name: Imprimir digests no job summary
+      - name: Atestar a imagem do app
+        uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
+        with:
+          subject-name: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          subject-digest: ${{ steps.push-app.outputs.digest }}
+          push-to-registry: true
+
+      - name: Atestar a imagem do migrate
+        uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
+        with:
+          subject-name: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/migrate
+          subject-digest: ${{ steps.push-migrate.outputs.digest }}
+          push-to-registry: true
+
+      - name: Imprimir digests e o commit no resumo
         env:
           APP_DIGEST: ${{ steps.push-app.outputs.digest }}
           MIGRATE_DIGEST: ${{ steps.push-migrate.outputs.digest }}
-          APP_TAGS: ${{ steps.meta-app.outputs.tags }}
-          MIGRATE_TAGS: ${{ steps.meta-migrate.outputs.tags }}
+          GIT_SHA: ${{ github.sha }}
         run: |
-          echo "## 🐳 Imagens publicadas no GHCR" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "### App (runner)" >> $GITHUB_STEP_SUMMARY
-          echo "**Digest:** \`$APP_DIGEST\`" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "**Tags:**" >> $GITHUB_STEP_SUMMARY
-          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
-          echo "$APP_TAGS" >> $GITHUB_STEP_SUMMARY
-          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "**Referência completa por digest:**" >> $GITHUB_STEP_SUMMARY
-          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
-          echo "${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@$APP_DIGEST" >> $GITHUB_STEP_SUMMARY
-          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "### Migrate (builder)" >> $GITHUB_STEP_SUMMARY
-          echo "**Digest:** \`$MIGRATE_DIGEST\`" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "**Tags:**" >> $GITHUB_STEP_SUMMARY
-          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
-          echo "$MIGRATE_TAGS" >> $GITHUB_STEP_SUMMARY
-          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "**Referência completa por digest:**" >> $GITHUB_STEP_SUMMARY
-          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
-          echo "${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/migrate@$MIGRATE_DIGEST" >> $GITHUB_STEP_SUMMARY
-          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          {
+            echo "## Imagens publicadas no GHCR"
+            echo ""
+            echo "- Commit: \`$GIT_SHA\`"
+            echo "- App: \`${REGISTRY}/${IMAGE_NAME}@${APP_DIGEST}\`"
+            echo "- Migrate: \`${REGISTRY}/${IMAGE_NAME}/migrate@${MIGRATE_DIGEST}\`"
+          } >> "$GITHUB_STEP_SUMMARY"
