@@ -29,14 +29,51 @@ type Props = Omit<InputHTMLAttributes<HTMLInputElement>, "type" | "value" | "def
   tipoInput?: "hidden" | "datetime-local";
 };
 
-export function mensagemRestricaoDataHora(valor: string, restricoes: { required?: boolean; min?: Limite; max?: Limite }) {
+const RE_DATA_HORA = /^(\d{4}-\d{2}-\d{2})T(\d{2}):(\d{2})(?::(\d{2})(?:\.(\d{1,3}))?)?$/;
+
+/** 0 = HH:mm, 1 = HH:mm:ss, 2 = HH:mm:ss.SSS. O step do datetime-local é em segundos; o padrão é 60. */
+function precisaoMaxima(step: Limite) {
+  const segundos = segundosDoStep(step);
+  if (segundos < 1) return 2;
+  if (segundos < 60) return 1;
+  return 0;
+}
+
+function segundosDoStep(step: Limite) {
+  if (step === "any") return 0.001;
+  if (typeof step === "number" && Number.isFinite(step) && step > 0) return step;
+  if (typeof step === "string") {
+    const texto = step.trim();
+    if (texto === "any") return 0.001;
+    const n = Number(texto);
+    if (texto !== "" && Number.isFinite(n) && n > 0) return n;
+  }
+  return 60;
+}
+
+function instanteComparavel(valor: string) {
+  const m = RE_DATA_HORA.exec(valor);
+  if (!m) return null;
+  const segundos = m[4];
+  const fracao = m[5];
+  const precisao = fracao !== undefined ? 2 : segundos !== undefined ? 1 : 0;
+  return { precisao, chave: `${m[1]}T${m[2]}:${m[3]}:${segundos ?? "00"}.${(fracao ?? "").padEnd(3, "0")}` };
+}
+
+function chaveLimite(valor: string) {
+  if (!valor) return "";
+  return instanteComparavel(valor)?.chave ?? valor;
+}
+
+export function mensagemRestricaoDataHora(valor: string, restricoes: { required?: boolean; min?: Limite; max?: Limite; step?: Limite }) {
   const texto = valor.trim();
-  const minimo = textoLimite(restricoes.min);
-  const maximo = textoLimite(restricoes.max);
   if (!texto) return restricoes.required ? "Informe data e hora." : "";
-  if (!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(texto)) return "Informe data e hora.";
-  if (minimo && texto < minimo) return "Informe um horário igual ou posterior ao mínimo.";
-  if (maximo && texto > maximo) return "Informe um horário igual ou anterior ao máximo.";
+  const atual = instanteComparavel(texto);
+  if (!atual || atual.precisao > precisaoMaxima(restricoes.step)) return "Informe data e hora.";
+  const minimo = chaveLimite(textoLimite(restricoes.min));
+  const maximo = chaveLimite(textoLimite(restricoes.max));
+  if (minimo && atual.chave < minimo) return "Informe um horário igual ou posterior ao mínimo.";
+  if (maximo && atual.chave > maximo) return "Informe um horário igual ou anterior ao máximo.";
   return "";
 }
 
@@ -73,12 +110,7 @@ function SeletorTempo({ rotulo, valor, opcoes, disabled, onChange, aoFecharPicke
   );
 }
 
-function EspelhoRestricao({ valor, required, disabled, form, min, max, aoFocarGatilho }: { valor: string; required?: boolean; disabled?: boolean; form?: string; min?: Limite; max?: Limite; aoFocarGatilho: () => void }) {
-  const mensagem = mensagemRestricaoDataHora(valor, { required, min, max });
-  function focarGatilho(evento: { preventDefault(): void }) {
-    evento.preventDefault();
-    aoFocarGatilho();
-  }
+function EspelhoRestricao({ valor, required, disabled, form, mensagem, aoInvalidar, aoFocar }: { valor: string; required?: boolean; disabled?: boolean; form?: string; mensagem: string; aoInvalidar: () => void; aoFocar: () => void }) {
   return (
     <input
       type="text"
@@ -90,8 +122,8 @@ function EspelhoRestricao({ valor, required, disabled, form, min, max, aoFocarGa
       disabled={disabled || undefined}
       form={form}
       onChange={() => {}}
-      onInvalid={focarGatilho}
-      onFocus={focarGatilho}
+      onInvalid={(evento) => { evento.preventDefault(); aoInvalidar(); }}
+      onFocus={(evento) => { evento.preventDefault(); aoFocar(); }}
       ref={(el) => { el?.setCustomValidity?.(mensagem); }}
     />
   );
@@ -108,6 +140,7 @@ export const DateTimePicker = forwardRef<HTMLInputElement, Props>(function DateT
 ) {
   void _tipoInput;
   const [aberto, setAberto] = useState(false);
+  const [erroRevelado, setErroRevelado] = useState(false);
   const [interno, setInterno] = useState(typeof defaultValue === "string" ? defaultValue : "");
   const val = value !== undefined ? String(value) : interno;
   const data = partirData(val);
@@ -115,12 +148,17 @@ export const DateTimePicker = forwardRef<HTMLInputElement, Props>(function DateT
   const travado = Boolean(disabled || readOnly);
   const gatilhoRef = useRef<HTMLButtonElement>(null);
   const erroId = useId();
-  const mensagem = mensagemRestricaoDataHora(val, { required, min, max });
+  const mensagem = mensagemRestricaoDataHora(val, { required, min, max, step });
   const restringe = Boolean(required || textoLimite(min) || textoLimite(max));
-  const invalido = ariaInvalid === true || ariaInvalid === "true" || ariaInvalid === "grammar" || ariaInvalid === "spelling" || Boolean(mensagem);
-  const descrito = [ariaDescribedBy, mensagem ? erroId : null].filter(Boolean).join(" ") || undefined;
+  const mostrarErro = erroRevelado && mensagem !== "";
+  const invalidoFora = ariaInvalid === true || ariaInvalid === "true" || ariaInvalid === "grammar" || ariaInvalid === "spelling";
+  const invalido = invalidoFora || mostrarErro;
+  const descrito = [ariaDescribedBy, mostrarErro ? erroId : null].filter(Boolean).join(" ") || undefined;
   function focarGatilho() {
     gatilhoRef.current?.focus();
+  }
+  function revelarErro() {
+    setErroRevelado(true);
   }
   function emitir(proximo: string, nativo?: ChangeEvent<HTMLInputElement>) {
     if (value === undefined) setInterno(proximo);
@@ -144,6 +182,7 @@ export const DateTimePicker = forwardRef<HTMLInputElement, Props>(function DateT
           aria-required={required || ariaRequired ? true : undefined}
           aria-invalid={invalido || undefined}
           aria-describedby={descrito}
+          onBlur={(evento) => { if (!(evento.relatedTarget instanceof Element && evento.relatedTarget.closest("[data-seletor-data-hora], [data-radix-popper-content-wrapper], [role='listbox']"))) revelarErro(); }}
           className={cn(CONTROLE_CAMPO, "inline-flex items-center justify-between gap-2 text-left", invalido && "border-red-500", className)}
         >
           <span className={cn(data ? "text-gray-800" : "text-gray-500")}>{data ? textoDataHora(data, hora, minuto) : placeholder}</span>
@@ -176,8 +215,8 @@ export const DateTimePicker = forwardRef<HTMLInputElement, Props>(function DateT
         aria-required={ariaRequired || (required ? true : undefined)}
         onChange={(e) => emitir(e.target.value, e)}
       />
-      {restringe ? <EspelhoRestricao valor={val} required={required} disabled={travado} form={typeof form === "string" ? form : undefined} min={min} max={max} aoFocarGatilho={focarGatilho} /> : null}
-      {mensagem ? <span id={erroId} role="alert" className="text-xs text-red-700">{mensagem}</span> : null}
+      {restringe ? <EspelhoRestricao valor={val} required={required} disabled={travado} form={typeof form === "string" ? form : undefined} mensagem={mensagem} aoInvalidar={() => { revelarErro(); focarGatilho(); }} aoFocar={focarGatilho} /> : null}
+      {mostrarErro ? <span id={erroId} role="alert" className="text-xs text-red-700">{mensagem}</span> : null}
     </Popover>
   );
 });

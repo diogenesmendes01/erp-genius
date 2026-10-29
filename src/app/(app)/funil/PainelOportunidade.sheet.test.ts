@@ -278,17 +278,59 @@ describe("DateTimePicker no Sheet — BLOCK-513-A11Y", () => {
     expect(screen.getByRole("dialog", { name: "Agendar experimental" }).getAttribute("data-state")).toBe("open");
   });
 
-  it("submit vazio foca o trigger e mantém o Sheet aberto", async () => {
+  it("render inicial de obrigatório vazio não mostra alerta, borda vermelha nem aria-invalid", async () => {
+    render(createElement(Agenda));
+    const gatilho = await screen.findByRole("button", { name: "Data e hora da experimental" });
+    expect(screen.queryByRole("alert")).toBeNull();
+    expect(gatilho.hasAttribute("aria-invalid")).toBe(false);
+    expect(gatilho.className.split(/\s+/)).not.toContain("border-red-500");
+    expect(gatilho.getAttribute("aria-required")).toBe("true");
+  });
+
+  it("blur vazio mostra o erro no gatilho", async () => {
     const user = userEvent.setup();
     render(createElement(Agenda));
     const gatilho = await screen.findByRole("button", { name: "Data e hora da experimental" });
+    expect(screen.queryByRole("alert")).toBeNull();
+    gatilho.focus();
+    await user.tab();
+    const alerta = await screen.findByRole("alert");
+    expect(alerta.textContent).toContain("Informe data e hora.");
+    expect(gatilho.getAttribute("aria-invalid")).toBe("true");
+    expect(gatilho.className.split(/\s+/)).toContain("border-red-500");
+    expect(gatilho.getAttribute("aria-describedby")).toContain(alerta.id);
+    expect(screen.getAllByRole("alert")).toHaveLength(1);
+  });
+
+  it("submit vazio foca o trigger, mostra o erro uma vez e mantém o Sheet aberto", async () => {
+    const user = userEvent.setup();
+    render(createElement(Agenda));
+    const gatilho = await screen.findByRole("button", { name: "Data e hora da experimental" });
+    expect(screen.queryByRole("alert")).toBeNull();
     await user.click(screen.getByRole("button", { name: "Salvar" }));
     await waitFor(() => expect(document.activeElement).toBe(gatilho));
+    expect(document.activeElement).not.toBe(oculto());
     expect(screen.getByRole("dialog", { name: "Agendar experimental" }).getAttribute("data-state")).toBe("open");
-    expect(screen.getByRole("alert").textContent).toContain("Informe data e hora.");
-    expect(gatilho.getAttribute("aria-describedby")).toContain(screen.getByRole("alert").id);
+    const alertas = screen.getAllByRole("alert");
+    expect(alertas).toHaveLength(1);
+    expect(alertas[0].textContent).toContain("Informe data e hora.");
+    expect(document.body.textContent?.match(/Informe data e hora\./g)).toHaveLength(1);
+    expect(gatilho.getAttribute("aria-describedby")).toContain(alertas[0].id);
     expect(gatilho.getAttribute("aria-required")).toBe("true");
     expect(gatilho.getAttribute("aria-invalid")).toBe("true");
+  });
+
+  it("onFocus do espelho devolve o foco ao gatilho sem duplicar o alerta", async () => {
+    const user = userEvent.setup();
+    render(createElement(Agenda));
+    const gatilho = await screen.findByRole("button", { name: "Data e hora da experimental" });
+    gatilho.focus();
+    await user.tab();
+    const alerta = await screen.findByRole("alert");
+    const espelho = oculto() as HTMLElement;
+    espelho.focus();
+    expect(document.activeElement).toBe(gatilho);
+    expect(screen.getAllByRole("alert")).toEqual([alerta]);
   });
 
   it("Esc com o picker aberto fecha só o picker", async () => {

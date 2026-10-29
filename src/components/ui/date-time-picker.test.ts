@@ -67,14 +67,20 @@ describe("DateTimePicker — contrato do valor submetido", () => {
     expect([...formularioDe(marcacao).keys()]).toEqual(["quando"]);
     const botao = /<button\b[^>]*>/.exec(marcacao)?.[0] ?? "";
     expect(botao).toContain('aria-required="true"');
-    expect(botao).toContain('aria-invalid="true"');
-    const descrito = /aria-describedby="([^"]*)"/.exec(botao)?.[1] ?? "";
-    expect(descrito.split(" ")).toContain("dica");
-    const idErro = descrito.split(" ").find((id) => id !== "dica");
-    expect(idErro).toBeTruthy();
-    expect(marcacao).toContain(`id="${idErro}"`);
-    expect(marcacao).toContain('role="alert"');
-    expect(marcacao).toContain("Informe data e hora.");
+    expect(botao).not.toContain("aria-invalid");
+    expect(botao).not.toMatch(/(?:^|[\s"])border-red-500(?:[\s"])/);
+    expect(/aria-describedby="([^"]*)"/.exec(botao)?.[1]).toBe("dica");
+    expect(marcacao).not.toContain('role="alert"');
+    expect(marcacao).not.toContain("Informe data e hora.");
+  });
+
+  it("valor com milissegundos, required e step 0.001 não gera alerta", () => {
+    const marcacao = html(createElement(DateTimePicker, { name: "realizadaEm", required: true, step: "0.001", value: "2026-10-01T02:30:00.000" }));
+    expect(marcacao).toContain('value="2026-10-01T02:30:00.000"');
+    expect(marcacao).toContain('step="0.001"');
+    expect(marcacao).not.toContain("Informe data e hora.");
+    expect(marcacao).not.toContain('role="alert"');
+    expect(marcacao).not.toContain("aria-invalid");
   });
 
   it("required vazio não valida pelo hidden: um espelho sem name carrega a restrição e não entra no FormData", () => {
@@ -103,6 +109,36 @@ describe("mensagemRestricaoDataHora", () => {
     expect(mensagemRestricaoDataHora("2026-12-01T10:00", { min: "2026-12-01T10:00" })).toBe("");
     expect(mensagemRestricaoDataHora("2026-12-01T12:00", { max: "2026-12-01T11:00" })).toBe("Informe um horário igual ou anterior ao máximo.");
     expect(mensagemRestricaoDataHora("", {})).toBe("");
+  });
+
+  it("aceita HH:mm quando o step é o de minutos e rejeita segundos", () => {
+    expect(mensagemRestricaoDataHora("2026-12-01T13:05", { required: true })).toBe("");
+    expect(mensagemRestricaoDataHora("2026-12-01T13:05", { required: true, step: 60 })).toBe("");
+    expect(mensagemRestricaoDataHora("2026-12-01T13:05", { required: true, step: "60" })).toBe("");
+    expect(mensagemRestricaoDataHora("2026-12-01T13:05:07", { required: true })).toBe("Informe data e hora.");
+    expect(mensagemRestricaoDataHora("2026-12-01T13:05:07.123", { required: true, step: "60" })).toBe("Informe data e hora.");
+  });
+
+  it("aceita HH:mm:ss quando o step permite segundos", () => {
+    expect(mensagemRestricaoDataHora("2026-12-01T13:05:07", { required: true, step: 1 })).toBe("");
+    expect(mensagemRestricaoDataHora("2026-12-01T13:05:07", { required: true, step: "1" })).toBe("");
+    expect(mensagemRestricaoDataHora("2026-12-01T13:05", { required: true, step: "1" })).toBe("");
+    expect(mensagemRestricaoDataHora("2026-12-01T13:05:07.123", { required: true, step: "1" })).toBe("Informe data e hora.");
+  });
+
+  it("aceita YYYY-MM-DDTHH:mm:ss.SSS quando o step permite milissegundos", () => {
+    expect(mensagemRestricaoDataHora("2026-12-01T13:05:07.123", { required: true, step: 0.001 })).toBe("");
+    expect(mensagemRestricaoDataHora("2026-10-01T02:30:00.000", { required: true, step: "0.001" })).toBe("");
+    expect(mensagemRestricaoDataHora("2026-12-01T13:05:07", { required: true, step: "0.001" })).toBe("");
+    expect(mensagemRestricaoDataHora("2026-12-01T13:05", { required: true, step: "0.001" })).toBe("");
+  });
+
+  it("continua rejeitando horário fora de min e max, mesmo com segundos ou milissegundos", () => {
+    expect(mensagemRestricaoDataHora("2026-12-01T09:59:59.999", { step: "0.001", min: "2026-12-01T10:00" })).toBe("Informe um horário igual ou posterior ao mínimo.");
+    expect(mensagemRestricaoDataHora("2026-12-01T10:00:00.000", { step: "0.001", min: "2026-12-01T10:00", max: "2026-12-01T11:00" })).toBe("");
+    expect(mensagemRestricaoDataHora("2026-12-01T11:00:00.001", { step: "0.001", max: "2026-12-01T11:00" })).toBe("Informe um horário igual ou anterior ao máximo.");
+    expect(mensagemRestricaoDataHora("2026-12-01T10:00:01", { step: "1", max: "2026-12-01T10:00" })).toBe("Informe um horário igual ou anterior ao máximo.");
+    expect(mensagemRestricaoDataHora("2026-12-01T10:00:00", { step: "1", min: "2026-12-01T10:00", max: "2026-12-01T10:00" })).toBe("");
   });
 });
 
