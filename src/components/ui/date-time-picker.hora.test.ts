@@ -3,7 +3,8 @@ import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
 
-vi.mock("@/components/ui/popover", async () => {
+// Sem este cast, o tsc contextualiza a fábrica no tipo do Popover/Calendar e o heap do typecheck passa de 5120 MB.
+vi.mock("@/components/ui/popover", (async () => {
   const React = await import("react");
   return {
     Popover: ({ children }: { children?: React.ReactNode }) => React.createElement(React.Fragment, null, children),
@@ -11,8 +12,8 @@ vi.mock("@/components/ui/popover", async () => {
     PopoverAnchor: ({ children }: { children?: React.ReactNode }) => children ?? null,
     PopoverContent: ({ children }: { children?: React.ReactNode }) => React.createElement("div", null, children),
   };
-});
-vi.mock("@/components/ui/calendar", () => ({ Calendar: () => null }));
+}) as () => Promise<Record<string, unknown>>);
+vi.mock("@/components/ui/calendar", (() => ({ Calendar: () => null })) as () => Record<string, unknown>);
 
 import { DateTimePicker } from "@/components/ui/date-time-picker";
 
