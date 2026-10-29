@@ -61,12 +61,20 @@ describe("Dockerfile: Prisma/OpenSSL em Alpine", () => {
     estagios = lerDockerfile(fs.readFileSync(path.resolve(process.cwd(), "Dockerfile"), "utf8"));
   });
 
-  it("estágio base usa node:22-alpine3.24 pinado por digest", () => {
-    expect(estagio("base").imagem).toMatch(/^node:22-alpine3\.24@sha256:[0-9a-f]{64}$/);
+  it("estágio base usa node:26-alpine3.24 pinado por digest", () => {
+    expect(estagio("base").imagem).toBe(
+      "node:26-alpine3.24@sha256:c6ad9e9c1d80f6eb607c26b4b0a132ff7a2344fad1c78ea3baa2a7d4c8de6d94"
+    );
   });
 
   it("estágio base instala openssl com um RUN real (não comentado, não spoof)", () => {
     expect(runs("base").filter(instalaOpenssl)).toHaveLength(1);
+  });
+
+  it("estágio base instala libatomic (o binário musl do Node 26 liga com ela)", () => {
+    const instalaLibatomic = (run: string) =>
+      comandos(run).some((c) => /^apk add\b/.test(c) && c.split(/\s+/).includes("libatomic"));
+    expect(runs("base").filter(instalaLibatomic)).toHaveLength(1);
   });
 
   it("detector de apk add rejeita spoof e comentário", () => {
@@ -84,9 +92,9 @@ describe("Dockerfile: Prisma/OpenSSL em Alpine", () => {
     expect(estagios.filter((e) => e.imagem !== "base").map((e) => e.nome)).toEqual(["base"]);
   });
 
-  it("builder reserva o mesmo heap do CI para o next build", () => {
+  it("builder reserva o heap do typecheck (6144) para o next build", () => {
     const envs = estagio("builder").instrucoes.filter((i) => i.op === "ENV").map((i) => i.args);
-    expect(envs).toContain("NODE_OPTIONS=--max-old-space-size=5120");
+    expect(envs).toContain("NODE_OPTIONS=--max-old-space-size=6144");
   });
 
   it("builder executa o schema engine (usado pelo serviço migrate) e exige P1001", () => {

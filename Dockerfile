@@ -1,12 +1,13 @@
 # syntax=docker/dockerfile:1
 
-FROM node:26-alpine3.24@sha256:40cd011b55415bc894e45b02fdd5a5dfde056921b7d23a64c74f80497af48797 AS base
-RUN apk add --no-cache openssl
+FROM node:26-alpine3.24@sha256:c6ad9e9c1d80f6eb607c26b4b0a132ff7a2344fad1c78ea3baa2a7d4c8de6d94 AS base
+RUN apk add --no-cache libatomic openssl
 
 FROM base AS deps
 WORKDIR /app
 COPY package.json package-lock.json ./
 RUN npm ci
+RUN node -e "require('esbuild')" && npx esbuild --version
 
 FROM base AS builder
 WORKDIR /app
@@ -16,7 +17,7 @@ RUN npx prisma generate
 RUN DATABASE_URL="postgresql://check:check@127.0.0.1:1/check" npx prisma migrate status 2>&1 | grep -q P1001 \
   || (echo "ERRO: schema engine do Prisma não carregou (o serviço migrate quebraria)" && exit 1)
 ENV NEXT_TELEMETRY_DISABLED=1
-ENV NODE_OPTIONS=--max-old-space-size=5120
+ENV NODE_OPTIONS=--max-old-space-size=6144
 RUN DATABASE_URL="postgresql://build:build@localhost:5432/build" npm run build
 
 FROM base AS runner
