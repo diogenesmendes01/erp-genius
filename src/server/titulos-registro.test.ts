@@ -32,10 +32,13 @@ describe("títulos de aba das fichas (E2)", () => {
     expect(await tituloAluno("a1")).toBe("Aluno");
   });
 
-  it("empresa: papel fora da ficha não consulta", async () => {
-    m.sessao.mockResolvedValue(u(Papel.PROFESSOR));
-    expect(await tituloEmpresa("e1")).toBe("Empresa");
-    expect(m.empresa).not.toHaveBeenCalled();
+  it("empresa: só financeiro/admin consultam", async () => {
+    for (const papel of [Papel.VENDEDOR, Papel.PROFESSOR, Papel.GERENTE_COMERCIAL]) {
+      m.empresa.mockClear();
+      m.sessao.mockResolvedValue(u(papel));
+      expect(await tituloEmpresa("e1"), papel).toBe("Empresa");
+      expect(m.empresa, papel).not.toHaveBeenCalled();
+    }
     m.sessao.mockResolvedValue(u(Papel.FINANCEIRO));
     m.empresa.mockResolvedValueOnce({ nome: "Acme" });
     expect(await tituloEmpresa("e1")).toBe("Acme · Empresa");
@@ -44,13 +47,17 @@ describe("títulos de aba das fichas (E2)", () => {
     expect(await tituloEmpresa("e2")).toBe("Beta · Empresa");
   });
 
-  it("empresa: o título segue a mesma lista de papéis da ficha", async () => {
-    for (const papel of Object.values(Papel)) {
+  it("empresa: o título não acompanha a allow-list da ficha", async () => {
+    for (const papel of PAPEIS_FICHA_EMPRESA) {
       m.empresa.mockReset();
-      m.empresa.mockResolvedValue({ nome: "Acme" });
       m.sessao.mockResolvedValue(u(papel));
-      const abre = papel === Papel.ADMINISTRADOR || PAPEIS_FICHA_EMPRESA.includes(papel);
-      expect(await tituloEmpresa("e1")).toBe(abre ? "Acme · Empresa" : "Empresa");
+      m.empresa.mockResolvedValue({ nome: "Acme" });
+      if (papel === Papel.FINANCEIRO) {
+        expect(await tituloEmpresa("e1")).toBe("Acme · Empresa");
+      } else {
+        expect(await tituloEmpresa("e1"), papel).toBe("Empresa");
+        expect(m.empresa, papel).not.toHaveBeenCalled();
+      }
     }
   });
 });
