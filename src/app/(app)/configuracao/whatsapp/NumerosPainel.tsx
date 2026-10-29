@@ -21,7 +21,7 @@ import { Chip } from "@/components/Chip";
 import { ConfirmarAcao } from "@/components/ConfirmarAcao";
 import { Modal } from "@/components/Modal";
 import { executarAcaoCliente, useAcaoCliente } from "@/lib/acao-cliente";
-import { botaoClasses } from "@/components/Botao";
+import { Botao } from "@/components/Botao";
 import { EstadoVazio } from "@/components/EstadoVazio";
 import { AlteracaoPendente } from "@/components/AlteracaoPendente";
 import { useAvisoAoSair } from "@/lib/aviso-ao-sair";
@@ -31,9 +31,7 @@ import { DRIVER_WHATSAPP_LABEL, FINALIDADE_NUMERO_LABEL, SETOR_ATENDIMENTO_LABEL
 import { Switch } from "@/components/ui/switch";
 import { CampoSelect } from "@/components/ui/select";
 import { CampoCombobox } from "@/components/ui/combobox";
-const btnPri = botaoClasses({ tamanho: "md" });
-const btnSec = botaoClasses({ variante: "secundario", tamanho: "sm" });
-const btnPerigo = botaoClasses({ variante: "perigo", tamanho: "sm" });
+
 const inputCls = "w-full rounded-md border border-gray-200 px-3 py-1.5 text-sm outline-none focus:border-brand-500";
 
 const SESSAO_BADGE: Record<string, { label: string; cls: string }> = {
@@ -108,11 +106,9 @@ export function NumerosPainel({
             Cada número conecta ao WhatsApp pelo motor: leia o QR ou use o código de pareamento.
           </p>
         </div>
-        <button type="button" className={btnPri} onClick={() => setForm(FORM_VAZIO)}>
-          <span className="flex items-center gap-1">
-            <IconPlus className="h-4 w-4" /> Novo número
-          </span>
-        </button>
+        <Botao onClick={() => setForm(FORM_VAZIO)}>
+          <IconPlus className="h-4 w-4" aria-hidden /> Novo número
+        </Botao>
       </div>
 
       {numeros.length === 0 && !form ? (
@@ -151,20 +147,18 @@ export function NumerosPainel({
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
                   {n.driver === "MOTOR" && n.ativo && (
-                    <button type="button" className={btnSec} onClick={() => setQrDe(n)}>
-                      <span className="flex items-center gap-1">
-                        <IconQrcode className="h-3.5 w-3.5" /> Conectar
-                      </span>
-                    </button>
+                    <Botao variante="secundario" tamanho="sm" onClick={() => setQrDe(n)}>
+                      <IconQrcode className="h-3.5 w-3.5" aria-hidden /> Conectar
+                    </Botao>
                   )}
                   {n.driver === "MOTOR" && n.sessao !== "DESCONECTADO" && (
-                    <button type="button" className={btnSec} onClick={() => setDesconectando(n)}>
+                    <Botao variante="secundario" tamanho="sm" onClick={() => setDesconectando(n)}>
                       Desconectar
-                    </button>
+                    </Botao>
                   )}
-                  <button
-                    type="button"
-                    className={btnSec}
+                  <Botao
+                    variante="secundario"
+                    tamanho="sm"
                     onClick={() =>
                       setForm({
                         id: n.id,
@@ -175,13 +169,11 @@ export function NumerosPainel({
                       })
                     }
                   >
-                    <span className="flex items-center gap-1">
-                      <IconPencil className="h-3.5 w-3.5" /> Editar
-                    </span>
-                  </button>
-                  <button
-                    type="button"
-                    className={botaoClasses({ variante: n.ativo ? "perigo" : "fantasma", tamanho: "sm" })}
+                    <IconPencil className="h-3.5 w-3.5" aria-hidden /> Editar
+                  </Botao>
+                  <Botao
+                    variante={n.ativo ? "perigo" : "fantasma"}
+                    tamanho="sm"
                     disabled={acao.ocupado}
                     onClick={() => {
                       acao.limpar();
@@ -190,20 +182,18 @@ export function NumerosPainel({
                     }}
                   >
                     {n.ativo ? "Desativar" : "Ativar"}
-                  </button>
-                  <button
-                    type="button"
-                    className={btnPerigo}
+                  </Botao>
+                  <Botao
+                    variante="perigo"
+                    tamanho="sm"
                     disabled={acao.ocupado}
                     onClick={() => {
                       acao.limpar();
                       setExcluindo(n);
                     }}
                   >
-                    <span className="flex items-center gap-1">
-                      <IconTrash className="h-3.5 w-3.5" /> Excluir
-                    </span>
-                  </button>
+                    <IconTrash className="h-3.5 w-3.5" aria-hidden /> Excluir
+                  </Botao>
                 </div>
               </div>
             );
@@ -215,9 +205,9 @@ export function NumerosPainel({
         <div className="mt-4 rounded-lg border border-gray-200 bg-surface p-4">
           <div className="mb-3 flex items-center justify-between">
             <span className="text-sm font-medium">{form.id ? "Editar número" : "Novo número"}</span>
-            <button className="text-gray-400 hover:text-gray-700" onClick={() => setForm(null)} aria-label="Fechar">
-              <IconX className="h-4 w-4" />
-            </button>
+            <Botao variante="fantasma" tamanho="sm" onClick={() => setForm(null)} aria-label="Fechar">
+              <IconX className="h-4 w-4" aria-hidden />
+            </Botao>
           </div>
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             <label className="text-xs text-gray-600">
@@ -249,9 +239,9 @@ export function NumerosPainel({
           </div>
           <div className="mt-3 flex items-center justify-end gap-3">
             <AlteracaoPendente sujo={sujo} />
-            <button type="button" className={btnPri} disabled={acao.ocupado} onClick={salvar}>
+            <Botao ocupado={acao.ocupado} onClick={salvar}>
               {acao.ocupado ? "Salvando…" : "Salvar número"}
-            </button>
+            </Botao>
           </div>
         </div>
       )}
@@ -365,9 +355,9 @@ export function SetoresNumeroEditor({
       )}
       <div className="mt-3 flex items-center justify-end gap-3">
         <AlteracaoPendente sujo={sujo} />
-        <button type="button" className={btnPri} disabled={acao.ocupado || setores.length === 0} onClick={salvar}>
+        <Botao ocupado={acao.ocupado} disabled={setores.length === 0} onClick={salvar}>
           {acao.ocupado ? "Salvando…" : "Salvar setores"}
-        </button>
+        </Botao>
       </div>
       <FeedbackAcao erro={acao.erro} sucesso={acao.sucesso} className="mt-3" />
     </div>
@@ -464,15 +454,15 @@ function QrModal({ numero, onClose }: { numero: NumeroConfig; onClose: () => voi
       <div className="mt-3 flex items-center justify-between">
         <span className={"rounded-full px-2 py-0.5 text-[11px] " + badge.cls}>{badge.label}</span>
         <div className="flex items-center gap-2">
-          <button type="button" className={btnSec} onClick={onClose}>Fechar</button>
+          <Botao variante="secundario" tamanho="sm" onClick={onClose}>Fechar</Botao>
           {aba === "QR" ? (
-            <button type="button" className={btnSec} disabled={acao.ocupado || estado === "CONECTADO"} onClick={pedirQr}>
+            <Botao variante="secundario" tamanho="sm" ocupado={acao.ocupado} disabled={estado === "CONECTADO"} onClick={pedirQr}>
               Atualizar QR
-            </button>
+            </Botao>
           ) : (
-            <button type="button" className={btnSec} disabled={acao.ocupado || estado === "CONECTADO" || !telefone.trim()} onClick={pedirCodigo}>
+            <Botao variante="secundario" tamanho="sm" ocupado={acao.ocupado} disabled={estado === "CONECTADO" || !telefone.trim()} onClick={pedirCodigo}>
               Gerar código
-            </button>
+            </Botao>
           )}
         </div>
       </div>

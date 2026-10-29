@@ -22,10 +22,11 @@ export default async function ComissoesFinanceiroPage({ searchParams }: { search
   const pagina = lerPagina(parametros);
   const ordem = lerOrdemComissoes(parametros);
   const naUrl = parametrosOrdemComissoes(ordem);
+  const podePagar = ctx.permissoes.podeOperarCobranca;
   const [{ itens: comissoes, total }, aPagar, config] = await Promise.all([
     listarComissoesPagina({ status, pagina, ordem }),
     totaisComissoesAPagar(),
-    carregarConfigFinanceiro(),
+    podePagar ? carregarConfigFinanceiro() : Promise.resolve({ fechamentoComissaoAutomatico: false }),
   ]);
   const ultima = paginaAlemDoFim(pagina, COMISSOES_POR_PAGINA, total);
   if (ultima) redirect(hrefLista(ROTA, { status, ...naUrl, pagina: ultima }));
@@ -41,7 +42,7 @@ export default async function ComissoesFinanceiroPage({ searchParams }: { search
       </form>
       {total > 0 && <p className="text-xs text-gray-500">{inicio}–{fim} de {total} {total === 1 ? "comissão" : "comissões"}</p>}
       <ComissoesAba
-        comissoes={comissoes} aPagar={aPagar} podePagar={ctx.permissoes.podeOperarCobranca} fechamentoAutomatico={config.fechamentoComissaoAutomatico}
+        comissoes={comissoes} aPagar={aPagar} podePagar={podePagar} fechamentoAutomatico={config.fechamentoComissaoAutomatico}
         ordenacao={{ atual: ordem, rota: ROTA, parametros: status ? { status } : {} }}
         vazio={status ? <>Nenhuma comissão nesta situação. <Link href={todas} className="text-brand-700 hover:underline">Ver todas</Link></> : undefined}
       />

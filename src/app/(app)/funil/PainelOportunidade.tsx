@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useLayoutEffect, useRef, useState, type MutableRefObject } from "react";
 import Link from "next/link";
 import { hrefConversa } from "@/lib/href-conversa";
 import type { ConversaParaAbrir } from "@/server/inbox/atalhos";
@@ -8,7 +8,8 @@ import type { ConversaParaAbrir } from "@/server/inbox/atalhos";
 import { useRouter } from "next/navigation";
 import { EtapaLead, Temperatura } from "@prisma/client";
 import { IconPhone, IconSpeakerphone, IconUser } from "@tabler/icons-react";
-import { Drawer } from "@/components/Drawer";
+import { cn } from "@/lib/utils";
+import { Sheet, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Avatar } from "@/components/Avatar";
 import { BadgeEstado, type TomEstado } from "@/components/BadgeEstado";
 import { BarraEtapas } from "@/components/BarraEtapas";
@@ -50,6 +51,27 @@ const ABAS: { id: Aba; rotulo: string }[] = [
 ];
 
 const CARTAO = "rounded-xl border border-gray-200 bg-surface p-3.5";
+const CLASSE_SHEET = "h-full w-full max-w-none gap-0 overflow-hidden p-0 sm:max-w-2xl md:w-[45%]";
+const SELETOR_CAMADA_PORTADA = "[data-radix-popper-content-wrapper], [cmdk-root], [role='listbox']";
+
+function elementoDoAlvo(alvo: EventTarget | null): Element | null {
+  if (alvo instanceof Element) return alvo;
+  if (alvo instanceof Node) return alvo.parentElement;
+  return null;
+}
+
+function alvoEmCamadaPortada(alvo: EventTarget | null) {
+  return !!elementoDoAlvo(alvo)?.closest(SELETOR_CAMADA_PORTADA);
+}
+
+function MarcaFoco({ destinoRef }: { destinoRef: MutableRefObject<HTMLElement | null> }) {
+  useLayoutEffect(() => {
+    if (destinoRef.current) return;
+    const ativo = document.activeElement;
+    if (ativo instanceof HTMLElement && ativo !== document.body) destinoRef.current = ativo;
+  }, [destinoRef]);
+  return null;
+}
 
 type Props = {
   conversa?: ConversaParaAbrir | null;
@@ -72,7 +94,7 @@ function Linha({ rotulo, children, mono = false }: { rotulo: string; children: R
   return (
     <div className="flex items-baseline justify-between gap-3 border-b border-gray-200 py-2 text-sm last:border-b-0">
       <dt className="text-gray-600">{rotulo}</dt>
-      <dd className={"text-right text-gray-800" + (mono ? " font-mono tabular-nums" : "")}>{children}</dd>
+      <dd className={cn("text-right text-gray-800", mono && "font-mono tabular-nums")}>{children}</dd>
     </div>
   );
 }
@@ -114,6 +136,8 @@ export function PainelOportunidade({ oportunidade: op, historico, capacidades, v
   const acaoLink = useAcaoCliente({ idempotente: true });
   const tentativaLink = useChaveIdempotencia();
   const [perda, setPerda] = useState(false);
+  const origemFocoRef = useRef<HTMLElement | null>(null);
+  const [aberto, setAberto] = useState(true);
   const [dataExp, setDataExp] = useState("");
   const [professorAgendar, setProfessorAgendar] = useState(op.professorExperimental?.id ?? "");
   const [agendaAberta, setAgendaAberta] = useState(false);
@@ -121,6 +145,9 @@ export function PainelOportunidade({ oportunidade: op, historico, capacidades, v
   const [novoDono, setNovoDono] = useState("");
   const [motivoDono, setMotivoDono] = useState("");
   const [confirmaDono, setConfirmaDono] = useState(false);
+  const aninhado = perda || confirmaDono;
+  const aninhadoRef = useRef(aninhado);
+  useLayoutEffect(() => { aninhadoRef.current = aninhado; });
   const [link, setLink] = useState("");
   const [nota, setNota] = useState("");
 
@@ -221,15 +248,46 @@ export function PainelOportunidade({ oportunidade: op, historico, capacidades, v
     </div>
   ) : undefined;
 
+  function aoMudarAberto(proximo: boolean) {
+    if (proximo || aninhadoRef.current) return;
+    setAberto(false);
+    aoFechar();
+  }
+  function conterFora(evento: { target: EventTarget | null; preventDefault(): void }) {
+    if (aninhadoRef.current || alvoEmCamadaPortada(evento.target)) evento.preventDefault();
+  }
+  function cederEscape(evento: { preventDefault(): void }) {
+    if (aninhadoRef.current) evento.preventDefault();
+  }
+  function devolverFoco(evento: { preventDefault(): void }) {
+    if (aninhadoRef.current) {
+      evento.preventDefault();
+      return;
+    }
+    const destino = origemFocoRef.current;
+    if (destino?.isConnected) {
+      evento.preventDefault();
+      destino.focus();
+    }
+  }
+
   return (
     <>
-      <Drawer
-        open
-        onClose={aoFechar}
-        title={op.nome}
-        largura="w-full max-sm:max-w-none sm:max-w-2xl md:w-[45%]"
-        footer={acoesFechamento}
+      <MarcaFoco destinoRef={origemFocoRef} />
+      <Sheet open={aberto} modal={!aninhado} onOpenChange={aoMudarAberto}>
+      <SheetContent
+        side="right"
+        className={CLASSE_SHEET}
+        onInteractOutside={conterFora}
+        onPointerDownOutside={conterFora}
+        onEscapeKeyDown={cederEscape}
+        onCloseAutoFocus={devolverFoco}
       >
+        <SheetHeader className="border-b border-gray-200 px-5 py-4 pe-14">
+          <SheetTitle>{op.nome}</SheetTitle>
+          <SheetDescription className="sr-only">Detalhes e ações da oportunidade.</SheetDescription>
+        </SheetHeader>
+        <div className="min-h-0 flex-1 overflow-y-auto px-5 py-4">
         <div className="mb-4 flex items-start gap-3">
           <Avatar nome={op.nome} tamanho={48} />
           <div className="min-w-0 flex-1">
@@ -253,7 +311,7 @@ export function PainelOportunidade({ oportunidade: op, historico, capacidades, v
             {ABAS.map((a) => <TabsTrigger key={a.id} value={a.id}>{a.rotulo}</TabsTrigger>)}
           </TabsList>
 
-          <TabsContent value="oportunidade" className="space-y-3">
+          <TabsContent value="oportunidade" className="flex flex-col gap-3">
             <BarraEtapas etapa={op.etapa} podeMover={podeMover} ocupado={acao.ocupado} aoEscolher={escolherEtapa} />
             <div className={CARTAO}>
             <dl>
@@ -306,7 +364,7 @@ export function PainelOportunidade({ oportunidade: op, historico, capacidades, v
             )}
 
             {experimentalMarcada ? (
-              <div className={CARTAO + " grid gap-2"}>
+              <div className={cn(CARTAO, "grid gap-2")}>
                 <p className="text-sm font-medium text-gray-900">Aula experimental</p>
                 <p className="font-mono text-sm tabular-nums text-gray-800">{dataHora(op.dataExperimental!, preferenciaFusoExibicao, fuso)}</p>
                 <p className="text-sm text-gray-700">{op.professorExperimental?.nome ?? "Sem professor"}</p>
@@ -326,7 +384,7 @@ export function PainelOportunidade({ oportunidade: op, historico, capacidades, v
             ) : podeAgendar ? <div className={CARTAO}>{formularioAgenda(false)}</div> : null}
 
             {taxaAberta && podeMover && (
-              <div className={CARTAO + " grid gap-2"}>
+              <div className={cn(CARTAO, "grid gap-2")}>
                 <p className="text-sm font-medium text-gray-800">Taxa de matrícula pendente</p>
                 {taxa!.linkPagamento && (
                   <p className="break-all text-xs text-gray-600">Link atual: {taxa!.linkPagamento}</p>
@@ -347,7 +405,7 @@ export function PainelOportunidade({ oportunidade: op, historico, capacidades, v
             <SecoesParidadeFunil oportunidade={op} podeEditarPrevisao={podeMover && !encerrada} podeTarefas={pode("tarefas.ver")} podeVerEmpresa={pode("funil.ver") || pode("comissoes.estornar")} />
           </TabsContent>
 
-          <TabsContent value="detalhes" className="space-y-3">
+          <TabsContent value="detalhes" className="flex flex-col gap-3">
             <div className={CARTAO}>
             <dl>
               <Linha rotulo="Tipo">{op.b2b ? "Empresa (B2B)" : "Pessoa física"}</Linha>
@@ -370,10 +428,10 @@ export function PainelOportunidade({ oportunidade: op, historico, capacidades, v
             <DocumentosOportunidade oportunidade={op} podeEditar={podeMover} />
           </TabsContent>
 
-          <TabsContent value="atividade" className="space-y-4">
+          <TabsContent value="atividade" className="flex flex-col gap-4">
             {podeMover && <InteracaoOportunidade oportunidadeId={op.id} />}
             {podeMover && (
-              <div className={CARTAO + " grid gap-2"}>
+              <div className={cn(CARTAO, "grid gap-2")}>
                 <label className="grid gap-1 text-sm text-gray-700">
                   <span>Nota interna (a equipe vê; o contato não)</span>
                   <CampoTexto rows={3} maxLength={2000} className={CONTROLE_CAMPO} value={nota} disabled={acao.ocupado || acaoNota.ocupado} onChange={(e) => setNota(e.target.value)} />
@@ -402,7 +460,10 @@ export function PainelOportunidade({ oportunidade: op, historico, capacidades, v
             )}
           </TabsContent>
         </Tabs>
-      </Drawer>
+        </div>
+        {acoesFechamento ? <SheetFooter className="justify-start border-t border-gray-200 px-5 py-3">{acoesFechamento}</SheetFooter> : null}
+      </SheetContent>
+      </Sheet>
 
       {perda && <ModalPerda oportunidadeId={op.id} nome={op.nome} aoFechar={() => setPerda(false)} />}
 

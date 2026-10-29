@@ -1,7 +1,9 @@
+// @vitest-environment jsdom
 import { readFileSync } from "node:fs";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
-import { describe, expect, it, vi } from "vitest";
+import { cleanup, render as renderDom } from "@testing-library/react";
+import { beforeAll, describe, expect, it, vi } from "vitest";
 import { CONTROLE_CAMPO } from "@/components/Campo";
 import type { CapacidadeCrm } from "@/server/crm/permissoes";
 import type { DetalheOportunidade } from "@/server/crm/historico";
@@ -42,13 +44,25 @@ const detalheComTaxaPendente: DetalheOportunidade = {
 };
 
 const GERENTE: CapacidadeCrm[] = ["funil.ver", "funil.mover", "funil.atribuir"];
-const render = (d: DetalheOportunidade, capacidades: CapacidadeCrm[] = GERENTE, extra: object = {}) =>
-  renderToStaticMarkup(
-    createElement(PainelOportunidade, {
-      oportunidade: d, historico: [], capacidades, vendedores: [{ id: "v1", nome: "Ana Vendedora" }, { id: "v2", nome: "Beto" }],
-      aoFechar: () => {}, ...extra,
-    }),
-  );
+beforeAll(() => {
+  if (!globalThis.ResizeObserver) {
+    globalThis.ResizeObserver = class { observe() {} unobserve() {} disconnect() {} } as unknown as typeof ResizeObserver;
+  }
+  const proto = Element.prototype as Element & { scrollIntoView?: () => void; hasPointerCapture?: () => boolean; setPointerCapture?: () => void; releasePointerCapture?: () => void };
+  proto.scrollIntoView ??= () => {};
+  proto.hasPointerCapture ??= () => false;
+  proto.setPointerCapture ??= () => {};
+  proto.releasePointerCapture ??= () => {};
+});
+
+const render = (d: DetalheOportunidade, capacidades: CapacidadeCrm[] = GERENTE, extra: object = {}) => {
+  cleanup();
+  renderDom(createElement(PainelOportunidade, {
+    oportunidade: d, historico: [], capacidades, vendedores: [{ id: "v1", nome: "Ana Vendedora" }, { id: "v2", nome: "Beto" }],
+    aoFechar: () => {}, ...extra,
+  }));
+  return document.body.innerHTML;
+};
 const renderPerda = () => renderToStaticMarkup(createElement(ModalPerda, { oportunidadeId: "op1", nome: "Maria", aoFechar: () => {} }));
 const clicarConfirmar = (v: { motivoPerda: string; observacao: string }) => validarPerda(v as never);
 
