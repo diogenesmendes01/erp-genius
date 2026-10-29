@@ -1,7 +1,7 @@
 import { spawn, spawnSync } from "node:child_process";
-import { chmodSync, existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs";
+import { chmodSync, existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, renameSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 
 const ROOT = join(process.cwd(), "ops/deployer");
@@ -52,14 +52,15 @@ mock = Path(os.environ["MOCK_DIR"])
 calls = mock / "calls.log"
 args = sys.argv[1:]
 gh_token = os.environ.get("GH_TOKEN", "")
-ghcr = os.environ.get("GHCR_TOKEN", "")
-if not gh_token or gh_token != ghcr or not os.environ.get("DATABASE_URL", "").startswith("postgres"):
-    sys.stderr.write("gh sem variaveis exportadas\\n")
+forbidden = ("DATABASE_URL", "SMOKE_COOKIE", "COOLIFY_TOKEN", "MIGRATE_DATABASE_URL", "DEPLOY_NOTIFY_TOKEN", "GHCR_TOKEN")
+if not gh_token or any(os.environ.get(name) for name in forbidden):
+    sys.stderr.write("gh sem allowlist\\n")
     sys.exit(1)
 if not (mock / "gh-export-logged").exists():
     (mock / "gh-export-logged").write_text("1", encoding="utf-8")
     with calls.open("a", encoding="utf-8") as fh:
         fh.write("gh-token-exportado\\n")
+        fh.write("gh-allowlist\\n")
 with calls.open("a", encoding="utf-8") as fh:
     fh.write("gh " + " ".join(args) + "\\n")
 if not args:
@@ -74,8 +75,22 @@ if args[0] == "api":
         text = (mock / f"checks-{found.group(1)}").read_text(encoding="utf-8")
         sys.stdout.write(text if text.endswith("\\n") else text + "\\n")
         sys.exit(0)
-    if "commits?per_page" in blob:
+    if "per_page=20" in blob and "commits?" in blob:
         sys.stdout.write((mock / "commits").read_text(encoding="utf-8"))
+        sys.exit(0)
+    if "per_page=100" in blob and "commits?" in blob:
+        if (mock / "history-fail").exists():
+            sys.exit(1)
+        import re
+        found_page = re.search(r"[?&]page=(\\d+)", blob)
+        page = int(found_page.group(1)) if found_page else 1
+        history_page = mock / f"history-page-{page}"
+        if history_page.exists():
+            sys.stdout.write(history_page.read_text(encoding="utf-8"))
+            sys.exit(0)
+        if page == 1:
+            sys.stdout.write((mock / "commits").read_text(encoding="utf-8"))
+            sys.exit(0)
         sys.exit(0)
     if "/pulls" in blob:
         import re
@@ -87,9 +102,17 @@ if args[0] == "api":
             sys.stdout.write(labels.read_text(encoding="utf-8"))
         sys.exit(0)
     if "/compare/" in blob:
-        compared = mock / "compare-shas"
-        if compared.exists():
-            sys.stdout.write(compared.read_text(encoding="utf-8"))
+        if (mock / "compare-fail").exists():
+            sys.exit(1)
+        import re
+        found_page = re.search(r"[?&]page=(\\d+)", blob)
+        page = int(found_page.group(1)) if found_page else 1
+        compare_page = mock / f"compare-page-{page}"
+        if compare_page.exists():
+            sys.stdout.write(compare_page.read_text(encoding="utf-8"))
+            sys.exit(0)
+        if page == 1 and (mock / "compare-shas").exists():
+            sys.stdout.write((mock / "compare-shas").read_text(encoding="utf-8"))
         sys.exit(0)
     sys.exit(1)
 if args[0] == "attestation":
@@ -122,10 +145,14 @@ if args[0] == "attestation":
 sys.exit(1)
 `);
   writeFileSync(join(dir, "curl"), `#!/usr/bin/env python3
-import os, sys
+import os, sys, time
 from pathlib import Path
 mock = Path(os.environ["MOCK_DIR"])
 calls = mock / "calls.log"
+forbidden = ("DATABASE_URL", "SMOKE_COOKIE", "COOLIFY_TOKEN", "MIGRATE_DATABASE_URL", "DEPLOY_NOTIFY_TOKEN", "GHCR_TOKEN", "GH_TOKEN")
+if any(os.environ.get(name) for name in forbidden):
+    sys.stderr.write("curl com variavel fora da allowlist\\n")
+    sys.exit(1)
 if (mock / "curl-exit").exists():
     sys.exit(1)
 args = sys.argv[1:]
@@ -161,6 +188,29 @@ if body and method in {"PATCH", "POST", "PUT"}:
     line += " " + body
 with calls.open("a", encoding="utf-8") as fh:
     fh.write(line + "\\n")
+header_texts = []
+idx = 0
+while idx < len(args):
+    if args[idx] == "-H" and idx + 1 < len(args) and args[idx + 1].startswith("@"):
+        header_texts.append(Path(args[idx + 1][1:]).read_text(encoding="utf-8"))
+    idx += 1
+def header_ok(prefix):
+    for text in header_texts:
+        if text.startswith(prefix) and len(text.strip()) >= len(prefix) + 16:
+            return True
+    return False
+sleep_url = (mock / "curl-sleep-url").read_text(encoding="utf-8").strip() if (mock / "curl-sleep-url").exists() else ""
+if sleep_url and sleep_url in url and not (mock / "curl-slept").exists():
+    paths = []
+    idx = 0
+    while idx < len(args):
+        if args[idx] == "-H" and idx + 1 < len(args) and args[idx + 1].startswith("@"):
+            paths.append(args[idx + 1][1:])
+        idx += 1
+    (mock / "curl-headers").write_text("\\n".join(paths), encoding="utf-8")
+    (mock / "curl-sleeping").write_text(url, encoding="utf-8")
+    (mock / "curl-slept").write_text("1", encoding="utf-8")
+    time.sleep(30)
 code = "500"
 resp = ""
 headers = "HTTP/1.1 200 OK\\r\\n"
@@ -183,7 +233,14 @@ elif "/api/v1/deploy?" in url and method == "POST":
     code = "500" if (mock / "deploy-fail").exists() else "200"
     resp = '{"deployments":[]}'
 elif url.endswith("${SMOKE_PATH}"):
-    code = (mock / "smoke-code").read_text(encoding="utf-8").strip() if (mock / "smoke-code").exists() else "200"
+    if header_ok("Cookie: "):
+        code = (mock / "smoke-code").read_text(encoding="utf-8").strip() if (mock / "smoke-code").exists() else "200"
+        with calls.open("a", encoding="utf-8") as fh:
+            fh.write("smoke-cookie-ok\\n")
+    else:
+        code = "401"
+        with calls.open("a", encoding="utf-8") as fh:
+            fh.write("smoke-sem-cookie\\n")
     resp = '{"total":0}'
 elif url.endswith("/api/health"):
     sha = (mock / "health-sha").read_text(encoding="utf-8").strip()
@@ -199,7 +256,14 @@ elif url.endswith("/api/ready"):
     code = (mock / "ready-code").read_text(encoding="utf-8").strip() if (mock / "ready-code").exists() else "200"
     resp = '{"ready":true}'
 elif "hooks.example.test" in url:
-    code = "500" if (mock / "notify-fail").exists() else "204"
+    if header_ok("Authorization: Bearer "):
+        code = "500" if (mock / "notify-fail").exists() else "204"
+        with calls.open("a", encoding="utf-8") as fh:
+            fh.write("notify-auth-ok\\n")
+    else:
+        code = "401"
+        with calls.open("a", encoding="utf-8") as fh:
+            fh.write("notify-sem-token\\n")
 else:
     code = "404"
 if out:
@@ -213,6 +277,13 @@ import os, sys
 from pathlib import Path
 mock = Path(os.environ["MOCK_DIR"])
 args = sys.argv[1:]
+forbidden = ("SMOKE_COOKIE", "COOLIFY_TOKEN", "MIGRATE_DATABASE_URL", "DEPLOY_NOTIFY_TOKEN", "GHCR_TOKEN", "GH_TOKEN")
+if any(os.environ.get(name) for name in forbidden):
+    sys.stderr.write("docker com variavel fora da allowlist\\n")
+    sys.exit(1)
+if "--env-file" in args and os.environ.get("DATABASE_URL"):
+    sys.stderr.write("docker com DATABASE_URL no ambiente\\n")
+    sys.exit(1)
 for arg in args:
     if arg.startswith("DATABASE_URL=") or "Bearer " in arg or arg.startswith("Cookie:"):
         sys.stderr.write("argv com segredo\\n")
@@ -250,6 +321,12 @@ sys.exit(1)
 import os, sys
 from pathlib import Path
 mock = Path(os.environ["MOCK_DIR"])
+if os.environ.get("DATABASE_URL") or os.environ.get("SMOKE_COOKIE") or os.environ.get("COOLIFY_TOKEN") or os.environ.get("GH_TOKEN"):
+    sys.stderr.write("pg_dump com variavel fora da allowlist\\n")
+    sys.exit(1)
+if not os.environ.get("PGPASSFILE"):
+    sys.stderr.write("pg_dump sem PGPASSFILE\\n")
+    sys.exit(1)
 with (mock / "calls.log").open("a", encoding="utf-8") as fh:
     fh.write("pg_dump " + " ".join(sys.argv[1:]) + "\\n")
 if (mock / "dump-fail").exists():
@@ -268,6 +345,9 @@ Path(target).write_text("PGDMP", encoding="utf-8")
 import os, sys
 from pathlib import Path
 mock = Path(os.environ["MOCK_DIR"])
+if os.environ.get("DATABASE_URL") or os.environ.get("SMOKE_COOKIE") or os.environ.get("COOLIFY_TOKEN"):
+    sys.stderr.write("pg_restore com variavel fora da allowlist\\n")
+    sys.exit(1)
 with (mock / "calls.log").open("a", encoding="utf-8") as fh:
     fh.write("pg_restore " + " ".join(sys.argv[1:]) + "\\n")
 if (mock / "list-fail").exists():
@@ -857,6 +937,11 @@ describe("fluxo · ordem, latest-wins, health e aviso", () => {
     expect(healthAt).toBeLessThan(readyAt);
     expect(readyAt).toBeLessThan(smokeAt);
     expect(smokeAt).toBeLessThan(notifyAt);
+    const compareAt = lines.findIndex((line) => line.includes("/compare/"));
+    expect(compareAt).toBeGreaterThanOrEqual(0);
+    expect(compareAt).toBeLessThan(dumpAt);
+    expect(lines).toContain("smoke-cookie-ok");
+    expect(lines).toContain("notify-auth-ok");
     expect(lines[dockerAt]).toContain("--network coolify");
     expect(lines[dockerAt]).toContain("prisma migrate deploy");
     expect(lines[dockerAt]).not.toContain("reset");
@@ -984,7 +1069,8 @@ describe("BLOCK-DEPLOY · env, argv, restore, contrato, smoke e pause", () => {
     const blocked = run(direct.env);
     expect(blocked.status).not.toBe(0);
     expect(blocked.stderr).toContain("deploy manual");
-    expect(callsOf(direct.mock).some((line) => line.includes("PATCH") || line.startsWith("docker run"))).toBe(false);
+    expect(callsOf(direct.mock).some((line) => line.includes("PATCH") || line.startsWith("docker run") || line.startsWith("pg_dump"))).toBe(false);
+    expect(JSON.parse(readFileSync(direct.failed, "utf8")).sha).toBe(SHA_NEW);
     const ctx = arrange({
       commits: [SHA_NEW, SHA_OLD],
       state: { sha: SHA_OLD, app: DIG_APP_PREV, migrate: DIG_MIG_PREV },
@@ -994,7 +1080,7 @@ describe("BLOCK-DEPLOY · env, argv, restore, contrato, smoke e pause", () => {
     const result = run(ctx.env);
     expect(result.status).not.toBe(0);
     expect(result.stderr).toContain("deploy manual");
-    expect(callsOf(ctx.mock).some((line) => line.startsWith("docker run"))).toBe(false);
+    expect(callsOf(ctx.mock).some((line) => line.startsWith("docker run") || line.startsWith("pg_dump"))).toBe(false);
     expect(readFileSync(join(process.cwd(), "docs/ops/deploy-auto.md"), "utf8")).toContain("migration-contract");
   });
 
@@ -1081,6 +1167,296 @@ exit 0
     expect(readFileSync(script, "utf8")).not.toContain("systemctl enable");
   });
 });
+
+function hexSha(n: number): string {
+  return n.toString(16).padStart(40, "0");
+}
+
+function expectNoRetryDump(ctx: ReturnType<typeof arrange>, dumpedOnce: boolean): void {
+  const first = callsOf(ctx.mock).filter((line) => line.startsWith("pg_dump"));
+  expect(first).toHaveLength(dumpedOnce ? 1 : 0);
+  expect(JSON.parse(readFileSync(ctx.failed, "utf8")).sha).toBe(SHA_NEW);
+  writeFileSync(join(ctx.mock, "calls.log"), "");
+  const again = run(ctx.env);
+  expect(again.status).toBe(0);
+  expect(again.stderr).toContain("aguardar_correcao");
+  expect(callsOf(ctx.mock).some((line) => line.startsWith("pg_dump"))).toBe(false);
+}
+
+describe("QA R2 · mutações, trap, marcador e histórico", () => {
+  it("smoke sem o cookie falha e faz rollback", () => {
+    const ctx = arrange({
+      state: { sha: SHA_OLD, app: DIG_APP_PREV, migrate: DIG_MIG_PREV },
+    });
+    const bin = join(work, "bin");
+    renameSync(join(bin, "curl"), join(bin, "curl.real"));
+    writeFileSync(join(bin, "curl"), `#!/usr/bin/env python3
+import os, sys
+from pathlib import Path
+args = []
+raw = sys.argv[1:]
+idx = 0
+while idx < len(raw):
+    if raw[idx] == "-H" and idx + 1 < len(raw) and raw[idx + 1].startswith("@"):
+        text = Path(raw[idx + 1][1:]).read_text(encoding="utf-8")
+        if text.startswith("Cookie:"):
+            idx += 2
+            continue
+    args.append(raw[idx])
+    idx += 1
+os.execv("${join(bin, "curl.real")}", ["curl.real", *args])
+`);
+    chmodSync(join(bin, "curl"), 0o755);
+    const result = run(ctx.env);
+    expect(result.status).not.toBe(0);
+    const lines = callsOf(ctx.mock);
+    expect(lines).toContain("smoke-sem-cookie");
+    expect(lines.some((line) => line.includes(DIG_APP_PREV) && line.includes("APP_IMAGE"))).toBe(true);
+    expect(JSON.parse(readFileSync(ctx.state, "utf8")).sha).toBe(SHA_OLD);
+    expect(JSON.parse(readFileSync(ctx.failed, "utf8")).sha).toBe(SHA_NEW);
+    expect(lines.join("\n")).not.toContain(SMOKE_COOKIE);
+  });
+
+  it("webhook sem token falha antes do backup", () => {
+    const ctx = arrange();
+    ctx.envValues.DEPLOY_NOTIFY_URL = "https://hooks.example.test/deploy";
+    materializeEnv(ctx.envFile, ctx.envValues);
+    const result = run(ctx.env);
+    expect(result.status).not.toBe(0);
+    expect(result.stderr).toContain("DEPLOY_NOTIFY_TOKEN");
+    expect(callsOf(ctx.mock).some((line) => line.startsWith("pg_dump") || line.includes("PATCH"))).toBe(false);
+    expect(callsOf(ctx.mock)).not.toContain("notify-auth-ok");
+  });
+
+  it("check duplicado não deixa o último sucesso vencer", () => {
+    const ctx = arrange();
+    const rows = checksFile("success").trim().split("\n").map((line) => (
+      line.startsWith("typecheck\t") ? "typecheck\tcompleted\tfailure" : line
+    ));
+    rows.push("typecheck\tcompleted\tsuccess");
+    writeFileSync(join(ctx.mock, `checks-${SHA_NEW}`), `${rows.join("\n")}\n`);
+    const result = run(ctx.env);
+    expect(result.status).toBe(0);
+    expect(result.stderr).toContain("nenhum_verde");
+    expect(callsOf(ctx.mock).some((line) => line.includes("PATCH") || line.startsWith("pg_dump"))).toBe(false);
+  });
+
+  it("o job typecheck do ci.yml inclui tsc -p ops/deployer", () => {
+    const ci = readFileSync(join(process.cwd(), ".github/workflows/ci.yml"), "utf8");
+    expect(ci).toContain("name: typecheck");
+    expect(ci).toContain("tsc -p ops/deployer");
+  });
+
+  it("trap EXIT INT TERM apaga o header do token se o processo morre no GHCR", async () => {
+    const ctx = arrange();
+    writeFileSync(join(ctx.mock, "curl-sleep-url"), "ghcr.io");
+    await expectSecretGoneAfterTerm(ctx.env, ctx.mock);
+  });
+
+  it("trap EXIT INT TERM apaga o header do cookie se o processo morre no smoke", async () => {
+    const ctx = arrange();
+    writeFileSync(join(ctx.mock, "curl-sleep-url"), SMOKE_PATH);
+    await expectSecretGoneAfterTerm(ctx.env, ctx.mock);
+  });
+
+  it("migration-contract grava o marcador antes do backup e não repete o pg_dump", () => {
+    const ctx = arrange({ contract: true });
+    const result = run(ctx.env);
+    expect(result.status).not.toBe(0);
+    expect(result.stderr).toContain("deploy manual");
+    expectNoRetryDump(ctx, false);
+  });
+
+  it("dump corrompido grava o marcador e o retry não chama pg_dump", () => {
+    const ctx = arrange({ listFail: true });
+    const result = run(ctx.env);
+    expect(result.status).not.toBe(0);
+    expect(result.stderr).toContain("pg_restore --list falhou");
+    expectNoRetryDump(ctx, true);
+  });
+
+  it("migrate que falha grava o marcador e o retry não chama pg_dump", () => {
+    const ctx = arrange({ migrateFail: true });
+    const result = run(ctx.env);
+    expect(result.status).not.toBe(0);
+    expectNoRetryDump(ctx, true);
+  });
+
+  it("clear-failed e resume apagam o marcador do SHA", () => {
+    work = mkdtempSync(join(tmpdir(), "erp-deployer-clear-"));
+    const failed = join(work, "state.json.failed");
+    const pause = join(work, "PAUSE");
+    writeFileSync(failed, "{}\n");
+    const script = join(ROOT, "bin/erp-deployer");
+    const env = { PATH: "/usr/bin:/bin", HOME: work, NODE_ENV: "test" as const, DEPLOYER_FAILED_FILE: failed, DEPLOYER_PAUSE_FILE: pause };
+    expect(spawnSync(script, ["clear-failed"], { env, encoding: "utf8" }).status).toBe(0);
+    expect(existsSync(failed)).toBe(false);
+    writeFileSync(failed, "{}\n");
+    writeFileSync(pause, "");
+    expect(spawnSync(script, ["resume"], { env, encoding: "utf8" }).status).toBe(0);
+    expect(existsSync(failed)).toBe(false);
+    expect(existsSync(pause)).toBe(false);
+  });
+
+  it("no primeiro deploy o guard lê o histórico e não só o commit candidato", () => {
+    const ctx = arrange({ commits: [SHA_NEW, SHA_OLD] });
+    writeFileSync(join(ctx.mock, `labels-${SHA_OLD}`), "migration-contract\n");
+    const result = run(ctx.env);
+    expect(result.status).not.toBe(0);
+    expect(result.stderr).toContain("deploy manual");
+    expect(callsOf(ctx.mock).some((line) => line.includes(`/commits/${SHA_OLD}/pulls`))).toBe(true);
+    expect(callsOf(ctx.mock).some((line) => line.startsWith("pg_dump"))).toBe(false);
+    expect(JSON.parse(readFileSync(ctx.failed, "utf8")).sha).toBe(SHA_NEW);
+  });
+
+  it("histórico indisponível no primeiro deploy falha fechado", () => {
+    const ctx = arrange();
+    writeFileSync(join(ctx.mock, "history-fail"), "1");
+    const result = run(ctx.env);
+    expect(result.status).not.toBe(0);
+    expect(result.stderr).toContain("histórico de migrations indisponível");
+    expect(callsOf(ctx.mock).some((line) => line.startsWith("pg_dump"))).toBe(false);
+    expect(JSON.parse(readFileSync(ctx.failed, "utf8")).sha).toBe(SHA_NEW);
+  });
+
+  it("histórico acima de 250 commits falha fechado", () => {
+    const ctx = arrange();
+    const many = Array.from({ length: 251 }, (_, index) => hexSha(index + 1));
+    writeFileSync(join(ctx.mock, "history-page-1"), `${many.join("\n")}\n`);
+    const result = run(ctx.env);
+    expect(result.status).not.toBe(0);
+    expect(result.stderr).toContain("acima de 250");
+    expect(callsOf(ctx.mock).some((line) => line.startsWith("pg_dump") || line.includes("/pulls"))).toBe(false);
+  });
+
+  it("o primeiro deploy pagina o histórico e vê o contrato na página seguinte", () => {
+    const ctx = arrange();
+    const page1 = Array.from({ length: 100 }, (_, index) => hexSha(index + 1));
+    const hidden = "d".repeat(40);
+    writeFileSync(join(ctx.mock, "history-page-1"), `${page1.join("\n")}\n`);
+    writeFileSync(join(ctx.mock, "history-page-2"), `${hidden}\n`);
+    writeFileSync(join(ctx.mock, `labels-${hidden}`), "migration-contract\n");
+    const result = run(ctx.env);
+    expect(result.status).not.toBe(0);
+    expect(result.stderr).toContain("deploy manual");
+    expect(callsOf(ctx.mock).some((line) => line.includes(`/commits/${hidden}/pulls`))).toBe(true);
+    expect(callsOf(ctx.mock).some((line) => line.startsWith("pg_dump"))).toBe(false);
+  });
+
+  it("a comparação acima de 250 commits falha fechada", () => {
+    const ctx = arrange({ state: { sha: SHA_OLD, app: DIG_APP_PREV, migrate: DIG_MIG_PREV } });
+    const many = Array.from({ length: 251 }, (_, index) => hexSha(index + 1));
+    writeFileSync(join(ctx.mock, "compare-page-1"), `${many.join("\n")}\n`);
+    const result = run(ctx.env);
+    expect(result.status).not.toBe(0);
+    expect(result.stderr).toContain("acima de 250");
+    expect(callsOf(ctx.mock).some((line) => line.startsWith("pg_dump"))).toBe(false);
+  });
+
+  it("a comparação pagina e não ignora o contrato da página seguinte", () => {
+    const ctx = arrange({ state: { sha: SHA_OLD, app: DIG_APP_PREV, migrate: DIG_MIG_PREV } });
+    const page1 = Array.from({ length: 100 }, (_, index) => hexSha(index + 1));
+    const hidden = "e".repeat(40);
+    writeFileSync(join(ctx.mock, "compare-page-1"), `${page1.join("\n")}\n`);
+    writeFileSync(join(ctx.mock, "compare-page-2"), `${hidden}\n`);
+    writeFileSync(join(ctx.mock, `labels-${hidden}`), "migration-contract\n");
+    const result = run(ctx.env);
+    expect(result.status).not.toBe(0);
+    expect(result.stderr).toContain("deploy manual");
+    expect(callsOf(ctx.mock).some((line) => line.includes(`/commits/${hidden}/pulls`))).toBe(true);
+    expect(callsOf(ctx.mock).some((line) => line.startsWith("pg_dump"))).toBe(false);
+  });
+
+  it("falha notifica o webhook quando ele está configurado", () => {
+    const ctx = arrange({ migrateFail: true });
+    ctx.envValues.DEPLOY_NOTIFY_URL = "https://hooks.example.test/deploy";
+    ctx.envValues.DEPLOY_NOTIFY_TOKEN = NOTIFY_TOKEN;
+    materializeEnv(ctx.envFile, ctx.envValues);
+    const result = run(ctx.env);
+    expect(result.status).not.toBe(0);
+    expect(callsOf(ctx.mock)).toContain("notify-auth-ok");
+    expect(callsOf(ctx.mock).some((line) => line.includes("hooks.example.test"))).toBe(true);
+    expect(JSON.parse(readFileSync(ctx.failed, "utf8")).sha).toBe(SHA_NEW);
+  });
+
+  it("o runbook é de produção, restaura por env-file e deixa o BLOCK-12 pendente", () => {
+    const doc = readFileSync(join(process.cwd(), "docs/ops/deploy-auto.md"), "utf8");
+    expect(doc.startsWith("# Runbook · deployer pull de produção\n")).toBe(true);
+    expect(doc).toContain("--env-file");
+    expect(doc).not.toContain('pg_restore --clean --if-exists --no-owner --dbname="$DATABASE_URL" /var/backups');
+    expect(doc).toContain("BLOCK-12");
+    expect(doc).toContain("depende do Mendes");
+    expect(doc).toContain("clear-failed");
+  });
+});
+
+function secretTextOutsideFixtures(root: string): string {
+  const hits: string[] = [];
+  const skip = new Set([join(root, "bin"), join(root, "mock"), join(root, "env")]);
+  const walk = (dir: string) => {
+    for (const name of readdirSync(dir)) {
+      const path = join(dir, name);
+      if (skip.has(path)) continue;
+      if (statSync(path).isDirectory()) {
+        walk(path);
+        continue;
+      }
+      const text = readFileSync(path, "utf8");
+      for (const secret of [COOLIFY_TOKEN, GHCR_TOKEN, SMOKE_COOKIE, "Authorization: Bearer", "Cookie:"]) {
+        if (text.includes(secret)) hits.push(path);
+      }
+    }
+  };
+  walk(root);
+  return hits.join("\n");
+}
+
+async function expectSecretGoneAfterTerm(env: NodeJS.ProcessEnv, mock: string): Promise<void> {
+  const child = spawn(DEPLOY, [], { env, detached: true, stdio: ["ignore", "ignore", "pipe"] });
+  let stderr = "";
+  child.stderr?.on("data", (chunk: Buffer) => {
+    stderr += String(chunk);
+  });
+  const sleeping = join(mock, "curl-sleeping");
+  const started = Date.now();
+  try {
+    while (!existsSync(sleeping)) {
+      if (child.exitCode !== null || Date.now() - started > 8000) {
+        throw new Error(`curl não dormiu\n${stderr}`);
+      }
+      await new Promise((resolve) => setTimeout(resolve, 30));
+    }
+    const headers = readFileSync(join(mock, "curl-headers"), "utf8").split("\n").filter(Boolean);
+    expect(headers.length).toBeGreaterThan(0);
+    for (const header of headers) expect(existsSync(header)).toBe(true);
+    if (child.pid) process.kill(-child.pid, "SIGTERM");
+    const outcome = await new Promise<{ code: number | null; signal: NodeJS.Signals | null }>((resolve) => {
+      const timer = setTimeout(() => resolve({ code: null, signal: null }), 5000);
+      child.on("exit", (code, signal) => {
+        clearTimeout(timer);
+        resolve({ code, signal });
+      });
+    });
+    expect(outcome.signal).toBeNull();
+    expect(outcome.code).toBe(143);
+    for (const header of headers) {
+      expect(existsSync(header)).toBe(false);
+      expect(existsSync(dirname(header))).toBe(false);
+    }
+    expect(stderr).not.toContain(COOLIFY_TOKEN);
+    expect(stderr).not.toContain(GHCR_TOKEN);
+    expect(stderr).not.toContain(SMOKE_COOKIE);
+    expect(secretTextOutsideFixtures(work)).toBe("");
+  } finally {
+    if (child.pid && child.exitCode === null) {
+      try {
+        process.kill(-child.pid, "SIGKILL");
+      } catch {
+        /* o processo já encerrou */
+      }
+    }
+  }
+}
 
 describe("attest_check.py", () => {
   it("rejeita saída vazia", () => {

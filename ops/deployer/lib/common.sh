@@ -42,7 +42,7 @@ log_event() {
   now="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
   line="$(printf '{"ts":"%s","event":"%s","result":"%s","sha":"%s","app_digest":"%s","migrate_digest":"%s","duration_ms":%s}' \
     "$now" "$event" "$result" "$sha" "$app" "$mig" "${DURATION_MS:-0}")"
-  if ! redacted="$(printf '%s' "$line" | python3 "${DEPLOYER_ROOT}/lib/py/redact.py")"; then
+  if ! redacted="$(printf '%s' "$line" | run_allow COOLIFY_TOKEN GHCR_TOKEN GH_TOKEN DATABASE_URL MIGRATE_DATABASE_URL SMOKE_COOKIE DEPLOY_NOTIFY_TOKEN -- python3 "${DEPLOYER_ROOT}/lib/py/redact.py")"; then
     redacted='{"event":"log_redact_failed"}'
   fi
   LAST_LOG="$redacted"
@@ -140,9 +140,9 @@ assert_notify_url() {
 
 http_header_file() {
   local line="$1" file=""
-  file="$(mktemp)" || return 1
-  chmod 0600 "$file" || { rm -f "$file"; return 1; }
-  printf '%s\n' "$line" > "$file" || { rm -f "$file"; return 1; }
+  file="$(secret_mktemp)" || return 1
+  chmod 0600 "$file" || return 1
+  printf '%s\n' "$line" > "$file" || return 1
   printf '%s' "$file"
 }
 
@@ -172,7 +172,7 @@ http_code() {
     args+=(-H "Content-Type: application/json" --data-binary "@${data_file}")
   fi
   args+=(--url "$url")
-  if ! code="$(curl "${args[@]}")"; then
+  if ! code="$(run_allow -- curl "${args[@]}")"; then
     if [[ "${#temps[@]}" -gt 0 ]]; then
       rm -f "${temps[@]}"
     fi
@@ -200,8 +200,8 @@ load_env_file() {
       die "env não pertence ao usuário deployer"
     fi
   fi
-  raw="$(mktemp)" || die "mktemp falhou"
-  if ! python3 "${DEPLOYER_ROOT}/lib/py/load_env.py" "$file" > "$raw"; then
+  raw="$(secret_mktemp)" || die "mktemp falhou"
+  if ! run_allow -- python3 "${DEPLOYER_ROOT}/lib/py/load_env.py" "$file" > "$raw"; then
     rm -f "$raw"
     die "env file inválido"
   fi
@@ -209,7 +209,14 @@ load_env_file() {
     case "$key" in
       COOLIFY_TOKEN|GHCR_TOKEN|COOLIFY_BASE_URL|APP_BASE_URL|DATABASE_URL|MIGRATE_DATABASE_URL|BACKUP_DIR|BACKUP_RETENTION_DAYS|DEPLOYER_STATE_FILE|DEPLOYER_LOCK_FILE|DEPLOYER_LOG_FILE|DEPLOYER_FAILED_FILE|DEPLOYER_PAUSE_FILE|HEALTH_ATTEMPTS|HEALTH_INTERVAL_SECONDS|DOCKER_NETWORK|DEPLOY_NOTIFY_URL|DEPLOY_NOTIFY_TOKEN|SMOKE_COOKIE|SMOKE_PATH)
         printf -v "$key" '%s' "$value"
-        export "${key?}"
+        case "$key" in
+          COOLIFY_TOKEN|GHCR_TOKEN|DATABASE_URL|MIGRATE_DATABASE_URL|SMOKE_COOKIE|DEPLOY_NOTIFY_TOKEN)
+            export -n "${key?}"
+            ;;
+          *)
+            export "${key?}"
+            ;;
+        esac
         ;;
       *)
         die "chave de env inesperada"
@@ -226,6 +233,86 @@ pin_path() {
     PATH="${tool_root}:${PATH}"
   fi
   export PATH
+}
+
+init_secret_tmp() {
+  if [[ -n "${SECRET_TMP_DIR:-}" && -d "$SECRET_TMP_DIR" ]]; then
+    return 0
+  fi
+  SECRET_TMP_DIR="$(mktemp -d)" || return 1
+  chmod 0700 "$SECRET_TMP_DIR" || return 1
+}
+
+secret_mktemp() {
+  init_secret_tmp || return 1
+  mktemp "${SECRET_TMP_DIR}/sec.XXXXXX"
+}
+
+cleanup_secret_tmp() {
+  if [[ "${BASH_SUBSHELL:-0}" -ne 0 ]]; then
+    return 0
+  fi
+  if [[ -n "${SECRET_TMP_DIR:-}" && "$SECRET_TMP_DIR" == /* && -d "$SECRET_TMP_DIR" ]]; then
+    rm -rf "$SECRET_TMP_DIR"
+    SECRET_TMP_DIR=""
+  fi
+}
+
+on_secret_signal() {
+  local code="$1"
+  if [[ "${BASH_SUBSHELL:-0}" -eq 0 ]]; then
+    cleanup_secret_tmp
+  fi
+  exit "$code"
+}
+
+trap cleanup_secret_tmp EXIT
+trap 'on_secret_signal 130' INT
+trap 'on_secret_signal 143' TERM
+
+if ! init_secret_tmp; then
+  printf 'deployer: mktemp falhou\n' >&2
+  exit 1
+fi
+
+run_allow() {
+  local -a keys=()
+  local envfile="" k="" rc=0
+  while [[ $# -gt 0 && "$1" != "--" ]]; do
+    keys+=("$1")
+    shift
+  done
+  if [[ "${1:-}" != "--" ]]; then
+    printf 'deployer: run_allow sem comando\n' >&2
+    return 1
+  fi
+  shift
+  envfile="$(secret_mktemp)" || return 1
+  chmod 0600 "$envfile" || return 1
+  {
+    printf 'PATH=%q\n' "$PATH"
+    printf 'HOME=%q\n' "${HOME:-/}"
+    printf 'LANG=%q\n' "${LANG:-C.UTF-8}"
+    printf 'TZ=%q\n' "${TZ:-UTC}"
+    printf 'TMPDIR=%q\n' "${TMPDIR:-/tmp}"
+    if [[ -n "${MOCK_DIR:-}" ]]; then
+      printf 'MOCK_DIR=%q\n' "$MOCK_DIR"
+    fi
+    if [[ -n "${LC_ALL:-}" ]]; then
+      printf 'LC_ALL=%q\n' "$LC_ALL"
+    fi
+    if [[ "${#keys[@]}" -gt 0 ]]; then
+      for k in "${keys[@]}"; do
+        if [[ -n "${!k+x}" ]]; then
+          printf '%s=%q\n' "$k" "${!k}"
+        fi
+      done
+    fi
+  } > "$envfile" || return 1
+  # shellcheck disable=SC2016
+  env -i PATH="$PATH" bash --noprofile --norc -c 'set -a; source "$1"; set +a; shift; exec "$@"' _ "$envfile" "$@" || rc=$?
+  rm -f "$envfile"
+  return "$rc"
 }
 
 # Contrato lido por bin/deploy.sh e lib/steps.sh.

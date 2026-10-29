@@ -36,7 +36,7 @@ record_check() {
 checks_verdict() {
   local sha="$1" tsv name status conclusion req state any_pending any_failure
   assert_sha "$sha"
-  if ! tsv="$(gh api --paginate --jq '.check_runs[] | [.name, .status, .conclusion] | @tsv' \
+  if ! tsv="$(run_allow GH_TOKEN -- gh api --paginate --jq '.check_runs[] | [.name, .status, .conclusion] | @tsv' \
       "repos/${GITHUB_REPO}/commits/${sha}/check-runs")"; then
     return 1
   fi
@@ -77,7 +77,7 @@ checks_verdict() {
 select_candidate() {
   local list="" s="" tip="" verdict="" i=0 sha=""
   local -a shas=()
-  if ! list="$(gh api --jq '.[].sha' "repos/${GITHUB_REPO}/commits?per_page=20&sha=main")"; then
+  if ! list="$(run_allow GH_TOKEN -- gh api --jq '.[].sha' "repos/${GITHUB_REPO}/commits?per_page=20&sha=main")"; then
     die "falha ao ler a main"
   fi
   [[ -n "$list" ]] || die "main sem commits"
@@ -153,7 +153,7 @@ verify_one() {
   if [[ "$image_ref" != "${APP_IMAGE_REPO}@${expected_digest}" && "$image_ref" != "${MIGRATE_IMAGE_REPO}@${expected_digest}" ]]; then
     die "ref de imagem não permitida"
   fi
-  if ! out="$(timeout 60 gh attestation verify "oci://${image_ref}" \
+  if ! out="$(run_allow GH_TOKEN -- timeout 60 gh attestation verify "oci://${image_ref}" \
       --repo "$GITHUB_REPO" \
       --signer-workflow "$SIGNER_WORKFLOW" \
       --format json)"; then
@@ -163,6 +163,7 @@ verify_one() {
     die "attestation saída vazia"
   fi
   if ! printf '%s' "$out" | EXPECTED_SHA="$expected_sha" EXPECTED_DIGEST="$expected_digest" \
+      run_allow EXPECTED_SHA EXPECTED_DIGEST -- \
       python3 "${DEPLOYER_ROOT}/lib/py/attest_check.py"; then
     die "attestation não confere com o commit da main"
   fi
@@ -177,9 +178,9 @@ backup_db() {
   chmod 0700 "$BACKUP_DIR" || die "não foi possível proteger o diretório de backup"
   stamp="$(date -u +%Y%m%dT%H%M%SZ)"
   file="${BACKUP_DIR}/${stamp}-${sha}.dump"
-  pgpass="$(mktemp "${BACKUP_DIR}/.pgpass.XXXXXX")" || die "mktemp falhou"
+  pgpass="$(secret_mktemp)" || die "mktemp falhou"
   chmod 0600 "$pgpass" || die "pgpass sem 0600"
-  if ! meta="$(python3 "${DEPLOYER_ROOT}/lib/py/pgpass.py" "$pgpass")"; then
+  if ! meta="$(run_allow DATABASE_URL -- python3 "${DEPLOYER_ROOT}/lib/py/pgpass.py" "$pgpass")"; then
     rm -f "$pgpass"
     die "DATABASE_URL inválida"
   fi
@@ -191,26 +192,31 @@ backup_db() {
     rm -f "$pgpass"
     die "DATABASE_URL com campos não utilizáveis"
   fi
-  if ! PGPASSFILE="$pgpass" pg_dump --format=custom --no-password --file "$file" -h "$host" -p "$port" -U "$user" -d "$db"; then
+  if ! PGPASSFILE="$pgpass" run_allow PGPASSFILE -- pg_dump --format=custom --no-password --file "$file" -h "$host" -p "$port" -U "$user" -d "$db"; then
     rm -f "$pgpass" "$file"
-    die "pg_dump falhou"
+    printf 'deployer: pg_dump falhou\n' >&2
+    return 1
   fi
   rm -f "$pgpass"
   if [[ ! -s "$file" ]]; then
     rm -f "$file"
-    die "dump vazio"
+    printf 'deployer: dump vazio\n' >&2
+    return 1
   fi
   chmod 0600 "$file" || die "dump sem 0600"
   base="$(basename "$file")"
-  if ! ( cd "$BACKUP_DIR" && sha256sum "$base" > "${base}.sha256" ); then
-    die "não foi possível calcular o checksum"
+  if ! ( cd "$BACKUP_DIR" && run_allow -- sha256sum "$base" > "${base}.sha256" ); then
+    printf 'deployer: não foi possível calcular o checksum\n' >&2
+    return 1
   fi
   chmod 0600 "${file}.sha256" || die "checksum sem 0600"
-  if ! ( cd "$BACKUP_DIR" && sha256sum -c "${base}.sha256" >/dev/null ); then
-    die "checksum do dump não confere"
+  if ! ( cd "$BACKUP_DIR" && run_allow -- sha256sum -c "${base}.sha256" >/dev/null ); then
+    printf 'deployer: checksum do dump não confere\n' >&2
+    return 1
   fi
-  if ! pg_restore --list "$file" >/dev/null; then
-    die "pg_restore --list falhou"
+  if ! run_allow -- pg_restore --list "$file" >/dev/null; then
+    printf 'deployer: pg_restore --list falhou\n' >&2
+    return 1
   fi
   find "$BACKUP_DIR" -maxdepth 1 -type f -name '*.dump' -mtime "+${BACKUP_RETENTION_DAYS}" -delete
   find "$BACKUP_DIR" -maxdepth 1 -type f -name '*.sha256' -mtime "+${BACKUP_RETENTION_DAYS}" -delete
@@ -247,7 +253,7 @@ coolify_set() {
   esac
   body="$(mktemp)" || die "mktemp falhou"
   resp="$(mktemp)" || die "mktemp falhou"
-  if ! ENV_KEY="$key" ENV_VALUE="$value" python3 "${DEPLOYER_ROOT}/lib/py/json_env.py" > "$body"; then
+  if ! ENV_KEY="$key" ENV_VALUE="$value" run_allow ENV_KEY ENV_VALUE -- python3 "${DEPLOYER_ROOT}/lib/py/json_env.py" > "$body"; then
     rm -f "$body" "$resp"
     die "não foi possível montar o env"
   fi
@@ -285,7 +291,7 @@ coolify_ler_imagens() {
     rm -f "$resp"
     die "Coolify recusou a leitura de env (${code})"
   fi
-  if ! parsed="$(python3 "${DEPLOYER_ROOT}/lib/py/coolify_images.py" < "$resp")"; then
+  if ! parsed="$(run_allow -- python3 "${DEPLOYER_ROOT}/lib/py/coolify_images.py" < "$resp")"; then
     rm -f "$resp"
     die "resposta de env do Coolify inválida"
   fi
@@ -313,23 +319,29 @@ run_migrate() {
   fi
   if [[ -n "${MIGRATE_DATABASE_URL:-}" ]]; then
     [[ "${MIGRATE_DATABASE_URL}" =~ ^postgres(ql)?://[^[:space:]]+$ ]] || die "MIGRATE_DATABASE_URL inválida"
-    envfile="$(mktemp)" || return 1
-    chmod 0600 "$envfile" || { rm -f "$envfile"; return 1; }
-    printf 'DATABASE_URL=%s\n' "$MIGRATE_DATABASE_URL" > "$envfile" || { rm -f "$envfile"; return 1; }
+    envfile="$(secret_mktemp)" || return 1
+    chmod 0600 "$envfile" || return 1
+    printf 'DATABASE_URL=%s\n' "$MIGRATE_DATABASE_URL" > "$envfile" || return 1
     db_env=(--env-file "$envfile")
   else
     db_env=(-e DATABASE_URL)
   fi
-  if ! docker pull "$image"; then
+  if ! run_allow -- docker pull "$image"; then
     if [[ -n "$envfile" ]]; then
       rm -f "$envfile"
     fi
     return 1
   fi
-  if [[ "${#net[@]}" -eq 0 ]]; then
-    docker run --rm --pull never "${db_env[@]}" --entrypoint npx "$image" prisma migrate deploy || rc=$?
+  if [[ -n "$envfile" ]]; then
+    if [[ "${#net[@]}" -eq 0 ]]; then
+      run_allow -- docker run --rm --pull never "${db_env[@]}" --entrypoint npx "$image" prisma migrate deploy || rc=$?
+    else
+      run_allow -- docker run --rm --pull never "${net[@]}" "${db_env[@]}" --entrypoint npx "$image" prisma migrate deploy || rc=$?
+    fi
+  elif [[ "${#net[@]}" -eq 0 ]]; then
+    run_allow DATABASE_URL -- docker run --rm --pull never "${db_env[@]}" --entrypoint npx "$image" prisma migrate deploy || rc=$?
   else
-    docker run --rm --pull never "${net[@]}" "${db_env[@]}" --entrypoint npx "$image" prisma migrate deploy || rc=$?
+    run_allow DATABASE_URL -- docker run --rm --pull never "${net[@]}" "${db_env[@]}" --entrypoint npx "$image" prisma migrate deploy || rc=$?
   fi
   if [[ -n "$envfile" ]]; then
     rm -f "$envfile"
@@ -350,7 +362,7 @@ wait_healthy() {
     fi
     got=""
     if [[ "$code" == "200" ]]; then
-      if got="$(python3 "${DEPLOYER_ROOT}/lib/py/health_sha.py" < "$body")"; then
+      if got="$(run_allow -- python3 "${DEPLOYER_ROOT}/lib/py/health_sha.py" < "$body")"; then
         :
       else
         got=""
@@ -397,6 +409,7 @@ write_json_atomic() {
   chmod 0600 "$tmp" || die "state temporário sem 0600"
   if ! STATE_SHA="$sha" STATE_APP="$app" STATE_MIG="$mig" STATE_RESULT="$result" \
       STATE_AT="$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+      run_allow STATE_SHA STATE_APP STATE_MIG STATE_RESULT STATE_AT -- \
       python3 "${DEPLOYER_ROOT}/lib/py/state_io.py" write > "$tmp"; then
     rm -f "$tmp"
     die "não foi possível gravar o state"
@@ -408,10 +421,10 @@ write_json_atomic() {
 rollback_from_state() {
   local app="" mig="" app_ref="" mig_ref=""
   if [[ -f "$DEPLOYER_STATE_FILE" ]]; then
-    if ! app="$(python3 "${DEPLOYER_ROOT}/lib/py/state_io.py" read app_digest "$DEPLOYER_STATE_FILE")"; then
+    if ! app="$(run_allow -- python3 "${DEPLOYER_ROOT}/lib/py/state_io.py" read app_digest "$DEPLOYER_STATE_FILE")"; then
       die "state file ilegível"
     fi
-    if ! mig="$(python3 "${DEPLOYER_ROOT}/lib/py/state_io.py" read migrate_digest "$DEPLOYER_STATE_FILE")"; then
+    if ! mig="$(run_allow -- python3 "${DEPLOYER_ROOT}/lib/py/state_io.py" read migrate_digest "$DEPLOYER_STATE_FILE")"; then
       die "state file ilegível"
     fi
     assert_digest "$app"
@@ -438,9 +451,13 @@ rollback_from_state() {
 
 commit_has_contract() {
   local sha="$1" names="" name=""
-  assert_sha "$sha"
-  if ! names="$(gh api --jq '.[] | .labels[]?.name' "repos/${GITHUB_REPO}/commits/${sha}/pulls")"; then
-    die "falha ao ler o label migration-contract"
+  if [[ ! "$sha" =~ $SHA_RE ]]; then
+    printf 'deployer: sha inválido no histórico\n' >&2
+    return 2
+  fi
+  if ! names="$(run_allow GH_TOKEN -- gh api --jq '.[] | .labels[]?.name' "repos/${GITHUB_REPO}/commits/${sha}/pulls")"; then
+    printf 'deployer: falha ao ler o label migration-contract\n' >&2
+    return 2
   fi
   while IFS= read -r name; do
     if [[ "$name" == "migration-contract" ]]; then
@@ -450,31 +467,101 @@ commit_has_contract() {
   return 1
 }
 
-guard_migration_contract() {
-  local sha="" prev="" list=""
-  if commit_has_contract "$CANDIDATE"; then
-    die "migration-contract exige deploy manual"
-  fi
-  if [[ ! -f "$DEPLOYER_STATE_FILE" ]]; then
-    return 0
-  fi
-  if ! prev="$(python3 "${DEPLOYER_ROOT}/lib/py/state_io.py" read sha "$DEPLOYER_STATE_FILE")"; then
-    die "state file ilegível"
-  fi
-  assert_sha "$prev"
-  if [[ "$prev" == "$CANDIDATE" ]]; then
-    return 0
-  fi
-  if ! list="$(gh api --jq '.commits[].sha' "repos/${GITHUB_REPO}/compare/${prev}...${CANDIDATE}")"; then
-    die "falha ao comparar commits para migration-contract"
-  fi
+append_shas() {
+  local batch="$1" sha=""
   while IFS= read -r sha; do
     [[ -n "$sha" ]] || continue
-    assert_sha "$sha"
-    if commit_has_contract "$sha"; then
-      die "migration-contract exige deploy manual"
+    if [[ ! "$sha" =~ $SHA_RE ]]; then
+      printf 'deployer: sha inválido no histórico\n' >&2
+      return 1
     fi
-  done <<< "$list"
+    RANGE_SHAS+=("$sha")
+    if [[ "${#RANGE_SHAS[@]}" -gt 250 ]]; then
+      printf 'deployer: comparação de commits acima de 250\n' >&2
+      return 1
+    fi
+  done <<< "$batch"
+}
+
+fetch_sha_pages() {
+  local jq_expr="$1" url_base="$2"
+  local page=1 batch="" before=0 added=0 sep="?"
+  RANGE_SHAS=()
+  if [[ "$url_base" == *\?* ]]; then
+    sep="&"
+  fi
+  while [[ "$page" -le 5 ]]; do
+    if ! batch="$(run_allow GH_TOKEN -- gh api --jq "$jq_expr" "${url_base}${sep}per_page=100&page=${page}")"; then
+      printf 'deployer: histórico de migrations indisponível\n' >&2
+      return 1
+    fi
+    if [[ -z "${batch//[[:space:]]/}" ]]; then
+      break
+    fi
+    before="${#RANGE_SHAS[@]}"
+    if ! append_shas "$batch"; then
+      return 1
+    fi
+    added=$(( ${#RANGE_SHAS[@]} - before ))
+    if [[ "$added" -lt 100 ]]; then
+      break
+    fi
+    page=$((page + 1))
+  done
+}
+
+reject_contract() {
+  local rc=0
+  commit_has_contract "$1" || rc=$?
+  if [[ "$rc" -eq 0 ]]; then
+    printf 'deployer: migration-contract exige deploy manual\n' >&2
+    return 1
+  fi
+  if [[ "$rc" -ne 1 ]]; then
+    return 1
+  fi
+  return 0
+}
+
+guard_migration_contract() {
+  local sha="" prev=""
+  if [[ ! -f "$DEPLOYER_STATE_FILE" ]]; then
+    if ! fetch_sha_pages '.[].sha' "repos/${GITHUB_REPO}/commits?sha=main"; then
+      return 1
+    fi
+    if [[ "${#RANGE_SHAS[@]}" -eq 0 ]]; then
+      printf 'deployer: histórico de migrations indisponível\n' >&2
+      return 1
+    fi
+  else
+    if ! prev="$(run_allow -- python3 "${DEPLOYER_ROOT}/lib/py/state_io.py" read sha "$DEPLOYER_STATE_FILE")"; then
+      printf 'deployer: state file ilegível\n' >&2
+      return 1
+    fi
+    if [[ ! "$prev" =~ $SHA_RE ]]; then
+      printf 'deployer: sha inválido no histórico\n' >&2
+      return 1
+    fi
+    if [[ "$prev" == "$CANDIDATE" ]]; then
+      RANGE_SHAS=()
+    elif ! fetch_sha_pages '.commits[].sha' "repos/${GITHUB_REPO}/compare/${prev}...${CANDIDATE}"; then
+      return 1
+    fi
+  fi
+  if ! reject_contract "$CANDIDATE"; then
+    return 1
+  fi
+  if [[ "${#RANGE_SHAS[@]}" -eq 0 ]]; then
+    return 0
+  fi
+  for sha in "${RANGE_SHAS[@]}"; do
+    if [[ "$sha" == "$CANDIDATE" ]]; then
+      continue
+    fi
+    if ! reject_contract "$sha"; then
+      return 1
+    fi
+  done
 }
 
 notify_line() {
@@ -483,6 +570,7 @@ notify_line() {
     return 0
   fi
   assert_notify_url "$DEPLOY_NOTIFY_URL"
+  assert_token "DEPLOY_NOTIFY_TOKEN" "${DEPLOY_NOTIFY_TOKEN:-}"
   body="$(mktemp)" || die "mktemp falhou"
   resp="$(mktemp)" || die "mktemp falhou"
   printf '%s\n' "$line" > "$body"
@@ -496,5 +584,6 @@ notify_line() {
   rm -f "$body" "$resp"
 }
 
-# CANDIDATE, PREV_APP e PREV_MIG são lidos por bin/deploy.sh.
+# CANDIDATE, PREV_APP, PREV_MIG e RANGE_SHAS são lidos pelos passos do deploy.
+RANGE_SHAS=()
 : "${CANDIDATE:-}${PREV_APP:-}${PREV_MIG:-}"

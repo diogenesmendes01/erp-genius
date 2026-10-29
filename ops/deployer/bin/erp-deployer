@@ -1,8 +1,10 @@
 #!/usr/bin/env bash
-# Kill switch. pause cria /etc/erp-deployer/PAUSE e para o timer. resume faz o inverso.
+# Kill switch. pause cria /etc/erp-deployer/PAUSE e para o timer.
+# resume apaga o PAUSE e o marcador de falha. clear-failed só apaga o marcador.
 set -euo pipefail
 
 PAUSE_FILE="${DEPLOYER_PAUSE_FILE:-/etc/erp-deployer/PAUSE}"
+FAILED_FILE="${DEPLOYER_FAILED_FILE:-/var/lib/erp-deployer/state.json.failed}"
 cmd="${1:-}"
 
 systemctl_present() {
@@ -34,6 +36,12 @@ start_timer_if_enabled() {
   fi
 }
 
+clear_failed() {
+  if [[ -e "$FAILED_FILE" || -L "$FAILED_FILE" ]]; then
+    rm -f "$FAILED_FILE"
+  fi
+}
+
 case "$cmd" in
   pause)
     mkdir -p "$(dirname "$PAUSE_FILE")"
@@ -43,10 +51,14 @@ case "$cmd" in
     ;;
   resume)
     rm -f "$PAUSE_FILE"
+    clear_failed
     start_timer_if_enabled
     ;;
+  clear-failed)
+    clear_failed
+    ;;
   *)
-    printf 'uso: erp-deployer pause|resume\n' >&2
+    printf 'uso: erp-deployer pause|resume|clear-failed\n' >&2
     exit 2
     ;;
 esac

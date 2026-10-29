@@ -1,8 +1,8 @@
-# Runbook · deployer pull da UAT
+# Runbook · deployer pull de produção
 
 Agente em `ops/deployer` que, na VPS, busca o commit mais novo da `main` com os 5 checks verdes, confere a attestation dos dois digests e só então faz backup, migrate e redeploy do serviço Coolify `thpvwxk6figfp347ajznvzhl`. O CI não recebe token do Coolify nem chave SSH.
 
-A Fase 2 (produção separada) fica fora deste runbook. A prova de rollback no app isolado (`BLOCK-DEPLOY-10/11/12`) fica com o DEVOPS e não faz parte deste agente.
+A prova de rollback no app isolado (`BLOCK-DEPLOY-10/11`) fica com o DEVOPS e não faz parte deste agente. O backup off-site (`BLOCK-12`) está pendente e depende do Mendes.
 
 ## Quando ligar o timer
 
@@ -20,7 +20,7 @@ Como root, no checkout deste repositório:
 
 Isso cria o usuário de sistema `deployer` com shell `/usr/sbin/nologin` (sem login), os diretórios `/var/lib/erp-deployer` e `/var/backups/erp-deployer` em `0700`, e `/etc/erp-deployer/env` em `0600` se ainda não existir. O diretório `/etc/erp-deployer` fica `0750` `root:deployer`. O comando `erp-deployer` fica em `/usr/local/sbin`.
 
-O script instalado em `/opt/erp-deployer` é do root e não é gravável pelo `deployer`. O `PATH` do processo é fixo (`/usr/bin` e vizinhos). O arquivo de env não pode trocar `PATH`, `LD_PRELOAD` nem o UUID do app: chaves fora da lista são ignoradas. O que entra na lista é exportado para `pg_dump`, `gh`, `docker` e o redator de log.
+O script instalado em `/opt/erp-deployer` é do root e não é gravável pelo `deployer`. O `PATH` do processo é fixo (`/usr/bin` e vizinhos). O arquivo de env não pode trocar `PATH`, `LD_PRELOAD` nem o UUID do app: chaves fora da lista são ignoradas. Cada processo filho recebe só a allowlist dele. `gh` recebe `GH_TOKEN`. `pg_dump` recebe o `PGPASSFILE`. O `docker run` da migrate recebe a URL por `--env-file` ou, se não houver `MIGRATE_DATABASE_URL`, só `DATABASE_URL`. Token, cookie e URL não entram no argv.
 
 ### Grupo docker
 
@@ -94,14 +94,14 @@ Um PR com o label `migration-contract` não sobe sozinho.
 3. Rode o `prisma migrate deploy` na imagem de migrate já atestada, com a URL interna do banco, na janela combinada.
 4. Atualize `APP_IMAGE` e `APP_MIGRATE_IMAGE` no Coolify para os digests atestados e faça o deploy pelo painel.
 5. Confira health, ready e a rota do smoke.
-6. Grave o state só se o health fechou, ou apague `state.json.failed` se o agente tinha marcado o SHA.
+6. Grave o state só se o health fechou. Se o agente marcou o SHA, `sudo erp-deployer clear-failed` apaga `state.json.failed`.
 7. `sudo erp-deployer resume`
 
 ## Rollback
 
 Falha de health, ready, smoke ou do `POST /deploy` depois da troca de imagem: o script restaura `APP_IMAGE` e `APP_MIGRATE_IMAGE` e redeploya. A fonte é o state anterior. No primeiro deploy, sem state, usa as imagens que o Coolify já tinha, se forem digests válidos. O banco não é revertido. O código automático só chama `pg_restore --list`. Não há `prisma migrate reset`, `prisma db push` nem down-migration.
 
-Em seguida grava `/var/lib/erp-deployer/state.json.failed` com o SHA que falhou, para o timer não repetir o mesmo commit. Para tentar de novo o mesmo SHA, apague esse arquivo com o agente pausado. Um commit mais novo da `main` é avaliado normalmente.
+Em seguida grava `/var/lib/erp-deployer/state.json.failed` com o SHA que falhou. Enquanto esse marcador existir para o mesmo SHA, o timer não tenta de novo e não roda outro `pg_dump`. Isso vale para `migration-contract`, dump corrompido, migrate, health e o `POST /deploy`. A retomada é manual: `sudo erp-deployer clear-failed` apaga só o marcador, e `sudo erp-deployer resume` apaga o marcador e o `PAUSE`. Um commit mais novo da `main` é avaliado normalmente.
 
 Se não houver state nem imagem anterior válida, pause o agente e use o restore manual abaixo, ou publique um commit de correção.
 
@@ -117,7 +117,11 @@ Isso cria `/etc/erp-deployer/PAUSE` e para `erp-deployer.timer` e `erp-deployer.
 sudo erp-deployer resume
 ```
 
-O `resume` apaga o arquivo. O timer só volta a ser iniciado se já estiver `enabled`. Quem ainda não recebeu o OK do Mendes continua com o timer desligado. O unit tem `ProtectSystem=strict`: o `deployer` não grava em `/etc`. Quem cria e apaga o `PAUSE` é o root, por esse comando.
+O `resume` apaga o arquivo e o marcador `state.json.failed`. O timer só volta a ser iniciado se já estiver `enabled`. Quem ainda não recebeu o OK do Mendes continua com o timer desligado. O unit tem `ProtectSystem=strict`: o `deployer` não grava em `/etc`. Quem cria e apaga o `PAUSE` é o root, por esse comando. Para liberar um SHA bloqueado sem mexer no `PAUSE`:
+
+```bash
+sudo erp-deployer clear-failed
+```
 
 ## Restore manual do banco
 
@@ -132,10 +136,18 @@ sha256sum -c NOME.dump.sha256
 pg_restore --list NOME.dump
 ```
 
-3. Combine uma janela. O `pg_restore` abaixo é manual e destrutivo para os objetos que o dump cobre. O exemplo usa as variáveis do host, sem gravar a senha no histórico se você usar um `pgpass` `0600`:
+3. Combine uma janela. O `pg_restore` abaixo é manual e destrutivo para os objetos que o dump cobre. A URL fica num env-file `0600`, não no argv do host:
 
 ```bash
-pg_restore --clean --if-exists --no-owner --dbname="$DATABASE_URL" /var/backups/erp-deployer/NOME.dump
+umask 077
+envfile="$(mktemp)"
+chmod 0600 "$envfile"
+printf 'DATABASE_URL=%s\n' "$DATABASE_URL" > "$envfile"
+docker run --rm --env-file "$envfile" \
+  -v /var/backups/erp-deployer:/backup:ro \
+  --entrypoint sh postgres:16 \
+  -c 'pg_restore --clean --if-exists --no-owner --dbname="$DATABASE_URL" /backup/NOME.dump'
+rm -f "$envfile"
 ```
 
 4. Confira `/api/health` (SHA esperado), `/api/ready` (200) e a rota do smoke.
@@ -153,6 +165,10 @@ systemctl enable --now erp-deployer.timer
 ```
 
 Acompanhe `journalctl -u erp-deployer.service` e `/var/lib/erp-deployer/deploy.log`.
+
+## Backup off-site (BLOCK-12, pendente)
+
+O dump em `/var/backups/erp-deployer` fica na própria VPS. A cópia off-site do `BLOCK-12` ainda não existe neste agente: está pendente e depende do Mendes. Este runbook não liga essa cópia, não muda o timer e não implementa o `BLOCK-12`.
 
 ## Dependências na VPS
 

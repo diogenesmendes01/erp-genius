@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Deploy pull da UAT. Segredos só em /etc/erp-deployer/env (0600, dono deployer).
+# Deploy pull de produção. Segredos só em /etc/erp-deployer/env (0600, dono deployer).
 set -euo pipefail
 umask 077
 
@@ -77,7 +77,7 @@ already_deployed() {
   if [[ ! -f "$DEPLOYER_STATE_FILE" ]]; then
     return 1
   fi
-  if ! current="$(python3 "${DEPLOYER_ROOT}/lib/py/state_io.py" read sha "$DEPLOYER_STATE_FILE")"; then
+  if ! current="$(run_allow -- python3 "${DEPLOYER_ROOT}/lib/py/state_io.py" read sha "$DEPLOYER_STATE_FILE")"; then
     die "state file ilegível"
   fi
   [[ "$current" == "$1" ]]
@@ -88,7 +88,7 @@ failed_same() {
   if [[ ! -f "$DEPLOYER_FAILED_FILE" ]]; then
     return 1
   fi
-  if ! current="$(python3 "${DEPLOYER_ROOT}/lib/py/state_io.py" read sha "$DEPLOYER_FAILED_FILE")"; then
+  if ! current="$(run_allow -- python3 "${DEPLOYER_ROOT}/lib/py/state_io.py" read sha "$DEPLOYER_FAILED_FILE")"; then
     die "marcador de falha ilegível"
   fi
   [[ "$current" == "$1" ]]
@@ -98,6 +98,14 @@ rollback_or_note() {
   if ! rollback_from_state; then
     log_event "rollback" "indisponivel" "${1:-}"
   fi
+}
+
+mark_and_stop() {
+  local event="$1" result="$2"
+  log_event "$event" "$result" "$CANDIDATE" "$app_digest" "$mig_digest"
+  write_json_atomic "$DEPLOYER_FAILED_FILE" "$CANDIDATE" "$app_digest" "$mig_digest" "$result"
+  notify_line "$LAST_LOG"
+  exit 1
 }
 
 main() {
@@ -118,7 +126,7 @@ main() {
   apply_defaults
   if [[ -n "${GHCR_TOKEN:-}" ]]; then
     GH_TOKEN="$GHCR_TOKEN"
-    export GH_TOKEN
+    export -n GH_TOKEN
   fi
   if [[ -e "/etc/erp-deployer/PAUSE" || -e "$DEPLOYER_PAUSE_FILE" ]]; then
     log_event "pause" "kill_switch"
@@ -164,29 +172,39 @@ main() {
   fi
   verify_one "${APP_IMAGE_REPO}@${app_digest}" "$CANDIDATE" "$app_digest"
   verify_one "${MIGRATE_IMAGE_REPO}@${mig_digest}" "$CANDIDATE" "$mig_digest"
-  backup_db "$CANDIDATE"
-  guard_migration_contract
+  if ! guard_migration_contract; then
+    mark_and_stop "contract" "bloqueado"
+  fi
+  if ! backup_db "$CANDIDATE"; then
+    mark_and_stop "backup" "dump_invalido"
+  fi
   coolify_ler_imagens
   coolify_set APP_MIGRATE_IMAGE "${MIGRATE_IMAGE_REPO}@${mig_digest}"
   if ! run_migrate "${MIGRATE_IMAGE_REPO}@${mig_digest}"; then
+    local migrate_note=""
     log_event "migrate" "falhou" "$CANDIDATE" "$app_digest" "$mig_digest"
+    write_json_atomic "$DEPLOYER_FAILED_FILE" "$CANDIDATE" "$app_digest" "$mig_digest" "migrate_fail"
+    migrate_note="$LAST_LOG"
     if ref_migrate_valida "$PREV_MIG"; then
       coolify_set APP_MIGRATE_IMAGE "$PREV_MIG"
     else
       log_event "migrate" "sem_ref_anterior_valida" "$CANDIDATE"
     fi
+    notify_line "$migrate_note"
     exit 1
   fi
   coolify_set APP_IMAGE "${APP_IMAGE_REPO}@${app_digest}"
   if ! coolify_deploy; then
     log_event "deploy" "coolify_falhou" "$CANDIDATE" "$app_digest" "$mig_digest"
     write_json_atomic "$DEPLOYER_FAILED_FILE" "$CANDIDATE" "$app_digest" "$mig_digest" "deploy_fail"
+    notify_line "$LAST_LOG"
     rollback_or_note "$CANDIDATE"
     exit 1
   fi
   if ! wait_healthy "$CANDIDATE"; then
     log_event "health" "falhou" "$CANDIDATE" "$app_digest" "$mig_digest"
     write_json_atomic "$DEPLOYER_FAILED_FILE" "$CANDIDATE" "$app_digest" "$mig_digest" "health_fail"
+    notify_line "$LAST_LOG"
     rollback_or_note "$CANDIDATE"
     exit 1
   fi
