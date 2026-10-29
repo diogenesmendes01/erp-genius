@@ -1,6 +1,6 @@
 "use client";
 
-import { forwardRef, useId, useRef, useState, type ChangeEvent, type InputHTMLAttributes, type ReactNode } from "react";
+import { forwardRef, useEffect, useId, useRef, useState, type ChangeEvent, type InputHTMLAttributes, type ReactNode } from "react";
 import { cn } from "@/lib/utils";
 import { CONTROLE_CAMPO } from "@/components/Campo";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -25,13 +25,17 @@ type Props = Omit<InputHTMLAttributes<HTMLInputElement>, "type" | "value" | "def
   onChange?: (evento: ChangeEvent<HTMLInputElement>) => void;
   onValueChange?: (valor: string) => void;
   fuso?: string;
-  /** Aceito por chamadas antigas. O controle submetido é sempre hidden, no mesmo formato local. */
-  tipoInput?: "hidden" | "datetime-local";
 };
 
 const RE_DATA_HORA = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})(?::(\d{2})(?:\.(\d{3}))?)?$/;
 
-/** 0 = HH:mm, 1 = HH:mm:ss, 2 = HH:mm:ss.SSS. O step do datetime-local é em segundos; o padrão é 60. */
+/**
+ * Precisão aceita no valor. O step é em segundos; omitido, vale 60.
+ * 0 = só HH:mm, 1 = também HH:mm:ss, 2 = também HH:mm:ss.SSS.
+ * Com o step 60, `YYYY-MM-DDTHH:mm:00` é inválido. O picker não herda a tolerância
+ * do datetime-local nativo a segundos zerados. Quem não passa step envia minuto
+ * (`valorCampoLocal` usa a precisão "minuto").
+ */
 function precisaoMaxima(step: Limite) {
   const segundos = segundosDoStep(step);
   if (segundos < 1) return 2;
@@ -145,13 +149,12 @@ function EspelhoRestricao({ valor, required, disabled, form, mensagem, aoInvalid
 export const DateTimePicker = forwardRef<HTMLInputElement, Props>(function DateTimePicker(
   {
     className, value, defaultValue, onChange, onValueChange, name, id, disabled, required, fuso,
-    tipoInput: _tipoInput, placeholder = "dd/mm/aaaa, hh:mm", min, max, step, form, readOnly,
+    placeholder = "dd/mm/aaaa, hh:mm", min, max, step, form, readOnly,
     "aria-label": ariaLabel, "aria-invalid": ariaInvalid, "aria-required": ariaRequired, "aria-describedby": ariaDescribedBy,
     ...rest
   },
   ref,
 ) {
-  void _tipoInput;
   const [aberto, setAberto] = useState(false);
   const [erroRevelado, setErroRevelado] = useState(false);
   const [interno, setInterno] = useState(typeof defaultValue === "string" ? defaultValue : "");
@@ -160,6 +163,19 @@ export const DateTimePicker = forwardRef<HTMLInputElement, Props>(function DateT
   const { hora, minuto } = partirHora(val);
   const travado = Boolean(disabled || readOnly);
   const gatilhoRef = useRef<HTMLButtonElement>(null);
+  const campoRef = useRef<HTMLInputElement | null>(null);
+  function ligarCampo(el: HTMLInputElement | null) {
+    campoRef.current = el;
+    if (typeof ref === "function") ref(el);
+    else if (ref) ref.current = el;
+  }
+  useEffect(() => {
+    const formulario = campoRef.current?.form;
+    if (!formulario) return;
+    const aoResetar = () => setErroRevelado(false);
+    formulario.addEventListener("reset", aoResetar);
+    return () => formulario.removeEventListener("reset", aoResetar);
+  }, [form]);
   const erroId = useId();
   const mensagem = mensagemRestricaoDataHora(val, { required, min, max, step });
   const restringe = Boolean(required || textoLimite(min) || textoLimite(max));
@@ -212,7 +228,7 @@ export const DateTimePicker = forwardRef<HTMLInputElement, Props>(function DateT
       </PopoverContent>
       <input
         {...rest}
-        ref={ref}
+        ref={ligarCampo}
         type="hidden"
         name={name}
         value={val}

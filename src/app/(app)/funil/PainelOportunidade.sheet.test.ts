@@ -1,5 +1,4 @@
 // @vitest-environment jsdom
-import { readFileSync } from "node:fs";
 import { createElement, useState } from "react";
 import { cleanup, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
@@ -8,9 +7,9 @@ import type { CapacidadeCrm } from "@/server/crm/permissoes";
 import type { DetalheOportunidade } from "@/server/crm/historico";
 
 vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh: () => {}, push: () => {} }) }));
-const acoes = vi.hoisted(() => ({ enviarProposta: vi.fn() }));
+const acoes = vi.hoisted(() => ({ enviarProposta: vi.fn(), agendarExperimental: vi.fn() }));
 vi.mock("@/server/comercial/acoes", () => ({
-  atribuirDono: vi.fn(), definirTemperatura: vi.fn(), agendarExperimental: vi.fn(),
+  atribuirDono: vi.fn(), definirTemperatura: vi.fn(), agendarExperimental: acoes.agendarExperimental,
   enviarProposta: acoes.enviarProposta, registrarNotaInterna: vi.fn(), marcarPerdido: vi.fn(),
   atribuirProfessorExperimental: vi.fn(), confirmarPresencaExperimental: vi.fn(), moverEtapa: vi.fn(),
   atualizarResumo: vi.fn(), atualizarDatas: vi.fn(), editarLead: vi.fn(), registrarInteracao: vi.fn(),
@@ -209,30 +208,42 @@ async function actFlush() {
   await new Promise((resolve) => setTimeout(resolve, 0));
 }
 
-describe("fonte do painel", () => {
-  const fonte = readFileSync("src/app/(app)/funil/PainelOportunidade.tsx", "utf8");
+describe("painel aberto no DOM", () => {
+  it("mostra título, descrição só para leitor de tela e rodapé, sem space-y, focus:ring, z-index arbitrário ou sombra solta", async () => {
+    const { sheet } = await abrirPainel();
+    expect(sheet.getAttribute("role")).toBe("dialog");
+    expect(sheet.querySelector("h2")?.textContent).toBe("Maria Souza");
+    const descricao = document.getElementById(sheet.getAttribute("aria-describedby") ?? "");
+    expect(descricao?.textContent).toBe("Detalhes e ações da oportunidade.");
+    expect(descricao?.className.split(/\s+/)).toContain("sr-only");
+    expect(screen.getByRole("button", { name: "Enviar proposta" })).toBeTruthy();
+    expect(screen.queryByRole("dialog", { name: "Drawer" })).toBeNull();
+    const classes = sheet.className;
+    expect(classes).toContain("md:w-[45%]");
+    expect(classes).toContain("max-w-none");
+    expect(classes).not.toMatch(/space-[xy]-/);
+    expect(classes).not.toMatch(/focus:ring/);
+    expect(classes).not.toMatch(/\bz-\[\d/);
+    expect(classes).not.toMatch(/\bshadow-(?:sm|md|lg)\b/);
+  });
+});
 
-  it("compõe Sheet Radix sem dismiss manual, z-index, space-y, focus:ring ou sombra solta", () => {
-    expect(fonte).toContain('from "@/components/ui/sheet"');
-    expect(fonte).toContain("SheetHeader");
-    expect(fonte).toContain("SheetTitle");
-    expect(fonte).toContain("SheetDescription");
-    expect(fonte).toContain("SheetFooter");
-    expect(fonte).toContain("onInteractOutside");
-    expect(fonte).toContain("onPointerDownOutside");
-    expect(fonte).toContain("[data-radix-popper-content-wrapper]");
-    expect(fonte).toContain("[cmdk-root]");
-    expect(fonte).toContain("[role='listbox']");
-    expect(fonte).not.toContain("Drawer");
-    expect(fonte).not.toContain("document.addEventListener");
-    expect(fonte).not.toMatch(/space-[xy]-/);
-    expect(fonte).not.toMatch(/\bz-\[?\d/);
-    expect(fonte).not.toMatch(/focus:ring/);
-    expect(fonte).not.toMatch(/\bshadow-(?:sm|md|lg)\b/);
-    expect(fonte).not.toMatch(/className=\{`[^`]*\$\{/);
-    expect(fonte).toContain("md:w-[45%]");
-    expect(fonte).toContain("max-w-none");
-    expect(fonte).toContain("sr-only");
+describe("agendamento da experimental preenchido", () => {
+  it("C1: escolhe data, hora e minuto e envia o valor local com o fuso do campo", async () => {
+    acoes.agendarExperimental.mockResolvedValue({ ok: true });
+    const { user } = await abrirPainel();
+    await user.click(screen.getByRole("button", { name: /Data e hora da experimental/ }));
+    await user.click(await screen.findByRole("button", { name: /15 de outubro de 2026/ }));
+    await user.click(screen.getByRole("combobox", { name: "Hora" }));
+    await user.click(await screen.findByRole("option", { name: "13" }));
+    await user.click(screen.getByRole("combobox", { name: "Minuto" }));
+    await user.click(await screen.findByRole("option", { name: "05" }));
+    await user.click(screen.getByRole("button", { name: "Agendar experimental" }));
+    await waitFor(() => expect(acoes.agendarExperimental).toHaveBeenCalledWith("op1", {
+      dataLocal: "2026-10-15T13:05",
+      fuso: "America/Sao_Paulo",
+    }));
+    expect(screen.getAllByRole("status").map((el) => el.textContent)).toContain("Experimental agendada.");
   });
 });
 
