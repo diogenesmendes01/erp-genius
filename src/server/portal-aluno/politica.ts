@@ -1,5 +1,4 @@
 import { createHash, randomBytes, timingSafeEqual } from "crypto";
-import { z } from "zod";
 
 export const COOKIE_SESSAO_PORTAL_ALUNO = "portal_aluno_session";
 
@@ -81,18 +80,21 @@ type AmbienteApp = {
   APP_BASE_URL?: string;
 };
 
-const appBaseUrlSchema = z.string().trim().min(1).refine((valor) => {
+function urlHttpsPublica(valor: string): URL | null {
+  const bruto = valor.trim();
+  if (!bruto || bruto.endsWith("/")) return null;
   try {
-    const url = new URL(valor);
-    return url.protocol === "https:" && url.hostname.length > 0 && url.username === "" && url.password === "";
+    const url = new URL(bruto);
+    if (url.protocol !== "https:" || url.hostname.length === 0 || url.username !== "" || url.password !== "") return null;
+    if (url.pathname !== "/" || url.search !== "" || url.hash !== "") return null;
+    return url;
   } catch {
-    return false;
+    return null;
   }
-}, "APP_BASE_URL precisa ser uma URL https.");
+}
 
 export function lerAppBaseUrl(env: AmbienteApp = process.env): URL | null {
-  const parsed = appBaseUrlSchema.safeParse(env.APP_BASE_URL);
-  return parsed.success ? new URL(parsed.data) : null;
+  return urlHttpsPublica(env.APP_BASE_URL ?? "");
 }
 
 export function validarAppBaseUrlNoBoot(env: AmbienteApp = process.env): void {

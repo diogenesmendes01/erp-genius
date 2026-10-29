@@ -138,6 +138,7 @@ describe("APP_BASE_URL no boot", () => {
   it("em produção exige URL https e fora de produção não exige", () => {
     expect(() => validarAppBaseUrlNoBoot({ NODE_ENV: "production" })).toThrow(/APP_BASE_URL/);
     expect(() => validarAppBaseUrlNoBoot({ NODE_ENV: "production", APP_BASE_URL: "http://erp.geniusidiomas.com" })).toThrow(/APP_BASE_URL/);
+    expect(() => validarAppBaseUrlNoBoot({ NODE_ENV: "production", APP_BASE_URL: "https://erp.geniusidiomas.com/" })).toThrow(/APP_BASE_URL/);
     expect(() => validarAppBaseUrlNoBoot({ NODE_ENV: "production", APP_BASE_URL: "https://erp.geniusidiomas.com" })).not.toThrow();
     expect(() => validarAppBaseUrlNoBoot({ NODE_ENV: "development" })).not.toThrow();
   });
