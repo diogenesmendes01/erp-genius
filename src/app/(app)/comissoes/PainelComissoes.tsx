@@ -1,11 +1,27 @@
+import type { ReactNode } from "react";
 import Link from "next/link";
+import type { StatusComissao } from "@prisma/client";
+import { IconCalculator } from "@tabler/icons-react";
+import { Avatar } from "@/components/Avatar";
+import { BadgeEstado, type TomEstado } from "@/components/BadgeEstado";
 import { botaoClasses } from "@/components/Botao";
 import { EstadoVazio } from "@/components/EstadoVazio";
+import { LinhaCampo } from "@/components/LinhaCampo";
 import { Paginacao } from "@/components/Paginacao";
 import { STATUS_COMISSAO_LABEL, rotular } from "@/lib/labels";
 import { dataCivilInstitucional } from "@/server/operacao/fuso";
 import { EstornarComissao } from "./EstornarComissao";
+import { CampoCombobox } from "@/components/ui/combobox";
+import { CampoSelect } from "@/components/ui/select";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import type { PainelComissoes as Painel, PeriodoComissao } from "@/server/crm/comissoes-painel";
+
+const TOM_STATUS: Record<StatusComissao, TomEstado> = {
+  PENDENTE: "aviso",
+  APROVADA: "aprovacao",
+  PAGA: "sucesso",
+  ESTORNADA: "perigo",
+};
 
 const PERIODO_ROTULO: Record<PeriodoComissao, string> = {
   mes: "Este mês", mes_anterior: "Mês anterior", trimestre: "Últimos 3 meses", ano: "Este ano",
@@ -22,6 +38,26 @@ function calculo(l: Painel["linhas"][number]) {
 
 const estornavel = (status: string) => status === "PENDENTE" || status === "APROVADA";
 
+function hrefDoAluno(l: { matriculaId?: string; oportunidadeId?: string | null }, podeAbrirPreparacao: boolean) {
+  if (l.matriculaId) return podeAbrirPreparacao ? `/matriculas/${encodeURIComponent(l.matriculaId)}/preparacao` : null;
+  if (l.oportunidadeId) return `/funil?o=${encodeURIComponent(l.oportunidadeId)}`;
+  return null;
+}
+
+function NomeDoAluno({ l, podeAbrirPreparacao }: { l: Painel["linhas"][number]; podeAbrirPreparacao: boolean }) {
+  const href = hrefDoAluno(l, podeAbrirPreparacao);
+  if (!href) return l.nome;
+  return <Link href={href} className="font-medium text-brand-700 hover:underline">{l.nome}</Link>;
+}
+
+function ComAvatar({ nome, children }: { nome: string; children: ReactNode }) {
+  return <span className="inline-flex items-center gap-2"><Avatar nome={nome} tamanho={32} />{children}</span>;
+}
+
+function SeloStatus({ status }: { status: StatusComissao }) {
+  return <BadgeEstado tom={TOM_STATUS[status]} ponto>{rotular(STATUS_COMISSAO_LABEL, status)}</BadgeEstado>;
+}
+
 function diaCivil(data: string | null) {
   if (!data) return "—";
   const [a, m, d] = data.split("-");
@@ -33,7 +69,7 @@ function dia(data: Date, fuso: string) {
   return `${d}/${m}/${a}`;
 }
 
-export function PainelComissoes({ painel, periodo, pagina, vendedorId, vendedores, veTodos, podeFecharMes, podeEstornar = false, fuso, hrefPagina }: {
+export function PainelComissoes({ painel, periodo, pagina, vendedorId, vendedores, veTodos, podeFecharMes, podeEstornar = false, podeAbrirPreparacao = true, fuso, hrefPagina }: {
   painel: Painel;
   periodo: PeriodoComissao;
   pagina: number;
@@ -42,6 +78,7 @@ export function PainelComissoes({ painel, periodo, pagina, vendedorId, vendedore
   veTodos: boolean;
   podeFecharMes: boolean;
   podeEstornar?: boolean;
+  podeAbrirPreparacao?: boolean;
   fuso: string;
   hrefPagina: (pagina: number) => string;
 }) {
@@ -54,14 +91,14 @@ export function PainelComissoes({ painel, periodo, pagina, vendedorId, vendedore
       </div>
 
       <form method="get" action="/comissoes" role="search" aria-label="Filtrar comissões" className="flex flex-wrap items-center gap-2">
-        <select name="periodo" defaultValue={periodo} aria-label="Período" className="min-h-11 rounded-md border border-gray-300 px-2 text-sm md:min-h-0 md:py-1.5">
-          {(Object.keys(PERIODO_ROTULO) as PeriodoComissao[]).map((p) => <option key={p} value={p}>{PERIODO_ROTULO[p]}</option>)}
-        </select>
+        <div className="w-full sm:w-48">
+          <label htmlFor="comissao-periodo" className="sr-only">Período</label>
+          <CampoSelect id="comissao-periodo" name="periodo" defaultValue={periodo} opcoes={(Object.keys(PERIODO_ROTULO) as PeriodoComissao[]).map((p) => ({ valor: p, rotulo: PERIODO_ROTULO[p] }))} />
+        </div>
         {veTodos && (
-          <select name="vendedor" defaultValue={vendedorId} aria-label="Vendedor" className="min-h-11 rounded-md border border-gray-300 px-2 text-sm md:min-h-0 md:py-1.5">
-            <option value="">Todos os vendedores</option>
-            {vendedores.map((v) => <option key={v.id} value={v.id}>{v.nome}</option>)}
-          </select>
+          <div className="w-full sm:w-56">
+            <CampoCombobox name="vendedor" defaultValue={vendedorId} aria-label="Vendedor" vazio="Todos os vendedores" opcoes={vendedores.map((v) => ({ valor: v.id, rotulo: v.nome }))} />
+          </div>
         )}
         <button type="submit" className={botaoClasses({ variante: "secundario" })}>Filtrar</button>
         {(filtrando || periodo !== "mes") && <Link href="/comissoes" className="text-sm text-brand-700 hover:underline">Limpar filtros</Link>}
@@ -71,8 +108,8 @@ export function PainelComissoes({ painel, periodo, pagina, vendedorId, vendedore
         <section aria-label="Totais por situação" className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {painel.totais.map((t, i) => (
             <div key={`${t.moeda}-${i}`} className="rounded-lg border border-border-soft p-3">
-              <p className="text-xs text-gray-600">{rotular(STATUS_COMISSAO_LABEL, t.status)}</p>
-              <p className="text-lg font-medium">{moeda(t.valor, t.moeda)}</p>
+              <SeloStatus status={t.status} />
+              <p className="mt-1 font-mono text-lg font-medium tabular-nums">{moeda(t.valor, t.moeda)}</p>
             </div>
           ))}
         </section>
@@ -93,14 +130,26 @@ export function PainelComissoes({ painel, periodo, pagina, vendedorId, vendedore
       {veTodos && painel.porVendedor.length > 0 && (
         <section aria-label="Por vendedor" className="space-y-1 text-sm">
           <h2 className="font-medium">Por vendedor</h2>
-          <ul className="divide-y divide-border-soft rounded-lg border border-border-soft">
-            {painel.porVendedor.map((v) => (
-              <li key={`${v.vendedorId}-${v.moeda}`} className="flex flex-wrap justify-between gap-2 p-3">
-                <span>{v.nome} · {v.quantidade} {v.quantidade === 1 ? "comissão" : "comissões"}</span>
-                <span className="font-medium">{moeda(v.valor, v.moeda)}</span>
-              </li>
-            ))}
-          </ul>
+          <div className="overflow-x-auto rounded-lg border border-border-soft">
+            <Table>
+              <TableHeader className="bg-surface-muted text-left text-xs text-gray-600">
+                <TableRow className="hover:bg-transparent">
+                  <TableHead scope="col" className="px-4 py-2 font-medium">Vendedor</TableHead>
+                  <TableHead scope="col" className="px-4 py-2 font-medium">Quantidade</TableHead>
+                  <TableHead scope="col" className="px-4 py-2 font-medium">Valor</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {painel.porVendedor.map((v) => (
+                  <TableRow key={`${v.vendedorId}-${v.moeda}`} className="transition-colors hover:bg-surface-muted">
+                    <TableCell className="px-4 py-2"><ComAvatar nome={v.nome}>{v.nome}</ComAvatar></TableCell>
+                    <TableCell className="px-4 py-2"><span className="font-mono tabular-nums">{v.quantidade}</span> {v.quantidade === 1 ? "comissão" : "comissões"}</TableCell>
+                    <TableCell className="px-4 py-2 font-mono font-medium tabular-nums">{moeda(v.valor, v.moeda)}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
         </section>
       )}
 
@@ -111,7 +160,7 @@ export function PainelComissoes({ painel, periodo, pagina, vendedorId, vendedore
             {painel.porPolitica.map((p) => (
               <li key={`${p.politicaId ?? "sem"}-${p.moeda}`} className="flex flex-wrap justify-between gap-2 p-3">
                 <span>{p.rotulo}</span>
-                <span className="font-medium">{moeda(p.valor, p.moeda)}</span>
+                <span className="font-mono font-medium tabular-nums">{moeda(p.valor, p.moeda)}</span>
               </li>
             ))}
           </ul>
@@ -125,7 +174,7 @@ export function PainelComissoes({ painel, periodo, pagina, vendedorId, vendedore
             {painel.evolucao.map((e) => (
               <li key={`${e.mes}-${e.moeda}`} className="flex flex-wrap justify-between gap-2 p-3">
                 <span>{e.mes.split("-").reverse().join("/")}</span>
-                <span className="font-medium">{moeda(e.valor, e.moeda)}</span>
+                <span className="font-mono font-medium tabular-nums">{moeda(e.valor, e.moeda)}</span>
               </li>
             ))}
           </ul>
@@ -140,45 +189,45 @@ export function PainelComissoes({ painel, periodo, pagina, vendedorId, vendedore
         ) : (
           <>
             <div className="hidden overflow-x-auto rounded-lg border border-border-soft md:block">
-              <table className="hidden w-full text-left text-sm md:table">
-                <thead className="bg-gray-100 text-xs text-gray-600">
-                  <tr>
-                    <th scope="col" className="px-4 py-2 font-medium">Aluno</th>
-                    <th scope="col" className="px-4 py-2 font-medium">Produto</th>
-                    <th scope="col" className="px-4 py-2 font-medium">Beneficiário</th>
-                    <th scope="col" className="px-4 py-2 font-medium">Cálculo</th>
-                    <th scope="col" className="px-4 py-2 font-medium">Valor</th>
-                    <th scope="col" className="px-4 py-2 font-medium">Situação</th>
-                    <th scope="col" className="px-4 py-2 font-medium">Competência</th>
-                    <th scope="col" className="px-4 py-2 font-medium">Previsão de pagamento</th>
-                    {podeEstornar && <th scope="col" className="px-4 py-2 font-medium">Ações</th>}
-                  </tr>
-                </thead>
-                <tbody>
+              <Table className="hidden md:table">
+                <TableHeader className="bg-surface-muted text-left text-xs text-gray-600">
+                  <TableRow className="hover:bg-transparent">
+                    <TableHead scope="col" className="px-4 py-2 font-medium">Aluno</TableHead>
+                    <TableHead scope="col" className="px-4 py-2 font-medium">Produto</TableHead>
+                    <TableHead scope="col" className="px-4 py-2 font-medium">Beneficiário</TableHead>
+                    <TableHead scope="col" className="px-4 py-2 font-medium">Cálculo</TableHead>
+                    <TableHead scope="col" className="px-4 py-2 font-medium">Valor</TableHead>
+                    <TableHead scope="col" className="px-4 py-2 font-medium">Situação</TableHead>
+                    <TableHead scope="col" className="px-4 py-2 font-medium">Competência</TableHead>
+                    <TableHead scope="col" className="px-4 py-2 font-medium">Previsão de pagamento</TableHead>
+                    {podeEstornar && <TableHead scope="col" className="px-4 py-2 font-medium">Ações</TableHead>}
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
                   {painel.linhas.map((l) => (
-                    <tr key={l.id} className="border-t border-border-soft">
-                      <td className="px-4 py-2">{l.nome}</td>
-                      <td className="px-4 py-2">{l.produto}</td>
-                      <td className="px-4 py-2">{l.vendedor}</td>
-                      <td className="px-4 py-2">{calculo(l)}</td>
-                      <td className="px-4 py-2">{moeda(l.valor, l.moeda)}</td>
-                      <td className="px-4 py-2">{rotular(STATUS_COMISSAO_LABEL, l.status)}</td>
-                      <td className="px-4 py-2">{dia(l.competencia, fuso)}</td>
-                      <td className="px-4 py-2">{diaCivil(l.previsaoPagamento)}</td>
-                      {podeEstornar && <td className="px-4 py-2">{estornavel(l.status) && <EstornarComissao id={l.id} aluno={l.nome} valor={moeda(l.valor, l.moeda)} />}</td>}
-                    </tr>
+                    <TableRow key={l.id} className="transition-colors hover:bg-surface-muted">
+                      <TableCell className="px-4 py-2"><ComAvatar nome={l.nome}><NomeDoAluno l={l} podeAbrirPreparacao={podeAbrirPreparacao} /></ComAvatar></TableCell>
+                      <TableCell className="px-4 py-2">{l.produto}</TableCell>
+                      <TableCell className="px-4 py-2"><ComAvatar nome={l.vendedor}>{l.vendedor}</ComAvatar></TableCell>
+                      <TableCell className="px-4 py-2 font-mono tabular-nums">{calculo(l)}</TableCell>
+                      <TableCell className="px-4 py-2 font-mono tabular-nums">{moeda(l.valor, l.moeda)}</TableCell>
+                      <TableCell className="px-4 py-2"><SeloStatus status={l.status} /></TableCell>
+                      <TableCell className="px-4 py-2 font-mono tabular-nums">{dia(l.competencia, fuso)}</TableCell>
+                      <TableCell className="px-4 py-2">{l.previsaoPagamento ? <span className="font-mono tabular-nums">{diaCivil(l.previsaoPagamento)}</span> : "—"}</TableCell>
+                      {podeEstornar && <TableCell className="px-4 py-2">{estornavel(l.status) && <EstornarComissao id={l.id} aluno={l.nome} valor={moeda(l.valor, l.moeda)} />}</TableCell>}
+                    </TableRow>
                   ))}
-                </tbody>
-              </table>
+                </TableBody>
+              </Table>
             </div>
             <ul className="space-y-2 md:hidden">
               {painel.linhas.map((l) => (
                 <li key={l.id} className="space-y-1 rounded-lg border border-border-soft p-3 text-sm">
-                  <p className="font-medium">{l.nome}</p>
-                  <p className="text-gray-600">{l.produto} · {l.vendedor}</p>
-                  <p>{calculo(l)}</p>
-                  <p className="flex flex-wrap justify-between gap-2"><span className="font-medium">{moeda(l.valor, l.moeda)}</span><span>{rotular(STATUS_COMISSAO_LABEL, l.status)}</span></p>
-                  <p className="text-xs text-gray-600">{dia(l.competencia, fuso)}{l.previsaoPagamento && <> · previsão de pagamento {diaCivil(l.previsaoPagamento)}</>}</p>
+                  <p className="font-medium"><ComAvatar nome={l.nome}><NomeDoAluno l={l} podeAbrirPreparacao={podeAbrirPreparacao} /></ComAvatar></p>
+                  <p className="flex flex-wrap items-center gap-2 text-gray-600"><span>{l.produto}</span><ComAvatar nome={l.vendedor}>{l.vendedor}</ComAvatar></p>
+                  <LinhaCampo icone={<IconCalculator size={18} />} valor={calculo(l)} rotulo="Cálculo" mono />
+                  <p className="flex flex-wrap items-center justify-between gap-2"><span className="font-mono font-medium tabular-nums">{moeda(l.valor, l.moeda)}</span><SeloStatus status={l.status} /></p>
+                  <p className="font-mono text-xs tabular-nums text-gray-600">{dia(l.competencia, fuso)}{l.previsaoPagamento && <> · previsão de pagamento {diaCivil(l.previsaoPagamento)}</>}</p>
                   {podeEstornar && estornavel(l.status) && <EstornarComissao id={l.id} aluno={l.nome} valor={moeda(l.valor, l.moeda)} />}
                 </li>
               ))}

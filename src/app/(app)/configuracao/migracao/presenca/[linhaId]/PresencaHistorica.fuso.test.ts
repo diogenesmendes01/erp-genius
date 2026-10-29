@@ -3,6 +3,15 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
 
 vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh: vi.fn() }) }));
+vi.mock("@/components/ui/popover", async () => {
+  const React = await import("react");
+  return {
+    Popover: ({ children }: { children?: React.ReactNode }) => React.createElement(React.Fragment, null, children),
+    PopoverTrigger: ({ children }: { children?: React.ReactNode }) => children ?? null,
+    PopoverAnchor: ({ children }: { children?: React.ReactNode }) => children ?? null,
+    PopoverContent: ({ children }: { children?: React.ReactNode }) => React.createElement("div", null, children),
+  };
+});
 vi.mock("@/server/migracao/presenca-historica", () => ({ proporPresencaHistoricaMigracao: vi.fn(), decidirPresencaHistoricaMigracao: vi.fn(), resolverDivergenciaPresencaHistoricaMigracao: vi.fn() }));
 
 import { PresencaHistorica, horarioDaAula, instanteDoRegistro } from "./PresencaHistorica";

@@ -1,15 +1,18 @@
 "use client";
 
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { salvarConfiguracaoOperacional } from "@/server/operacao/acoes";
 import { FeedbackAcao } from "@/components/FeedbackAcao";
 import { useAcaoCliente } from "@/lib/acao-cliente";
 import { botaoClasses } from "@/components/Botao";
 import { CampoFuso } from "@/components/CampoFuso";
+import { Switch } from "@/components/ui/switch";
 
 export function OperacaoFormulario({ exigirPrimeiraMensalidade, prazoConferenciaHoras, fusoInstitucional, prazoReservaMinutos }: { exigirPrimeiraMensalidade: boolean; prazoConferenciaHoras: number | null; fusoInstitucional: string | null; prazoReservaMinutos: number | null }) {
   const router = useRouter();
   const acao = useAcaoCliente({ idempotente: false });
+  const [primeira, setPrimeira] = useState(exigirPrimeiraMensalidade);
   async function salvar(form: FormData) {
     const desfecho = await acao.executar(() => salvarConfiguracaoOperacional({ prazoReservaMinutos: String(form.get("reserva") ?? "").trim() ? Number(form.get("reserva")) : null, exigirPrimeiraMensalidade: form.get("primeira") === "on", prazoConferenciaHoras: Number(form.get("prazo")), fusoInstitucional: String(form.get("fuso") ?? "").trim() || undefined }), "Configuração salva.");
     if (desfecho?.tipo === "ok") router.refresh();
@@ -18,7 +21,7 @@ export function OperacaoFormulario({ exigirPrimeiraMensalidade, prazoConferencia
     <label className="block">Fuso oficial da escola<CampoFuso padrao={fusoInstitucional ?? ""} required={false} className="mt-1 block w-full rounded border p-2" /></label>
     <p className="text-gray-500">Define as datas institucionais. A preferência de exibição de cada pessoa é independente. Deixar em branco mantém a configuração atual; não escolhe um fuso automaticamente.</p>
     <p>Contrato aceito e taxa de matrícula confirmada são obrigatórios para ativar a matrícula.</p>
-    <label className="flex items-center gap-2"><input type="checkbox" name="primeira" defaultChecked={exigirPrimeiraMensalidade} />Exigir também a primeira mensalidade confirmada</label>
+    <label className="flex items-center gap-2"><Switch name="primeira" checked={primeira} onCheckedChange={(marcado) => setPrimeira(marcado === true)} />Exigir também a primeira mensalidade confirmada</label>
     <p className="text-gray-500">Essa exigência vale na próxima ativação. Matrículas já ativas mantêm seu histórico.</p>
     <label className="block">Suspender lembretes durante a conferência por (horas)<input name="prazo" type="number" required min="1" max="720" defaultValue={prazoConferenciaHoras ?? ""} className="mt-1 block w-36 rounded border p-2" /></label>
     <p className="text-gray-500">O prazo é fixado quando a secretaria informa o pagamento. Afeta apenas aquela cobrança. Ao vencer o prazo, a régua pode retomar se ainda houver saldo; rejeitar o comprovante encerra a suspensão. Alterar esta configuração vale para novos informes.</p>

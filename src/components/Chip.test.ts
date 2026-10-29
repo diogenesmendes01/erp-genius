@@ -1,5 +1,6 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
+import { PONTO_TOM } from "./BadgeEstado";
 import { Chip } from "./Chip";
 
 const html = (selecionado: boolean, contagem?: number) =>
@@ -26,5 +27,13 @@ describe("Chip", () => {
     expect(html(false, 3)).toContain(">3<");
     expect(html(false, 0)).toContain(">0<");
     expect(html(false)).not.toMatch(/>\d+</);
+  });
+  it("contador usa mono tabular e o ponto semântico vem antes do rótulo", () => {
+    const comPonto = renderToStaticMarkup(Chip({ selecionado: false, onClick: () => {}, pontoTom: "atraso", contagem: 4, children: "Atraso" }));
+    expect(comPonto).toContain(`aria-hidden="true"`);
+    expect(comPonto).toContain(PONTO_TOM.atraso);
+    expect(comPonto.indexOf(PONTO_TOM.atraso)).toBeLessThan(comPonto.indexOf("Atraso"));
+    expect(comPonto).toContain('class="font-mono text-xs tabular-nums opacity-80">4<');
+    expect(html(false)).not.toContain("h-[7px]");
   });
 });

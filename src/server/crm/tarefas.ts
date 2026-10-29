@@ -2,8 +2,10 @@ import { RecorrenciaTarefaSchema } from "./tarefa-recorrencia-configuracao";
 import type { RecorrenciaTarefa } from "@prisma/client";
 import {erroContencaoNotificadosTarefaD10} from "./tarefa-notificados";
 import {CamposAdicionaisTarefaD10Schema,LembreteTarefaD10Schema,PrioridadeTarefaD10Schema} from "./tarefa-d10-schema";
+import { TituloTarefaHumanaSchema } from "../_shared/efeitos-humanos-schema";
 import { criarTarefaTx, editarTarefaTx, agendamentoTarefa } from "./tarefas-escrita";
 import { concluirTarefaTx, reabrirTarefaTx, reagendarTarefaTx, cancelarTarefaTx } from "./tarefas-transicoes";
+import type { DecisaoMensagemAgendada } from "@/lib/selo-mensagem-agendada";
 import { revalidatePath } from "next/cache";
 import { Papel, type Prisma, type PrioridadeTarefa, type TipoTarefa } from "@prisma/client";
 import { z } from "zod";
@@ -50,7 +52,7 @@ const DataCivilSchema = z
 const HoraSchema = z.string().regex(/^(?:[01]\d|2[0-3]):[0-5]\d$/, "Informe um horário válido (HH:MM).");
 
 export const CamposTarefaSchema = z.object({
-  titulo: z.string().trim().min(1, "Informe o título da tarefa.").max(200, "O título deve ter até 200 caracteres."),
+  titulo: TituloTarefaHumanaSchema,
   tipo: z.enum(["WHATSAPP", "LIGACAO", "EMAIL", "REUNIAO", "OUTRO"], { errorMap: () => ({ message: "Escolha o tipo da tarefa." }) }),
   descricao: z.string().trim().max(2000, "A descrição deve ter até 2000 caracteres.").optional(),
   dataCivil: DataCivilSchema.nullish(),
@@ -128,27 +130,30 @@ export async function criarTarefa(i: TarefaInput): Promise<Resultado<{ id: strin
   });
 }
 
-export async function editarTarefa(id: string, versao: number, i: Partial<TarefaInput>): Promise<Resultado> {
+export async function editarTarefa(id: string, versao: number, i: Partial<TarefaInput> & { aceitarForaDaJanela?: boolean }): Promise<Resultado> {
   return executarAcao(async () => {
     const autor = await exigirSessao();
     exigirCapacidadeCrm(autor, "tarefas.ver");
+    const aceitarForaDaJanela = i.aceitarForaDaJanela === true;
     const d = CamposTarefaSchema.partial().parse(i);
     await prisma.$transaction(async (tx) => {
       const t = await carregarVisivel(tx, autor, id);
-      await editarTarefaTx(tx, autor, t, versao, d);
+      await editarTarefaTx(tx, autor, t, versao, d, { aceitarForaDaJanela });
     }).catch(erroContencaoNotificadosTarefaD10);
     revalidar();
   });
 }
 
-export async function concluirTarefa(id: string, versao: number, resultado?: string): Promise<Resultado> {
+const DecisaoMensagem = z.enum(["cancelar", "manter"]).optional();
+export async function concluirTarefa(id: string, versao: number, resultado?: string, mensagemAgendada?: DecisaoMensagemAgendada): Promise<Resultado> {
   return executarAcao(async () => {
     const autor = await exigirSessao();
     exigirCapacidadeCrm(autor, "tarefas.ver");
     const texto = z.string().trim().max(2000, "O resultado deve ter até 2000 caracteres.").optional().parse(resultado) || null;
+    const decisao = DecisaoMensagem.parse(mensagemAgendada);
     await prisma.$transaction(async (tx) => {
       const t = await carregarVisivel(tx, autor, id);
-      await concluirTarefaTx({ tx, autor, tarefa: t, versao }, texto);
+      await concluirTarefaTx({ tx, autor, tarefa: t, versao }, texto, decisao);
     });
     revalidar();
   });
@@ -166,31 +171,33 @@ export async function reabrirTarefa(id: string, versao: number): Promise<Resulta
   });
 }
 
-export async function reagendarTarefa(id: string, versao: number, q: { dataCivil: string | null; hora: string | null }): Promise<Resultado> {
+export async function reagendarTarefa(id: string, versao: number, q: { dataCivil: string | null; hora: string | null; aceitarForaDaJanela?: boolean }): Promise<Resultado> {
   return executarAcao(async () => {
     const autor = await exigirSessao();
     exigirCapacidadeCrm(autor, "tarefas.ver");
+    const aceitarForaDaJanela = q.aceitarForaDaJanela === true;
     const dados = z.object({ dataCivil: DataCivilSchema.nullable(), hora: HoraSchema.nullable() }).parse(q);
     await prisma.$transaction(async (tx) => {
       const t = await carregarVisivel(tx, autor, id);
       if (t.status !== "ABERTA") throw new ErroRegra("Só tarefas abertas podem ser reagendadas.");
       const antecedencia = dados.dataCivil && dados.hora ? t.lembreteAntecedenciaMin : null;
       const novo = agendamentoTarefa(dados.dataCivil, dados.hora, t.fusoOrigem, antecedencia);
-      await reagendarTarefaTx({ tx, autor, tarefa: t, versao }, { ...novo, lembreteAntecedenciaMin: antecedencia });
+      await reagendarTarefaTx({ tx, autor, tarefa: t, versao }, { ...novo, lembreteAntecedenciaMin: antecedencia }, { aceitarForaDaJanela });
     });
     revalidar();
   });
 }
 
-export async function cancelarTarefa(id: string, versao: number, motivo: string): Promise<Resultado> {
+export async function cancelarTarefa(id: string, versao: number, motivo: string, mensagemAgendada?: DecisaoMensagemAgendada): Promise<Resultado> {
   return executarAcao(async () => {
     const autor = await exigirSessao();
     exigirCapacidadeCrm(autor, "tarefas.ver");
     const m = z.string().trim().min(1, "Informe o motivo do cancelamento.").max(500, "O motivo deve ter até 500 caracteres.").parse(motivo);
+    const decisao = DecisaoMensagem.parse(mensagemAgendada);
     await prisma.$transaction(async (tx) => {
       await tx.$queryRaw`SELECT id FROM "Tarefa" WHERE id = ${id} FOR UPDATE`;
       const t = await carregarVisivel(tx, autor, id);
-      await cancelarTarefaTx({ tx, autor, tarefa: t, versao }, m);
+      await cancelarTarefaTx({ tx, autor, tarefa: t, versao }, m, decisao);
     });
     revalidar();
   });

@@ -27,7 +27,9 @@ vi.mock("react-hook-form", () => ({
     register: () => ({}),
     handleSubmit: (f: (v: unknown) => unknown) => () => f(m.valoresModalidade),
     formState: { errors: {} },
+    control: {},
   }),
+  Controller: () => null,
 }));
 
 import { IdiomasPainel } from "./IdiomasPainel";

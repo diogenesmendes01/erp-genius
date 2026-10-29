@@ -4,7 +4,7 @@ import type { Resultado } from "@/server/_shared";
 import { arquivarFonte as arquivarFonteDominio, criarFonteTexto as criarFonteTextoDominio } from "./conhecimento/fontes";
 import { definirEstadoAria as definirEstadoAriaDominio, definirSupervisao as definirSupervisaoDominio, pausarAria as pausarAriaDominio, reativarAria as reativarAriaDominio } from "./estado";
 import { aprovarAcaoAria as aprovarAcaoAriaDominio, desfazerAcaoAria as desfazerAcaoAriaDominio, rejeitarAcaoAria as rejeitarAcaoAriaDominio } from "./historico";
-import { aprovarSugestaoNoInbox as aprovarSugestaoNoInboxDominio, rejeitarSugestaoNoInbox as rejeitarSugestaoNoInboxDominio, desfazerSugestaoNoInbox as desfazerSugestaoNoInboxDominio } from "./decisao-inbox";
+import { aprovarTurnoAria as aprovarTurnoAriaDominio, rejeitarTurnoAria as rejeitarTurnoAriaDominio, aprovarSugestaoEditadaNoInbox as aprovarSugestaoEditadaNoInboxDominio, aprovarSugestaoNoInbox as aprovarSugestaoNoInboxDominio, rejeitarSugestaoNoInbox as rejeitarSugestaoNoInboxDominio, desfazerSugestaoNoInbox as desfazerSugestaoNoInboxDominio } from "./decisao-inbox";
 import { devolverParaAria as devolverParaAriaDominio } from "./pausa";
 import { testarAria as testarAriaDominio } from "./playground";
 import { descartarRascunho as descartarRascunhoDominio, publicarRascunho as publicarRascunhoDominio, salvarRascunho as salvarRascunhoDominio } from "./versoes";
@@ -68,3 +68,6 @@ export async function testarAria(i: Parameters<typeof testarAriaDominio>[0]): Re
 export async function aprovarSugestaoNoInbox(atendimentoId: string, id: string) { return aprovarSugestaoNoInboxDominio(atendimentoId, id); }
 export async function rejeitarSugestaoNoInbox(atendimentoId: string, id: string, motivo?: string) { return rejeitarSugestaoNoInboxDominio(atendimentoId, id, motivo); }
 export async function desfazerSugestaoNoInbox(atendimentoId: string, id: string) { return desfazerSugestaoNoInboxDominio(atendimentoId, id); }
+export async function aprovarSugestaoEditadaNoInbox(input: Parameters<typeof aprovarSugestaoEditadaNoInboxDominio>[0]) { return aprovarSugestaoEditadaNoInboxDominio(input); }
+export async function aprovarTurnoAria(input: Parameters<typeof aprovarTurnoAriaDominio>[0]) { return aprovarTurnoAriaDominio(input); }
+export async function rejeitarTurnoAria(input: Parameters<typeof rejeitarTurnoAriaDominio>[0]) { return rejeitarTurnoAriaDominio(input); }

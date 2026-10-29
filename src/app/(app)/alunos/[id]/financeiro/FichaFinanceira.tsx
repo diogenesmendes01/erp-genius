@@ -23,8 +23,11 @@ import { CampoMoeda } from "@/components/CampoMoeda";
 import { MensagemStatus } from "@/components/MensagemStatus";
 import { botaoClasses } from "@/components/Botao";
 import { EstadoVazio } from "@/components/EstadoVazio";
+import { SeletorCampo } from "@/app/(app)/secretaria/controles";
+import { DatePicker } from "@/components/ui/date-picker";
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
 
-const inputCls = "w-full rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:border-brand-500";
+const inputCls = "w-full rounded-md border border-gray-200 px-3 py-2 text-sm outline-none focus:border-brand-500";
 const btnPri = botaoClasses();
 const btnSec = botaoClasses({ variante: "secundario", tamanho: "sm" });
 
@@ -145,25 +148,25 @@ export function FichaFinanceira({ dados, preferenciaFusoExibicao = null, fusoEsc
       </div>
 
       <section className="overflow-hidden rounded-lg border border-gray-200">
-        <div className="border-b border-gray-100 bg-gray-50 px-4 py-2 text-sm font-medium">Cobranças</div>
+        <div className="border-b border-gray-100 bg-surface-muted px-4 py-2 text-sm font-medium">Cobranças</div>
         <div className="overflow-x-auto">
-        <table className="w-full min-w-[640px] text-sm">
-          <thead className="text-left text-xs text-gray-500">
-            <tr>
-              <th className="px-4 py-2 font-medium">Tipo</th>
-              <th className="px-4 py-2 font-medium">Vencimento</th>
-              <th className="px-4 py-2 font-medium">Valor</th>
-              <th className="px-4 py-2 font-medium">Status</th>
-              <th className="px-4 py-2 font-medium text-right">Ações</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-100">
+        <Table className="w-full min-w-[640px] text-sm">
+          <TableHeader className="text-left text-xs text-gray-500">
+            <TableRow>
+              <TableHead className="px-4 py-2 font-medium">Tipo</TableHead>
+              <TableHead className="px-4 py-2 font-medium">Vencimento</TableHead>
+              <TableHead className="px-4 py-2 font-medium">Valor</TableHead>
+              <TableHead className="px-4 py-2 font-medium">Status</TableHead>
+              <TableHead className="px-4 py-2 font-medium text-right">Ações</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody className="divide-y divide-gray-100">
             {dados.cobrancas.map((c) => (
-              <tr key={c.id} className="hover:bg-gray-50">
-                <td className="px-4 py-2">{TIPO_COBRANCA_LABEL[c.tipo]}</td>
-                <td className="px-4 py-2 text-gray-600">{rotuloVencimento(c.vencimento)}</td>
-                <td className="px-4 py-2">{formatarMoeda(c.valorNegociado, c.moeda)}</td>
-                <td className="px-4 py-2 text-gray-600">
+              <TableRow key={c.id} className="hover:bg-surface-muted">
+                <TableCell className="px-4 py-2">{TIPO_COBRANCA_LABEL[c.tipo]}</TableCell>
+                <TableCell className="px-4 py-2 text-gray-600">{rotuloVencimento(c.vencimento)}</TableCell>
+                <TableCell className="px-4 py-2">{formatarMoeda(c.valorNegociado, c.moeda)}</TableCell>
+                <TableCell className="px-4 py-2 text-gray-600">
                   {STATUS_COBRANCA_LABEL[c.status]}
                   {(() => {
                     const ch = reguaChipInfo(c.regua, fusoEscola);
@@ -175,8 +178,8 @@ export function FichaFinanceira({ dados, preferenciaFusoExibicao = null, fusoEsc
                     </span>
                   )}
                   {c.regularizacaoIntegral && <Link className="ml-2 inline-block rounded bg-blue-100 px-1.5 py-0.5 text-[11px] text-blue-700" href={c.regularizacaoIntegral.href} title={`Aplicada em ${instanteAdministrativo(c.regularizacaoIntegral.aplicadaEm)}`}>{c.regularizacaoIntegral.escolha === "CREDITO" ? "Regularizada por crédito" : "Cobertura reprogramada"}</Link>}
-                </td>
-                <td className="px-4 py-2">
+                </TableCell>
+                <TableCell className="px-4 py-2">
                   <div className="flex items-center justify-end gap-2">
                     {c.compensacaoHref && <Link className={btnSec} href={c.compensacaoHref}>Compensar dias sem oferta</Link>}
                     {c.regularizacaoIntegral && <Link className={btnSec} href={c.regularizacaoIntegral.href}>Histórico da regularização</Link>}
@@ -191,11 +194,11 @@ export function FichaFinanceira({ dados, preferenciaFusoExibicao = null, fusoEsc
                       </>
                     )}
                   </div>
-                </td>
-              </tr>
+                </TableCell>
+              </TableRow>
             ))}
-          </tbody>
-        </table>
+          </TableBody>
+        </Table>
         </div>
       </section>
 
@@ -337,9 +340,9 @@ export function RenegociarModal({
   return (
     <Modal titulo="Renegociar / ajustar" aoFechar={onClose} bloquearFechamento={acao.ocupado}>
       <label htmlFor={`${campoId}-tipo`} className="mb-1 block text-xs text-gray-600">Tipo</label>
-      <select id={`${campoId}-tipo`} className={inputCls + " mb-2"} value={tipo} onChange={(e) => setTipo(e.target.value as TipoAjuste)}>
+      <SeletorCampo id={`${campoId}-tipo`} className={inputCls + " mb-2"} value={tipo} onChange={(e) => setTipo(e.target.value as TipoAjuste)}>
         {tipos.map((t) => <option key={t} value={t}>{TIPO_AJUSTE_LABEL[t]}</option>)}
-      </select>
+      </SeletorCampo>
       {tipo !== TipoAjuste.PERDAO && (
         <>
           <label htmlFor={`${campoId}-valor`} className="mb-1 block text-xs text-gray-600">Novo valor (de {formatarMoeda(cobranca.valorNegociado, moeda)})</label>
@@ -348,12 +351,12 @@ export function RenegociarModal({
         </>
       )}
       <label htmlFor={`${campoId}-vigencia`} className="mb-1 block text-xs text-gray-600">Vigência</label>
-      <select id={`${campoId}-vigencia`} className={inputCls + " mb-1"} value={vigencia} onChange={(e) => setVig(e.target.value as Vigencia)}>
+      <SeletorCampo id={`${campoId}-vigencia`} className={inputCls + " mb-1"} value={vigencia} onChange={(e) => setVig(e.target.value as Vigencia)}>
         {Object.values(Vigencia).map((v) => <option key={v} value={v}>{VIGENCIA_INFO[v].label}</option>)}
-      </select>
+      </SeletorCampo>
       <p className={"mb-2 text-xs " + VIGENCIA_INFO[vigencia].cls}>{VIGENCIA_INFO[vigencia].label}</p>
       <label htmlFor={`${campoId}-vencimento`} className="mb-1 block text-xs text-gray-600">Novo vencimento (opcional)</label>
-      <input id={`${campoId}-vencimento`} type="date" className={inputCls + " mb-2"} value={novoVenc} onChange={(e) => setVenc(e.target.value)} />
+      <DatePicker id={`${campoId}-vencimento`} className={inputCls + " mb-2"} value={novoVenc} onChange={(e) => setVenc(e.target.value)} />
       <label htmlFor={`${campoId}-motivo`} className="mb-1 block text-xs text-gray-600">Motivo (obrigatório)</label>
       <input id={`${campoId}-motivo`} aria-required="true" className={inputCls + " mb-3"} value={motivo} onChange={(e) => setMotivo(e.target.value)} />
       <p className="mb-3 text-xs text-gray-400">Acima do seu limite de desconto, o pedido vai para aprovação do Gerente Comercial / Admin.</p>

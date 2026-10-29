@@ -11,6 +11,10 @@ import { ColunaOrdenavel } from "@/components/ColunaOrdenavel";
 import { ImportarAlunosModal } from "./ImportarAlunosModal";
 import { botaoClasses } from "@/components/Botao";
 import { EstadoVazioLinha } from "@/components/EstadoVazio";
+import { SeletorCampo } from "@/app/(app)/secretaria/controles";
+import { Avatar } from "@/components/Avatar";
+import { BadgeEstado, type TomEstado } from "@/components/BadgeEstado";
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
 
 export interface AlunoRow {
   id: string;
@@ -22,13 +26,13 @@ export interface AlunoRow {
   financeiro: { atrasado: boolean; emAberto: { moeda: string; valor: number }[] } | null;
 }
 
-const STATUS_CLS: Record<StatusAluno, string> = {
-  ATIVO: "bg-green-100 text-green-700",
-  PAUSADO: "bg-amber-100 text-amber-700",
-  ENCERRADO: "bg-gray-200 text-gray-500",
+const TOM_STATUS: Record<StatusAluno, TomEstado> = {
+  ATIVO: "sucesso",
+  PAUSADO: "aviso",
+  ENCERRADO: "neutro",
 };
 
-const campo = "rounded-md border border-gray-300 px-2 py-1.5 text-sm outline-none focus:border-brand-500";
+const campo = "rounded-md border border-gray-200 px-2 py-1.5 text-sm outline-none focus:border-brand-500";
 
 const hrefPagina = (f: FiltrosAlunos, pagina: number) => {
   const q = filtrosParaQuery({ ...f, pagina });
@@ -99,24 +103,24 @@ export function AlunosLista({
           placeholder="Buscar por nome ou código…"
           className={campo + " w-64 px-3"}
         />
-        <select name="status" value={campos.status} onChange={mudarSelect("status")} aria-label="Filtrar por status" className={campo}>
+        <SeletorCampo name="status" value={campos.status} onChange={mudarSelect("status")} aria-label="Filtrar por status" className={campo}>
           <option value="">Todos os status</option>
           {Object.values(StatusAluno).map((s) => (
             <option key={s} value={s}>{STATUS_ALUNO_LABEL[s]}</option>
           ))}
-        </select>
-        <select name="pais" value={campos.pais} onChange={mudarSelect("pais")} aria-label="Filtrar por país" className={campo}>
+        </SeletorCampo>
+        <SeletorCampo name="pais" value={campos.pais} onChange={mudarSelect("pais")} aria-label="Filtrar por país" className={campo} busca>
           <option value="">Todos os países</option>
           {opcoes.paises.map((p) => (
             <option key={p.id} value={p.id}>{p.nome}</option>
           ))}
-        </select>
-        <select name="turma" value={campos.turma} onChange={mudarSelect("turma")} aria-label="Filtrar por turma" className={campo}>
+        </SeletorCampo>
+        <SeletorCampo name="turma" value={campos.turma} onChange={mudarSelect("turma")} aria-label="Filtrar por turma" className={campo} busca>
           <option value="">Todas as turmas</option>
           {opcoes.turmas.map((t) => (
             <option key={t.id} value={t.id}>{t.label}</option>
           ))}
-        </select>
+        </SeletorCampo>
         {ordemNaoPadrao && <>
           <input type="hidden" name="ordem" value={filtros.ordem.campo} />
           <input type="hidden" name="dir" value={filtros.ordem.dir} />
@@ -134,17 +138,17 @@ export function AlunosLista({
       </p>
 
       <div aria-busy={buscando} className={"overflow-x-auto rounded-lg border border-gray-200 transition-opacity " + (buscando ? "opacity-60" : "")}>
-        <table className="w-full min-w-[640px] text-sm">
-          <thead className="bg-gray-100 text-left text-xs text-gray-500">
-            <tr>
+        <Table className="w-full min-w-[640px] text-sm">
+          <TableHeader className="bg-surface-muted text-left text-xs text-gray-500">
+            <TableRow>
               <ColunaOrdenavel campo="nome" rotulo="Aluno" {...coluna} />
               <ColunaOrdenavel campo="pais" rotulo="País" {...coluna} />
-              <th className="px-4 py-2 font-medium">Turma</th>
+              <TableHead className="px-4 py-2 font-medium">Turma</TableHead>
               <ColunaOrdenavel campo="status" rotulo="Status" {...coluna} />
-              {exibirFinanceiro && <th className="px-4 py-2 font-medium">Financeiro</th>}
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-100">
+              {exibirFinanceiro && <TableHead className="px-4 py-2 font-medium">Financeiro</TableHead>}
+            </TableRow>
+          </TableHeader>
+          <TableBody className="divide-y divide-gray-100">
             {alunos.length === 0 ? (
               <EstadoVazioLinha colSpan={exibirFinanceiro ? 5 : 4}>
                   {totalBase === 0 ? "Nenhum aluno cadastrado no seu alcance." : filtrando ? (
@@ -155,32 +159,35 @@ export function AlunosLista({
                 </EstadoVazioLinha>
             ) : (
               alunos.map((a) => (
-                <tr key={a.id} className="hover:bg-gray-50">
-                  <td className="px-4 py-3">
-                    <Link href={`/alunos/${a.id}`} className="font-medium text-brand-700 hover:underline">
-                      {a.nome}
-                    </Link>
-                    <div className="text-xs text-gray-400">{a.codigo}</div>
-                  </td>
-                  <td className="px-4 py-3 text-gray-600">{a.pais}</td>
-                  <td className="px-4 py-3 text-gray-600">{a.turmas.length ? a.turmas.map((t) => <div key={t.id}>{t.label}</div>) : "—"}</td>
-                  <td className="px-4 py-3">
-                    <span className={"rounded-full px-2 py-0.5 text-xs font-medium " + STATUS_CLS[a.status]}>
-                      {STATUS_ALUNO_LABEL[a.status]}
-                    </span>
-                  </td>
-                  {exibirFinanceiro && <td className="px-4 py-3">
+                <TableRow key={a.id} className="hover:bg-surface-muted">
+                  <TableCell className="px-4 py-3">
+                    <div className="flex items-center gap-2">
+                      <Avatar nome={a.nome} tamanho={32} />
+                      <div>
+                        <Link href={`/alunos/${a.id}`} className="font-medium text-brand-700 hover:underline">
+                          {a.nome}
+                        </Link>
+                        <div className="font-mono text-xs tabular-nums text-gray-500">{a.codigo}</div>
+                      </div>
+                    </div>
+                  </TableCell>
+                  <TableCell className="px-4 py-3 text-gray-600">{a.pais}</TableCell>
+                  <TableCell className="px-4 py-3 text-gray-600">{a.turmas.length ? a.turmas.map((t) => <div key={t.id}>{t.label}</div>) : "—"}</TableCell>
+                  <TableCell className="px-4 py-3">
+                    <BadgeEstado tom={TOM_STATUS[a.status]}>{STATUS_ALUNO_LABEL[a.status]}</BadgeEstado>
+                  </TableCell>
+                  {exibirFinanceiro && <TableCell className="px-4 py-3">
                     {a.financeiro === null ? "—" : a.financeiro.atrasado ? (
                       <span className="text-red-600">Em atraso</span>
                     ) : (
                       <span className="text-green-600">Em dia</span>
                     )}
-                  </td>}
-                </tr>
+                  </TableCell>}
+                </TableRow>
               ))
             )}
-          </tbody>
-        </table>
+          </TableBody>
+        </Table>
       </div>
 
       <Paginacao pagina={filtros.pagina} temProxima={temProxima} href={(p) => hrefPagina(filtros, p)} aoClicar={aoClicar} rotulo="Páginas de alunos" />

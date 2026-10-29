@@ -21,6 +21,7 @@ vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh: m.refresh }) })
 vi.mock("@/server/whatsapp/acoes", () => ({ acionarKillSwitchRegua: m.kill, estimarAlcanceRegua: m.estimar, salvarPoliticaRegua: m.salvar }));
 vi.mock("@/lib/aviso-ao-sair", () => ({ useAvisoAoSair: () => undefined }));
 
+import { CampoSelect } from "@/components/ui/select";
 import { PoliticaPainel } from "./PoliticaPainel";
 import { ConfirmarAcao } from "@/components/ConfirmarAcao";
 import { FeedbackAcao } from "@/components/FeedbackAcao";
@@ -47,7 +48,7 @@ const politicaBase: PoliticaConfig = {
 let politica: PoliticaConfig;
 const tela = (): ReactNode => m.ganchos!.renderizar(PoliticaPainel, { politica, numeros: [numero], templates: [template] });
 const doTipo = (t: ReactNode, tipo: unknown): No[] => elementos(t).filter((n) => n.type === tipo);
-const estado = (t: ReactNode) => elementos(t).find((n) => n.type === "select" && n.props.value !== undefined && ["DESLIGADA", "SHADOW", "ATIVA"].includes(String(n.props.value)))!;
+const estado = (t: ReactNode) => elementos(t).find((n) => n.type === CampoSelect && n.props.value !== undefined && ["DESLIGADA", "SHADOW", "ATIVA"].includes(String(n.props.value)))!;
 const escolherEstado = (valor: string) => (estado(tela()).props.onChange as (e: unknown) => void)({ target: { value: valor } });
 
 beforeEach(() => {

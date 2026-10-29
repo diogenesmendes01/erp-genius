@@ -1,6 +1,9 @@
+import { readFileSync } from "node:fs";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
+import { CLASSES_TOM } from "@/components/BadgeEstado";
+import { CONTROLE_CAMPO } from "@/components/Campo";
 
 vi.mock("next/navigation", () => ({ useRouter: () => ({ push: vi.fn(), refresh: vi.fn() }) }));
 vi.mock("@/server/empresas/acoes", () => ({ salvarEmpresa: vi.fn() }));
@@ -43,8 +46,10 @@ describe("EmpresasCliente (filtros na URL)", () => {
     expect(html).toMatch(/<form[^>]*action="\/empresas"/);
     expect(html).toContain('role="search"');
     expect(html).toContain('value="acme"');
-    expect(html).toContain('<option value="inativas" selected="">Inativas</option>');
-    expect(html).toContain('<option value="p1" selected="">Costa Rica</option>');
+    expect(html).toContain(">Inativas<");
+    expect(html).toContain('<input type="hidden" name="situacao" value="inativas"/>');
+    expect(html).toContain(">Costa Rica<");
+    expect(html).toContain('<input type="hidden" name="pais" value="p1"/>');
     expect(html).toContain("Limpar filtros");
   });
 
@@ -70,8 +75,11 @@ describe("EmpresasCliente (filtros na URL)", () => {
     expect(html).toMatch(/<a [^>]*href="\/empresas\?situacao=ativas&amp;ordem=nome&amp;dir=asc"[^>]*>Empresa</);
     expect(html).toMatch(/<a [^>]*href="\/empresas\?situacao=ativas&amp;ordem=colaboradores&amp;dir=desc"[^>]*>Colaboradores</);
     expect(html).toMatch(/<a [^>]*href="\/empresas\?situacao=ativas&amp;ordem=situacao&amp;dir=asc"[^>]*>Status</);
-    expect(html).toContain('<th class="px-4 py-2 font-medium">País</th>');
-    expect(html).not.toContain('type="hidden"');
+    expect(html).toContain(">País</th>");
+    expect(html).toContain('<input type="hidden" name="situacao" value="ativas"/>');
+    expect(html).toContain('<input type="hidden" name="pais" value=""/>');
+    expect(html).not.toContain('name="ordem"');
+    expect(html).not.toContain('name="dir"');
   });
 
   it("ordem escolhida: coluna marcada; paginação, limpar e formulário sem JavaScript mantêm a ordem", () => {
@@ -81,6 +89,7 @@ describe("EmpresasCliente (filtros na URL)", () => {
     expect(html.match(/aria-sort="/g)).toHaveLength(1);
     expect(html).toContain('href="/empresas?busca=acme&amp;ordem=colaboradores&amp;dir=desc&amp;pagina=3"');
     expect(html).toMatch(/<a[^>]*href="\/empresas\?ordem=colaboradores&amp;dir=desc"[^>]*>Limpar filtros<\/a>/);
+    expect(html).toMatch(/<a[^>]*href="\/empresas\?busca=acme"[^>]*>Voltar à ordem padrão<\/a>/);
     expect(html).toContain('<input type="hidden" name="ordem" value="colaboradores"/>');
   });
 
@@ -138,4 +147,47 @@ describe("EmpresasCliente: com JavaScript, o clique de cada link vai para o MESM
       for (const texto of esperados) expect(daLista.some((l) => l.texto === texto), texto).toBe(true);
     });
   }
+});
+
+describe("EmpresasCliente · design system", () => {
+  it("a fonte usa os primitivos e não traz borda cinza nem badge ad-hoc", () => {
+    const fonte = readFileSync("src/app/(app)/empresas/EmpresasCliente.tsx", "utf8");
+    expect(fonte).toContain("Avatar");
+    expect(fonte).toContain("BadgeEstado");
+    expect(fonte).toContain("CONTROLE_CAMPO");
+    expect(fonte).toContain("LinhaCampo");
+    expect(fonte).toContain("font-mono");
+    expect(fonte).toContain("tabular-nums");
+    expect(fonte).not.toContain("border-gray-300");
+    for (const cor of ["bg-green-100", "bg-amber-100", "bg-blue-100", "bg-red-100", "bg-yellow-100"]) {
+      expect(fonte).not.toContain(cor);
+    }
+  });
+
+  it("filtros, código, empresa e status usam controle, avatar, badge e mono", () => {
+    const html = render({
+      empresas: [
+        { ...empresa(1), nome: "Acme Brasil", codigo: "E-9", ativo: true, colaboradores: 12, faturasAReceber: 3, pais: "Costa Rica" },
+        { ...empresa(2), nome: "Beta Leste", codigo: null, ativo: false, colaboradores: 0, faturasAReceber: 1, pais: null },
+      ],
+      total: 2,
+      totalBase: 2,
+    });
+    expect(html).toContain(CONTROLE_CAMPO);
+    expect(html).toContain("font-mono");
+    expect(html).toContain("tabular-nums");
+    expect(html).toContain(">AB<");
+    expect(html).toContain(">BL<");
+    expect(html).toContain("#E-9");
+    expect(html).toContain(CLASSES_TOM.sucesso);
+    expect(html).toContain(CLASSES_TOM.neutro);
+    expect(html).toContain("Ativa");
+    expect(html).toContain("Inativa");
+    expect(html).toContain("País");
+    expect(html).toContain('href="/empresas/e1"');
+    expect(html).toContain("bg-surface-muted");
+    expect(html).toContain("hover:bg-surface-muted");
+    expect(html).not.toContain("border-gray-300");
+    expect(html).not.toContain("bg-green-100");
+  });
 });

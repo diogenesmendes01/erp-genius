@@ -5,7 +5,7 @@ import { Papel } from "@prisma/client";
 
 const mocks = vi.hoisted(() => ({
   guard: vi.fn(), preferencia: vi.fn(), fila: vi.fn(), comissoes: vi.fn(), totais: vi.fn(), kpis: vi.fn(),
-  aprovacoes: vi.fn(), cotacoes: vi.fn(), relatorio: vi.fn(), informes: vi.fn(), contarInformes: vi.fn(), politicas: vi.fn(), retomadas: vi.fn(), configFinanceiro: vi.fn(),
+  aprovacoes: vi.fn(), preparacoes: vi.fn(async () => []), cotacoes: vi.fn(), relatorio: vi.fn(), informes: vi.fn(), contarInformes: vi.fn(), politicas: vi.fn(), retomadas: vi.fn(), configFinanceiro: vi.fn(),
   podeConfigurar: vi.fn(),
   redirect: vi.fn((d: string) => { throw new Error(`REDIRECT ${d}`); }),
   componente: vi.fn(),
@@ -20,7 +20,7 @@ vi.mock("@/components/AcessoNegado", () => ({ AcessoNegado: () => createElement(
 vi.mock("@/server/preferencias/fuso-exibicao", () => ({ consultarPreferenciaFusoEquipe: mocks.preferencia }));
 vi.mock("@/server/relatorios/atendimento", () => ({ fusoDaEscola: async () => "America/Sao_Paulo" }));
 vi.mock("@/server/cobrancas/consultas", () => ({ listarFilaCobranca: mocks.fila }));
-vi.mock("@/server/ajustes/consultas", () => ({ listarAprovacoesPendentes: mocks.aprovacoes }));
+vi.mock("@/server/ajustes/consultas", () => ({ listarAprovacoesPendentes: mocks.aprovacoes, listarPreparacoesPendentesAprovacao: mocks.preparacoes }));
 vi.mock("@/server/retomada/consultas", () => ({ listarPropostasRetomada: mocks.retomadas }));
 vi.mock("@/server/financeiro/consultas", () => ({
   COMISSOES_POR_PAGINA: 50, listarComissoesPagina: mocks.comissoes, totaisComissoesAPagar: mocks.totais,
@@ -73,7 +73,7 @@ describe("/financeiro por rota (E8)", () => {
     mocks.preferencia.mockResolvedValue({ ok: true, dado: { fusoExibicao: "America/Costa_Rica" } });
     mocks.fila.mockResolvedValue({ itens: [], dashs: { aVencer: 0, emAtraso: 0, bloquear: 0, promessas: 0, recebidoHoje: [] }, regua: [] });
     mocks.comissoes.mockResolvedValue({ itens: [], total: 0 }); mocks.totais.mockResolvedValue([]); mocks.kpis.mockResolvedValue({ recebidoMes: [], emAtraso: [], aReceber: [], comissoesAPagar: [], novasMatriculas: 0 });
-    mocks.aprovacoes.mockResolvedValue([]); mocks.cotacoes.mockResolvedValue([]); mocks.relatorio.mockResolvedValue({});
+    mocks.aprovacoes.mockResolvedValue([]); mocks.preparacoes.mockResolvedValue([]); mocks.cotacoes.mockResolvedValue([]); mocks.relatorio.mockResolvedValue({});
     mocks.informes.mockResolvedValue({ itens: [], temAnterior: false, temProxima: false, anterior: null, proxima: null }); mocks.contarInformes.mockResolvedValue(0);
     mocks.politicas.mockResolvedValue({}); mocks.podeConfigurar.mockResolvedValue(false); mocks.retomadas.mockResolvedValue({ ok: true, dado: [] }); mocks.configFinanceiro.mockResolvedValue({ fechamentoComissaoAutomatico: false });
   });
@@ -202,6 +202,17 @@ describe("/financeiro por rota (E8)", () => {
     expect(pagina).toContain('role="alert"');
     expect(pagina).toContain('href="/financeiro/informes"');
     expect(mocks.informes).not.toHaveBeenCalled();
+  });
+
+  it("gerente abre comissões sem a configuração exclusiva do financeiro", async () => {
+    mocks.guard.mockResolvedValue([Papel.GERENTE_COMERCIAL]);
+    mocks.configFinanceiro.mockRejectedValue(new Error("Você não tem permissão para esta ação."));
+    const pagina = await html(Comissoes());
+    expect(pagina).toContain("[comissoes|");
+    expect(mocks.configFinanceiro).not.toHaveBeenCalled();
+    const props = mocks.componente.mock.calls.at(-1)?.[0] as { podePagar: boolean; fechamentoAutomatico: boolean };
+    expect(props.podePagar).toBe(false);
+    expect(props.fechamentoAutomatico).toBe(false);
   });
 
   it("Gerente pedindo uma aba de cobrança direto: acesso negado, sem consultar a fila nem os informes", async () => {

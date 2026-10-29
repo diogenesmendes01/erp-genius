@@ -16,6 +16,8 @@ import { botaoClasses } from "@/components/Botao";
 import { MSG_DECISAO_INCERTA, MSG_RESULTADO_INCERTO, MSG_RESULTADO_INCERTO_SEM_CHAVE } from "@/lib/mensagens";
 import { CampoTexto } from "@/components/CampoTexto";
 import { EstadoVazio } from "@/components/EstadoVazio";
+import { SeletorCampo } from "@/app/(app)/secretaria/controles";
+import { DatePicker } from "@/components/ui/date-picker";
 
 type Dados = NonNullable<Extract<Awaited<ReturnType<typeof consultarRegularizacoesPeriodoIntegral>>, { ok: true }>["dado"]>;
 type Escolha = "" | "CREDITO" | "COBERTURA_FUTURA";
@@ -46,7 +48,7 @@ function dataCivil(valor: string | null) {
 function MemoriaCalculo({ memoria }: { memoria: Memoria }) {
   const valores = memoria.valores;
   const opcional = (valor?: string) => valor == null ? "—" : formatarMoeda(valor, memoria.moeda);
-  return <section className="space-y-2 rounded bg-gray-100 p-3" aria-label="Memória de cálculo da proposta">
+  return <section className="space-y-2 rounded bg-surface-muted p-3" aria-label="Memória de cálculo da proposta">
     <h3 className="font-medium">Memória de cálculo</h3>
     <p>Cobertura original: {dataCivil(memoria.coberturaOriginal.inicio)} a {dataCivil(memoria.coberturaOriginal.fim)} · moeda {memoria.moeda}.</p>
     <dl className="grid grid-cols-1 gap-1 text-sm sm:grid-cols-2">
@@ -142,8 +144,8 @@ export function PeriodoIntegral({
     }}>
       <fieldset disabled={ocupado} className="space-y-3">
         <legend>{d.podeReconferir ? "Reconferir escolha do aluno" : "Escolha do aluno"}</legend>
-        <label className="block" htmlFor="escolha">Tratamento escolhido<select id="escolha" className={classe} name="escolha" value={escolha} onChange={evento => setEscolha(evento.target.value as Escolha)} required><option value="" disabled>Selecione</option><option value="CREDITO">Crédito a constituir em etapa posterior</option><option value="COBERTURA_FUTURA">Cobertura futura a definir</option></select></label>
-        {escolha === "COBERTURA_FUTURA" && <fieldset className="space-y-2 rounded border p-3"><legend>Período de cobertura futura</legend><label className="block" htmlFor="inicio">Início civil<input id="inicio" className={classe} name="inicio" type="date" defaultValue={baseReconferencia?.coberturaFutura?.inicio ?? ""} {...periodo.propsInicio} required /></label><label className="block" htmlFor="fim">Fim civil<input id="fim" className={classe} name="fim" type="date" defaultValue={baseReconferencia?.coberturaFutura?.fim ?? ""} min={periodo.min} required /></label></fieldset>}
+        <label className="block" htmlFor="escolha">Tratamento escolhido<SeletorCampo id="escolha" className={classe} name="escolha" value={escolha} onChange={evento => setEscolha(evento.target.value as Escolha)} required><option value="" disabled>Selecione</option><option value="CREDITO">Crédito a constituir em etapa posterior</option><option value="COBERTURA_FUTURA">Cobertura futura a definir</option></SeletorCampo></label>
+        {escolha === "COBERTURA_FUTURA" && <fieldset className="space-y-2 rounded border p-3"><legend>Período de cobertura futura</legend><label className="block" htmlFor="inicio">Início civil<DatePicker id="inicio" className={classe} name="inicio" defaultValue={baseReconferencia?.coberturaFutura?.inicio ?? ""} {...periodo.propsInicio} required /></label><label className="block" htmlFor="fim">Fim civil<DatePicker id="fim" className={classe} name="fim" defaultValue={baseReconferencia?.coberturaFutura?.fim ?? ""} min={periodo.min} required /></label></fieldset>}
         <label className="block" htmlFor="clausula">Cláusula contratual aplicável<CampoTexto id="clausula" className={classe} name="clausula" defaultValue={baseReconferencia?.clausula ?? ""} minLength={5} maxLength={2000} required /></label>
         <label className="block" htmlFor="evidenciaEscolha">Evidência da escolha do aluno<CampoTexto id="evidenciaEscolha" className={classe} name="evidenciaEscolha" defaultValue={baseReconferencia?.evidenciaEscolha ?? ""} minLength={5} maxLength={2000} required /></label>
         <label className="block" htmlFor="motivo">Motivo<CampoTexto id="motivo" className={classe} name="motivo" defaultValue={baseReconferencia?.motivo ?? ""} minLength={5} maxLength={2000} required /></label>
@@ -164,7 +166,7 @@ export function PeriodoIntegral({
         <p className="whitespace-pre-wrap">Motivo: {proposta.motivo}</p>
         {proposta.memoria ? <MemoriaCalculo memoria={proposta.memoria} /> : <p role="alert">A memória de cálculo desta proposta não está disponível; ela não pode ser aprovada nesta tela.</p>}
         {proposta.decisao ? <><p>{proposta.decisao.aprovada ? "Proposta aprovada." : "Proposta rejeitada."}</p><p className="whitespace-pre-wrap">Justificativa da decisão: {proposta.decisao.motivo}</p>
-          {proposta.decisao.aplicacao ? <section className="space-y-1 rounded bg-gray-100 p-3"><p>Aplicada em {instanteAdministrativo(proposta.decisao.aplicacao.aplicadaEm)}.</p>{proposta.escolha === "CREDITO" ? <><p>Crédito efetivamente constituído: {proposta.decisao.aplicacao.credito ? formatarMoeda(proposta.decisao.aplicacao.credito.valor, proposta.decisao.aplicacao.credito.moeda) : "nenhum valor adicional"}.</p><p>Saldo retirado da cobrança conforme a memória: {proposta.memoria?.escolha === "CREDITO" ? formatarMoeda(proposta.memoria.saldoADesobrigar, proposta.memoria.moeda) : "valor histórico indisponível"}.</p></> : <><p>{proposta.superada ? "Cobertura reprogramada nesta aplicação" : "Cobertura efetivamente reprogramada"}: {proposta.coberturaFutura ? `${dataCivil(proposta.coberturaFutura.inicio)} a ${dataCivil(proposta.coberturaFutura.fim)}` : "período histórico indisponível"}.</p><p>Os valores e o vencimento da mesma cobrança foram preservados.</p></>}</section> : proposta.decisao.aprovada && <p role="status">Aprovada; aplicação pendente.</p>}
+          {proposta.decisao.aplicacao ? <section className="space-y-1 rounded bg-surface-muted p-3"><p>Aplicada em {instanteAdministrativo(proposta.decisao.aplicacao.aplicadaEm)}.</p>{proposta.escolha === "CREDITO" ? <><p>Crédito efetivamente constituído: {proposta.decisao.aplicacao.credito ? formatarMoeda(proposta.decisao.aplicacao.credito.valor, proposta.decisao.aplicacao.credito.moeda) : "nenhum valor adicional"}.</p><p>Saldo retirado da cobrança conforme a memória: {proposta.memoria?.escolha === "CREDITO" ? formatarMoeda(proposta.memoria.saldoADesobrigar, proposta.memoria.moeda) : "valor histórico indisponível"}.</p></> : <><p>{proposta.superada ? "Cobertura reprogramada nesta aplicação" : "Cobertura efetivamente reprogramada"}: {proposta.coberturaFutura ? `${dataCivil(proposta.coberturaFutura.inicio)} a ${dataCivil(proposta.coberturaFutura.fim)}` : "período histórico indisponível"}.</p><p>Os valores e o vencimento da mesma cobrança foram preservados.</p></>}</section> : proposta.decisao.aprovada && <p role="status">Aprovada; aplicação pendente.</p>}
         </> : <p role="status">Aguardando decisão independente.</p>}
         {proposta.podeDecidir && proposta.memoria && <form className="space-y-2" onSubmit={evento => {
           evento.preventDefault();
@@ -189,7 +191,7 @@ export function PeriodoIntegral({
         }}>
           <fieldset disabled={ocupado} className="space-y-2">
             <legend>Decisão independente</legend>
-            <label className="block" htmlFor={`decisao-${proposta.id}`}>Decisão<select id={`decisao-${proposta.id}`} className={classe} name="decisao" defaultValue="" required><option value="" disabled>Selecione</option><option value="aprovar">Aprovar proposta</option><option value="rejeitar">Rejeitar proposta</option></select></label>
+            <label className="block" htmlFor={`decisao-${proposta.id}`}>Decisão<SeletorCampo id={`decisao-${proposta.id}`} className={classe} name="decisao" defaultValue="" required><option value="" disabled>Selecione</option><option value="aprovar">Aprovar proposta</option><option value="rejeitar">Rejeitar proposta</option></SeletorCampo></label>
             <label className="block" htmlFor={`motivo-${proposta.id}`}>Justificativa<CampoTexto id={`motivo-${proposta.id}`} className={classe} name="motivo" minLength={5} maxLength={2000} required /></label>
             <button className={botaoClasses({ variante: "secundario", tamanho: "lg" })}>Registrar decisão</button>
           </fieldset>

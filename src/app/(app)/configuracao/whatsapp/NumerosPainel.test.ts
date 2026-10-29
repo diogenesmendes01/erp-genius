@@ -1,8 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
-import { criarGanchos, botao, elementos, texto } from "@/test/tela-sem-dom";
+import { criarGanchos, botaoOuBotao as botao, elementos, texto } from "@/test/tela-sem-dom";
 import type { NumeroConfig } from "@/server/whatsapp/consultas";
+import { Botao } from "@/components/Botao";
 
 const ganchos = vi.hoisted(() => ({ atual: null as null | ReturnType<typeof import("@/test/tela-sem-dom").criarGanchos> }));
 vi.mock("react", async (orig) => {
@@ -125,5 +126,19 @@ describe("NumerosPainel — motor", () => {
     const arvore = ganchos.atual.renderizar(NumerosPainel, { numeros: [inativo], vendedores: [] });
     (botao(arvore, "Ativar").props.onClick as () => void)();
     await vi.waitFor(() => expect(acoes.reativarNumeroWhatsApp).toHaveBeenCalledWith("n1"));
+  });
+
+  it("todos os botões da lista e do formulário são o Botao do design system, com type explícito", () => {
+    ganchos.atual = criarGanchos();
+    const props = { numeros: [numero({ sessao: "CAIU" })], vendedores: [] };
+    (botao(ganchos.atual.renderizar(NumerosPainel, props), "Editar").props.onClick as () => void)();
+    const arvore = ganchos.atual.renderizar(NumerosPainel, props);
+    expect(elementos(arvore).filter((n) => n.type === "button")).toEqual([]);
+    for (const rotulo of ["Novo número", "Conectar", "Desconectar", "Editar", "Desativar", "Excluir", "Salvar número"]) {
+      expect(botao(arvore, rotulo).type).toBe(Botao);
+    }
+    const fechar = elementos(arvore).find((n) => n.props["aria-label"] === "Fechar")!;
+    expect(fechar.type).toBe(Botao);
+    expect(renderToStaticMarkup(createElement(NumerosPainel, props)).match(/<button(?![^>]*type="button")/g)).toBeNull();
   });
 });

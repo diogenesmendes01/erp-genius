@@ -19,6 +19,7 @@ vi.mock("@/server/secretaria/pagador-preparacao", () => ({ registrarPagadorPrepa
 import type { ReactNode } from "react";
 import { CAMPOS_DO_PAGADOR, PagadorFormulario, rascunhosIniciais } from "./PagadorFormulario";
 import { FormDataFalso, criarGanchos, elementos, submeter, type No } from "@/test/tela-sem-dom";
+import { SeletorCampo } from "@/app/(app)/secretaria/controles";
 
 beforeEach(() => { vi.clearAllMocks(); m.ganchos = criarGanchos(); vi.stubGlobal("FormData", FormDataFalso); });
 afterEach(() => { vi.unstubAllGlobals(); });
@@ -27,7 +28,7 @@ type Props = Parameters<typeof PagadorFormulario>[0];
 const base: Props = { matriculaId: "m1", versao: 0, paises: [{ id: "br", nome: "Brasil" }, { id: "cr", nome: "Costa Rica" }], atual: null };
 const tela = (p: Props = base) => m.ganchos!.renderizar(PagadorFormulario, p);
 const campo = (t: ReactNode, nome: string): No | undefined => elementos(t).find((n) => n.props.name === nome);
-const mudarTipo = (tipo: string) => (elementos(tela()).find((n) => n.type === "select" && n.props.name === undefined)!.props.onChange as (e: { target: { value: string } }) => void)({ target: { value: tipo } });
+const mudarTipo = (tipo: string) => (elementos(tela()).find((n) => n.type === SeletorCampo && n.props.name === undefined)!.props.onChange as (e: { target: { value: string } }) => void)({ target: { value: tipo } });
 const digitar = (nome: string, valor: string) => (campo(tela(), nome)!.props.onChange as (e: { target: { value: string } }) => void)({ target: { value: valor } });
 
 describe("PagadorFormulario — um rascunho por tipo", () => {

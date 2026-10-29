@@ -6,12 +6,12 @@ import { marcaIdempotencia } from "@/server/_shared/idempotencia";
 import type { Setor } from "./setor";
 import { atribuirAtendimentoTx, transferirAtendimentoTx } from "./transferencia-nucleo";
 import { TransferirPessoaInboxSchema, TransferirSetorInboxSchema } from "./entrada-transferencia-inbox";
-export async function transferirPessoaInbox(input: { atendimentoId: string; usuarioId: string; contexto?: string; chaveIdempotencia: string }): Promise<Resultado> {
+export async function transferirPessoaInbox(input: { atendimentoId: string; usuarioId: string; contexto?: string; anexarResumoAria?: boolean; chaveIdempotencia: string }): Promise<Resultado> {
   return executarAcao(async () => {
     const u = await exigirSessao();
     const { chaveIdempotencia, ...dados } = TransferirPessoaInboxSchema.parse(input);
     const marca = marcaIdempotencia(chaveIdempotencia, dados)!;
-    await prisma.$transaction(tx => atribuirAtendimentoTx(tx, u, dados.atendimentoId, dados.usuarioId, { contexto: dados.contexto, marca }));
+    await prisma.$transaction(tx => atribuirAtendimentoTx(tx, u, dados.atendimentoId, dados.usuarioId, { contexto: dados.contexto, marca, anexarResumoAria: dados.anexarResumoAria }));
     revalidatePath("/inbox");
   });
 }

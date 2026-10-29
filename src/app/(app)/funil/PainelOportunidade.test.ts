@@ -1,6 +1,10 @@
+// @vitest-environment jsdom
+import { readFileSync } from "node:fs";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
-import { describe, expect, it, vi } from "vitest";
+import { cleanup, render as renderDom } from "@testing-library/react";
+import { beforeAll, describe, expect, it, vi } from "vitest";
+import { CONTROLE_CAMPO } from "@/components/Campo";
 import type { CapacidadeCrm } from "@/server/crm/permissoes";
 import type { DetalheOportunidade } from "@/server/crm/historico";
 
@@ -12,6 +16,9 @@ vi.mock("@/server/comercial/acoes", () => ({
   anexarDocumentoLead: vi.fn(), arquivarDocumentoLead: vi.fn(),
 }));
 vi.mock("@/server/matricula/acoes", () => ({ registrarLinkPagamento: vi.fn() }));
+vi.mock("@/server/inbox/acoes-fechamento-painel", () => ({
+  definirPrevisaoOportunidade: vi.fn(), criarTarefaOportunidade: vi.fn(), concluirTarefaOportunidade: vi.fn(), reabrirTarefaOportunidade: vi.fn(),
+}));
 
 import { PainelOportunidade } from "./PainelOportunidade";
 import { ModalPerda, validarPerda } from "./ModalPerda";
@@ -25,7 +32,9 @@ const base: DetalheOportunidade = {
   urgencia: null, orcamento: null, objecao: null, taxaMatricula: null,
   telefoneE164: "+50688887777", paisId: "cr", segmento: "ADULTO", origemCampanha: null, origemConjunto: null,
   origemAnuncio: null, origemPalavra: null, planoPrevisto: null, comissaoPrevista: null, dataProposta: null,
+  professorExperimental: null, experimentalConfirmadaEm: null,
   documentos: [{ id: "d1", categoria: "PROPOSTA", nome: "proposta.pdf", url: "/api/files/a.pdf" }],
+  b2bDetalhes: null, tarefas: [],
 };
 const detalheEmProposta: DetalheOportunidade = { ...base, etapa: "PROPOSTA" };
 const detalheEmExperimental: DetalheOportunidade = { ...base, etapa: "EXPERIMENTAL_AGENDADA", dataExperimental: new Date("2026-10-20T18:00:00Z") };
@@ -35,13 +44,25 @@ const detalheComTaxaPendente: DetalheOportunidade = {
 };
 
 const GERENTE: CapacidadeCrm[] = ["funil.ver", "funil.mover", "funil.atribuir"];
-const render = (d: DetalheOportunidade, capacidades: CapacidadeCrm[] = GERENTE, extra: object = {}) =>
-  renderToStaticMarkup(
-    createElement(PainelOportunidade, {
-      oportunidade: d, historico: [], capacidades, vendedores: [{ id: "v1", nome: "Ana Vendedora" }, { id: "v2", nome: "Beto" }],
-      aoFechar: () => {}, ...extra,
-    }),
-  );
+beforeAll(() => {
+  if (!globalThis.ResizeObserver) {
+    globalThis.ResizeObserver = class { observe() {} unobserve() {} disconnect() {} } as unknown as typeof ResizeObserver;
+  }
+  const proto = Element.prototype as Element & { scrollIntoView?: () => void; hasPointerCapture?: () => boolean; setPointerCapture?: () => void; releasePointerCapture?: () => void };
+  proto.scrollIntoView ??= () => {};
+  proto.hasPointerCapture ??= () => false;
+  proto.setPointerCapture ??= () => {};
+  proto.releasePointerCapture ??= () => {};
+});
+
+const render = (d: DetalheOportunidade, capacidades: CapacidadeCrm[] = GERENTE, extra: object = {}) => {
+  cleanup();
+  renderDom(createElement(PainelOportunidade, {
+    oportunidade: d, historico: [], capacidades, vendedores: [{ id: "v1", nome: "Ana Vendedora" }, { id: "v2", nome: "Beto" }],
+    aoFechar: () => {}, ...extra,
+  }));
+  return document.body.innerHTML;
+};
 const renderPerda = () => renderToStaticMarkup(createElement(ModalPerda, { oportunidadeId: "op1", nome: "Maria", aoFechar: () => {} }));
 const clicarConfirmar = (v: { motivoPerda: string; observacao: string }) => validarPerda(v as never);
 
@@ -54,7 +75,8 @@ describe("PainelOportunidade", () => {
   });
   it("modal de perda: 9 motivos do ERP; Outro exige observação", () => {
     const html = renderPerda();
-    expect(html.match(/name="motivoPerda"/g)).toHaveLength(9);
+    expect(html.match(/role="radio"/g)).toHaveLength(9);
+    expect(html).toContain('name="motivoPerda"');
     expect(clicarConfirmar({ motivoPerda: "OUTRO", observacao: "" }).erro).toBe("Observação obrigatória quando o motivo é Outro");
     expect(clicarConfirmar({ motivoPerda: "PRECO", observacao: "" }).input).toEqual({ motivoPerda: "PRECO", observacao: undefined });
     expect(clicarConfirmar({ motivoPerda: "", observacao: "" }).input).toBeNull();
@@ -62,7 +84,9 @@ describe("PainelOportunidade", () => {
   it("vendedor não vê seletor de responsável; check-in da experimental não aparece", () => {
     const html = render(detalheEmExperimental, ["funil.ver", "funil.mover"]);
     expect(html).not.toContain('aria-label="Responsável"');
-    expect(html).not.toContain("Realizada");
+    expect(html).not.toMatch(/>Realizada</);
+    expect(html).toContain("Confirmar presença");
+    expect(html).toContain('aria-label="Professor da experimental"');
     expect(render(detalheEmExperimental)).toContain('aria-label="Responsável"');
   });
   it("oportunidade com taxa de matrícula pendente mostra Registrar link de pagamento (D10)", () => {
@@ -127,6 +151,57 @@ it("335: Abrir contato usa a ficha existente /contatos?c= e codifica a pessoa se
   expect(t).toMatch(/href="\/contatos\?c=p%20%3F%2F335"[^>]*>Abrir contato<\/a>/);
   expect(t).not.toContain("/contatos/p");
   expect(render({ ...base, pessoaId: null }, GERENTE, { abaInicial: "detalhes" })).not.toContain("Abrir contato");
+});
+
+const FONTES_PAINEL = [
+  "src/app/(app)/funil/PainelOportunidade.tsx",
+  "src/app/(app)/funil/SecoesParidadeFunil.tsx",
+  "src/app/(app)/funil/EdicaoOportunidade.tsx",
+];
+const BADGES_AD_HOC = ["bg-amber-50", "bg-red-100", "bg-yellow-100", "bg-blue-100", "bg-green-100"];
+
+describe("PainelOportunidade: design system", () => {
+  it("cabeçalho rico, abas e barra de etapas usam os primitivos globais", () => {
+    const html = render(base);
+    expect(html).toContain("#L-000001");
+    expect(html).toContain("font-mono");
+    expect(html).toContain("tabular-nums");
+    expect(html).toContain(">MS<");
+    expect(html).toContain('aria-label="Temperatura: Morno"');
+    expect(html).toContain('aria-label="Etapas da oportunidade"');
+    expect(html).toContain("bg-surface-muted");
+    expect(html).toMatch(/role="tab"[^>]*data-state="active"[^>]*>Oportunidade</);
+    expect(html).toMatch(/role="tab"[^>]*>Oportunidade</);
+  });
+
+  it("detalhes mantêm follow-up, contato, responsável e campanha com controle do sistema", () => {
+    const html = render(
+      { ...base, origemCampanha: "Outubro", proximoFollowUp: new Date("2026-10-21T15:00:00Z") },
+      GERENTE,
+      { abaInicial: "detalhes", fuso: "America/Sao_Paulo" },
+    );
+    expect(html).toMatch(/Próximo follow-up<\/dt><dd[^>]*font-mono tabular-nums[^>]*>/);
+    expect(html).toContain(">Abrir contato</a>");
+    expect(html).toContain("+50688887777");
+    expect(html).toContain("Ana Vendedora");
+    expect(html).toContain("Outubro");
+    expect(html).toContain(CONTROLE_CAMPO);
+  });
+
+  it("arquivos do painel importam CONTROLE_CAMPO e não usam borda nem badge ad-hoc", () => {
+    for (const arquivo of FONTES_PAINEL) {
+      const fonte = readFileSync(arquivo, "utf8");
+      expect(fonte, arquivo).toContain("CONTROLE_CAMPO");
+      expect(fonte, arquivo).not.toContain("border-gray-300");
+      for (const proibido of BADGES_AD_HOC) expect(fonte, `${arquivo} ${proibido}`).not.toContain(proibido);
+    }
+    const painel = readFileSync(FONTES_PAINEL[0]!, "utf8");
+    expect(painel).toContain("Avatar");
+    expect(painel).toContain("BadgeEstado");
+    expect(painel).toContain("BarraEtapas");
+    expect(painel).toContain("font-mono");
+    expect(painel).toContain("tabular-nums");
+  });
 });
 
 describe("entradas autorizadas da conversa (#336)", () => {

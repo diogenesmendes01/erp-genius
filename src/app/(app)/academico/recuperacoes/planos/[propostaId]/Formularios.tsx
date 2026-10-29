@@ -12,6 +12,7 @@ import { MensagemStatus } from "@/components/MensagemStatus";
 import { botaoClasses } from "@/components/Botao";
 import { CampoTexto } from "@/components/CampoTexto";
 import { HABILIDADE_LABEL, rotular } from "@/lib/labels";
+import { CampoCombobox, CampoInstante, Caixa } from "@/app/(app)/academico/controles";
 type Habilidade = typeof HABILIDADES[number];
 type Resposta = { ok: true; dado?: unknown } | { ok: false; erro: string };
 
@@ -27,7 +28,7 @@ export function Formulario({ titulo, executar, children }: { titulo: string; exe
 }
 export function Horario({ rotulo = "Data e horário efetivos", fusoInstitucional, fusoExibicao }: { rotulo?: string; fusoInstitucional: string | null; fusoExibicao?: string }) {
   const [local, setLocal] = useState(""), [fuso, setFuso] = useState(fusoInstitucional ?? "");
-  return <><label className="block">{rotulo}<input name="dataHora" type="datetime-local" step="0.001" required onChange={e => setLocal(e.target.value)} className="block rounded border p-2" /></label>
+  return <><label className="block">{rotulo}<CampoInstante name="dataHora" step="0.001" required onChange={e => setLocal(e.target.value)} className="block rounded border p-2" /></label>
     <label className="block">Fuso desse horário<CampoFuso padrao={fusoInstitucional ?? ""} onChange={setFuso} className="block rounded border p-2" /></label>
     {fusoExibicao ? <PreviaConversao local={local} fuso={fuso} fusoExibicao={fusoExibicao} /> : null}
     <p>Informe o fuso, por exemplo America/Sao_Paulo ou America/Costa_Rica. Horários ambíguos ou inexistentes precisam ser corrigidos.</p></>;
@@ -50,7 +51,7 @@ export function Reservar({ propostaId, propostaHash, saldo }: { propostaId: stri
     if (r.ok) tentativa.current = null;
     return r;
   }}>
-    {saldo.map(h => <label key={h.habilidade} className="block"><input type="checkbox" name={h.habilidade} disabled={h.disponiveis === 0} /> {rotular(HABILIDADE_LABEL, h.habilidade)} — {h.disponiveis} disponíveis</label>)}
+    {saldo.map(h => <label key={h.habilidade} className="block"><Caixa name={h.habilidade} disabled={h.disponiveis === 0} /> {rotular(HABILIDADE_LABEL, h.habilidade)} — {h.disponiveis} disponíveis</label>)}
     <label className="block">Motivo<CampoTexto name="motivo" required minLength={5} maxLength={2000} className="block w-full rounded border p-2" /></label>
   </Formulario>;
 }
@@ -59,7 +60,7 @@ export function Realizar({ itemReservaId, professoresHistoricos = [], somenteHis
   return <Formulario titulo={somenteHistorica ? "Registrar realização histórica" : "Registrar realização"} executar={d => realizarRecuperacaoLocal({ itemReservaId, realizadaPorId: realizadaPorId || undefined, motivoRegularizacao: realizadaPorId ? campo(d, "motivoRegularizacao") : undefined, dataHora: campo(d, "dataHora"), fuso: campo(d, "fuso"), evidencia: campo(d, "evidencia") })}>
     <MensagemStatus texto={somenteHistorica ? "Registre somente uma avaliação comprovadamente realizada antes da pausa ou do encerramento. Uma nova realização continua exigindo autorização específica vigente." : null} />
     <Horario rotulo={somenteHistorica ? "Data e horário históricos da realização" : undefined} fusoInstitucional={fusoInstitucional} fusoExibicao={fusoExibicao} />
-    {professoresHistoricos.length > 0 && <label className="block">Quem realizou a avaliação?<select value={realizadaPorId} onChange={e => setRealizadaPorId(e.target.value)} className="block rounded border p-2"><option value="">Eu realizei</option>{professoresHistoricos.map(p => <option key={p.id} value={p.id}>{p.nome}</option>)}</select></label>}
+    {professoresHistoricos.length > 0 && <label className="block">Quem realizou a avaliação?<CampoCombobox value={realizadaPorId} onChange={e => setRealizadaPorId(e.target.value)} className="block rounded border p-2" placeholder="Eu realizei" vazio="Eu realizei" opcoes={[...professoresHistoricos.map(p => ({ valor: p.id, rotulo: p.nome }))]} /></label>}
     {realizadaPorId && <label className="block">Motivo da regularização<CampoTexto name="motivoRegularizacao" required minLength={5} maxLength={2000} className="block w-full rounded border p-2" /></label>}
     <label className="block">Evidência da avaliação realizada<CampoTexto name="evidencia" required minLength={5} maxLength={4000} className="block w-full rounded border p-2" /></label>
   </Formulario>;

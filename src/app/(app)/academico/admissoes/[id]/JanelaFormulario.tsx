@@ -5,6 +5,7 @@ import { prepararJanelaAdmissao, decidirJanelaAdmissao } from "@/server/matricul
 import { MSG_DECISAO_INCERTA, MSG_RESULTADO_INCERTO } from "@/lib/mensagens";
 import { botaoClasses } from "@/components/Botao";
 import { CampoTexto } from "@/components/CampoTexto";
+import { CampoDia } from "@/app/(app)/academico/controles";
 
 export function JanelaFormulario({ turmaId, versaoAnterior, fusoConferido }: { turmaId: string; versaoAnterior: number; fusoConferido: string }) {
   const router = useRouter(), tentativa = useRef<{ assinatura: string; chave: string } | null>(null);
@@ -29,7 +30,7 @@ export function JanelaFormulario({ turmaId, versaoAnterior, fusoConferido }: { t
   return <form onSubmit={enviar} className="space-y-3 rounded border p-4"><h2 className="font-medium">Preparar nova janela</h2>
     <p>Data final incluída, no fuso {fusoConferido}. A regra vigente só muda após aprovação independente.</p>
     <fieldset disabled={ocupado} className="space-y-3">
-      <label className="block">Último dia para nova admissão<input type="date" required value={limiteEntrada} onChange={(e) => setLimite(e.target.value)} className="mt-1 block rounded border bg-[var(--surface)] p-2" /></label>
+      <label className="block">Último dia para nova admissão<CampoDia required value={limiteEntrada} onChange={(e) => setLimite(e.target.value)} className="mt-1 block rounded border bg-[var(--surface)] p-2" /></label>
       <label className="block">Motivo da janela<CampoTexto required minLength={5} maxLength={2000} value={motivo} onChange={(e) => setMotivo(e.target.value)} className="mt-1 block w-full rounded border bg-[var(--surface)] p-2" /></label>
       <button className={botaoClasses({ tamanho: "lg" })} disabled={motivo.trim().length < 5}>{ocupado ? "Preparando…" : "Preparar para decisão"}</button>
     </fieldset>{erro && <p role="alert">{erro}</p>}

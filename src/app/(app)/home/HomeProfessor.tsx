@@ -10,6 +10,8 @@ import { ConfirmarAcao } from "@/components/ConfirmarAcao";
 import { useAcaoCliente } from "@/lib/acao-cliente";
 import { botaoClasses } from "@/components/Botao";
 import { EstadoVazio } from "@/components/EstadoVazio";
+import { Avatar } from "@/components/Avatar";
+import { BadgeEstado } from "@/components/BadgeEstado";
 
 interface Turma {
   id: string;
@@ -67,22 +69,23 @@ export function HomeProfessor({
       <h1 className="text-2xl font-medium">Olá, {nome.split(" ")[0]}</h1>
 
       {vencidas > 0 && (
-        <p className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
-          <strong>{vencidas}</strong> experimental(is) com <strong>check-in vencido</strong> — registre
+        <p className="flex flex-wrap items-center gap-2 rounded-xl border border-gray-200 bg-surface p-4 text-sm text-gray-700">
+          <BadgeEstado tom="atraso" className="font-mono tabular-nums">{vencidas}</BadgeEstado>
+          experimental(is) com <strong>check-in vencido</strong> — registre
           Compareceu/Faltou: sem o check-in a recuperação de no-show não acontece.
         </p>
       )}
 
       {proxima && (
-        <section className="rounded-lg border border-brand-200 bg-brand-50 p-4">
-          <div className="text-xs font-medium text-brand-700">Próxima aula experimental</div>
-          <div className="mt-1 text-lg font-medium text-gray-800">
+        <section className="rounded-xl border border-gray-200 bg-surface p-4">
+          <BadgeEstado tom="brand">Próxima aula experimental</BadgeEstado>
+          <div className="mt-1 text-lg font-medium text-gray-900">
             {data(proxima.data).texto} ({data(proxima.data).fuso}; origem UTC) · {proxima.nome}
           </div>
         </section>
       )}
 
-      <section className="rounded-lg border border-gray-200 bg-surface p-4">
+      <section className="rounded-xl border border-gray-200 bg-surface p-4">
         <h2 className="mb-3 font-medium">Experimentais para check-in</h2>
         {experimentais.length === 0 ? (
           <EstadoVazio>Nenhuma experimental agendada.</EstadoVazio>
@@ -90,22 +93,18 @@ export function HomeProfessor({
           <ul className="flex flex-col gap-2">
             {experimentais.map((e) => (
               <Fragment key={e.id}>
-              <li
-                className={
-                  "flex items-center justify-between rounded-md px-3 py-2 " +
-                  (e.vencida ? "border border-red-200 bg-red-50" : "bg-gray-50")
-                }
-              >
-                <div className="text-sm">
-                  <span className="font-medium text-gray-800">{e.nome}</span>
-                  <span className="ml-2 text-gray-500">
-                    {data(e.data).texto} ({data(e.data).fuso}; origem UTC)
-                  </span>
-                  {e.vencida && (
-                    <span className="ml-2 rounded-full bg-red-100 px-2 py-0.5 text-xs font-medium text-red-700">
-                      Check-in vencido
+              <li className="flex items-center justify-between gap-3 rounded-lg bg-surface-muted px-3 py-2">
+                <div className="flex min-w-0 items-center gap-2 text-sm">
+                  <Avatar nome={e.nome} tamanho={32} />
+                  <div className="min-w-0">
+                    <span className="font-medium text-gray-900">{e.nome}</span>
+                    <span className="ml-2 text-gray-500">
+                      {data(e.data).texto} ({data(e.data).fuso}; origem UTC)
                     </span>
-                  )}
+                    {e.vencida && (
+                      <span className="ml-2"><BadgeEstado tom="atraso">Check-in vencido</BadgeEstado></span>
+                    )}
+                  </div>
                 </div>
                 <div className="flex gap-2">
                   <button
@@ -149,18 +148,22 @@ export function HomeProfessor({
         </ConfirmarAcao>
       )}
 
-      <section className="rounded-lg border border-gray-200 bg-surface p-4">
+      <section className="rounded-xl border border-gray-200 bg-surface p-4">
         <h2 className="mb-3 font-medium">Minhas turmas</h2>
         {turmas.length === 0 ? (
           <EstadoVazio>Você não tem turmas atribuídas.</EstadoVazio>
         ) : (
           <ul className="flex flex-col gap-2">
             {turmas.map((t) => (
-              <li key={t.id} className="flex items-center justify-between rounded-md border border-gray-100 px-3 py-2">
+              <li key={t.id} className="flex items-center justify-between gap-3 rounded-lg bg-surface-muted px-3 py-2">
                 <Link href={`/alunos/turma/${t.id}`} className="text-sm font-medium text-brand-700 hover:underline">
                   {t.label}
                 </Link>
-                <span className="text-xs text-gray-500">{t.diasHorario ?? "Horário a definir"} · {t.alunos} alunos</span>
+                <span className="flex items-center gap-2 text-xs text-gray-500">
+                  {t.diasHorario ?? <BadgeEstado tom="aviso">Horário a definir</BadgeEstado>}
+                  <BadgeEstado tom="neutro" className="font-mono tabular-nums">{t.alunos}</BadgeEstado>
+                  alunos
+                </span>
               </li>
             ))}
           </ul>

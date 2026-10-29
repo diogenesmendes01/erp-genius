@@ -9,6 +9,7 @@ import { botaoClasses } from "@/components/Botao";
 import { FeedbackAcao } from "@/components/FeedbackAcao";
 import { useAcaoCliente } from "@/lib/acao-cliente";
 import { CampoTexto } from "@/components/CampoTexto";
+import { CampoCombobox, CampoInstante } from "@/app/(app)/academico/controles";
 
 export function Formulario({ propostaId, professores, fusoInstitucional }: {
   propostaId: string;
@@ -42,16 +43,13 @@ export function Formulario({ propostaId, professores, fusoInstitucional }: {
     <p className="text-sm">O início deve estar no passado ou presente e o fim, se informado, deve ser posterior ao início. A designação não concede autorização retroativa: o acesso depende do registro e de sua vigência.</p>
     <fieldset disabled={acao.ocupado} className="space-y-3">
       <label className="block">Professor
-        <select name="professorId" required defaultValue="" className="block rounded border p-2">
-          <option value="" disabled>Selecione</option>
-          {professores.map(professor => <option key={professor.id} value={professor.id}>{professor.nome}</option>)}
-        </select>
+        <CampoCombobox name="professorId" required defaultValue="" className="block rounded border p-2" placeholder="Selecione" opcoes={[...professores.map(professor => ({ valor: professor.id, rotulo: professor.nome }))]} />
       </label>
       <label className="block">Início
-        <input name="inicio" type="datetime-local" step="0.001" required {...periodo.propsInicio} className="block rounded border p-2" />
+        <CampoInstante name="inicio" step="0.001" required {...periodo.propsInicio} className="block rounded border p-2" />
       </label>
       <label className="block">Fim (opcional)
-        <input name="fim" type="datetime-local" step="0.001" min={periodo.min} className="block rounded border p-2" />
+        <CampoInstante name="fim" step="0.001" min={periodo.min} className="block rounded border p-2" />
       </label>
       <label className="block">Fuso IANA
         <CampoFuso padrao={fusoInstitucional ?? ""} className="block rounded border p-2" />

@@ -201,6 +201,7 @@ export const ROTULOS_TRILHA: Record<string, string> = {
 
 export const SEM_PAGINA: Record<string, { href: string; rotulo: string }> = {
   "/matriculas": { href: "/secretaria", rotulo: "Matrículas" },
+  "/oportunidades": { href: "/funil", rotulo: "Funil" },
 };
 
 export type ItemTrilha = { href: string; rotulo: string; atual: boolean };

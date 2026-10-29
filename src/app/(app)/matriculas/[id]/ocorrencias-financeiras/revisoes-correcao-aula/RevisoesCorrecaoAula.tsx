@@ -11,6 +11,7 @@ import { FeedbackAcao } from "@/components/FeedbackAcao";
 import { executarAcaoCliente } from "@/lib/acao-cliente";
 import { botaoClasses } from "@/components/Botao";
 import { CampoTexto } from "@/components/CampoTexto";
+import { GrupoRadio, RadioGroupItem } from "@/app/(app)/secretaria/controles";
 import { EstadoVazio } from "@/components/EstadoVazio";
 
 type Dados = NonNullable<Extract<Awaited<ReturnType<typeof consultarRevisoesFinanceirasCorrecaoAula>>, { ok: true }>["dado"]>;
@@ -60,7 +61,7 @@ export function RevisoesCorrecaoAula({ dados }: { matriculaId: string; dados: Da
     {dados.candidatas.map(p => <article key={p.id} className="rounded border p-4 space-y-2">
       <h2 className="font-medium">Correção de presença v{p.versao} · {data(p.encontro.inicio, p.encontro.fusoOrigem)}</h2>
       {p.podePreparar
-        ? <form onSubmit={e => { e.preventDefault(); preparar(p.id, e.currentTarget); }} className="space-y-2"><fieldset className="space-y-1"><legend>Tipo da revisão</legend>{p.tiposDisponiveis.map((t, i) => <label key={t.tipo} className="block"><input type="radio" name="tipo" value={t.tipo} defaultChecked={i === 0} disabled={ocupado} /> {t.tipo === "AULA_NAO_COBRAVEL" ? `Aula não devia ser cobrada. ${descreverEfeito(t.efeito) ?? ""}` : "Sem alteração de valores (falta e presença equivalentes)."}</label>)}</fieldset><label className="block">Justificativa financeira<CampoTexto name="motivo" required minLength={5} maxLength={3000} disabled={ocupado} className="block w-full rounded border p-2" /></label><button disabled={ocupado} className={botaoClasses({ variante: "secundario", tamanho: "lg" })}>Preparar revisão financeira</button></form>
+        ? <form onSubmit={e => { e.preventDefault(); preparar(p.id, e.currentTarget); }} className="space-y-2"><fieldset className="space-y-1"><legend>Tipo da revisão</legend><GrupoRadio name="tipo" defaultValue={p.tiposDisponiveis[0]?.tipo ?? ""} disabled={ocupado}>{p.tiposDisponiveis.map((t) => <label key={t.tipo} className="flex items-center gap-2"><RadioGroupItem value={t.tipo} /> {t.tipo === "AULA_NAO_COBRAVEL" ? `Aula não devia ser cobrada. ${descreverEfeito(t.efeito) ?? ""}` : "Sem alteração de valores (falta e presença equivalentes)."}</label>)}</GrupoRadio></fieldset><label className="block">Justificativa financeira<CampoTexto name="motivo" required minLength={5} maxLength={3000} disabled={ocupado} className="block w-full rounded border p-2" /></label><button disabled={ocupado} className={botaoClasses({ variante: "secundario", tamanho: "lg" })}>Preparar revisão financeira</button></form>
         : <p>{p.preparoBloqueadoPor}</p>}
       {alvo === `preparar:${p.id}` && erro && <FeedbackAcao erro={erro} />}
     </article>)}

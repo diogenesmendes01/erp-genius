@@ -13,6 +13,7 @@ import { atendimentoVisivel } from "./atendimentos";
 import { escopoAtendimentos } from "./escopo";
 import { SETORES, ehGerenteDoSetor, type Setor } from "./setor";
 import { PRAZO_MAXIMO_CONVITE_DIAS } from "./participantes";
+import { podeAmpliarAcessoAoLead } from "./visibilidade-lead";
 
 import { comoErroRegra } from "./erro-regra-atendimento";
 
@@ -23,6 +24,7 @@ import { atribuirAtendimentoTx, transferirAtendimentoTx, exigirResponsavelEnxerg
 const MSG_JA_ASSUMIDO = "Outro atendente já assumiu este atendimento.";
 const MSG_FORA_DO_ESCOPO = "Atendimento fora do seu escopo.";
 const MSG_SEM_ALCADA = "Sua função não autoriza esta ação neste atendimento.";
+const MSG_CONVITE_FORA_DA_CARTEIRA = "Convidar pessoas nesta conversa cabe a quem tem a oportunidade na carteira ou à gerência comercial.";
 
 const MOTIVO_CANCELAMENTO_REVOGADO = "Convite de participante revogado; revisar antes de enviar.";
 
@@ -155,6 +157,7 @@ export async function convidarParticipante(input: { atendimentoId: string; usuar
       if (!a) throw new ErroRegra(MSG_FORA_DO_ESCOPO);
       if (a.encerradoEm) throw new ErroRegra("Atendimento encerrado.");
       if (!podeExecutar(u, "convidar", { setor: a.finalidade, responsavelId: a.responsavelId })) throw new ErroRegra(MSG_SEM_ALCADA);
+      if (!await podeAmpliarAcessoAoLead(u, a, tx)) throw new ErroRegra(MSG_CONVITE_FORA_DA_CARTEIRA);
       if (dados.usuarioId === u.id) throw new ErroRegra("Você não pode convidar a si mesmo.");
       const alvo = await tx.usuario.findUnique({ where: { id: dados.usuarioId }, select: { ativo: true } });
       if (!alvo?.ativo) throw new ErroRegra("A pessoa escolhida não está ativa.");

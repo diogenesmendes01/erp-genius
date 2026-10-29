@@ -25,6 +25,7 @@ vi.mock("@/server/_shared", async (original) => {
 });
 
 import { decidirAprovacao } from "./acoes";
+import { registrarEvento } from "@/server/_shared";
 import { escopoMatriculaAprovacao } from "@/server/financeiro/acesso";
 
 beforeEach(() => {
@@ -45,6 +46,19 @@ beforeEach(() => {
 });
 
 describe("aprovação independente na equipe atual", () => {
+  it("rejeição exige motivo, preserva a justificativa do pedido e grava a recusa no evento", async () => {
+    expect((await decidirAprovacao("pedido", { aprovar: false, motivo: "não" })).ok).toBe(false);
+    expect(m.aprovacao.update).not.toHaveBeenCalled();
+    expect((await decidirAprovacao("pedido", { aprovar: false, motivo: "preço alto demais" })).ok).toBe(true);
+    const data = m.aprovacao.update.mock.calls[0][0].data;
+    expect(data.status).toBe("REJEITADA");
+    expect(data).not.toHaveProperty("motivo");
+    expect(registrarEvento).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({
+      tipo: "AprovacaoDecidida",
+      payload: expect.objectContaining({ status: "REJEITADA", motivo: "preço alto demais", motivoRejeicao: "preço alto demais" }),
+    }));
+  });
+
   it("aprova o desconto da equipe dentro da alçada", async () => {
     expect((await decidirAprovacao("pedido", { aprovar: true })).ok).toBe(true);
     expect(m.cobranca.update).toHaveBeenCalledOnce();

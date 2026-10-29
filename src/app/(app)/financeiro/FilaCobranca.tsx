@@ -1,6 +1,6 @@
 "use client";
 
-import { useId, useRef, useState, type KeyboardEvent } from "react";
+import { useState, type KeyboardEvent } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { TIPO_COBRANCA_LABEL, STATUS_INTENCAO_LABEL, rotular } from "@/lib/labels";
@@ -17,7 +17,6 @@ import { ConfirmarAcao } from "@/components/ConfirmarAcao";
 import { AcessoAulasPainel } from "./AcessoAulasPainel";
 import { formatarDiaCivilGravado, formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
 import { MensagemStatus } from "@/components/MensagemStatus";
-import { useDialogo } from "@/lib/dialogo";
 import { formatarCompetencia } from "@/lib/data-civil";
 import { botaoClasses } from "@/components/Botao";
 import { MSG_RESULTADO_INCERTO_SEM_CHAVE } from "@/lib/mensagens";
@@ -38,6 +37,10 @@ import {
   type IndicadorFila,
 } from "@/server/cobrancas/filtros-fila";
 
+import { CampoCombobox } from "@/components/ui/combobox";
+import { DatePicker } from "@/components/ui/date-picker";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Sheet, SheetContent, SheetFooter, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 const btnPri = botaoClasses();
 const btnSec = botaoClasses({ variante: "secundario", tamanho: "sm" });
 
@@ -57,11 +60,11 @@ function chipCls(item: FilaCobrancaItem): string {
   if (item.precisaBloqueio) return "bg-red-100 text-red-700";
   if (item.acessoBloqueado) return "bg-red-100 text-red-700";
   if (item.estado === "promessa") return "bg-blue-100 text-blue-700";
-  if (item.estado === "concluida") return "bg-gray-100 text-gray-500";
+  if (item.estado === "concluida") return "bg-surface-muted text-gray-500";
   if (item.tipoAcao === "lembrar") return "bg-green-100 text-green-700";
   if (item.tipoAcao === "cobrar") return "bg-amber-100 text-amber-700";
   if (item.tipoAcao === "bloquear") return "bg-red-100 text-red-700";
-  return "bg-gray-100 text-gray-600";
+  return "bg-surface-muted text-gray-600";
 }
 
 function rotuloAcaoCurto(item: FilaCobrancaItem, fusoEscola: string): string {
@@ -271,7 +274,7 @@ export function FilaCobranca({
             aria-pressed={filtros.indicador === d.chave}
             className={
               "block rounded-lg border bg-surface p-3 text-left transition " +
-              (filtros.indicador === d.chave ? "border-brand-500 ring-1 ring-brand-500" : "border-gray-200 hover:border-gray-300")
+              (filtros.indicador === d.chave ? "border-brand-500 ring-1 ring-brand-500" : "border-gray-200 hover:border-gray-200")
             }
           >
             <div className={"text-2xl font-medium " + d.cls}>{d.valor}</div>
@@ -306,28 +309,10 @@ export function FilaCobranca({
           maxLength={100}
           aria-label="Buscar cobrança por aluno ou código"
           placeholder="Buscar aluno ou código…"
-          className="w-48 rounded-md border border-gray-300 px-3 py-1.5 text-sm outline-none focus:border-brand-500"
+          className="w-48 rounded-md border border-gray-200 px-3 py-1.5 text-sm outline-none focus:border-brand-500"
         />
-        <select
-          name="pais"
-          value={lista.campos.pais}
-          onChange={lista.mudarSelect("pais")}
-          aria-label="Filtrar por país"
-          className="rounded-md border border-gray-300 px-2 py-1.5 text-sm outline-none focus:border-brand-500"
-        >
-          <option value="">Todos os países</option>
-          {opcoes.paises.map((p) => <option key={p} value={p}>{p}</option>)}
-        </select>
-        <select
-          name="turma"
-          value={lista.campos.turma}
-          onChange={lista.mudarSelect("turma")}
-          aria-label="Filtrar por turma"
-          className="rounded-md border border-gray-300 px-2 py-1.5 text-sm outline-none focus:border-brand-500"
-        >
-          <option value="">Todas as turmas</option>
-          {opcoes.turmas.map((t) => <option key={t} value={t}>{t}</option>)}
-        </select>
+        <CampoCombobox name="pais" value={lista.campos.pais} onChange={lista.mudarSelect("pais")} className="rounded-md border border-gray-200 px-2 py-1.5 text-sm outline-none focus:border-brand-500" aria-label="Filtrar por país" vazio={"Todos os países"} opcoes={opcoes.paises.map((p) => ({ valor: String(p), rotulo: p }))} />
+        <CampoCombobox name="turma" value={lista.campos.turma} onChange={lista.mudarSelect("turma")} className="rounded-md border border-gray-200 px-2 py-1.5 text-sm outline-none focus:border-brand-500" aria-label="Filtrar por turma" vazio={"Todas as turmas"} opcoes={opcoes.turmas.map((t) => ({ valor: String(t), rotulo: t }))} />
         {filtros.indicador && <input type="hidden" name="indicador" value={filtros.indicador} />}
         <button type="submit" disabled={lista.buscando} className={botaoClasses({ variante: "secundario" })}>
           {lista.buscando ? "Buscando…" : "Buscar"}
@@ -363,17 +348,11 @@ export function FilaCobranca({
           {itens.map((item) => (
             <div
               key={item.id}
-              className="relative border-b border-gray-100 px-4 py-3 last:border-0 hover:bg-gray-50 has-[button:focus-visible]:bg-gray-50"
+              className="relative border-b border-gray-100 px-4 py-3 last:border-0 hover:bg-highlight has-[button:focus-visible]:bg-highlight"
             >
               <div className="flex items-center gap-2">
                 {podeOperar && elegivelLote(item) && (
-                  <input
-                    type="checkbox"
-                    aria-label={`Selecionar ${item.aluno.nome} para o lote`}
-                    className="relative z-10 h-3.5 w-3.5 accent-brand-600"
-                    checked={selecao.has(item.id)}
-                    onChange={() => alternarSelecao(item)}
-                  />
+                  <Checkbox className="relative z-10" checked={selecao.has(item.id)} aria-label={`Selecionar ${item.aluno.nome} para o lote`} onCheckedChange={() => alternarSelecao(item)} />
                 )}
                 <button
                   type="button"
@@ -613,25 +592,17 @@ export function DetalheCobranca({
     }
   }
 
-  const painel = useRef<HTMLDivElement>(null);
-  const tituloId = useId();
-  useDialogo(painel, { aberto: true, aoFechar: onClose, bloquearFechamento: manualOcupado });
-
   return (
-    <div className="fixed inset-0 z-50 flex justify-end bg-black/60" onClick={() => { if (!manualOcupado) onClose(); }}>
-      <div
-        ref={painel}
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby={tituloId}
-        tabIndex={-1}
-        className="h-full w-full max-w-md overflow-y-auto border-s border-gray-200 bg-surface-raised shadow-dialog"
-        onClick={(e) => e.stopPropagation()}
+    <Sheet open onOpenChange={(aberto) => { if (!aberto && !manualOcupado) onClose(); }}>
+      <SheetContent
+        side="right"
+        className="h-full w-full max-w-md gap-0 overflow-y-auto p-0"
+        onPointerDownOutside={(e) => { if (manualOcupado) e.preventDefault(); }}
+        onEscapeKeyDown={(e) => { if (manualOcupado) e.preventDefault(); }}
       >
-        <div className="flex items-center justify-between border-b border-gray-200 px-5 py-3">
-          <h2 id={tituloId} className="text-sm font-medium">Detalhe da cobrança</h2>
-          <button type="button" aria-label="Fechar detalhe da cobrança" className="text-gray-400 hover:text-gray-700 disabled:opacity-50" disabled={manualOcupado} onClick={onClose}>✕</button>
-        </div>
+        <SheetHeader className="border-b border-gray-200 px-5 py-3 pe-14">
+          <SheetTitle className="text-sm">Detalhe da cobrança</SheetTitle>
+        </SheetHeader>
 
         <div className="px-5 py-4">
           <div className="flex flex-wrap items-center gap-2">
@@ -679,7 +650,7 @@ export function DetalheCobranca({
             )}
             <CampoTexto
               aria-label="Mensagem de cobrança"
-              className="w-full rounded-md border border-gray-300 p-2 text-sm outline-none focus:border-brand-500"
+              className="w-full rounded-md border border-gray-200 p-2 text-sm outline-none focus:border-brand-500"
               rows={3}
               value={texto}
               disabled={manualOcupado}
@@ -731,7 +702,7 @@ export function DetalheCobranca({
               const feito = item.passosFeitos.includes(deg.passo);
               const atual = item.passo === deg.passo && item.estado === "acao_devida";
               const data = dataCivilComDeslocamento(item.vencimento, deg.offsetDias);
-              const cor = feito ? "bg-success" : atual ? "bg-amber-600" : deg.tipo === "bloquear" ? "border border-danger bg-surface" : "border border-gray-300 bg-surface";
+              const cor = feito ? "bg-success" : atual ? "bg-amber-600" : deg.tipo === "bloquear" ? "border border-danger bg-surface" : "border border-gray-200 bg-surface";
               return (
                 <li key={deg.passo} className="mb-2.5">
                   <span className={"absolute -left-[7px] mt-1 h-3 w-3 rounded-full " + cor} />
@@ -748,7 +719,7 @@ export function DetalheCobranca({
 
         {podeOperar && <div className="px-5 pb-4"><AcessoAulasPainel matriculaId={item.matriculaId} preferenciaFusoExibicao={preferenciaFusoExibicao} /></div>}
 
-        <div className="border-t border-gray-200 px-5 py-3">
+        <SheetFooter className="mt-auto flex-col items-stretch gap-0 border-t border-gray-200 px-5 py-3 sm:flex-col sm:justify-start">
           <div className="flex flex-wrap gap-2">
             {podeOperar && <button className={btnSec} onClick={onPagar}>Registrar pagamento</button>}
             {podeOperar && (
@@ -757,13 +728,10 @@ export function DetalheCobranca({
           </div>
           {mostrarPromessa && (
             <div className="mt-3 flex items-center gap-2">
-              <input
-                type="date"
-                aria-label="Data da promessa de pagamento"
-                className="rounded-md border border-gray-300 px-2 py-1 text-sm outline-none focus:border-brand-500"
+              <DatePicker aria-label="Data da promessa de pagamento"
+                className="rounded-md border border-gray-200 px-2 py-1 text-sm outline-none focus:border-brand-500"
                 value={promessaData}
-                onChange={(e) => setPromessaData(e.target.value)}
-              />
+                onChange={(e) => setPromessaData(e.target.value)} />
               <button
                 className={btnPri}
                 disabled={!promessaData}
@@ -785,8 +753,8 @@ export function DetalheCobranca({
               Ver ficha →
             </Link>
           </div>
-        </div>
-      </div>
-    </div>
+        </SheetFooter>
+      </SheetContent>
+    </Sheet>
   );
 }

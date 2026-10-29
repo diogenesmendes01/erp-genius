@@ -4,7 +4,7 @@ import { beforeEach,afterEach,expect,it,vi } from "vitest";
 import { criarDomMinimo,desligarObservadores,type Elemento } from "@/test/dom-minimo";
 import type { PropsCompositor } from "./Compositor";
 import type { PortaRascunhoInsight } from "./rascunho-insight";
-vi.mock("@tabler/icons-react",()=>Object.fromEntries(["IconCalendarEvent","IconMicrophone","IconMoodSmile","IconPaperclip","IconPlayerStop","IconSend","IconTrash","IconBolt","IconCamera","IconFileCheck","IconFileText","IconListCheck","IconMapPin","IconPhoto","IconUser"].map(k=>[k,()=>null])));
+vi.mock("@tabler/icons-react",()=>Object.fromEntries(["IconCalendarEvent","IconMicrophone","IconMoodSmile","IconPaperclip","IconPlayerStop","IconSend","IconTrash","IconBolt","IconCamera","IconFileCheck","IconBook","IconFileText","IconListCheck","IconMapPin","IconPhoto","IconUser"].map(k=>[k,()=>null])));
 let root:Root,host:Elemento,Compositor:typeof import("./Compositor").Compositor,porta:PortaRascunhoInsight|null;
 const storage=new Map<string,string>(),enviar=vi.fn(),publicar=(p:PortaRascunhoInsight|null)=>{porta=p;};
 const props=(p:Partial<PropsCompositor>={}):PropsCompositor=>({atendimentoId:"A",modo:"responder",podeEnviar:true,capacidades:[],aoEnviarTexto:enviar,aoEnviarMidia:enviar,aoNota:enviar,aoPortaRascunhoInsight:publicar,...p});

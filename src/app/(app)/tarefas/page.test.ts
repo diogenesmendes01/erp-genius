@@ -12,6 +12,7 @@ const mocks = vi.hoisted(() => ({
   obter: vi.fn(async () => null as unknown),
   responsaveis: vi.fn(async () => [] as unknown[]),
   fusoPref: vi.fn(async () => null as string | null),
+  mensagem: vi.fn(async () => null as { id: string; status: "PENDENTE"; agendadaPara: string; quando: string } | null),
 }));
 vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh: () => {}, push: () => {}, replace: () => {} }) }));
 vi.mock("@/server/_shared", () => ({ exigirSessaoPagina: async () => mocks.usuario.valor }));
@@ -27,6 +28,7 @@ vi.mock("@/server/crm/tarefas-acoes", () => ({
 }));
 
 vi.mock("@/server/inbox/atalhos", () => ({ atendimentoParaAbrir: mocks.conversa }));
+vi.mock("@/server/inbox/mensagem-agendada-tarefa", () => ({ resumoMensagemAgendadaDaTarefa: mocks.mensagem }));
 import Page from "./page";
 
 const t1 = {
@@ -43,6 +45,8 @@ const vendedor = ["VENDEDOR"];
 describe("/tarefas (página)", () => {
   beforeEach(() => {
     mocks.obter.mockResolvedValue(null);
+    mocks.mensagem.mockReset();
+    mocks.mensagem.mockResolvedValue(null);
     mocks.config.mockResolvedValue({ fusoInstitucional: "America/Costa_Rica" });
   });
 
@@ -51,11 +55,16 @@ describe("/tarefas (página)", () => {
 
   it("deep link ?t= abre o painel; vendedor não vê Equipe", async () => {
     mocks.obter.mockResolvedValue(t1);
+    mocks.mensagem.mockResolvedValue({ id: "m1", status: "PENDENTE", agendadaPara: "2026-10-29T16:00:00.000Z", quando: "29/10 10:00" });
     const html = await renderPagina(vendedor, { t: "t1" });
     expect(html).toContain('role="dialog"');
     expect(html).toContain("Ligar para Maria");
+    expect(html).toContain("Mensagem agendada · 29/10 10:00");
     expect(mocks.obter).toHaveBeenCalledWith(expect.objectContaining({ id: "u1" }), "t1");
+    expect(mocks.mensagem).toHaveBeenCalledWith(expect.anything(), "t1", "America/Costa_Rica");
+    mocks.mensagem.mockClear();
     expect(await renderPagina(vendedor, {})).not.toContain(">Equipe<");
+    expect(mocks.mensagem).not.toHaveBeenCalled();
   });
 
   it("gerente vê Minhas e Equipe e o escopo vai para a consulta", async () => {
@@ -87,9 +96,10 @@ describe("/tarefas (página)", () => {
 });
 
 it("#336 não consulta em lista/nova/negada; tarefa autorizada fornece seus três vínculos", async () => {
-  mocks.obter.mockResolvedValue(null); mocks.conversa.mockClear();
+  mocks.obter.mockResolvedValue(null); mocks.conversa.mockClear(); mocks.mensagem.mockClear();
   await renderPagina(vendedor, {}); await renderPagina(vendedor, { t: "nova" }); await renderPagina(vendedor, { t: "fora" });
   expect(mocks.conversa).not.toHaveBeenCalled();
+  expect(mocks.mensagem).not.toHaveBeenCalled();
   mocks.obter.mockResolvedValue({ ...t1, atendimentoId: "a336", leadId: "l336", pessoaId: "p336" });
   const html = await renderPagina(vendedor, { t: "t1" });
   expect(mocks.conversa).toHaveBeenCalledExactlyOnceWith(expect.objectContaining({ id: "u1" }), { atendimentoId: "a336", leadId: "l336", pessoaId: "p336" });

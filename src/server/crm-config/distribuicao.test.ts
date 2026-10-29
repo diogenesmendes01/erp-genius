@@ -41,6 +41,7 @@ describe("atribuirAutomaticamente (tx mockada)", () => {
       prazoRespostaSetor: { findUniqueOrThrow: vi.fn().mockResolvedValue(cfg), update: vi.fn().mockResolvedValue({}) },
       usuario: { findMany: vi.fn().mockResolvedValue(ativos.map((id) => ({ id }))), findFirst: vi.fn() },
       oportunidade: { findUnique: vi.fn() },
+      coberturaCarteira: { findMany: vi.fn().mockResolvedValue([]) },
     };
     return { tx, comoTx: tx as unknown as Prisma.TransactionClient };
   }
@@ -67,6 +68,50 @@ describe("atribuirAutomaticamente (tx mockada)", () => {
       expect(tx.prazoRespostaSetor.update).not.toHaveBeenCalled();
     }
     expect(registrarEvento).not.toHaveBeenCalled();
+  });
+
+  it("cobertura_ativa_redireciona_a_carteira_ao_substituto", async () => {
+    const { tx, comoTx } = txCom(novo({ leadId: "lead" }), { regraDistribuicao: "RODIZIO", participantesIds: ["titular"], ultimoAtribuidoId: null });
+    tx.oportunidade.findUnique.mockResolvedValue({ vendedorDonoId: "titular" });
+    tx.coberturaCarteira.findMany.mockResolvedValue([{ titularId: "titular", substitutoId: "sub", substituto: { ativo: true } }]);
+    expect(await atribuirAutomaticamente(comoTx, "at1")).toBe("sub");
+    expect(registrarEvento).toHaveBeenCalledWith(comoTx, expect.objectContaining({
+      payload: { atendimentoId: "at1", responsavelId: "sub", motivo: "CARTEIRA", titularId: "titular", cobertura: true },
+    }));
+    expect(tx.prazoRespostaSetor.update).not.toHaveBeenCalled();
+  });
+
+  it("cobertura_encadeada_segue_ate_o_substituto_livre", async () => {
+    const { tx, comoTx } = txCom(novo({ leadId: "lead" }), { regraDistribuicao: "RODIZIO", participantesIds: ["a", "b", "c"], ultimoAtribuidoId: null });
+    tx.oportunidade.findUnique.mockResolvedValue({ vendedorDonoId: "a" });
+    tx.coberturaCarteira.findMany.mockResolvedValue([
+      { titularId: "b", substitutoId: "c", substituto: { ativo: true } },
+      { titularId: "a", substitutoId: "b", substituto: { ativo: true } },
+    ]);
+    expect(await atribuirAutomaticamente(comoTx, "at1")).toBe("c");
+    expect(registrarEvento).toHaveBeenCalledWith(comoTx, expect.objectContaining({
+      payload: { atendimentoId: "at1", responsavelId: "c", motivo: "CARTEIRA", titularId: "a", cobertura: true },
+    }));
+    expect(tx.prazoRespostaSetor.update).not.toHaveBeenCalled();
+  });
+
+  it("cobertura_em_ciclo_cai_na_roleta_dos_disponiveis", async () => {
+    const { tx, comoTx } = txCom(novo({ leadId: "lead" }), { regraDistribuicao: "RODIZIO", participantesIds: ["a", "b", "livre"], ultimoAtribuidoId: null });
+    tx.oportunidade.findUnique.mockResolvedValue({ vendedorDonoId: "a" });
+    tx.coberturaCarteira.findMany.mockResolvedValue([
+      { titularId: "a", substitutoId: "b", substituto: { ativo: true } },
+      { titularId: "b", substitutoId: "a", substituto: { ativo: true } },
+    ]);
+    expect(await atribuirAutomaticamente(comoTx, "at1")).toBe("livre");
+    expect(registrarEvento).toHaveBeenCalledWith(comoTx, expect.objectContaining({
+      payload: { atendimentoId: "at1", responsavelId: "livre", motivo: "RODIZIO" },
+    }));
+  });
+
+  it("cobertura_ativa_pausa_o_titular_na_roleta", async () => {
+    const { tx, comoTx } = txCom(novo(), { regraDistribuicao: "RODIZIO", participantesIds: ["titular", "outro"], ultimoAtribuidoId: null });
+    tx.coberturaCarteira.findMany.mockResolvedValue([{ titularId: "titular", substitutoId: "sub", substituto: { ativo: false } }]);
+    expect(await atribuirAutomaticamente(comoTx, "at1")).toBe("outro");
   });
 
   it("manual_ou_setor_sem_linha_fica_na_fila", async () => {

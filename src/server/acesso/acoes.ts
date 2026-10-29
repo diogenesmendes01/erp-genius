@@ -12,6 +12,8 @@ import {
   ErroPermissao,
   type Resultado,
 } from "@/server/_shared";
+import { marcaIdempotencia, repeticaoIdempotente } from "@/server/_shared/idempotencia";
+import { ChaveIdempotenciaSchema } from "@/server/_shared/validacao";
 import {
   CriarUsuarioSchema,
   EditarUsuarioSchema,
@@ -34,18 +36,25 @@ async function bloquearUsuarios(tx: Prisma.TransactionClient, autorId: string, i
   if (!autor?.ativo || !autor.papeis.includes(Papel.ADMINISTRADOR)) throw new ErroPermissao();
 }
 
-export async function criarUsuario(input: CriarUsuarioInput): Promise<Resultado<{ id: string }>> {
+export async function criarUsuario(input: CriarUsuarioInput & { chaveIdempotencia?: string }): Promise<Resultado<{ id: string }>> {
   return executarAcao(async () => {
     const autor = await exigirSessaoComPapel(Papel.ADMINISTRADOR);
     const dados = CriarUsuarioSchema.parse(input);
-    await validarGerente(dados.gerenteComercialId);
+    const { senha, ...semSenha } = dados;
+    const marca = marcaIdempotencia(ChaveIdempotenciaSchema.optional().parse(input.chaveIdempotencia), semSenha);
 
-    const existe = await prisma.usuario.findUnique({ where: { email: dados.email } });
-    if (existe) throw new ErroRegra("Já existe usuário com esse e-mail.");
-
-    const senhaHash = await bcrypt.hash(dados.senha, 10);
+    const senhaHash = await bcrypt.hash(senha, 10);
     const id = await prisma.$transaction(async (tx) => {
       await bloquearUsuarios(tx, autor.id, dados.gerenteComercialId ? [dados.gerenteComercialId] : []);
+      if (marca) {
+        const repetido = await repeticaoIdempotente(tx, {
+          tipo: "UsuarioCriado", agregadoTipo: "Usuario", autorId: autor.id, marca,
+          mensagemConflito: "Esta tentativa já foi usada com outros dados. Recarregue a página e confira se o usuário já aparece antes de repetir.",
+        });
+        if (repetido) return repetido.agregadoId;
+      }
+      const existe = await tx.usuario.findUnique({ where: { email: dados.email } });
+      if (existe) throw new ErroRegra("Já existe usuário com esse e-mail.");
       await validarGerente(dados.gerenteComercialId, undefined, tx);
       const u = await tx.usuario.create({
         data: {
@@ -66,7 +75,7 @@ export async function criarUsuario(input: CriarUsuarioInput): Promise<Resultado<
         agregadoTipo: "Usuario",
         agregadoId: u.id,
         autorId: autor.id,
-        payload: { nome: u.nome, email: u.email, papeis: dados.papeis, permissoes: dados.permissoes, gerenteComercialId: dados.gerenteComercialId, limiteTaxa: dados.limiteDescontoTaxaPct, limiteMensalidade: dados.limiteDescontoMensalidadePct },
+        payload: { nome: u.nome, email: u.email, papeis: dados.papeis, permissoes: dados.permissoes, gerenteComercialId: dados.gerenteComercialId, limiteTaxa: dados.limiteDescontoTaxaPct, limiteMensalidade: dados.limiteDescontoMensalidadePct, ...marca },
       });
       return u.id;
     });

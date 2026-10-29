@@ -9,6 +9,7 @@ import { useAcaoCliente } from "@/lib/acao-cliente";
 import { CampoTexto } from "@/components/CampoTexto";
 import { EstadoVazio } from "@/components/EstadoVazio";
 import { rotular } from "@/lib/labels";
+import { CampoSelect, CampoDia, CampoRelogio, SelectItem } from "@/app/(app)/academico/controles";
 
 type Dados = NonNullable<Extract<Awaited<ReturnType<typeof consultarOcorrenciasParticular>>, { ok: true }>["dado"]>;
 const nomes: Record<string, string> = { REALIZADA: "Aula realizada", FALTA_ALUNO: "Aluno faltou", CANCELAMENTO_ALUNO: "Cancelada pelo aluno", CANCELAMENTO_ESCOLA: "Cancelada pela escola" };
@@ -33,12 +34,10 @@ export function OcorrenciaParticular({ dados, fusoExibicao }: { dados: Dados; fu
       const d = await acao.executar(() => registrarOcorrenciaParticular({ ...entrada, chaveIdempotencia: chave.current.valor }), "Informe registrado. A conferência financeira permanece separada.");
       if (d?.tipo === "ok") router.refresh();
     }}>
-      <label className="block">Ocorrência<select name="tipo" required disabled={ocupado} className="ml-2 rounded border p-2">
-        {(dados.podeInformarCancelamento ? [dados.origemCancelamento === "ALUNO" ? "CANCELAMENTO_ALUNO" : "CANCELAMENTO_ESCOLA"] : ["REALIZADA", "FALTA_ALUNO"]).map(t => <option key={t} value={t}>{nomes[t]}</option>)}
-      </select></label>
+      <label className="block">Ocorrência<CampoSelect name="tipo" required disabled={ocupado} className="ml-2 rounded border p-2" placeholder="Selecionar">{(dados.podeInformarCancelamento ? [dados.origemCancelamento === "ALUNO" ? "CANCELAMENTO_ALUNO" : "CANCELAMENTO_ESCOLA"] : ["REALIZADA", "FALTA_ALUNO"]).map(t => <SelectItem key={t} value={t}>{nomes[t]}</SelectItem>)}</CampoSelect></label>
       {dados.podeInformarCancelamento && <fieldset className="space-y-2"><legend>Quando o cancelamento foi comunicado? Horário de {dados.fuso}</legend>
-        <label className="block">Data<input type="date" name="data" required disabled={ocupado} className="ml-2 rounded border p-2" /></label>
-        <label className="block">Hora<input type="time" name="hora" required disabled={ocupado} className="ml-2 rounded border p-2" /></label>
+        <label className="block">Data<CampoDia name="data" required disabled={ocupado} className="ml-2 rounded border p-2" /></label>
+        <label className="block">Hora<CampoRelogio name="hora" required disabled={ocupado} className="ml-2 rounded border p-2" /></label>
       </fieldset>}
       <label className="block">Evidência ou motivo da atualização<CampoTexto name="evidencia" required minLength={5} maxLength={2000} disabled={ocupado} className="block w-full rounded border p-2" /></label>
       <button type="submit" disabled={ocupado} className={botaoClasses({ tamanho: "lg" })}>{ocupado ? "Registrando…" : dados.versaoAtual ? "Registrar nova versão" : "Registrar ocorrência"}</button>

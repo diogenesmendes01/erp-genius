@@ -33,6 +33,14 @@ it("reagendar público converte local no servidor e delega intenção/ator selec
  expect(await acao("reagendarAgendamentoDoAtendimento")({atendimentoId:"a",intencaoId:"i",quandoLocal:"2035-01-02T10:00",fuso:"America/Sao_Paulo",chaveIdempotencia:"reagendar-publica-362"})).toEqual({ok:true,dado:{id:"nova"}});
  expect(m.core).toHaveBeenCalledExactlyOnceWith(m.db,"ator",{tipo:"REAGENDAR",atendimentoId:"a",intencaoId:"i",agendadaPara:"2035-01-02T13:00:00.000Z",chaveIdempotencia:"reagendar-publica-362"});expect(m.db.$transaction).not.toHaveBeenCalled();
 });
+it("editar público converte local no servidor e delega texto e horário ao núcleo",async()=>{
+ expect(await acao("editarAgendamentoDoAtendimento")({atendimentoId:"a",intencaoId:"i",texto:"Novo texto",quandoLocal:"2035-01-02T10:00",fuso:"America/Sao_Paulo",chaveIdempotencia:"editar-publica-374"})).toEqual({ok:true,dado:{id:"nova"}});
+ expect(m.core).toHaveBeenCalledExactlyOnceWith(m.db,"ator",{tipo:"EDITAR",atendimentoId:"a",intencaoId:"i",texto:"Novo texto",agendadaPara:"2035-01-02T13:00:00.000Z",chaveIdempotencia:"editar-publica-374"});
+ expect(m.revalidar.mock.calls.map(([path])=>path).sort()).toEqual(["/inbox","/inicio","/tarefas"].sort());
+});
+it("editar público com fuso inválido recusa antes do núcleo",async()=>{
+ expect((await acao("editarAgendamentoDoAtendimento")({atendimentoId:"a",intencaoId:"i",texto:"Novo",quandoLocal:"2035-01-02T10:00",fuso:"Fuso/Ficticio"})).ok).toBe(false);expect(m.core).not.toHaveBeenCalled();
+});
 it("enviar agora público delega sem relógio ou dispatch no wrapper",async()=>{
  expect(await acao("enviarAgendamentoAgoraDoAtendimento")({atendimentoId:"a",intencaoId:"i",chaveIdempotencia:"enviar-publica-362"})).toEqual({ok:true,dado:{id:"nova"}});
  expect(m.core).toHaveBeenCalledExactlyOnceWith(m.db,"ator",{tipo:"ENVIAR_AGORA",atendimentoId:"a",intencaoId:"i",chaveIdempotencia:"enviar-publica-362"});expect(m.db.$transaction).not.toHaveBeenCalled();

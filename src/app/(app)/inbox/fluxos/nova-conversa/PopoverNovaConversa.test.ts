@@ -17,7 +17,7 @@ describe("portabilidade dos estados de abertura existentes #361", () => {
   expect(painel({ destinos: [destino], numeros: [], comercial: false })).toContain("A administração precisa disponibilizar um canal ativo");
  });
  it("busca tem label vinculada e campo fluido de raio canônico", () => {
-  const html = painel({ destinos: [destino], numeros: [], comercial: false }); expect(html).toMatch(/<label[^>]*for="[^"]+"/); expect(html).toContain('type="search"'); expect(html).toContain("Nome ou número com DDD"); expect(html).toContain("w-full rounded-md border border-gray-300");
+  const html = painel({ destinos: [destino], numeros: [], comercial: false }); expect(html).toMatch(/<label[^>]*for="[^"]+"/); expect(html).toContain('type="search"'); expect(html).toContain("Nome ou número com DDD"); expect(html).toContain("w-full rounded-md border border-gray-200");
  });
  it("destino indisponível mantém impedimento e botão desabilitado", () => {
   const html = painel({ destinos: [{ ...destino, disponivel: false, impedimento: "Destinatário indisponível" }], numeros: [], comercial: false }); expect(html).toContain("Destinatário indisponível"); expect(html).toContain('disabled=""');

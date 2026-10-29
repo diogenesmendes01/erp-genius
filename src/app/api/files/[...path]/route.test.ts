@@ -63,6 +63,8 @@ describe("GET /api/files/[...path]", () => {
     const res = await GET(req, ctx(["123-comprovante.pdf"]));
     expect(res.status).toBe(200);
     expect(res.headers.get("Content-Type")).toBe("application/pdf");
+    expect(res.headers.get("Content-Disposition")).toBe('inline; filename="123-comprovante.pdf"');
+    expect(res.headers.get("X-Content-Type-Options")).toBe("nosniff");
     expect(res.headers.get("Cache-Control")).toBe("private, no-store");
     expect(await res.text()).toBe("PDFDATA");
     expect(readFileMock).toHaveBeenCalled();

@@ -24,11 +24,22 @@ vi.mock("@/server/financeiro/permuta-servico", () => ({
 
 }));
 
+import { CampoCombobox } from "@/components/ui/combobox";
+import { CampoSelect } from "@/components/ui/select";
+import { Collapsible } from "@/components/ui/collapsible";
 import { DecidirCompensacao, PermutaOperacional } from "./PermutaOperacional";
 
 type No = { type?: unknown; props?: Record<string, unknown> };
 
-function todos(no: unknown, tipo: string): No[] {
+const NAO_EXECUTAR = new Set<unknown>([CampoCombobox, CampoSelect]);
+
+function filhos(atual: No): unknown {
+  if (NAO_EXECUTAR.has(atual.type)) return atual.props?.children;
+  if (typeof atual.type === "function") return (atual.type as (props: Record<string, unknown>) => unknown)(atual.props ?? {});
+  return atual.props?.children;
+}
+
+function todos(no: unknown, tipo: unknown): No[] {
 
   if (Array.isArray(no)) return no.flatMap(item => todos(item, tipo));
 
@@ -38,11 +49,9 @@ function todos(no: unknown, tipo: string): No[] {
 
   if (atual.type === DecidirCompensacao) return [];
 
-  if (typeof atual.type === "function") return todos((atual.type as (props: Record<string, unknown>) => unknown)(atual.props ?? {}), tipo);
+  const conteudo = filhos(atual);
 
-  const filhos = atual.props?.children;
-
-  return [...(atual.type === tipo ? [atual] : []), ...todos(Array.isArray(filhos) ? filhos : [filhos], tipo)];
+  return [...(atual.type === tipo ? [atual] : []), ...todos(Array.isArray(conteudo) ? conteudo : [conteudo], tipo)];
 
 }
 
@@ -56,9 +65,10 @@ function textoDoNo(no: unknown): string {
 
   const atual = no as No;
 
-  if (typeof atual.type === "function") return textoDoNo((atual.type as (props: Record<string, unknown>) => unknown)(atual.props ?? {}));
+  const opcoes = atual.props?.opcoes;
+  const rotulos = Array.isArray(opcoes) ? opcoes.map((opcao) => opcao && typeof opcao === "object" && "rotulo" in opcao ? textoDoNo((opcao as { rotulo: unknown }).rotulo) : "").join("") : "";
 
-  return textoDoNo(atual.props?.children);
+  return rotulos + textoDoNo(filhos(atual));
 
 }
 
@@ -171,7 +181,7 @@ it("mostra compensação aplicada com cobrança, valor e evidência da decisão"
   preparar();
   const conjunto = [{ ...acordos[0], confirmacoes: [{ ...acordos[0].confirmacoes[0], propostas: [{ ...acordos[0].confirmacoes[0].propostas[0], decisao: { aprovada: true, efetivada: true, motivo: "Serviço conferido", aplicacoes: [{ id: "aplicacao", cobrancaId: "cobranca", valor: "100.00", aplicadaEm: "2026-09-18T12:00:00Z" }] } }] }] }];
   const arvore = PermutaOperacional({ acordos: conjunto, podeFinanceiro: true, podePedagogico: false, podeAprovar: true });
-  expect(todos(arvore, "details")).toHaveLength(1);
+  expect(todos(arvore, Collapsible)).toHaveLength(1);
   expect(JSON.stringify(todos(arvore, "li"))).toContain("R$ 100,00");
   expect(JSON.stringify(todos(arvore, "li"))).toContain("C-1");
   expect(todos(arvore, "form")).toHaveLength(2);

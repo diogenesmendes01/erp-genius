@@ -18,15 +18,21 @@ import {carregarFusoInstitucionalTx} from "@/server/operacao/relogio";
 import {instanteDoCampoLocal,valorCampoLocal} from "@/server/operacao/fuso-entrada";
 import {pessoaDoAtendimento} from "./painel-detalhes";
 import {avisarAtendimento} from "./aviso";
+import {executarAgendadaInbox,naTransacaoAtual,motivoSemAgendadaInboxTx} from "./agendadas-operacao-inbox";
+import {carregarMensagensAgendadasDasTarefas} from "./mensagem-agendada-tarefa";
+import {TextoAgendadaSchema} from "@/server/crm/mensagens-agendadas-regras";
+import {carregarPoliticaRegua} from "@/server/cobrancas/politica";
+import {COMPLEMENTO_FORA_DA_JANELA,type JanelaEnvioTarefa,type MensagemAgendadaDaTarefa} from "@/lib/selo-mensagem-agendada";
 const Id=z.string().min(1);
 const Contexto=z.object({contextoEsperado:z.string().min(1),fusoEscolaEsperado:z.string().min(1)});
 const Campos=CamposTarefaSchema.omit({leadId:true,pessoaId:true,alunoId:true,matriculaId:true});
-const Criar=Campos.merge(Contexto).extend({vincularOportunidade:z.boolean(),jaFeita:z.boolean().optional(),chaveIdempotencia:ChaveIdempotenciaSchema}).strict();
-const Editar=Campos.partial().merge(Contexto).extend({vinculo:z.enum(["manter","vincularAtual","remover"])}).strict();
+const MensagemNaData=z.object({texto:TextoAgendadaSchema,chaveIdempotencia:ChaveIdempotenciaSchema}).strict();
+const Criar=Campos.merge(Contexto).extend({vincularOportunidade:z.boolean(),jaFeita:z.boolean().optional(),chaveIdempotencia:ChaveIdempotenciaSchema,mensagem:MensagemNaData.optional()}).strict();
+const Editar=Campos.partial().merge(Contexto).extend({vinculo:z.enum(["manter","vincularAtual","remover"]),aceitarForaDaJanela:z.boolean().optional()}).strict();
 export type CriarTarefaInboxInput=z.input<typeof Criar>;
 export type EditarTarefaInboxInput=z.input<typeof Editar>;
 export type TarefaModalSnapshot={id:string;versao:number;titulo:string;tipo:Tarefa["tipo"];descricao:string;prioridade:Tarefa["prioridade"];recorrencia:Tarefa["recorrencia"];dataCivil:string|null;hora:string|null;inicioEm:string|null;duracaoMin:15|30|45|60|90;fusoOrigem:string;lembreteAntecedenciaMin:0|10|15|30|60|1440|null;responsavelId:string|null;notificarUsuarioIds:string[];leadId:string|null;pessoaId:string|null;podeAlterarVinculo:boolean;vinculadaAtual:boolean};
-export type DadosModalTarefa={contatoNome:string;oportunidade:{id:string;titulo:string}|null;responsaveis:{id:string;nome:string}[];notificadosPossiveis:{id:string;nome:string}[];podeAtribuirResponsavel:boolean;fusoEscola:string;usuarioId:string;contextoEsperado:string;contextoIdentidadeEsperada:string;tarefa:TarefaModalSnapshot|null};
+export type DadosModalTarefa={contatoNome:string;oportunidade:{id:string;titulo:string}|null;responsaveis:{id:string;nome:string}[];notificadosPossiveis:{id:string;nome:string}[];podeAtribuirResponsavel:boolean;fusoEscola:string;usuarioId:string;contextoEsperado:string;contextoIdentidadeEsperada:string;podeAgendarMensagem:boolean;motivoSemMensagem:string|null;janelaEnvio:JanelaEnvioTarefa;mensagemAgendada:MensagemAgendadaDaTarefa|null;tarefa:TarefaModalSnapshot|null};
 async function contexto(tx:Prisma.TransactionClient,sessao:UsuarioSessao,id:string){
  const autor=await tx.usuario.findUnique({where:{id:sessao.id},select:{id:true,nome:true,papeis:true,permissoes:true,ativo:true}});
  if(!autor?.ativo||apenasPortal(autor))throw new ErroRegra("Sua sessão não está mais ativa.");
@@ -53,14 +59,18 @@ export async function dadosTarefaModal(sessao:UsuarioSessao,atendimentoId:string
   const dono=t?{responsavelId:t.responsavelId,setor:t.setor}:await resolverResponsavel(tx,c.autor,undefined);
   const notificadosPossiveis=await listarCandidatosNotificadosTarefaD10(tx,c.autor,{...dono,gerenteDoResponsavelId:null});
   const notificarUsuarioIds=t?(await tx.tarefaNotificado.findMany({where:{tarefaId:t.id},select:{usuarioId:true}})).map(n=>n.usuarioId).sort():[];
+  const motivoSemMensagem=t?null:await motivoSemAgendadaInboxTx(tx,c.autor.id,id),podeAgendarMensagem=!t&&motivoSemMensagem===null;
+  const politica=await carregarPoliticaRegua(tx);
+  const mensagens=t?await carregarMensagensAgendadasDasTarefas(tx,[{id:t.id,fusoOrigem:t.fusoOrigem}]):new Map();
   const final=await contexto(tx,sessao,id);conferir(final,c.contextoEsperado);if(t)await tarefaVisivel(tx,t.id,final.filtro);
-  return {contatoNome:nomeDoContato(c.a.contato),oportunidade:c.op?{id:c.op.id,titulo:c.op.nome}:null,responsaveis:await listarResponsaveisPossiveis(c.autor,tx),notificadosPossiveis,podeAtribuirResponsavel:capacidadesCrm(c.autor.papeis).has("tarefas.equipe"),fusoEscola:fuso,usuarioId:c.autor.id,contextoEsperado:c.contextoEsperado,contextoIdentidadeEsperada:c.contextoIdentidadeEsperada,
+  return {contatoNome:nomeDoContato(c.a.contato),oportunidade:c.op?{id:c.op.id,titulo:c.op.nome}:null,responsaveis:await listarResponsaveisPossiveis(c.autor,tx),notificadosPossiveis,podeAtribuirResponsavel:capacidadesCrm(c.autor.papeis).has("tarefas.equipe"),fusoEscola:fuso,usuarioId:c.autor.id,contextoEsperado:c.contextoEsperado,contextoIdentidadeEsperada:c.contextoIdentidadeEsperada,podeAgendarMensagem,motivoSemMensagem,janelaEnvio:{inicio:politica.janelaInicio,fim:politica.janelaFim,diasSemana:[...politica.diasSemana]},mensagemAgendada:t?mensagens.get(t.id)??null:null,
    tarefa:t?{id:t.id,versao:t.versao,titulo:t.titulo,tipo:t.tipo,descricao:t.descricao??"",prioridade:t.prioridade,recorrencia:t.recorrencia,dataCivil:local?.slice(0,10)??t.dataCivil,hora:local?.slice(11,16)??null,inicioEm:t.inicioEm?.toISOString()??null,duracaoMin:CamposTarefaSchema.shape.duracaoMin.parse(t.duracaoMin)!,fusoOrigem:t.fusoOrigem,lembreteAntecedenciaMin:CamposTarefaSchema.shape.lembreteAntecedenciaMin.parse(t.lembreteAntecedenciaMin)??null,responsavelId:t.responsavelId,notificarUsuarioIds,leadId:t.leadId,pessoaId:t.pessoaId,podeAlterarVinculo:!!c.op&&(!t.leadId||t.leadId===c.op.id),vinculadaAtual:!!c.op&&t.leadId===c.op.id}:null};
  });
 }
 export async function criarTarefaInbox(sessao:UsuarioSessao,atendimentoId:string,input:CriarTarefaInboxInput):Promise<{id:string}>{
- const id=Id.parse(atendimentoId),i=Criar.parse(input),{chaveIdempotencia,jaFeita=false,vincularOportunidade,contextoEsperado,fusoEscolaEsperado,...campos}=i;
- const marca=marcaIdempotencia(chaveIdempotencia,{operacao:"criarTarefaNoInbox",atendimentoId:id,campos,jaFeita,vincularOportunidade,contextoEsperado,fusoEscolaEsperado})!;
+ const id=Id.parse(atendimentoId),i=Criar.parse(input),{chaveIdempotencia,jaFeita=false,vincularOportunidade,contextoEsperado,fusoEscolaEsperado,mensagem,...campos}=i;
+ if(mensagem&&jaFeita)throw new ErroRegra("Tarefa já feita não agenda mensagem.");
+ const marca=marcaIdempotencia(chaveIdempotencia,{operacao:"criarTarefaNoInbox",atendimentoId:id,campos,jaFeita,vincularOportunidade,contextoEsperado,fusoEscolaEsperado,...(mensagem?{mensagem}:{})})!;
  return prisma.$transaction(async tx=>{
   const repetido=await repeticaoIdempotente(tx,{tipo:"TarefaCriada",agregadoTipo:"Tarefa",autorId:sessao.id,marca,mensagemConflito:"Esta tentativa já foi usada com outros dados. Reabra o formulário."});
   const fuso=await carregarFusoInstitucionalTx(tx);
@@ -71,9 +81,10 @@ export async function criarTarefaInbox(sessao:UsuarioSessao,atendimentoId:string
   if(vincularOportunidade&&!c.op)throw new ErroRegra("A oportunidade atual não está disponível para vínculo.");
   const t=await criarTarefaTx(tx,c.autor,{...campos,atendimentoId:id,leadId:vincularOportunidade?c.op!.id:undefined,pessoaId:c.pessoa?.pessoaId},fuso,marca);
   if(jaFeita)await concluirTarefaTx({tx,autor:c.autor,tarefa:t,versao:t.versao,filtro:c.filtro},null);
+  if(mensagem&&t.inicioEm&&t.inicioEm.getTime()>Date.now()){try{await executarAgendadaInbox(naTransacaoAtual(tx),c.autor.id,{tipo:"CRIAR",atendimentoId:id,texto:mensagem.texto,agendadaPara:t.inicioEm.toISOString(),perguntarSeResponder:true,tarefaId:t.id,...(t.leadId?{leadId:t.leadId}:{}),chaveIdempotencia:mensagem.chaveIdempotencia});}catch(e){if(e instanceof ErroRegra&&e.message.includes("Fora da janela de envio")&&!e.message.includes("Enviar mensagem nesta data"))throw new ErroRegra(e.message+COMPLEMENTO_FORA_DA_JANELA);throw e;}}
   {const final=await contexto(tx,sessao,id);conferir(final,contextoEsperado);}
   await avisarAtendimento(tx,id);return {id:t.id};
- }).catch(erroContencaoNotificadosTarefaD10);
+ },mensagem?{timeout:15000}:undefined).catch(erroContencaoNotificadosTarefaD10);
 }
 export async function editarTarefaInbox(sessao:UsuarioSessao,atendimentoId:string,tarefaId:string,versao:number,input:EditarTarefaInboxInput):Promise<void>{
  const id=Id.parse(atendimentoId),tid=Id.parse(tarefaId),v=z.number().int().positive().parse(versao),i=Editar.parse(input);
@@ -82,7 +93,7 @@ export async function editarTarefaInbox(sessao:UsuarioSessao,atendimentoId:strin
   await tx.$queryRaw`SELECT id FROM "AtendimentoWhatsApp" WHERE id=${id} FOR UPDATE`;
   await tx.$queryRaw`SELECT id FROM "Tarefa" WHERE id=${tid} FOR UPDATE`;
   const c=await contexto(tx,sessao,id);conferir({contextoEsperado:i.vinculo==="manter"?c.contextoIdentidadeEsperada:c.contextoEsperado},i.contextoEsperado);conferirFuso(fuso,i.fusoEscolaEsperado);
-  const t=await tarefaVisivel(tx,tid,c.filtro),opcoes:OpcoesEdicaoTarefaTx={filtro:c.filtro};
+  const t=await tarefaVisivel(tx,tid,c.filtro),opcoes:OpcoesEdicaoTarefaTx={filtro:c.filtro,aceitarForaDaJanela:i.aceitarForaDaJanela};
   if(i.vinculo!=="manter"){
    if(!c.op||t.leadId&&t.leadId!==c.op.id||i.vinculo==="remover"&&t.leadId!==c.op.id)throw new ErroRegra("Este vínculo não pertence à oportunidade atual.");
    const pessoaAtual=c.pessoa?.leadId===c.op.id?c.pessoa.pessoaId:null;

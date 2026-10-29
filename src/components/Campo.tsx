@@ -13,6 +13,8 @@ export const ROTULO_CAMPO = "mb-1 block text-sm font-medium text-gray-800";
 export const DICA_CAMPO = "mt-1 block text-xs text-gray-500";
 export const ERRO_CAMPO = "mt-1 block text-xs text-red-700";
 export const CONTROLE_INVALIDO = "aria-[invalid=true]:border-red-500";
+export const CONTROLE_CAMPO =
+  `w-full min-h-11 md:min-h-[36px] rounded-md border border-gray-200 bg-surface-muted px-3 py-1.5 text-sm text-gray-800 transition-colors focus:border-brand-500 focus:bg-surface focus:outline-none ${CONTROLE_INVALIDO}`;
 
 type PropsCampo = {
   rotulo: ReactNode;

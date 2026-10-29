@@ -17,6 +17,7 @@ vi.mock("@/server/aria/versoes", () => ({ salvarRascunho: vi.fn(), publicarRascu
 vi.mock("@/server/aria/estado", () => ({ definirEstadoAria: vi.fn(), pausarAria: vi.fn(), reativarAria: vi.fn(), definirSupervisao: vi.fn() }));
 vi.mock("@/server/aria/playground", () => ({ testarAria: vi.fn() }));
 vi.mock("@/server/aria/historico", () => ({ aprovarAcaoAria: vi.fn(), rejeitarAcaoAria: vi.fn(), desfazerAcaoAria: vi.fn() }));
+vi.mock("@/server/aria/decisao-inbox", () => ({ aprovarSugestaoNoInbox: vi.fn(), aprovarSugestaoEditadaNoInbox: vi.fn(), rejeitarSugestaoNoInbox: vi.fn(), desfazerSugestaoNoInbox: vi.fn() }));
 vi.mock("@/server/aria/conhecimento/fontes", () => ({ criarFonteTexto: vi.fn(), arquivarFonte: vi.fn() }));
 
 import Page from "./page";
@@ -105,7 +106,8 @@ describe("/aria (página)", () => {
     mocks.carregar.mockResolvedValue(dados({ paises: [{ id: "p1", nome: "Costa Rica" }] }));
     const html = renderToStaticMarkup(await Page({ searchParams: Promise.resolve({ aba: "playground" }) }));
     expect(html).toContain("SIMULAÇÃO · nada é enviado nem alterado");
-    expect(html).toContain("Costa Rica");
+    expect(html).toContain("País dos preços");
+    expect(html).toContain("Primeiro país ativo");
   });
 
   it("historico_mostra_quem_decidiu", async () => {

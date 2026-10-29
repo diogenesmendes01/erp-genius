@@ -18,6 +18,7 @@ vi.mock("@/server/contratos/modelos", () => ({ prepararModeloContratual: m.prepa
 vi.mock("@/lib/aviso-ao-sair", () => ({ useAvisoAoSair: m.aviso }));
 
 import type { ReactNode } from "react";
+import { Checkbox } from "@/components/ui/checkbox";
 import { ModeloFormulario } from "./ModeloFormulario";
 import { MSG_RESULTADO_INCERTO } from "@/lib/mensagens";
 import { CampoTexto } from "@/components/CampoTexto";
@@ -36,7 +37,7 @@ function preencher(tituloDoModelo: string) {
   const de200 = () => elementos(tela()).filter((n) => n.type === "input" && n.props.maxLength === 200 && n.props.name === undefined);
   const textos = () => elementos(tela()).filter((n) => n.type === CampoTexto && n.props.name === undefined);
   (de200()[0].props.onChange as Mudanca)({ target: { value: tituloDoModelo } });
-  (elementos(tela()).find((n) => n.type === "input" && n.props.type === "checkbox")!.props.onChange as (e: { target: { checked: boolean } }) => void)({ target: { checked: true } });
+  (elementos(tela()).find((n) => n.type === Checkbox)!.props.onCheckedChange as (marcado: boolean) => void)(true);
   (textos()[0].props.onChange as Mudanca)({ target: { value: "Matrículas regulares de mensalidade." } });
   (de200()[1].props.onChange as Mudanca)({ target: { value: "Objeto" } });
   (textos()[1].props.onChange as Mudanca)({ target: { value: "O contrato tem por objeto a prestação dos serviços educacionais." } });

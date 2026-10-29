@@ -15,6 +15,9 @@ import { ACOES_MATRIZ } from "@/server/aria/matriz";
 import { aprovarAcaoAria, desfazerAcaoAria, rejeitarAcaoAria } from "@/server/aria/acoes";
 import type { ItemHistoricoAria } from "@/server/aria/consultas";
 import { formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
+import { CampoCombobox } from "@/components/ui/combobox";
+import { Input } from "@/components/ui/input";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
 type Props = {
   itens: ItemHistoricoAria[];
@@ -31,7 +34,7 @@ const RESULTADOS = [
   { valor: "REJEITADAS", rotulo: "Rejeitadas" },
   { valor: "DESFEITAS", rotulo: "Desfeitas" },
 ];
-const CAMPO = "w-full rounded-md border border-gray-300 px-2 py-1.5 text-sm";
+const CAMPO = "w-full";
 
 export function Historico({ itens, proximo, podeDecidir, fuso, filtros }: Props) {
   const router = useRouter();
@@ -70,24 +73,16 @@ export function Historico({ itens, proximo, podeDecidir, fuso, filtros }: Props)
       <form method="get" action="/aria" className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <input type="hidden" name="aba" value="historico" />
         <label className="grid gap-1 text-sm font-medium text-gray-800">Contato ou telefone
-          <input name="busca" defaultValue={filtros.busca} className={CAMPO} />
+          <Input name="busca" defaultValue={filtros.busca} className={CAMPO} />
         </label>
         <label className="grid gap-1 text-sm font-medium text-gray-800">Ação
-          <select name="acao" defaultValue={filtros.acao} className={CAMPO}>
-            <option value="">Todas</option>
-            {ACOES_MATRIZ.map((a) => <option key={a} value={a}>{ACAO_AGENTE_IA_LABEL[a]}</option>)}
-          </select>
+          <CampoCombobox name="acao" defaultValue={filtros.acao} vazio="Todas" opcoes={ACOES_MATRIZ.map((a) => ({ valor: a, rotulo: ACAO_AGENTE_IA_LABEL[a] }))} />
         </label>
         <label className="grid gap-1 text-sm font-medium text-gray-800">Etapa
-          <select name="etapa" defaultValue={filtros.etapa} className={CAMPO}>
-            <option value="">Todas</option>
-            {ETAPAS_ARIA.map((e) => <option key={e} value={e}>{ETAPA_LABEL[e]}</option>)}
-          </select>
+          <CampoCombobox name="etapa" defaultValue={filtros.etapa} vazio="Todas" opcoes={ETAPAS_ARIA.map((e) => ({ valor: e, rotulo: ETAPA_LABEL[e] }))} />
         </label>
         <label className="grid gap-1 text-sm font-medium text-gray-800">Resultado
-          <select name="resultado" defaultValue={filtros.resultado} className={CAMPO}>
-            {RESULTADOS.map((r) => <option key={r.valor} value={r.valor}>{r.rotulo}</option>)}
-          </select>
+          <CampoCombobox name="resultado" defaultValue={filtros.resultado} vazio="Todas" opcoes={RESULTADOS.filter((r) => r.valor !== "").map((r) => ({ valor: r.valor, rotulo: r.rotulo }))} />
         </label>
         <div><Botao type="submit" variante="secundario">Filtrar</Botao></div>
       </form>
@@ -99,34 +94,34 @@ export function Historico({ itens, proximo, podeDecidir, fuso, filtros }: Props)
       ) : (
         <>
           <div className="hidden overflow-x-auto rounded-lg border border-border-soft md:block">
-            <table className="min-w-full text-sm">
-              <thead className="bg-gray-100 text-left text-gray-800">
-                <tr>
-                  <th scope="col" className="px-3 py-2 font-medium">Quando</th>
-                  <th scope="col" className="px-3 py-2 font-medium">Ação</th>
-                  <th scope="col" className="px-3 py-2 font-medium">Contato</th>
-                  <th scope="col" className="px-3 py-2 font-medium">Etapa</th>
-                  <th scope="col" className="px-3 py-2 font-medium">Confiança</th>
-                  <th scope="col" className="px-3 py-2 font-medium">Resultado</th>
-                  <th scope="col" className="px-3 py-2 font-medium">Decidido por</th>
-                  <th scope="col" className="px-3 py-2 font-medium"><span className="sr-only">Ações</span></th>
-                </tr>
-              </thead>
-              <tbody>
+            <Table>
+              <TableHeader className="bg-surface-muted text-left text-gray-800">
+                <TableRow className="hover:bg-transparent">
+                  <TableHead scope="col" className="px-3 py-2 font-medium">Quando</TableHead>
+                  <TableHead scope="col" className="px-3 py-2 font-medium">Ação</TableHead>
+                  <TableHead scope="col" className="px-3 py-2 font-medium">Contato</TableHead>
+                  <TableHead scope="col" className="px-3 py-2 font-medium">Etapa</TableHead>
+                  <TableHead scope="col" className="px-3 py-2 font-medium">Confiança</TableHead>
+                  <TableHead scope="col" className="px-3 py-2 font-medium">Resultado</TableHead>
+                  <TableHead scope="col" className="px-3 py-2 font-medium">Decidido por</TableHead>
+                  <TableHead scope="col" className="px-3 py-2 font-medium"><span className="sr-only">Ações</span></TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
                 {itens.map((i) => (
-                  <tr key={i.id} className="border-t border-border-soft align-top">
-                    <td className="whitespace-nowrap px-3 py-2">{quando(i.quando)}</td>
-                    <td className="px-3 py-2">{ACAO_AGENTE_IA_LABEL[i.acao]}</td>
-                    <td className="px-3 py-2">{i.contato}</td>
-                    <td className="px-3 py-2">{i.etapa ? ETAPA_LABEL[i.etapa] : "—"}</td>
-                    <td className="px-3 py-2">{i.confianca}%</td>
-                    <td className="px-3 py-2">{STATUS_ACAO_AGENTE_IA_LABEL[i.status]}</td>
-                    <td className="px-3 py-2">{i.decididaPor ?? "—"}</td>
-                    <td className="px-3 py-2">{botoes(i)}</td>
-                  </tr>
+                  <TableRow key={i.id} className="align-top">
+                    <TableCell className="whitespace-nowrap px-3 py-2">{quando(i.quando)}</TableCell>
+                    <TableCell className="px-3 py-2">{ACAO_AGENTE_IA_LABEL[i.acao]}</TableCell>
+                    <TableCell className="px-3 py-2">{i.contato}</TableCell>
+                    <TableCell className="px-3 py-2">{i.etapa ? ETAPA_LABEL[i.etapa] : "—"}</TableCell>
+                    <TableCell className="px-3 py-2">{i.confianca}%</TableCell>
+                    <TableCell className="px-3 py-2">{STATUS_ACAO_AGENTE_IA_LABEL[i.status]}</TableCell>
+                    <TableCell className="px-3 py-2">{i.decididaPor ?? "—"}</TableCell>
+                    <TableCell className="px-3 py-2">{botoes(i)}</TableCell>
+                  </TableRow>
                 ))}
-              </tbody>
-            </table>
+              </TableBody>
+            </Table>
           </div>
           <ul className="space-y-2 md:hidden">
             {itens.map((i) => (

@@ -6,6 +6,7 @@ import { formatarInstanteExibicao, resolverFusoExibicao } from "@/server/operaca
 import { FeedbackAcao } from "@/components/FeedbackAcao";
 import { useAcaoCliente } from "@/lib/acao-cliente";
 import { botaoClasses } from "@/components/Botao";
+import { CampoCombobox } from "@/app/(app)/academico/controles";
 type RespostaPreviaSubstituicao = Awaited<ReturnType<typeof preverSubstituicaoAvaliadorRecuperacao>>;
 type DadosPreviaSubstituicao = NonNullable<Extract<RespostaPreviaSubstituicao, { ok: true }>["dado"]>;
 
@@ -27,7 +28,7 @@ export function PreviaSubstituicao({ itemReservaId, atualId, professores, prefer
   return <section className="space-y-3 rounded border p-4"><h2 className="text-xl">Conferir substituição na agenda</h2>
     <p>Esta tela confere a disponibilidade para o horário aprovado. O avaliador e a atribuição atuais permanecem em vigor.</p>
     <form onChange={() => { setResultado(null); acao.limpar(); }} onSubmit={async e => { e.preventDefault(); const substitutoId = String(new FormData(e.currentTarget).get("substituto") ?? ""); const d = await acao.executar(() => preverSubstituicaoAvaliadorRecuperacao({ itemReservaId, substitutoId })); if (d?.tipo === "ok") setResultado(d.dado ?? null); }} className="space-y-2">
-      <label className="block">Professor substituto<select name="substituto" required defaultValue="" disabled={pendente} className="block rounded border p-2"><option value="" disabled>Selecione</option>{professores.filter(p => p.id !== atualId).map(p => <option key={p.id} value={p.id}>{p.nome}</option>)}</select></label>
+      <label className="block">Professor substituto<CampoCombobox name="substituto" required defaultValue="" disabled={pendente} className="block rounded border p-2" placeholder="Selecione" opcoes={[...professores.filter(p => p.id !== atualId).map(p => ({ valor: p.id, rotulo: p.nome }))]} /></label>
       <button type="submit" disabled={pendente} className={botaoClasses({ variante: "secundario", tamanho: "lg" })}>{pendente ? "Conferindo…" : "Conferir disponibilidade"}</button>
     </form>
     <FeedbackAcao erro={acao.erro} />

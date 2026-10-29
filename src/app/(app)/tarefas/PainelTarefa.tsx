@@ -18,11 +18,19 @@ import { useChaveIdempotencia } from "@/lib/chave-idempotencia";
 import { PRIORIDADE_TAREFA_LABEL, STATUS_TAREFA_LABEL, TIPO_TAREFA_LABEL } from "@/lib/labels";
 import type { Resultado } from "@/server/_shared/resultado";
 import type { TarefaLista } from "@/server/crm/mensagens-agendadas";
+import { AVISO_REMARCACAO_MENSAGEM, textoSeloMensagemAgendada, type DecisaoMensagemAgendada, type MensagemAgendadaDaTarefa } from "@/lib/selo-mensagem-agendada";
+import { EscolhaMensagemAgendada, OpcoesMensagemAgendada } from "../inbox/EscolhaMensagemAgendada";
 import { assumirTarefa, cancelarTarefa, concluirTarefa, criarTarefa, editarTarefa, reabrirTarefa } from "@/server/crm/tarefas-acoes";
 import { camposAlterados, type CamposFormulario } from "./edicao";
 import { horaNoFuso, hrefTarefas, textoHora, type ParamsTarefas } from "./visao";
+import { CONTROLE_CAMPO } from "@/components/Campo";
+import { Checkbox } from "@/components/ui/checkbox";
+import { CampoCombobox } from "@/components/ui/combobox";
+import { CampoData } from "@/components/ui/date-picker";
+import { CampoSelect } from "@/components/ui/select";
+import { CampoHora } from "@/components/ui/time-picker";
 
-const CONTROLE = "w-full rounded-md border border-gray-300 px-2 py-1.5 text-sm max-sm:min-h-11";
+const CONTROLE = CONTROLE_CAMPO;
 const DURACOES = [15, 30, 45, 60, 90] as const;
 const LEMBRETES: { valor: string; rotulo: string }[] = [
   { valor: "", rotulo: "Sem lembrete" },
@@ -37,6 +45,7 @@ const LEMBRETES: { valor: string; rotulo: string }[] = [
 type Props = {
   conversa?: ConversaParaAbrir | null;
   tarefa: TarefaLista | null;
+  mensagemAgendada?: MensagemAgendadaDaTarefa | null;
   responsaveis: { id: string; nome: string }[];
   fusoEscola: string;
   fusoExibicao: string;
@@ -48,7 +57,7 @@ export function PainelTarefa(props: Props) {
   return <FormularioTarefa key={props.tarefa?.id ?? "nova"} {...props} />;
 }
 
-function FormularioTarefa({ tarefa, responsaveis, fusoEscola, fusoExibicao, dataInicial, params, conversa }: Props) {
+function FormularioTarefa({ tarefa, responsaveis, fusoEscola, fusoExibicao, dataInicial, params, conversa, mensagemAgendada = null }: Props) {
   const router = useRouter();
   const acao = useAcaoCliente({ idempotente: !tarefa });
   const tentativa = useChaveIdempotencia();
@@ -65,6 +74,9 @@ function FormularioTarefa({ tarefa, responsaveis, fusoEscola, fusoExibicao, data
   const [resultado, setResultado] = useState("");
   const [motivo, setMotivo] = useState("");
   const [cancelando, setCancelando] = useState(false);
+  const [decisaoMensagem, setDecisaoMensagem] = useState<DecisaoMensagemAgendada | null>(null);
+  const [escolhendoConclusao, setEscolhendoConclusao] = useState(false);
+  const [aceitarFora, setAceitarFora] = useState(false);
 
   const fechar = () => router.replace(hrefTarefas({ ...params, t: undefined }));
   const horaNaEscola = tarefa?.inicioEm ? textoHora(tarefa.inicioEm, fusoExibicao, fusoEscola) : null;
@@ -90,7 +102,7 @@ function FormularioTarefa({ tarefa, responsaveis, fusoEscola, fusoExibicao, data
         dataCivil: tarefa.dataCivil, hora: tarefa.inicioEm ? horaNoFuso(tarefa.inicioEm, tarefa.fusoOrigem) : null,
         lembreteAntecedenciaMin: tarefa.lembreteAntecedenciaMin as CamposFormulario["lembreteAntecedenciaMin"],
       };
-      return editarTarefa(tarefa.id, tarefa.versao, { ...camposAlterados(lida, base), ...(mudouResponsavel ? { responsavelId: responsavel || null } : {}) });
+      return editarTarefa(tarefa.id, tarefa.versao, { ...camposAlterados(lida, base), ...(mudouResponsavel ? { responsavelId: responsavel || null } : {}), ...(mensagemAgendada && aceitarFora ? { aceitarForaDaJanela: true } : {}) });
     }, tarefa ? "Tarefa salva." : "Tarefa criada.");
     if (!tarefa) tentativa.depoisDo(d);
     if (d?.tipo === "ok") {
@@ -114,6 +126,7 @@ function FormularioTarefa({ tarefa, responsaveis, fusoEscola, fusoExibicao, data
             {tarefa.status === "CANCELADA" && tarefa.motivoCancelamento ? ` · ${tarefa.motivoCancelamento}` : ""}
           </p>
         )}
+        {mensagemAgendada && <div className="mb-3 space-y-2"><p className="text-sm font-medium text-brand-700">{textoSeloMensagemAgendada(mensagemAgendada.quando)}<span className="mt-0.5 block font-normal text-gray-600">{AVISO_REMARCACAO_MENSAGEM}</span></p><label className="flex items-center gap-2 text-sm"><Checkbox checked={aceitarFora} onCheckedChange={(v) => setAceitarFora(v === true)} />Mover a mensagem mesmo fora da janela de envio</label></div>}
 
           {conversa && <div className="flex flex-wrap gap-x-3">
             <Link href={hrefConversa(conversa.atendimentoId)} className="inline-flex min-h-11 items-center text-sm text-brand-700 hover:underline">Abrir conversa</Link>
@@ -123,36 +136,31 @@ function FormularioTarefa({ tarefa, responsaveis, fusoEscola, fusoExibicao, data
           <Campo rotulo="Título" obrigatorio>{(c) => <input {...c} type="text" maxLength={200} value={titulo} onChange={(e) => setTitulo(e.target.value)} disabled={!aberta} className={CONTROLE} />}</Campo>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <Campo rotulo="Tipo">{(c) => (
-              <select {...c} value={tipo} onChange={(e) => setTipo(e.target.value as TipoTarefa)} disabled={!aberta} className={CONTROLE}>
-                {Object.entries(TIPO_TAREFA_LABEL).map(([v, r]) => <option key={v} value={v}>{r}</option>)}
-              </select>
+              <CampoSelect id={c.id} value={tipo} onValueChange={(v) => setTipo(v as TipoTarefa)} disabled={!aberta} opcoes={Object.entries(TIPO_TAREFA_LABEL).map(([valor, rotulo]) => ({ valor, rotulo }))} />
             )}</Campo>
             <Campo rotulo="Prioridade">{(c) => (
-              <select {...c} value={prioridade} onChange={(e) => setPrioridade(e.target.value as PrioridadeTarefa)} disabled={!aberta} className={CONTROLE}>
-                {Object.entries(PRIORIDADE_TAREFA_LABEL).map(([v, r]) => <option key={v} value={v}>{r}</option>)}
-              </select>
+              <CampoSelect id={c.id} value={prioridade} onValueChange={(v) => setPrioridade(v as PrioridadeTarefa)} disabled={!aberta} opcoes={Object.entries(PRIORIDADE_TAREFA_LABEL).map(([valor, rotulo]) => ({ valor, rotulo }))} />
             )}</Campo>
-            <Campo rotulo="Data">{(c) => <input {...c} type="date" value={dataCivil} onChange={(e) => setDataCivil(e.target.value)} disabled={!aberta} className={CONTROLE} />}</Campo>
-            <Campo rotulo="Hora" dica="No horário da escola.">{(c) => <input {...c} type="time" value={hora} onChange={(e) => setHora(e.target.value)} disabled={!aberta} className={CONTROLE} />}</Campo>
+            <Campo rotulo="Data">{(c) => <CampoData {...c} value={dataCivil} onChange={(e) => setDataCivil(e.target.value)} disabled={!aberta} />}</Campo>
+            <Campo rotulo="Hora" dica="No horário da escola.">{(c) => <CampoHora {...c} value={hora} onChange={(e) => setHora(e.target.value)} disabled={!aberta} />}</Campo>
             <Campo rotulo="Duração">{(c) => (
-              <select {...c} value={duracao} onChange={(e) => setDuracao(Number(e.target.value))} disabled={!aberta} className={CONTROLE}>
-                {DURACOES.map((m) => <option key={m} value={m}>{m} minutos</option>)}
-              </select>
+              <CampoSelect id={c.id} value={String(duracao)} onValueChange={(v) => setDuracao(Number(v))} disabled={!aberta} opcoes={DURACOES.map((m) => ({ valor: String(m), rotulo: `${m} minutos` }))} />
             )}</Campo>
             <Campo rotulo="Lembrete" dica="Exige data e hora.">{(c) => (
-              <select {...c} value={lembrete} onChange={(e) => setLembrete(e.target.value)} disabled={!aberta} className={CONTROLE}>
-                {LEMBRETES.map((l) => <option key={l.valor} value={l.valor}>{l.rotulo}</option>)}
-              </select>
+              <CampoCombobox id={c.id} value={lembrete} onValueChange={setLembrete} disabled={!aberta} vazio="Sem lembrete" opcoes={LEMBRETES.filter((l) => l.valor !== "").map((l) => ({ valor: l.valor, rotulo: l.rotulo }))} />
             )}</Campo>
           </div>
           {horaNaEscola?.dica && <p className="text-xs text-gray-600">Para você: {horaNaEscola.hora}. {horaNaEscola.dica}.</p>}
           {responsaveis.length > 0 && (
             <Campo rotulo="Responsável">{(c) => (
-              <select {...c} value={responsavel} onChange={(e) => setResponsavel(e.target.value)} disabled={!aberta} className={CONTROLE}>
-                {!tarefa && <option value="__eu__">Eu</option>}
-                <option value="">Fila do setor</option>
-                {responsaveis.map((r) => <option key={r.id} value={r.id}>{r.nome}</option>)}
-              </select>
+              <CampoCombobox
+                id={c.id}
+                value={responsavel}
+                onValueChange={setResponsavel}
+                disabled={!aberta}
+                vazio="Fila do setor"
+                opcoes={[...(!tarefa ? [{ valor: "__eu__", rotulo: "Eu" }] : []), ...responsaveis.map((r) => ({ valor: r.id, rotulo: r.nome }))]}
+              />
             )}</Campo>
           )}
           <Campo rotulo="Descrição">{(c) => <CampoTexto {...c} rows={3} maxLength={2000} value={descricao} onChange={(e) => setDescricao(e.target.value)} disabled={!aberta} className={CONTROLE} />}</Campo>
@@ -169,9 +177,9 @@ function FormularioTarefa({ tarefa, responsaveis, fusoEscola, fusoExibicao, data
         {tarefa && aberta && (
           <div className="mt-6 space-y-3 border-t border-gray-200 pt-4">
             <Campo rotulo="Resultado" dica="Opcional. Em tarefas de contato com oportunidade, entra no histórico.">{(c) => <CampoTexto {...c} rows={2} maxLength={2000} value={resultado} onChange={(e) => setResultado(e.target.value)} className={CONTROLE} />}</Campo>
-            <Botao variante="secundario" disabled={acao.ocupado} onClick={() => simples(() => concluirTarefa(tarefa.id, tarefa.versao, resultado), "Tarefa concluída.")}>Concluir</Botao>
+            <Botao variante="secundario" disabled={acao.ocupado} onClick={() => { if (mensagemAgendada) setEscolhendoConclusao(true); else void simples(() => concluirTarefa(tarefa.id, tarefa.versao, resultado), "Tarefa concluída."); }}>Concluir</Botao>
             <Campo rotulo="Motivo do cancelamento">{(c) => <input {...c} type="text" maxLength={500} value={motivo} onChange={(e) => setMotivo(e.target.value)} className={CONTROLE} />}</Campo>
-            <Botao variante="perigo" disabled={acao.ocupado || !motivo.trim()} onClick={() => setCancelando(true)}>Cancelar tarefa</Botao>
+            <Botao variante="perigo" disabled={acao.ocupado || !motivo.trim()} onClick={() => { setDecisaoMensagem(null); setCancelando(true); }}>Cancelar tarefa</Botao>
           </div>
         )}
       </Drawer>
@@ -180,12 +188,22 @@ function FormularioTarefa({ tarefa, responsaveis, fusoEscola, fusoExibicao, data
           titulo={`Cancelar a tarefa "${tarefa.titulo}"?`}
           confirmacao="cancelamento"
           idempotente
-          acao={() => cancelarTarefa(tarefa.id, tarefa.versao, motivo)}
+          podeConfirmar={!mensagemAgendada || !!decisaoMensagem}
+          acao={() => mensagemAgendada && decisaoMensagem ? cancelarTarefa(tarefa.id, tarefa.versao, motivo, decisaoMensagem) : cancelarTarefa(tarefa.id, tarefa.versao, motivo)}
           aoConcluir={() => { setCancelando(false); router.refresh(); }}
           aoCancelar={() => setCancelando(false)}
         >
-          A tarefa sai da agenda e dos lembretes. Ela continua no histórico com o motivo informado.
+          <p>A tarefa sai da agenda e dos lembretes. Ela continua no histórico com o motivo informado.</p>
+          {mensagemAgendada && <><p className="font-medium text-brand-700">{textoSeloMensagemAgendada(mensagemAgendada.quando)}</p><OpcoesMensagemAgendada valor={decisaoMensagem} aoMudar={setDecisaoMensagem} /></>}
         </ConfirmarAcao>
+      )}
+      {escolhendoConclusao && mensagemAgendada && tarefa && (
+        <EscolhaMensagemAgendada
+          mensagem={mensagemAgendada}
+          ocupado={acao.ocupado}
+          aoVoltar={() => setEscolhendoConclusao(false)}
+          aoEscolher={(decisao) => { setEscolhendoConclusao(false); void simples(() => concluirTarefa(tarefa.id, tarefa.versao, resultado, decisao), "Tarefa concluída."); }}
+        />
       )}
     </>
   );

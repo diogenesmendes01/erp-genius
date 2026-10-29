@@ -7,6 +7,7 @@ import { FeedbackAcao } from "@/components/FeedbackAcao";
 import { useAcaoCliente } from "@/lib/acao-cliente";
 import { CampoTexto } from "@/components/CampoTexto";
 import { CampoFuso } from "@/components/CampoFuso";
+import { CampoSelect, CampoInstante, SelectItem } from "@/app/(app)/academico/controles";
 
 const tipos = [
   ["FALTA", "Falta"],
@@ -15,7 +16,7 @@ const tipos = [
 
 export function FormularioOcorrencia({ reservaId, fuso }: { reservaId: string; fuso: string }) {
   const router = useRouter();
-  const acao = useAcaoCliente({ idempotente: false });
+  const acao = useAcaoCliente({ idempotente: true });
 
   return <form className="space-y-3 rounded border p-3" onSubmit={async evento => {
     evento.preventDefault();
@@ -34,13 +35,10 @@ export function FormularioOcorrencia({ reservaId, fuso }: { reservaId: string; f
     <p className="text-sm">O sistema calcula cancelamento dentro ou fora do prazo. Falta não lança nota zero; impedimento pela escola não consome a oportunidade.</p>
     <fieldset disabled={acao.ocupado} className="space-y-2">
       <label className="block">Tipo
-        <select name="tipo" required defaultValue="" className="block rounded border p-2">
-          <option value="" disabled>Selecione</option>
-          {tipos.map(([valor, rotulo]) => <option key={valor} value={valor}>{rotulo}</option>)}
-        </select>
+        <CampoSelect name="tipo" required defaultValue="" className="block rounded border p-2" placeholder="Selecione">{tipos.map(([valor, rotulo]) => <SelectItem key={valor} value={valor}>{rotulo}</SelectItem>)}</CampoSelect>
       </label>
       <label className="block">Data e hora da ocorrência
-        <input name="dataHoraLocal" type="datetime-local" step="0.001" required className="block rounded border p-2" />
+        <CampoInstante name="dataHoraLocal" step="0.001" required className="block rounded border p-2" />
       </label>
       <label className="block">Fuso da data e hora
         <CampoFuso padrao={fuso} className="block rounded border p-2" />

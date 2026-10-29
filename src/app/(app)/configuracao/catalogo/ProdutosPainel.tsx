@@ -9,6 +9,8 @@ import { useAcaoCliente } from "@/lib/acao-cliente";
 import { useChaveIdempotencia } from "@/lib/chave-idempotencia";
 import { botaoClasses } from "@/components/Botao";
 
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
+import { CampoCombobox } from "@/components/ui/combobox";
 export interface ProdutoRow {
   id: string;
   idioma: { nome: string };
@@ -17,7 +19,7 @@ export interface ProdutoRow {
 }
 
 const inputCls =
-  "rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:border-brand-500";
+  "rounded-md border border-gray-200 px-3 py-2 text-sm outline-none focus:border-brand-500";
 
 export function ProdutosPainel({
   produtos,
@@ -47,43 +49,31 @@ export function ProdutosPainel({
       <p className="mb-3 text-sm text-gray-500">Unidade vendável = idioma × modalidade.</p>
 
       <div className="overflow-x-auto rounded-lg border border-gray-200">
-        <table className="w-full text-sm">
-          <thead className="bg-gray-100 text-left text-xs text-gray-500">
-            <tr>
-              <th className="px-4 py-2 font-medium">Idioma</th>
-              <th className="px-4 py-2 font-medium">Modalidade</th>
-              <th className="px-4 py-2 font-medium">Preços</th>
-              <th className="px-4 py-2 font-medium">Países</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-100">
+        <Table className="w-full text-sm">
+          <TableHeader className="bg-surface-muted text-left text-xs text-gray-500">
+            <TableRow>
+              <TableHead className="px-4 py-2 font-medium">Idioma</TableHead>
+              <TableHead className="px-4 py-2 font-medium">Modalidade</TableHead>
+              <TableHead className="px-4 py-2 font-medium">Preços</TableHead>
+              <TableHead className="px-4 py-2 font-medium">Países</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody className="divide-y divide-gray-100">
             {produtos.map((p) => (
-              <tr key={p.id} className="hover:bg-gray-50">
-                <td className="px-4 py-3 font-medium text-gray-800">{p.idioma.nome}</td>
-                <td className="px-4 py-3 text-gray-600">{p.modalidade.nome}</td>
-                <td className="px-4 py-3 text-gray-600">{p._count.precos}</td>
-                <td className="px-4 py-3 text-gray-600">{p._count.produtosPais}</td>
-              </tr>
+              <TableRow key={p.id} className="hover:bg-highlight">
+                <TableCell className="px-4 py-3 font-medium text-gray-800">{p.idioma.nome}</TableCell>
+                <TableCell className="px-4 py-3 text-gray-600">{p.modalidade.nome}</TableCell>
+                <TableCell className="px-4 py-3 text-gray-600">{p._count.precos}</TableCell>
+                <TableCell className="px-4 py-3 text-gray-600">{p._count.produtosPais}</TableCell>
+              </TableRow>
             ))}
-          </tbody>
-        </table>
+          </TableBody>
+        </Table>
       </div>
 
       <div className="mt-3 flex flex-wrap items-center gap-2">
-        <select aria-label="Idioma do novo produto" value={idiomaId} onChange={(e) => setIdiomaId(e.target.value)} className={inputCls}>
-          {idiomas.map((i) => (
-            <option key={i.id} value={i.id}>
-              {i.nome}
-            </option>
-          ))}
-        </select>
-        <select aria-label="Modalidade do novo produto" value={modalidadeId} onChange={(e) => setModalidadeId(e.target.value)} className={inputCls}>
-          {modalidades.map((m) => (
-            <option key={m.id} value={m.id}>
-              {m.nome}
-            </option>
-          ))}
-        </select>
+        <CampoCombobox value={idiomaId} onChange={(e) => setIdiomaId(e.target.value)} className={inputCls} aria-label="Idioma do novo produto" opcoes={idiomas.map((i) => ({ valor: String(i.id), rotulo: i.nome }))} />
+        <CampoCombobox value={modalidadeId} onChange={(e) => setModalidadeId(e.target.value)} className={inputCls} aria-label="Modalidade do novo produto" opcoes={modalidades.map((m) => ({ valor: String(m.id), rotulo: m.nome }))} />
         <button
           onClick={adicionar}
           disabled={acao.ocupado}

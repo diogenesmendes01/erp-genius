@@ -82,7 +82,7 @@ describe("/comissoes (página)", () => {
     expect(html).toContain("15/11/2026");
     expect(html).toContain("previsão de pagamento 15/11/2026");
     expect(html).toContain("dia 15 do mês seguinte à competência");
-    expect(html).toContain("<td class=\"px-4 py-2\">—</td>");
+    expect(html).toContain('<td class="p-2 align-middle px-4 py-2">—</td>');
   });
 
   it("tabela vira cartões no celular", async () => {
@@ -112,6 +112,20 @@ describe("/comissoes (página)", () => {
     const html = renderToStaticMarkup(await Page({ searchParams: Promise.resolve({ periodo: "ano" }) }));
     expect(html).toContain("Matriculadas sem comissão");
     expect(html).toContain("Pendências de todos os períodos");
+  });
+
+  it("financeiro puro vê o aluno sem link de preparação; vendedor abre a preparação", async () => {
+    const comMatricula = { ...painel, linhas: [{ ...painel.linhas[0], matriculaId: "m1", oportunidadeId: "o1" }] };
+    const htmlDe = async (usuario: typeof vendedor) => {
+      mocks.usuario.valor = usuario;
+      mocks.carregar.mockResolvedValue(comMatricula);
+      return renderToStaticMarkup(await Page({ searchParams: Promise.resolve({}) }));
+    };
+    const financeiroHtml = await htmlDe(financeiro);
+    expect(financeiroHtml).toContain("Ana Souza");
+    expect(financeiroHtml).not.toContain("/matriculas/m1/preparacao");
+    expect(await htmlDe(vendedor)).toContain('href="/matriculas/m1/preparacao"');
+    expect(await htmlDe(com(["FINANCEIRO", "SECRETARIA_ACADEMICA"]))).toContain('href="/matriculas/m1/preparacao"');
   });
 
   it("período e vendedor da URL chegam ao carregamento", async () => {

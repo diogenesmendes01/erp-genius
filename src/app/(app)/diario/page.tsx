@@ -19,7 +19,7 @@ export default async function DiarioPage({ searchParams }: { searchParams: Promi
   return <div className="space-y-6">
     <Link className="inline-block text-sm text-brand-700 underline" href="/academico/avaliacoes">Avaliações e histórico por matrícula</Link>
     <form method="get" action="/diario" role="search" aria-label="Buscar no histórico do diário" className="flex flex-wrap items-center gap-2">
-      <input name="busca" defaultValue={busca} maxLength={100} aria-label="Buscar aula por turma, assunto ou professor" placeholder="Buscar por turma, assunto ou professor…" className="w-72 rounded-md border border-gray-300 px-3 py-1.5 text-sm outline-none focus:border-brand-500" />
+      <input name="busca" defaultValue={busca} maxLength={100} aria-label="Buscar aula por turma, assunto ou professor" placeholder="Buscar por turma, assunto ou professor…" className="w-72 rounded-md border border-gray-200 px-3 py-1.5 text-sm outline-none focus:border-brand-500" />
       <button type="submit" className={botaoClasses({ variante: "secundario" })}>Buscar</button>
       {busca && <Link href="/diario" className="text-sm text-brand-700 hover:underline">Limpar busca</Link>}
     </form>

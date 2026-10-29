@@ -17,7 +17,9 @@ const oportunidade: DetalheOportunidade = {
   dataExperimental: null, motivoPerda: null, criadoEm: new Date("2026-10-22T12:00Z"), pessoaId: null, interesse: null,
   objetivo: null, urgencia: null, orcamento: null, objecao: null, taxaMatricula: null,
   telefoneE164: "+5500000336", paisId: null, segmento: "ADULTO", origemCampanha: null, origemConjunto: null,
-  origemAnuncio: null, origemPalavra: null, planoPrevisto: null, comissaoPrevista: null, dataProposta: null, documentos: [],
+  origemAnuncio: null, origemPalavra: null, planoPrevisto: null, comissaoPrevista: null, dataProposta: null,
+  professorExperimental: null, experimentalConfirmadaEm: null, documentos: [],
+  b2bDetalhes: null, tarefas: [],
 };
 it("#336 FunilCliente repassa conversa autorizada ao painel sem prop órfã", () => {
   const html = renderToStaticMarkup(createElement(FunilCliente, {

@@ -13,6 +13,7 @@ export type LinhaComissao = {
   id: string; nome: string; produto: string; vendedor: string; base: string; percentual: string | null;
   valor: string; moeda: string; status: StatusComissao; competencia: Date;
   previsaoPagamento: string | null;
+  matriculaId: string; alunoId: string; oportunidadeId: string | null;
 };
 
 export type PainelComissoes = {
@@ -98,7 +99,8 @@ export async function carregarPainelComissoes(
         id: true, percentual: true, valor: true, moeda: true, status: true, aprovadaEm: true, criadoEm: true, tipo: true,
         vendedor: { select: { nome: true } }, politica: { select: { base: true } },
         matricula: { select: {
-          aluno: { select: { primeiroNome: true, sobrenome: true } }, lead: { select: { nome: true } },
+          id: true,
+          aluno: { select: { id: true, primeiroNome: true, sobrenome: true } }, lead: { select: { id: true, nome: true } },
           produto: { select: { idioma: { select: { nome: true } }, modalidade: { select: { nome: true } } } },
         } },
       },
@@ -139,6 +141,9 @@ export async function carregarPainelComissoes(
       percentual: c.tipo === "PERCENTUAL" ? dinheiro(c.percentual) : null,
       valor: dinheiro(c.valor), moeda: c.moeda, status: c.status, competencia: c.aprovadaEm ?? c.criadoEm,
       previsaoPagamento: c.status === "PAGA" || c.status === "ESTORNADA" ? null : previsaoPagamentoComissao(c.aprovadaEm ?? c.criadoEm, fuso, diaPrevisao),
+      matriculaId: c.matricula.id,
+      alunoId: c.matricula.aluno.id,
+      oportunidadeId: c.matricula.lead?.id ?? null,
     })),
     possuiMais,
     diaPrevisaoPagamento: diaPrevisao,

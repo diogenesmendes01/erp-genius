@@ -3,21 +3,21 @@ import { Papel } from "@prisma/client";
 import { exigirPapelLeitura } from "@/lib/guards";
 import { AcessoNegado } from "@/components/AcessoNegado";
 import { competenciasFaturaveis, obterEmpresa } from "@/server/empresas/consultas";
+import { PAPEIS_FICHA_EMPRESA } from "@/server/empresas/papeis";
 import { listarProdutosParaMatricula } from "@/server/matricula/consultas";
 import { FichaEmpresa } from "./FichaEmpresa";
 
-const PAPEIS: Papel[] = [Papel.FINANCEIRO];
-
 export default async function EmpresaDetalhePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const papeis = await exigirPapelLeitura(...PAPEIS);
+  const papeis = await exigirPapelLeitura(...PAPEIS_FICHA_EMPRESA);
   if (!papeis) return <AcessoNegado recurso="as empresas (B2B)" />;
 
   const dados = await obterEmpresa(id);
   if (!dados) notFound();
+  const podeOperarB2B = papeis.includes(Papel.ADMINISTRADOR) || papeis.includes(Papel.FINANCEIRO);
   const [produtos, competencias] = await Promise.all([
     listarProdutosParaMatricula(),
-    competenciasFaturaveis(id),
+    podeOperarB2B ? competenciasFaturaveis(id) : Promise.resolve([]),
   ]);
 
   const podePagar = papeis.includes(Papel.ADMINISTRADOR) || papeis.includes(Papel.FINANCEIRO) || papeis.includes(Papel.SECRETARIA_ACADEMICA);
@@ -30,6 +30,7 @@ export default async function EmpresaDetalhePage({ params }: { params: Promise<{
       produtos={produtos.map((p) => ({ id: p.id, label: `${p.idioma.nome} · ${p.modalidade.nome}` }))}
       competencias={competencias}
       podePagar={podePagar}
+      podeEditar={podeOperarB2B}
     />
   );
 }

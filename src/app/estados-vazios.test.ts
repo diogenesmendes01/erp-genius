@@ -6,14 +6,14 @@ import { EstadoVazio, EstadoVazioLinha } from "@/components/EstadoVazio";
 describe("EstadoVazio — componente (HTML exato; os invariantes de design estão em src/components/EstadoVazio.test.ts)", () => {
   it("compacto por padrão; bloco tracejado e centralizado para a lista principal", () => {
     const compacto = renderToStaticMarkup(EstadoVazio({ children: "Nenhuma turma." }));
-    expect(compacto).toBe('<div data-estado-vazio="" class="rounded-md border border-dashed border-gray-300 px-3 py-2 text-sm text-gray-500"><p>Nenhuma turma.</p></div>');
+    expect(compacto).toBe('<div data-estado-vazio="" class="rounded-item bg-surface-muted px-3 py-3 text-sm text-gray-500"><p>Nenhuma turma.</p></div>');
     const bloco = renderToStaticMarkup(EstadoVazio({ bloco: true, children: "Nenhuma turma." }));
-    expect(bloco).toBe('<div data-estado-vazio="" class="rounded-lg border border-dashed border-gray-300 p-8 text-center text-sm text-gray-500"><p>Nenhuma turma.</p></div>');
+    expect(bloco).toBe('<div data-estado-vazio="" class="rounded-lg border border-dashed border-gray-200 bg-surface-muted px-6 py-8 text-center text-sm text-gray-500"><p>Nenhuma turma.</p></div>');
   });
 
   it("a ação (próximo passo) vem depois da mensagem; margem de posição e role são repassados", () => {
     const html = renderToStaticMarkup(EstadoVazio({ bloco: true, className: "mt-4", role: "status", "aria-busy": true, acao: createElement("a", { href: "/novo" }, "Criar"), children: "Nada." }));
-    expect(html).toBe('<div data-estado-vazio="" class="rounded-lg border border-dashed border-gray-300 p-8 text-center text-sm text-gray-500 mt-4" role="status" aria-busy="true"><p>Nada.</p><div class="mt-3 flex flex-wrap justify-center gap-2"><a href="/novo">Criar</a></div></div>');
+    expect(html).toBe('<div data-estado-vazio="" class="rounded-lg border border-dashed border-gray-200 bg-surface-muted px-6 py-8 text-center text-sm text-gray-500 mt-4" role="status" aria-busy="true"><p>Nada.</p><div class="mt-3 flex flex-wrap justify-center gap-2"><a href="/novo">Criar</a></div></div>');
     expect(renderToStaticMarkup(EstadoVazio({ acao: createElement("a", { href: "/novo" }, "Criar"), children: "Nada." }))).toContain('<p>Nada.</p><div class="mt-2 flex flex-wrap gap-2"><a href="/novo">Criar</a></div>');
   });
 

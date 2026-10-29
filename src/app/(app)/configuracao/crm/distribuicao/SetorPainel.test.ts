@@ -18,6 +18,12 @@ const html = (p: Partial<SetorPainelProps> = {}) => renderToStaticMarkup(createE
 describe("tela de Distribuição e SLA", () => {
   it("sem_aviso_em_breve", () => expect(html()).not.toMatch(/em breve/i));
 
+  it("mostra_quem_esta_em_cobertura_ativa", () => {
+    const h = html({ candidatos: [{ id: "v1", nome: "Vera", coberturaAtiva: { substitutoNome: "Caio", ate: "2026-11-01T00:00:00.000Z" } }] });
+    expect(h).toContain("Vera");
+    expect(h).toContain("Em cobertura por Caio (pausado na roleta)");
+  });
+
   it("mostra_horario_gravado", () => {
     const h = html();
     expect(h).toContain('value="08:00"');

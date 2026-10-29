@@ -12,8 +12,9 @@ import { botaoClasses } from "@/components/Botao";
 import { MensagemStatus } from "@/components/MensagemStatus";
 import { CampoTexto } from "@/components/CampoTexto";
 import { EstadoVazio } from "@/components/EstadoVazio";
+import { CampoCombobox } from "@/app/(app)/academico/controles";
 
-const campo = "rounded-md border border-gray-300 px-3 py-2 text-sm";
+const campo = "rounded-md border border-gray-200 px-3 py-2 text-sm";
 const botao = botaoClasses({ tamanho: "lg" });
 type RegistroForm = { alunoId: string; nomeAluno: string; presente: boolean | null; observacao: string; podeEditar: boolean };
 type AlunoChamada = { alunoId: string; nomeAluno: string };
@@ -112,7 +113,7 @@ export function DiarioAulas({ aulas, turmas, mensagemVazio, fusoEntrada }: { aul
       {erro && <p role="alert" className="rounded-md bg-red-50 p-3 text-sm text-red-700">{erro}</p>}
       <div className="grid gap-4 sm:grid-cols-2">
         <label className="flex flex-col gap-1 text-sm">Turma
-          {edicao ? <span className={campo}>{edicao.turma}</span> : <select className={campo} value={turmaId} onChange={async (e) => { await escolherTurma(e.target.value); }}><option value="">Selecione</option>{turmas.map((t) => <option key={t.id} value={t.id}>{t.label}</option>)}</select>}
+          {edicao ? <span className={campo}>{edicao.turma}</span> : <CampoCombobox className={campo} value={turmaId} onChange={async (e) => { await escolherTurma(e.target.value); }} placeholder="Selecione" vazio="Selecione" opcoes={[...turmas.map((t) => ({ valor: t.id, rotulo: t.label }))]} />}
         </label>
         <label className="flex flex-col gap-1 text-sm">Data e hora da aula
           <CampoDataHoraLocal fuso={fusoEntrada} className={campo} value={data} disabled={!!edicao} max={dataLocal()} onChange={async (e) => { const dataAnterior = data; setData(e.target.value); await escolherTurma(turmaId, e.target.value, { registros, dataAnterior, conferenciaAnterior: conferencia }); }} />
@@ -128,7 +129,7 @@ export function DiarioAulas({ aulas, turmas, mensagemVazio, fusoEntrada }: { aul
         {conferencia && <p role="alert" className="text-amber-700">Há vínculos com histórico incompleto. Solicite conferência à gestão antes de registrar esta chamada.</p>}
         {registros.map((r, i) => <div key={r.alunoId} className="grid gap-2 rounded-md border border-gray-100 p-3 sm:grid-cols-[1fr_160px_2fr]">
           <div className="text-sm font-medium">{r.nomeAluno}{!r.podeEditar && <p className="mt-1 text-xs font-normal text-gray-500">Histórico em leitura após saída da turma.</p>}</div>
-          <label className="flex flex-col gap-1 text-xs">Presença de {r.nomeAluno}<select className={campo} disabled={!r.podeEditar || carregando || !!troca} value={r.presente === null ? "" : r.presente ? "sim" : "nao"} onChange={(e) => setRegistros((rs) => rs.map((v, pos) => pos === i ? { ...v, presente: e.target.value === "" ? null : e.target.value === "sim" } : v))}><option value="">Não informada</option><option value="sim">Presente</option><option value="nao">Ausente</option></select></label>
+          <label className="flex flex-col gap-1 text-xs">Presença de {r.nomeAluno}<CampoCombobox className={campo} disabled={!r.podeEditar || carregando || !!troca} value={r.presente === null ? "" : r.presente ? "sim" : "nao"} onChange={(e) => setRegistros((rs) => rs.map((v, pos) => pos === i ? { ...v, presente: e.target.value === "" ? null : e.target.value === "sim" } : v))} placeholder="Não informada" vazio="Não informada" opcoes={[{ valor: "sim", rotulo: "Presente" }, { valor: "nao", rotulo: "Ausente" }]} /></label>
           <label className="flex flex-col gap-1 text-xs">Observação pedagógica de {r.nomeAluno}<CampoTexto className={campo} disabled={!r.podeEditar || carregando || !!troca} maxLength={2000} rows={2} value={r.observacao} onChange={(e) => setRegistros((rs) => rs.map((v, pos) => pos === i ? { ...v, observacao: e.target.value } : v))} /></label>
         </div>)}
         {turmaId && !carregando && !erro && !troca && registros.length === 0 && <EstadoVazio>Nenhum aluno elegível na data selecionada.</EstadoVazio>}
@@ -137,7 +138,7 @@ export function DiarioAulas({ aulas, turmas, mensagemVazio, fusoEntrada }: { aul
     </section>}
     {aulas.length === 0 && <EstadoVazio bloco>{mensagemVazio ?? "Nenhuma aula registrada neste histórico."}</EstadoVazio>}
     {aulas.map((a) => <article key={a.id} className="rounded-lg border border-gray-200 bg-surface p-5">
-      <div className="flex flex-wrap items-center justify-between gap-3"><h2 className="font-medium">{a.turma} · {new Intl.DateTimeFormat("pt-BR", { dateStyle: "short", timeStyle: "short", timeZone: a.fusoExibicao }).format(new Date(a.ocorridaEm))}</h2>{a.encontroParaEditar ? <Link className={botaoClasses({ variante: "secundario", tamanho: "lg" })} href={`/diario/encontros/${a.encontroParaEditar}`}>Completar diário do encontro</Link> : a.podeEditar ? <button className={botaoClasses({ variante: "secundario", tamanho: "lg" })} onClick={() => abrir(a)}>Editar registro</button> : <span className="rounded-full bg-gray-100 px-2 py-1 text-xs text-gray-600">Somente leitura</span>}</div>
+      <div className="flex flex-wrap items-center justify-between gap-3"><h2 className="font-medium">{a.turma} · {new Intl.DateTimeFormat("pt-BR", { dateStyle: "short", timeStyle: "short", timeZone: a.fusoExibicao }).format(new Date(a.ocorridaEm))}</h2>{a.encontroParaEditar ? <Link className={botaoClasses({ variante: "secundario", tamanho: "lg" })} href={`/diario/encontros/${a.encontroParaEditar}`}>Completar diário do encontro</Link> : a.podeEditar ? <button className={botaoClasses({ variante: "secundario", tamanho: "lg" })} onClick={() => abrir(a)}>Editar registro</button> : <span className="rounded-full bg-surface-muted px-2 py-1 text-xs text-gray-600">Somente leitura</span>}</div>
       <p className="mt-1 text-xs text-gray-500">Exibido em {a.fusoExibicao}</p>
       <p className="mt-1 text-xs text-gray-500">Professor: {a.professor}</p>
       {a.encontroParaCorrecao && <Link className="mt-2 inline-block text-sm text-brand-700 underline" href={`/diario/encontros/${a.encontroParaCorrecao}/correcao`}>Propor ou conferir correção</Link>}

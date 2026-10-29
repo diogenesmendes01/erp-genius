@@ -18,6 +18,7 @@ import { CampoTexto } from "@/components/CampoTexto";
 import { CampoDataHoraLocal } from "@/components/CampoDataHoraLocal";
 import { liberarEntregaOperacionalLocal, prorrogarEtapaOperacionalLocal } from "@/server/diario/reposicao-local";
 import { STATUS_MATRICULA_LABEL, rotular } from "@/lib/labels";
+import { CampoCombobox } from "@/app/(app)/academico/controles";
 
 export type OperacaoEntrega = {
   reposicaoId: string;
@@ -61,7 +62,7 @@ export function OperacaoEntregaReposicao({ operacao, fusoExibicao }: { operacao:
     <form className="space-y-2 rounded border p-3" onSubmit={(evento) => { evento.preventDefault(); if (envioDesignacao.current) return; envioDesignacao.current = true; const dados = new FormData(evento.currentTarget); const entrada = tentativaDesignacao.current ?? { reposicaoId: operacao.reposicaoId, professorId: String(dados.get("professorId") ?? ""), motivo: String(dados.get("motivo") ?? ""), chaveIdempotencia: chaveDesignacao.current }; tentativaDesignacao.current = entrada; setTemTentativa(true); executar(async () => { try { const resultado = await substituirAvaliadorReposicaoOperacional(entrada); if (resultado.ok) { tentativaDesignacao.current = null; setTemTentativa(false); chaveDesignacao.current = crypto.randomUUID(); } return resultado; } finally { envioDesignacao.current = false; } }); }}>
       <p className="font-medium">{operacao.avaliador ? "Substituir avaliador" : "Designar avaliador"}</p>
       {operacao.avaliador && <p className="text-sm">Avaliador vigente: {operacao.avaliador.nome}, desde {data(operacao.avaliador.inicio, fusoExibicao)} (origem {operacao.fuso}). As avaliações anteriores permanecem atribuídas ao autor original.</p>}
-      <label className="block">Professor avaliador<select name="professorId" required defaultValue="" disabled={ocupado || temTentativa} className="block w-full rounded border p-2"><option value="" disabled>Selecione o professor</option>{operacao.avaliadoresDisponiveis.filter((professor) => professor.id !== operacao.avaliador?.professorId).map((professor) => <option key={professor.id} value={professor.id}>{professor.nome}</option>)}</select></label>
+      <label className="block">Professor avaliador<CampoCombobox name="professorId" required defaultValue="" disabled={ocupado || temTentativa} className="block w-full rounded border p-2" placeholder="Selecione o professor" opcoes={[...operacao.avaliadoresDisponiveis.filter((professor) => professor.id !== operacao.avaliador?.professorId).map((professor) => ({ valor: professor.id, rotulo: professor.nome }))]} /></label>
       <label className="block">Motivo<CampoTexto name="motivo" required minLength={5} maxLength={4000} disabled={ocupado || temTentativa} className="block w-full rounded border p-2" /></label>
       <button disabled={ocupado} className={botaoClasses({ variante: "secundario", tamanho: "lg" })}>{temTentativa ? "Repetir substituição" : operacao.avaliador ? "Confirmar substituição" : "Confirmar designação"}</button>
     </form>

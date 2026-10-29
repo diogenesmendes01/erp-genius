@@ -1,10 +1,11 @@
 "use server";
 
+import { TextoNotaInternaSchema } from "../_shared/efeitos-humanos-schema";
 import { normalizarNotaComMencoes, type TokenMencao } from "@/lib/mencoes-nota";
 import { notificarMencoesNaNota } from "@/server/inbox/mencoes";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
-import { Papel } from "@prisma/client";
+import { Papel, type Evento, type Prisma } from "@prisma/client";
 import { cancelarAgendadaInboxTx } from "@/server/inbox/agendadas-cancelamento";
 import { prisma } from "@/lib/prisma";
 import { avisarAtendimentoAtualizado } from "@/server/inbox/barramento";
@@ -13,17 +14,22 @@ import { marcaIdempotencia, repeticaoIdempotente } from "@/server/_shared/idempo
 import { exigirInstanteDoCampoLocal } from "@/server/_shared/campo-local";
 import { capacidadesCrm } from "@/server/crm/permissoes";
 import { cancelarMensagemAgendada } from "@/server/crm/mensagens-agendadas";
+import { nomeAnexoCurto } from "@/server/crm/mensagens-agendadas-regras";
 import { atendimentoVisivel } from "./atendimentos";
 import { executarAgendadaInbox } from "@/server/inbox/agendadas-operacao-inbox";
 import type { NotaInternaThread } from "./consultas-inbox";
 import { notasInternasDoAtendimento } from "./notas-consulta";
 import { despacharFila } from "./despachante";
-import { copiarMidiaParaSaida } from "./midia";
+import { copiarDocumentoParaSaida, copiarMidiaParaSaida, descartarMidiaSaida } from "./midia";
+import { enfileirarSaidaInboxTx } from "./enfileirar-inbox";
+import { ERRO_ANEXAR_PROPOSTA, exigirPropostaVisivel } from "./proposta-atendimento";
+import { ERRO_ANEXAR_MATERIAL, exigirMaterialAtivo, exigirMaterialDoCatalogo } from "./catalogo-atendimento";
+import type { EnvioInboxResultado } from "./acoes";
 
 const TokenMencaoSchema = z.object({ usuarioId: z.string().min(1).max(200), inicio: z.number().int().nonnegative(), fim: z.number().int().positive() });
 const NotaSchema = z.object({
   atendimentoId: z.string().min(1),
-  nota: z.string().trim().min(1, "Escreva a nota.").max(2000, "A nota pode ter no máximo 2000 caracteres."),
+  nota: TextoNotaInternaSchema,
   mencoes: z.array(TokenMencaoSchema).max(50).optional(),
   chaveIdempotencia: ChaveIdempotenciaSchema.optional(),
 });
@@ -67,12 +73,24 @@ function revalidarAgendadas() {
   revalidatePath("/inicio");
 }
 
-export async function agendarMensagemNoAtendimento(input: { atendimentoId: string; texto: string; quando: string; chaveIdempotencia?: string }): Promise<Resultado<{ id: string }>> {
+export type AnexoVinculoAgendamento = { midiaUrl?: string; documentoPropostaId?: string; anexoNome?: string; leadId?: string; tarefaId?: string };
+const AnexoVinculoSchema = z.object({
+  midiaUrl: z.string().min(1).optional(),
+  documentoPropostaId: z.string().min(1).optional(),
+  anexoNome: z.string().optional().transform(nomeAnexoCurto),
+  leadId: z.string().min(1).optional(),
+  tarefaId: z.string().min(1).optional(),
+});
+
+export async function agendarMensagemNoAtendimento(input: { atendimentoId: string; texto: string; quando: string; perguntarSeResponder?: boolean; chaveIdempotencia?: string } & AnexoVinculoAgendamento): Promise<Resultado<{ id: string }>> {
   return executarAcao(async () => {
     const u = await exigirSessao();
     const atendimentoId = z.string().min(1).parse(input.atendimentoId);
+    const perguntarSeResponder = z.boolean().optional().parse(input.perguntarSeResponder);
+    const { midiaUrl, documentoPropostaId, anexoNome, leadId, tarefaId } = AnexoVinculoSchema.parse(input);
     const r = await executarAgendadaInbox(prisma, u.id, {
-      tipo: "CRIAR", atendimentoId, texto: input.texto, agendadaPara: input.quando, chaveIdempotencia: input.chaveIdempotencia,
+      tipo: "CRIAR", atendimentoId, texto: input.texto, agendadaPara: input.quando, perguntarSeResponder, chaveIdempotencia: input.chaveIdempotencia,
+      midiaUrl, documentoPropostaId, anexoNome, leadId, tarefaId,
     });
     revalidarAgendadas();
     return r;
@@ -91,6 +109,19 @@ export async function reagendarAgendamentoDoAtendimento(input: { atendimentoId: 
   });
 }
 
+export async function editarAgendamentoDoAtendimento(input: { atendimentoId: string; intencaoId: string; texto: string; quandoLocal: string; fuso: string; chaveIdempotencia?: string }): Promise<Resultado<{ id: string }>> {
+  return executarAcao(async () => {
+    const u = await exigirSessao();
+    const atendimentoId = z.string().min(1).parse(input.atendimentoId);
+    const intencaoId = z.string().min(1).parse(input.intencaoId);
+    const texto = z.string().parse(input.texto);
+    const agendadaPara = exigirInstanteDoCampoLocal(input.quandoLocal, input.fuso).toISOString();
+    const r = await executarAgendadaInbox(prisma, u.id, { tipo: "EDITAR", atendimentoId, intencaoId, texto, agendadaPara, chaveIdempotencia: input.chaveIdempotencia });
+    revalidarAgendadas();
+    return r;
+  });
+}
+
 export async function enviarAgendamentoAgoraDoAtendimento(input: { atendimentoId: string; intencaoId: string; chaveIdempotencia?: string }): Promise<Resultado<{ id: string }>> {
   return executarAcao(async () => {
     const u = await exigirSessao();
@@ -102,10 +133,24 @@ export async function enviarAgendamentoAgoraDoAtendimento(input: { atendimentoId
   });
 }
 
-export async function agendarMensagemNoAtendimentoLocal(input: { atendimentoId: string; texto: string; quandoLocal: string; fuso: string; chaveIdempotencia?: string }): Promise<Resultado<{ id: string }>> {
+export async function agendarMensagemNoAtendimentoLocal(input: { atendimentoId: string; texto: string; quandoLocal: string; fuso: string; perguntarSeResponder?: boolean; chaveIdempotencia?: string } & AnexoVinculoAgendamento): Promise<Resultado<{ id: string }>> {
   const r = await executarAcao(async () => exigirInstanteDoCampoLocal(input.quandoLocal, input.fuso).toISOString());
   if (!r.ok) return { ok: false, erro: r.erro };
-  return agendarMensagemNoAtendimento({ atendimentoId: input.atendimentoId, texto: input.texto, quando: r.dado!, chaveIdempotencia: input.chaveIdempotencia });
+  return agendarMensagemNoAtendimento({
+    atendimentoId: input.atendimentoId, texto: input.texto, quando: r.dado!, perguntarSeResponder: input.perguntarSeResponder, chaveIdempotencia: input.chaveIdempotencia,
+    midiaUrl: input.midiaUrl, documentoPropostaId: input.documentoPropostaId, anexoNome: input.anexoNome, leadId: input.leadId, tarefaId: input.tarefaId,
+  });
+}
+
+export async function manterAgendadaAposResposta(input: { atendimentoId: string; intencaoId: string; chaveIdempotencia?: string }): Promise<Resultado<{ id: string }>> {
+  return executarAcao(async () => {
+    const u = await exigirSessao();
+    const atendimentoId = z.string().min(1).parse(input.atendimentoId);
+    const intencaoId = z.string().min(1).parse(input.intencaoId);
+    const r = await executarAgendadaInbox(prisma, u.id, { tipo: "MANTER", atendimentoId, intencaoId, chaveIdempotencia: input.chaveIdempotencia });
+    revalidarAgendadas();
+    return r;
+  });
 }
 
 export async function cancelarAgendamentoDoAtendimento(input: { atendimentoId: string; intencaoId: string }): Promise<Resultado> {
@@ -179,5 +224,109 @@ export async function encaminharMensagem(input: { mensagemId: string; destinoAte
     for (const intencaoId of intencaoIds) await despacharFila(new Date(), { intencaoId });
     revalidatePath("/inbox");
     return { intencaoIds };
+  });
+}
+
+const PropostaSchema = z.object({
+  atendimentoId: z.string().min(1),
+  documentoId: z.string().min(1),
+  legenda: z.string().max(1024, "A legenda pode ter no máximo 1024 caracteres.").optional(),
+  chaveIdempotencia: ChaveIdempotenciaSchema.optional(),
+});
+const MaterialCatalogoSchema = z.object({
+  atendimentoId: z.string().min(1),
+  fonteId: z.string().min(1),
+  legenda: z.string().max(1024, "A legenda pode ter no máximo 1024 caracteres.").optional(),
+  chaveIdempotencia: ChaveIdempotenciaSchema.optional(),
+});
+const EVENTO_PROPOSTA = "PropostaEnviadaNoAtendimento";
+const EVENTO_CATALOGO = "CatalogoEnviadoNoAtendimento";
+
+type Tx = Prisma.TransactionClient;
+
+interface EnvioDeArquivo {
+  autorId: string;
+  atendimentoId: string;
+  evento: string;
+  referencia: Record<string, string>;
+  legenda: string;
+  chaveIdempotencia?: string;
+  mensagemConflito: string;
+  mensagemSemConfirmacao: string;
+  erroCopia: string;
+  resolverUrl(): Promise<string>;
+  conferirNaTransacao?(tx: Tx): Promise<void>;
+}
+
+function intencaoDoEvento(e: Evento, mensagem: string): string {
+  const id = (e.payload as Record<string, unknown> | null)?.intencaoId;
+  if (typeof id !== "string") throw new ErroRegra(mensagem);
+  return id;
+}
+
+async function situacaoDoEnvio(intencaoId: string): Promise<EnvioInboxResultado> {
+  await despacharFila(new Date(), { intencaoId });
+  const final = await prisma.intencaoMensagem.findUnique({ where: { id: intencaoId }, select: { status: true, motivoFalha: true } });
+  revalidatePath("/inbox");
+  return { status: final?.status ?? "PENDENTE", motivo: final?.motivoFalha ?? null };
+}
+
+async function enviarArquivoNoAtendimento(e: EnvioDeArquivo): Promise<EnvioInboxResultado> {
+  const { autorId, atendimentoId, legenda: texto } = e;
+  const marca = marcaIdempotencia(e.chaveIdempotencia, { atendimentoId, ...e.referencia, legenda: texto });
+  const alvo = marca ? { tipo: e.evento, agregadoTipo: "AtendimentoWhatsApp", autorId, marca, mensagemConflito: e.mensagemConflito } : null;
+  if (alvo) {
+    const repetido = await prisma.$transaction((tx) => repeticaoIdempotente(tx, alvo));
+    if (repetido) return situacaoDoEnvio(intencaoDoEvento(repetido, e.mensagemSemConfirmacao));
+  }
+  const url = await e.resolverUrl();
+  const midiaPath = await copiarDocumentoParaSaida(autorId, url);
+  if (!midiaPath) throw new ErroRegra(e.erroCopia);
+  let gravado: { intencaoId: string; nova: boolean };
+  try {
+    gravado = await prisma.$transaction(async (tx) => {
+      if (alvo) {
+        const repetido = await repeticaoIdempotente(tx, alvo);
+        if (repetido) return { intencaoId: intencaoDoEvento(repetido, e.mensagemSemConfirmacao), nova: false };
+      }
+      await e.conferirNaTransacao?.(tx);
+      const intencao = await enfileirarSaidaInboxTx(tx, autorId, atendimentoId, { tipo: "midia", url: midiaPath, ...(texto ? { legenda: texto } : {}) });
+      await registrarEvento(tx, { tipo: e.evento, agregadoTipo: "AtendimentoWhatsApp", agregadoId: atendimentoId, autorId, payload: { ...e.referencia, intencaoId: intencao.id, ...marca } });
+      return { intencaoId: intencao.id, nova: true };
+    });
+  } catch (erro) {
+    await descartarMidiaSaida(autorId, midiaPath);
+    throw erro;
+  }
+  if (!gravado.nova) await descartarMidiaSaida(autorId, midiaPath);
+  return situacaoDoEnvio(gravado.intencaoId);
+}
+
+export async function enviarPropostaNoAtendimento(input: { atendimentoId: string; documentoId: string; legenda?: string; chaveIdempotencia?: string }): Promise<Resultado<EnvioInboxResultado>> {
+  return executarAcao(async () => {
+    const u = await exigirSessao();
+    const { atendimentoId, documentoId, legenda, chaveIdempotencia } = PropostaSchema.parse(input);
+    return enviarArquivoNoAtendimento({
+      autorId: u.id, atendimentoId, evento: EVENTO_PROPOSTA, referencia: { documentoId }, legenda: legenda?.trim() ?? "", chaveIdempotencia,
+      mensagemConflito: "Esta tentativa já foi usada com outra proposta. Feche e reabra a conversa e confira as mensagens antes de repetir.",
+      mensagemSemConfirmacao: "Não foi possível confirmar o envio anterior desta proposta. Confira a conversa antes de repetir.",
+      erroCopia: ERRO_ANEXAR_PROPOSTA,
+      resolverUrl: async () => (await exigirPropostaVisivel(u, atendimentoId, documentoId)).url,
+    });
+  });
+}
+
+export async function enviarMaterialDoCatalogo(input: { atendimentoId: string; fonteId: string; legenda?: string; chaveIdempotencia?: string }): Promise<Resultado<EnvioInboxResultado>> {
+  return executarAcao(async () => {
+    const u = await exigirSessao();
+    const { atendimentoId, fonteId, legenda, chaveIdempotencia } = MaterialCatalogoSchema.parse(input);
+    return enviarArquivoNoAtendimento({
+      autorId: u.id, atendimentoId, evento: EVENTO_CATALOGO, referencia: { fonteId }, legenda: legenda?.trim() ?? "", chaveIdempotencia,
+      mensagemConflito: "Esta tentativa já foi usada com outro material. Feche e reabra a conversa e confira as mensagens antes de repetir.",
+      mensagemSemConfirmacao: "Não foi possível confirmar o envio anterior deste material. Confira a conversa antes de repetir.",
+      erroCopia: ERRO_ANEXAR_MATERIAL,
+      resolverUrl: async () => (await exigirMaterialDoCatalogo(u, atendimentoId, fonteId)).url,
+      conferirNaTransacao: async (tx) => { await exigirMaterialAtivo(tx, fonteId); },
+    });
   });
 }

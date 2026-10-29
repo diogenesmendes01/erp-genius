@@ -8,6 +8,7 @@ import { botaoClasses } from "@/components/Botao";
 import { MSG_DECISAO_INCERTA } from "@/lib/mensagens";
 import { useAcaoCliente } from "@/lib/acao-cliente";
 import { CampoTexto } from "@/components/CampoTexto";
+import { CampoSelect, Caixa, SelectItem } from "@/app/(app)/academico/controles";
 
 export function ProporMigracao({ turmaId, destinoId, estadoHash, versaoEsperada }: {
   turmaId: string; destinoId: string; estadoHash: string; versaoEsperada: number;
@@ -23,7 +24,7 @@ export function ProporMigracao({ turmaId, destinoId, estadoHash, versaoEsperada 
   }}>
     <fieldset disabled={acao.ocupado} className="space-y-3"><legend className="font-medium">Encaminhar para decisão independente</legend>
       <label className="block">Motivo da mudança<CampoTexto name="motivo" required minLength={5} maxLength={2000} className="block w-full rounded border p-2" /></label>
-      <label className="block"><input type="checkbox" required /> Conferi as versões e os impactos apresentados.</label>
+      <label className="block"><Caixa required /> Conferi as versões e os impactos apresentados.</label>
       <button className={botaoClasses({ tamanho: "lg" })}>{acao.ocupado ? "Registrando…" : "Registrar proposta"}</button>
     </fieldset><FeedbackAcao erro={acao.erro} sucesso={acao.sucesso} />
   </form>;
@@ -39,9 +40,9 @@ export function DecidirMigracao({ propostaId, estadoHash, podeAprovar }: { propo
     else if (d?.tipo === "ok") router.refresh();
   }}>
     <fieldset disabled={acao.ocupado} className="space-y-3"><legend className="font-medium">Decisão desta proposta</legend>
-      <label className="block">Decisão<select name="decisao" required defaultValue="" className="block rounded border p-2"><option value="">Selecione</option>{podeAprovar && <option value="aprovar">Aprovar e aplicar a mudança</option>}<option value="rejeitar">Rejeitar para revisão</option></select></label>
+      <label className="block">Decisão<CampoSelect name="decisao" required defaultValue="" className="block rounded border p-2" placeholder="Selecione">{podeAprovar && <SelectItem value={"aprovar"}>Aprovar e aplicar a mudança</SelectItem>}<SelectItem value={"rejeitar"}>Rejeitar para revisão</SelectItem></CampoSelect></label>
       <label className="block">Justificativa<CampoTexto name="motivo" required minLength={5} maxLength={2000} className="block w-full rounded border p-2" /></label>
-      <label className="block"><input type="checkbox" required /> Conferi a proposta e seus impactos.</label>
+      <label className="block"><Caixa required /> Conferi a proposta e seus impactos.</label>
       <button className={botaoClasses({ variante: "secundario", tamanho: "lg" })}>{acao.ocupado ? "Registrando…" : "Registrar decisão"}</button>
     </fieldset><FeedbackAcao erro={acao.erro} sucesso={acao.sucesso} />
   </form>;

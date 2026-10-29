@@ -17,9 +17,10 @@ vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh: m.refresh, push
 vi.mock("@/server/matricula/condicoes-continuidade-mensal", () => ({ consultarCondicoesContinuidadeMensal: vi.fn(), prepararCondicoesContinuidadeMensal: m.preparar, decidirCondicoesContinuidadeMensal: m.decidir }));
 
 import { CondicoesContinuidadeMensal } from "./CondicoesContinuidadeMensal";
-import { MSG_DECISAO_INCERTA, MSG_RESULTADO_INCERTO_SEM_CHAVE } from "@/lib/mensagens";
+import { MSG_DECISAO_INCERTA, MSG_RESULTADO_INCERTO } from "@/lib/mensagens";
 import { anuncios, contratoFeedbackSeparado } from "@/test/feedback-acao";
 import { FormDataFalso, criarGanchos, elementos, submeter, texto } from "@/test/tela-sem-dom";
+import { SeletorCampo } from "@/app/(app)/secretaria/controles";
 
 beforeEach(() => { vi.resetAllMocks(); m.ganchos = criarGanchos(); vi.stubGlobal("FormData", FormDataFalso); });
 afterEach(() => { vi.unstubAllGlobals(); });
@@ -31,7 +32,7 @@ const dados = {
 const tela = () => m.ganchos!.renderizar(CondicoesContinuidadeMensal, { dados, fusoEscola: "America/Sao_Paulo" });
 
 const escolher = (id: string, valor: string) =>
-  (elementos(tela()).find((n) => n.type === "select" && n.props.id === id)!.props.onChange as (e: { target: { value: string } }) => void)({ target: { value: valor } });
+  (elementos(tela()).find((n) => n.type === SeletorCampo && n.props.id === id)!.props.onChange as (e: { target: { value: string } }) => void)({ target: { value: valor } });
 function escolherRegras() {
   escolher("referencia-cobertura", "MES_CIVIL");
   escolher("ajuste-vencimento", "MANTER_DATA");
@@ -44,7 +45,7 @@ describe("CondicoesContinuidadeMensal", () => {
   contratoFeedbackSeparado({
     nome: "preparar continuidade mensal", preparar: escolherRegras, tela, action: m.preparar,
     acionar: () => submeter(tela(), valoresPreparo, 0),
-    sucesso: "Versão preparada para revisão independente.", incerto: MSG_RESULTADO_INCERTO_SEM_CHAVE,
+    sucesso: "Versão preparada para revisão independente.", incerto: MSG_RESULTADO_INCERTO,
     ocupado: () => elementos(tela()).some((n) => n.type === "button" && texto(n.props.children) === "Registrando…"),
   });
 
@@ -71,5 +72,23 @@ describe("CondicoesContinuidadeMensal", () => {
     await submeter(tela(), valoresPreparo, 0);
     expect(m.preparar.mock.calls[1][0]).toMatchObject({ matriculaId: "m", documentoId: "d", regras: { regraCobertura: { referencia: "MES_CIVIL" }, referenciaVencimento: "MES_COBERTURA", ajusteVencimento: { regra: "MANTER_DATA" }, diaVencimento: 10 } });
     expect(m.refresh).toHaveBeenCalledTimes(1);
+  });
+
+  it("reenvio depois de resultado incerto repete a chave; depois do sucesso, a chave é nova", async () => {
+    escolherRegras();
+    m.preparar.mockRejectedValueOnce(new TypeError("Failed to fetch"));
+    await submeter(tela(), valoresPreparo, 0);
+    m.preparar.mockResolvedValueOnce({ ok: false, erro: "Recusado" });
+    await submeter(tela(), valoresPreparo, 0);
+    m.preparar.mockResolvedValueOnce({ ok: true });
+    await submeter(tela(), valoresPreparo, 0);
+    m.preparar.mockResolvedValueOnce({ ok: true });
+    await submeter(tela(), valoresPreparo, 0);
+    const [primeira, erro, sucesso, nova] = m.preparar.mock.calls.map((c) => (c[0] as { chaveIdempotencia?: string }).chaveIdempotencia);
+    expect(primeira).toMatch(/^[0-9a-f-]{36}$/);
+    expect(erro).toBe(primeira);
+    expect(sucesso).toBe(primeira);
+    expect(nova).toMatch(/^[0-9a-f-]{36}$/);
+    expect(nova).not.toBe(primeira);
   });
 });

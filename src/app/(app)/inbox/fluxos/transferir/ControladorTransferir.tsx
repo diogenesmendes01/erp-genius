@@ -29,7 +29,7 @@ export function ControladorTransferir(props: Props) {
   const [resumo, setResumo] = useState<{ chave: string; disponivel: boolean } | null>(null);
   const invalidada = controle.invalidada;
   const aberto = controle.aberto;
-  const possuiSetores = opcoes.setores.length > 0;
+  const usaResumo = opcoes.setores.length > 0 || opcoes.pessoas;
   useEffect(() => {
     if (!aberto || invalidada || !opcoes.pessoas) return;
     let viva = true;
@@ -39,13 +39,13 @@ export function ControladorTransferir(props: Props) {
     return () => { viva = false; };
   }, [atendimentoId, carregarPessoas, chave, aberto, invalidada, opcoes.pessoas]);
   useEffect(() => {
-    if (!aberto || invalidada || !possuiSetores) return;
+    if (!aberto || invalidada || !usaResumo) return;
     let viva = true;
     void carregarResumo(atendimentoId).then(disponivel => {
       if (viva) setResumo({ chave, disponivel });
     }).catch(() => { if (viva) setResumo({ chave, disponivel: false }); });
     return () => { viva = false; };
-  }, [atendimentoId, carregarResumo, chave, aberto, invalidada, possuiSetores]);
+  }, [atendimentoId, carregarResumo, chave, aberto, invalidada, usaResumo]);
   const tokenFoto = `${useId()}:${controle.aberturaId}`;
   const [foto, setFoto] = useState<{chave:string;dado:FotoPresenca|null}|null>(null);
   useEffect(()=>{

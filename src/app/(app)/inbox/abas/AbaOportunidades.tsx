@@ -7,7 +7,6 @@ import type { Resultado } from "@/server/_shared/resultado";
 import { FeedbackAcao } from "@/components/FeedbackAcao";
 import { useAcaoCliente } from "@/lib/acao-cliente";
 import { formatarMoedaOuIndefinida } from "@/lib/dinheiro";
-import { TEMPERATURA_LABEL } from "@/lib/labels";
 import type { DestinoArraste } from "@/server/crm/etapas";
 import { moverEtapaNoInbox } from "@/server/inbox/acoes-painel";
 import type { OportunidadesPainel } from "@/server/inbox/painel-oportunidades";
@@ -18,6 +17,8 @@ import { TarefasOportunidade } from "./TarefasOportunidade";
 import { OutrasOportunidades } from "./OutrasOportunidades";
 import { CartaoExperimental } from "./CartaoExperimental";
 import { PrevisaoOportunidade } from "./PrevisaoOportunidade";
+import { QualificacaoOportunidadeInbox } from "./QualificacaoOportunidadeInbox";
+import { AcoesFechamentoOportunidade, type SecaoFechamentoInbox } from "./AcoesFechamentoOportunidade";
 
 type Props = { dados: OportunidadesPainel; capacidades: CapacidadesPainel; atendimentoId: string; fuso: string | null; fusoEscola?: string; aoMudar(): void; aoNovaTarefa?(): void; aoAdicionarNota?(): void; aoEditarTarefa?(t: import("@/server/inbox/painel-tarefas").TarefaPainel): void; aoAbrirPerda(): void; podeAbrirFunil?: boolean; podeCriarOportunidade?: boolean; contextoAria?: boolean; podeAssumir?: boolean; aoAssumir?(): Promise<Resultado> };
 export function AbaOportunidades(props: Props) {
@@ -25,7 +26,8 @@ export function AbaOportunidades(props: Props) {
 }
 function OportunidadeDoAtendimento({ dados, capacidades, atendimentoId, fuso, fusoEscola, aoMudar, aoNovaTarefa, aoAdicionarNota, aoEditarTarefa, aoAbrirPerda, podeAbrirFunil = false, podeCriarOportunidade = false, podeAssumir = false, contextoAria = false, aoAssumir }: Props) {
   const acao = useAcaoCliente({ idempotente: true }), vivo = useRef(false);
-  const [erroLocal, setErroLocal] = useState<string | null>(null), [fluxo, setFluxo] = useState<string | null>(null);
+  const [erroLocal, setErroLocal] = useState<string | null>(null);
+  const [secao, setSecao] = useState<SecaoFechamentoInbox | null>(null);
   useEffect(() => { vivo.current = true; return () => { vivo.current = false; }; }, []);
   const chaveAssumir = JSON.stringify([atendimentoId, dados.atual?.id, contextoAria, podeAssumir]);
   const [ofertaAssumir, setOfertaAssumir] = useState(() => ({ chave: chaveAssumir, token: Symbol("assumir") }));
@@ -45,7 +47,7 @@ function OportunidadeDoAtendimento({ dados, capacidades, atendimentoId, fuso, fu
     if (!podeAssumir || !aoAssumir || acao.ocupado) return;
     const ciclo = cicloAssumir.current;
     if (contextoAria && (!ciclo.ativo || ciclo.token !== ofertaAssumir.token)) return;
-    setErroLocal(null); setFluxo(null);
+    setErroLocal(null);
     const r = await acao.executar(async () => {
       try { const resultado = await aoAssumir(); return contextoAria && !ciclo.ativo ? { ok: true as const } : resultado; }
       catch (e) { if (contextoAria && !ciclo.ativo) return { ok: true as const }; throw e; }
@@ -57,16 +59,18 @@ function OportunidadeDoAtendimento({ dados, capacidades, atendimentoId, fuso, fu
   const destinoPerda = opcoesEtapa(o.etapa).find(e => e.etapa === "PERDIDO")?.destino;
   function escolher(etapa: EtapaLead, destino: DestinoArraste) {
     if (!capacidades.moverEtapa || acao.ocupado) return;
-    acao.limpar(); setErroLocal(null); setFluxo(null);
+    acao.limpar(); setErroLocal(null); setSecao(null);
     if (destino.tipo === "nenhum") return;
     if (destino.tipo === "recusar") { setErroLocal(destino.motivo); return; }
     if (destino.tipo === "acao") {
       if (destino.acao === "marcarPerdido") { aoAbrirPerda(); return; }
-      const rotulos = { agendarExperimental: "agendar a experimental", enviarProposta: "enviar a proposta", prepararContratacao: "preparar a contratação" };
-      setFluxo("Para " + rotulos[destino.acao] + ", abra a oportunidade no funil."); return;
+      if (destino.acao === "agendarExperimental") return;
+      setSecao(destino.acao); return;
     }
     void mover(etapa);
   }
+  const encerrada = o.etapa === "MATRICULADO" || o.etapa === "PERDIDO";
+  const podeFechar = capacidades.moverEtapa && !encerrada;
   return <div className="min-w-0 space-y-4">
     <header className="min-w-0 space-y-1">
       <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-1 text-xs"><h3 className="font-medium text-brand-700">Oportunidade atual</h3><span className="text-gray-500">Funil Matrículas</span></div>
@@ -74,11 +78,12 @@ function OportunidadeDoAtendimento({ dados, capacidades, atendimentoId, fuso, fu
       <p className="text-[17px] font-semibold">{o.valor === null ? "Sem valor" : formatarMoedaOuIndefinida(o.valor, o.moeda)}</p>
     </header>
     <BarraEtapas etapa={o.etapa} podeMover={capacidades.moverEtapa} ocupado={acao.ocupado} aoEscolher={escolher} />
-    <CartaoExperimental oportunidade={o} fuso={fuso} fusoEscola={fusoEscola ?? fuso ?? ""} podeAbrirFunil={podeAbrirFunil} />
+    <CartaoExperimental oportunidade={o} fuso={fuso} fusoEscola={fusoEscola ?? fuso ?? ""} podeAbrirFunil={podeAbrirFunil} podeMover={capacidades.moverEtapa} />
+    <QualificacaoOportunidadeInbox atendimentoId={atendimentoId} oportunidadeId={o.id} temperatura={o.temperatura} etapa={o.etapa} podeEditar={podeFechar} resumo={{ interesse: o.interesse ?? null, objetivo: o.objetivo ?? null, urgencia: o.urgencia ?? null, orcamento: o.orcamento ?? null, objecao: o.objecao ?? null, proximaAcao: o.proximaAcao ?? null }} aoMudar={aoMudar} />
+    <AcoesFechamentoOportunidade atendimentoId={atendimentoId} oportunidade={o} podeAgir={podeFechar} secao={secao} aoMudar={aoMudar} />
     <FeedbackAcao erro={erroLocal ?? acao.erro} sucesso={acao.sucesso} />
-    {fluxo && <div role="status" className="space-y-1 text-sm text-gray-600"><p>{fluxo}</p>{podeAbrirFunil && <a href={"/funil?o=" + encodeURIComponent(o.id)} className="inline-flex min-h-11 items-center text-brand-700 underline">Abrir no funil</a>}</div>}
     <dl className="space-y-2 text-[13px]">
-      {([['Responsável', o.responsavel?.nome ?? 'Sem responsável'], ['Temperatura', TEMPERATURA_LABEL[o.temperatura]], ['Produto', o.produto ?? '—']] as const).map(([rotulo, valor]) => <div key={rotulo} className="grid min-w-0 grid-cols-[104px_minmax(0,1fr)] gap-2"><dt className="text-gray-600">{rotulo}</dt><dd className="min-w-0 [overflow-wrap:anywhere]">{valor}</dd></div>)}
+      {([['Responsável', o.responsavel?.nome ?? 'Sem responsável'], ['Produto', o.produto ?? '—']] as const).map(([rotulo, valor]) => <div key={rotulo} className="grid min-w-0 grid-cols-[104px_minmax(0,1fr)] gap-2"><dt className="text-gray-600">{rotulo}</dt><dd className="min-w-0 [overflow-wrap:anywhere]">{valor}</dd></div>)}
     </dl>
     <PrevisaoOportunidade atendimentoId={atendimentoId} oportunidadeId={o.id} probabilidadePct={o.probabilidadePct} previsaoFechamento={o.previsaoFechamento} podeEditar={o.podeEditarPrevisao} aoMudar={aoMudar}/>
     <div className="flex flex-col items-start">

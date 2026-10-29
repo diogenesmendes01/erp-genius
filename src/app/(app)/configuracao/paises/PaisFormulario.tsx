@@ -8,9 +8,11 @@ import { PaisSchema, type PaisInput } from "@/server/paises/schema";
 import { criarPais, editarPais } from "@/server/paises/acoes";
 import { FeedbackAcao } from "@/components/FeedbackAcao";
 import { useAcaoCliente } from "@/lib/acao-cliente";
+import { useChaveIdempotencia } from "@/lib/chave-idempotencia";
 import { botaoClasses } from "@/components/Botao";
 import { EstadoVazio } from "@/components/EstadoVazio";
 import { CampoFuso } from "@/components/CampoFuso";
+import { CampoCombobox } from "@/components/ui/combobox";
 
 const VALIDADORES = ["cpf", "cedula_cr", "curp", "dni_ar", "dui_sv", "passaporte"];
 
@@ -26,7 +28,7 @@ export interface PaisParaEditar {
 }
 
 const inputCls =
-  "w-full rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:border-brand-500";
+  "w-full rounded-md border border-gray-200 px-3 py-2 text-sm outline-none focus:border-brand-500";
 
 export function PaisFormulario({
   pais,
@@ -36,7 +38,8 @@ export function PaisFormulario({
   onClose: () => void;
 }) {
   const router = useRouter();
-  const acao = useAcaoCliente({ idempotente: false });
+  const acao = useAcaoCliente({ idempotente: !pais });
+  const tentativa = useChaveIdempotencia();
 
   const {
     register,
@@ -59,7 +62,8 @@ export function PaisFormulario({
   const { fields, append, remove } = useFieldArray({ control, name: "tiposDocumento", keyName: "_formKey" });
 
   async function onSubmit(data: PaisInput) {
-    const d = await acao.executar<unknown>(() => pais ? editarPais(pais.id, data) : criarPais(data));
+    const d = await acao.executar<unknown>(() => pais ? editarPais(pais.id, data) : criarPais({ ...data, chaveIdempotencia: tentativa.atual }));
+    tentativa.depoisDo(d);
     if (d?.tipo !== "ok") return;
     router.refresh();
     onClose();
@@ -140,17 +144,9 @@ export function PaisFormulario({
                 placeholder="Cédula"
                 className={inputCls + " flex-1"}
               />
-              <select
-                {...register(`tiposDocumento.${i}.validador`)}
-                aria-label={`Validador do tipo de documento ${i + 1}`}
-                className={inputCls + " w-40"}
-              >
-                {VALIDADORES.map((v) => (
-                  <option key={v} value={v}>
-                    {v}
-                  </option>
-                ))}
-              </select>
+              <Controller control={control} name={`tiposDocumento.${i}.validador`} render={({ field }) => (
+                <CampoCombobox value={field.value} onChange={(evento) => field.onChange(evento.target.value)} aria-label={`Validador do tipo de documento ${i + 1}`} className={inputCls + " w-40"} opcoes={VALIDADORES.map((v) => ({ valor: v, rotulo: v }))} />
+              )} />
               <button
                 type="button"
                 onClick={() => remove(i)}

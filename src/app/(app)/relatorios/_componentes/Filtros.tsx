@@ -1,8 +1,9 @@
 import Link from "next/link";
 import { botaoClasses } from "@/components/Botao";
+import { CampoCombobox } from "@/components/ui/combobox";
+import { CampoData } from "@/components/ui/date-picker";
+import { CampoSelect } from "@/components/ui/select";
 import { ORIGEM_CANAL_LABEL, TEMPERATURA_LABEL } from "@/lib/labels";
-
-const CAMPO = "min-h-11 rounded-md border border-gray-300 px-2 text-sm md:min-h-0 md:py-1.5";
 
 export const PERIODOS = [
   { valor: "HOJE", rotulo: "Hoje" },
@@ -24,40 +25,32 @@ export function Filtros({ valores, aba, pessoas, mostrarResponsavel, mostrarAuto
   return (
     <form method="get" action="/relatorios" role="search" aria-label="Filtrar relatórios" className="flex flex-wrap items-end gap-2">
       <input type="hidden" name="aba" value={aba} />
-      <select name="periodo" defaultValue={valores.periodo || "30D"} aria-label="Período" className={CAMPO}>
-        {PERIODOS.map((p) => <option key={p.valor} value={p.valor}>{p.rotulo}</option>)}
-      </select>
-      <label className="text-xs text-gray-600">
-        De <input type="date" name="de" defaultValue={valores.de ?? ""} className={CAMPO} />
+      <label htmlFor="relatorio-periodo" className="sr-only">Período</label>
+      <CampoSelect id="relatorio-periodo" name="periodo" defaultValue={valores.periodo || "30D"} opcoes={PERIODOS.map((p) => ({ valor: p.valor, rotulo: p.rotulo }))} />
+      <label className="grid gap-1 text-xs text-gray-600">
+        De
+        <CampoData name="de" defaultValue={valores.de ?? ""} />
       </label>
-      <label className="text-xs text-gray-600">
-        Até <input type="date" name="ate" defaultValue={valores.ate ?? ""} className={CAMPO} />
+      <label className="grid gap-1 text-xs text-gray-600">
+        Até
+        <CampoData name="ate" defaultValue={valores.ate ?? ""} />
       </label>
       {mostrarResponsavel && (
-        <select name="responsavel" defaultValue={valores.responsavel ?? ""} aria-label="Responsável" className={CAMPO}>
-          <option value="">Todos os responsáveis</option>
-          {pessoas.map((r) => <option key={r.id} value={r.id}>{r.nome}</option>)}
-        </select>
+        <CampoCombobox name="responsavel" defaultValue={valores.responsavel ?? ""} aria-label="Responsável" vazio="Todos os responsáveis" opcoes={pessoas.map((r) => ({ valor: r.id, rotulo: r.nome }))} />
       )}
       {mostrarFunil && (
-        <select name="funil" defaultValue={valores.funil ?? ""} aria-label="Funil" className={CAMPO}>
-          <option value="">Todos os funis</option>
-        </select>
+        <CampoCombobox name="funil" defaultValue={valores.funil ?? ""} aria-label="Funil" vazio="Todos os funis" opcoes={[]} />
       )}
-      <select name="origem" defaultValue={valores.origem ?? ""} aria-label="Origem" className={CAMPO}>
-        <option value="">Todas as origens</option>
-        {Object.entries(ORIGEM_CANAL_LABEL).map(([v, r]) => <option key={v} value={v}>{r}</option>)}
-      </select>
-      <select name="temperatura" defaultValue={valores.temperatura ?? ""} aria-label="Temperatura" className={CAMPO}>
-        <option value="">Todas as temperaturas</option>
-        {Object.entries(TEMPERATURA_LABEL).map(([v, r]) => <option key={v} value={v}>{r}</option>)}
-      </select>
+      <CampoCombobox name="origem" defaultValue={valores.origem ?? ""} aria-label="Origem" vazio="Todas as origens" opcoes={Object.entries(ORIGEM_CANAL_LABEL).map(([valor, rotulo]) => ({ valor, rotulo }))} />
+      <CampoCombobox name="temperatura" defaultValue={valores.temperatura ?? ""} aria-label="Temperatura" vazio="Todas as temperaturas" opcoes={Object.entries(TEMPERATURA_LABEL).map(([valor, rotulo]) => ({ valor, rotulo }))} />
       {mostrarAutor && (
-        <select name="autor" defaultValue={valores.autor ?? ""} aria-label="Quem fez" className={CAMPO}>
-          <option value="">Aria e equipe</option>
-          <option value="ARIA">Só a Aria</option>
-          <option value="EQUIPE">Só a equipe</option>
-        </select>
+        <CampoCombobox
+          name="autor"
+          defaultValue={valores.autor ?? ""}
+          aria-label="Quem fez"
+          vazio="Aria e equipe"
+          opcoes={[{ valor: "ARIA", rotulo: "Só a Aria" }, { valor: "EQUIPE", rotulo: "Só a equipe" }]}
+        />
       )}
       <button type="submit" className={botaoClasses({ variante: "secundario" })}>Filtrar</button>
       {filtrando && <Link href={`/relatorios?aba=${aba}`} className="text-sm text-brand-700 hover:underline">Limpar filtros</Link>}

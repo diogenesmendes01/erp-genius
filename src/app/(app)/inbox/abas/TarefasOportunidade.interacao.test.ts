@@ -12,7 +12,7 @@ let root:Root,host:Elemento,pagina:Elemento;
 const mudar=vi.fn(),teclas=new Set<(e:KeyboardEvent)=>void>();
 const renderLista=(tarefas:TarefaPainel[],atendimentoId="a330")=>act(async()=>root.render(createElement(TarefasOportunidade,{atendimentoId,tarefas,fusoEscola:"America/Sao_Paulo",fuso:"America/Costa_Rica",podeCriar:false,aoMudar:mudar})));
 const render=(atendimentoId="a330",t=tarefa)=>act(async()=>root.render(createElement(TarefasOportunidade,{atendimentoId,tarefas:[t],fusoEscola:"America/Sao_Paulo",fuso:"America/Costa_Rica",podeCriar:false,aoMudar:mudar})));
-function prop(e:Elemento,n:string,arg?:unknown){const k=Object.keys(e).find(k=>k.startsWith("__reactProps"))!;(e as unknown as Record<string,Record<string,(a?:unknown)=>unknown>>)[k][n](arg);}
+function prop(e:Elemento,n:string,arg?:unknown){const k=Object.keys(e).find(k=>k.startsWith("__reactProps"));const direto=k?(e as unknown as Record<string,Record<string,(a?:unknown)=>unknown>>)[k]:undefined;if(typeof direto?.[n]==="function"){direto[n](arg);return;}const fk=Object.keys(e).find(k=>k.startsWith("__reactFiber"));let f=fk?(e as unknown as Record<string,{return?:unknown;memoizedProps?:Record<string,unknown>}>)[fk]:undefined;while(f){const fn=f.memoizedProps?.[n];if(typeof fn==="function"){(fn as (a?:unknown)=>void)(arg);return;}f=f.return as typeof f;}throw new Error("sem "+n);}
 const btn=(texto:string)=>pagina.querySelectorAll("button").find(b=>b.textContent===texto)!;
 const gatilho=()=>host.querySelectorAll("button").find(b=>b.getAttribute("title")==="Cancelar tarefa")!;
 const abrir=()=>act(async()=>prop(gatilho(),"onClick"));
@@ -27,12 +27,12 @@ beforeEach(async()=>{
 afterEach(async()=>{await act(async()=>root.unmount());desligarObservadores();vi.unstubAllGlobals();});
 it("concluir trava clique duplo antes de rerender e recarrega só após ACK",async()=>{
  let fim!:(r:{ok:true})=>void;concluir.mockImplementation(()=>new Promise(r=>fim=r));await render();
- await act(async()=>{prop(host.querySelector("input")!,"onChange");prop(host.querySelector("input")!,"onChange");});
+ await act(async()=>{prop(host.querySelector('[role="checkbox"]')!,"onCheckedChange");prop(host.querySelector('[role="checkbox"]')!,"onCheckedChange");});
  expect(concluir).toHaveBeenCalledExactlyOnceWith("a330","t330",1);expect(mudar).not.toHaveBeenCalled();
  await act(async()=>fim({ok:true}));expect(mudar).toHaveBeenCalledOnce();
 });
-it("reabrir concluída não depende de podeAgir das abertas",async()=>{await render("a330",{...tarefa,status:"CONCLUIDA",podeAgir:false});await act(async()=>prop(host.querySelector("input")!,"onChange"));expect(reabrir).toHaveBeenCalledExactlyOnceWith("a330","t330",1);});
-it("erro de versão fica visível e pede atualização",async()=>{concluir.mockResolvedValue({ok:false,erro:"Esta tarefa foi alterada por outra pessoa. Recarregue."});await render();await act(async()=>prop(host.querySelector("input")!,"onChange"));expect(host.textContent).toContain("Esta tarefa foi alterada por outra pessoa. Recarregue.");expect(mudar).toHaveBeenCalledOnce();});
+it("reabrir concluída não depende de podeAgir das abertas",async()=>{await render("a330",{...tarefa,status:"CONCLUIDA",podeAgir:false});await act(async()=>prop(host.querySelector('[role="checkbox"]')!,"onCheckedChange"));expect(reabrir).toHaveBeenCalledExactlyOnceWith("a330","t330",1);});
+it("erro de versão fica visível e pede atualização",async()=>{concluir.mockResolvedValue({ok:false,erro:"Esta tarefa foi alterada por outra pessoa. Recarregue."});await render();await act(async()=>prop(host.querySelector('[role="checkbox"]')!,"onCheckedChange"));expect(host.textContent).toContain("Esta tarefa foi alterada por outra pessoa. Recarregue.");expect(mudar).toHaveBeenCalledOnce();});
 it("cancelar exige motivo e confirmação real; Voltar não chama action",async()=>{await render();gatilho().focus();await abrir();expect(pagina.querySelector('[role="alertdialog"]')).toBeTruthy();expect(btn("Confirmar cancelamento").hasAttribute("disabled")).toBe(true);await clicar("Confirmar cancelamento");expect(cancelar).not.toHaveBeenCalled();await clicar("Voltar");expect(pagina.querySelector("textarea")).toBeNull();expect(cancelar).not.toHaveBeenCalled();});
 it("confirmação final recebe motivo normalizado, foco seguro, busy e duplo clique único",async()=>{
  let fim!:(r:{ok:true})=>void;cancelar.mockImplementation(()=>new Promise(r=>fim=r));await render();await abrir();await revisar("  Cliente pediu  ");
@@ -83,7 +83,7 @@ it("ACK de cancelamento vigente continua válido após refresh de outra tarefa",
  expect(mudar).toHaveBeenCalledOnce();expect(pagina.querySelector('[role="alertdialog"]')).toBeNull();expect(cancelar).toHaveBeenCalledExactlyOnceWith("a330","t330",1,"Alvo vigente");
 });
 it("ACK de conclusão do alvo atualizado não reconcilia outra versão",async()=>{
- let fim!:(r:{ok:true})=>void;concluir.mockImplementation(()=>new Promise(r=>fim=r));await render();await act(async()=>prop(host.querySelector("input")!,"onChange"));await render("a330",{...tarefa,versao:2});await act(async()=>fim({ok:true}));expect(mudar).not.toHaveBeenCalled();
+ let fim!:(r:{ok:true})=>void;concluir.mockImplementation(()=>new Promise(r=>fim=r));await render();await act(async()=>prop(host.querySelector('[role="checkbox"]')!,"onCheckedChange"));await render("a330",{...tarefa,versao:2});await act(async()=>fim({ok:true}));expect(mudar).not.toHaveBeenCalled();
 });
 it("alvo removido e reapresentado não reabilita a abertura invalidada",async()=>{
  await render();await abrir();await revisar("Preservado mesmo assim");const campo=pagina.querySelector("textarea");await renderLista([]);await render();
@@ -100,6 +100,16 @@ it.each([403,404])("revogação %s desmonta a sessão e ACK antigo não reconcil
 });
 it("resultado incerto após refresh preserva motivo sem converter em sucesso",async()=>{
  let falhar!:(e:Error)=>void;cancelar.mockImplementation(()=>new Promise((_r,reject)=>falhar=reject));await render();await abrir();await revisar("Motivo incerto");await clicar("Confirmar cancelamento");await renderLista([]);await act(async()=>falhar(Error("rede")));expect(mudar).not.toHaveBeenCalled();expect((pagina.querySelector("textarea")! as unknown as {value:string}).value).toBe("Motivo incerto");expect(btn("Confirmar cancelamento").hasAttribute("disabled")).toBe(true);
+});
+it("concluir com mensagem pergunta e envia manter; cancelar exige a escolha",async()=>{
+ const com={...tarefa,mensagemAgendada:{id:"m",status:"ADIADA" as const,agendadaPara:"2026-10-29T13:00:00.000Z",quando:"29/10 10:00"}};
+ await render("a330",com);expect(host.textContent).toContain("Mensagem agendada · 29/10 10:00");
+ await act(async()=>prop(host.querySelector('[role="checkbox"]')!,"onCheckedChange"));expect(concluir).not.toHaveBeenCalled();
+ const manter=pagina.querySelectorAll("button").find(b=>b.textContent==="Manter o envio agendado")!;await act(async()=>prop(manter,"onClick"));
+ expect(concluir).toHaveBeenCalledExactlyOnceWith("a330","t330",1,"manter");
+ await render("a330",com);await abrir();await revisar("Cliente pediu");expect(btn("Confirmar cancelamento").hasAttribute("disabled")).toBe(true);
+ const radio=pagina.querySelectorAll('[role="radio"]').find(e=>e.getAttribute("value")==="cancelar")!;await act(async()=>{const fk=Object.keys(radio).find(k=>k.startsWith("__reactFiber"))!;let f=(radio as unknown as Record<string,{return?:unknown;memoizedProps?:Record<string,unknown>}>)[fk];while(f&&typeof f.memoizedProps?.onValueChange!=="function")f=f.return as typeof f;(f!.memoizedProps!.onValueChange as (v:string)=>void)("cancelar");});
+ await clicar("Confirmar cancelamento");expect(cancelar).toHaveBeenCalledExactlyOnceWith("a330","t330",1,"Cliente pediu","cancelar");
 });
 it("fechar superfície e reabrir mesma conversa invalida o ACK da abertura anterior",async()=>{
  let fim!:(r:{ok:true})=>void;cancelar.mockImplementation(()=>new Promise(r=>fim=r));await render();await abrir();await revisar("Tentativa antiga");await clicar("Confirmar cancelamento");await act(async()=>root.render(null));await render();await abrir();await revisar("Abertura nova");await act(async()=>fim({ok:true}));expect(mudar).not.toHaveBeenCalled();expect((pagina.querySelector("textarea")! as unknown as {value:string}).value).toBe("Abertura nova");expect(pagina.querySelector('[role="alertdialog"]')).toBeTruthy();

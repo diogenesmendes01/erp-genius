@@ -5,6 +5,8 @@ import { listarAvaliacoesAlocacao } from "@/server/avaliacoes/lancamentos";
 import { consultarConsolidadoAvaliacoes } from "@/server/avaliacoes/consolidado";
 import { EstadoVazio } from "@/components/EstadoVazio";
 import { HABILIDADE_LABEL } from "@/lib/labels";
+import {Collapsible, CollapsibleTrigger, CollapsibleContent} from "@/app/(app)/academico/controles";
+import { Table, TableHeader, TableBody, TableHead, TableRow, TableCell, TableCaption } from "@/components/ui/table";
 
 function valor(f: { numerador: string; denominador: string } | null) {
   if (!f) return "Pendente";
@@ -76,13 +78,13 @@ export default async function AvaliacoesPage({ params }: { params: Promise<{ alo
         {(consolidado.dado.frequencia.pendencias.length > 0 || consolidado.dado.frequencia.pendenciasHistoricas.length > 0) && <p role="status">Há aulas, chamadas ou registros históricos a conferir. Ausências, impedimentos e reposições precisam ser identificados antes do fechamento.</p>}
         {!consolidado.dado.frequencia.base && <p>Nenhum encontro ministrado elegível foi identificado para esta apuração.</p>}
       </div>
-      <div className="overflow-x-auto"><table className="w-full text-left"><caption className="sr-only">Resultados por habilidade</caption><thead><tr><th>Habilidade</th><th>Resultado</th><th>Mínimo</th><th>Conferência</th></tr></thead><tbody>
+      <div className="overflow-x-auto"><Table className="w-full text-left"><TableCaption className="sr-only">Resultados por habilidade</TableCaption><TableHeader><TableRow><TableHead>Habilidade</TableHead><TableHead>Resultado</TableHead><TableHead>Mínimo</TableHead><TableHead>Conferência</TableHead></TableRow></TableHeader><TableBody>
         {consolidado.dado.resultado.habilidades.map(h => {
           const fonteAlterada = aproveitamento?.pendencias.some((pendencia) => pendencia.habilidade === h.habilidade && pendencia.situacao === "PENDENTE_FONTE_ALTERADA");
           const notaLocalPrevalece = aproveitamento?.conflitosLocais.some((conflito) => conflito.habilidade === h.habilidade);
-          return <tr key={h.habilidade}><th scope="row">{HABILIDADE_LABEL[h.habilidade]}</th><td>{valor(h.resultado)}</td><td>{h.minimo}</td><td>{fonteAlterada ? "Fonte aproveitada em nova conferência" : notaLocalPrevalece ? "Nota local oficial prevalece" : h.atendeMinimo === null ? "Notas pendentes" : h.atendeMinimo ? "Mínimo atingido" : "Abaixo do mínimo"}</td></tr>;
+          return <TableRow key={h.habilidade}><TableHead scope="row">{HABILIDADE_LABEL[h.habilidade]}</TableHead><TableCell>{valor(h.resultado)}</TableCell><TableCell>{h.minimo}</TableCell><TableCell>{fonteAlterada ? "Fonte aproveitada em nova conferência" : notaLocalPrevalece ? "Nota local oficial prevalece" : h.atendeMinimo === null ? "Notas pendentes" : h.atendeMinimo ? "Mínimo atingido" : "Abaixo do mínimo"}</TableCell></TableRow>;
         })}
-      </tbody></table></div>
+      </TableBody></Table></div>
       <p>Média geral: {valor(consolidado.dado.resultado.geral)}. Mínimo: {consolidado.dado.resultado.minimoGeral}.</p>
       <p>{consolidado.dado.resultado.atendeRequisitosNotas === null ? "Há avaliações sem notas oficiais suficientes." : consolidado.dado.resultado.atendeRequisitosNotas ? "As notas atingem os mínimos geral e por habilidade." : "As notas ainda não atingem todos os mínimos."}</p>
       {consolidado.dado.resultado.recuperacoesPendentes && <p role="status">Há notas de recuperação pendentes de lançamento completo ou conferência. Elas ainda não alteram o resultado.</p>}
@@ -91,7 +93,7 @@ export default async function AvaliacoesPage({ params }: { params: Promise<{ alo
         <p>Resultado regular: {valor(h.resultadoOriginal)}. Resultado vigente: {valor(h.resultado)}.</p>
         {h.memoriaRecuperacao.map(m => <p key={m.tentativaId}>Nota: {m.nota ?? "Pendente"} — {m.pendencia ? "aguardando regularização ou conferência" : m.melhorou ? "melhorou o resultado" : "preservado o melhor resultado anterior"}.</p>)}
       </div>)}
-      <details><summary>Composição dos resultados</summary>{consolidado.dado.resultado.habilidades.map(h => <div key={h.habilidade} className="my-3"><h3 className="font-medium">{HABILIDADE_LABEL[h.habilidade]} — peso na média geral: {h.peso}</h3>{h.memoria.map(m => <p key={m.avaliacaoId}>{consolidado.dado!.fontes.find(f => f.codigo === m.avaliacaoId)?.titulo ?? m.avaliacaoId}: {m.nota ?? "Pendente"}; peso {m.peso}{m.pendencia === "AGUARDANDO_OFICIALIZACAO" ? " — aguardando conferência" : m.pendencia ? " — nota ausente" : ""}.</p>)}</div>)}</details>
+      <Collapsible ><CollapsibleTrigger type="button" className="text-left font-medium">Composição dos resultados</CollapsibleTrigger><CollapsibleContent>{consolidado.dado.resultado.habilidades.map(h => <div key={h.habilidade} className="my-3"><h3 className="font-medium">{HABILIDADE_LABEL[h.habilidade]} — peso na média geral: {h.peso}</h3>{h.memoria.map(m => <p key={m.avaliacaoId}>{consolidado.dado!.fontes.find(f => f.codigo === m.avaliacaoId)?.titulo ?? m.avaliacaoId}: {m.nota ?? "Pendente"}; peso {m.peso}{m.pendencia === "AGUARDANDO_OFICIALIZACAO" ? " — aguardando conferência" : m.pendencia ? " — nota ausente" : ""}.</p>)}</div>)}</CollapsibleContent></Collapsible>
     </section>}
     {!consolidado.ok && <p role="alert">Consolidado indisponível: {consolidado.erro}</p>}
     <nav aria-label="Avaliações da matrícula" className="space-y-3">{r.dado.avaliacoes.map(a => <Link key={a.codigo} className="block rounded border p-3 underline" href={`/academico/avaliacoes/${encodeURIComponent(alocacaoId)}/${encodeURIComponent(a.codigo)}`}>

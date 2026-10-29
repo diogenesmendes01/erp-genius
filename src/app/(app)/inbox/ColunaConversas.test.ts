@@ -22,6 +22,12 @@ it("setor/status viram removíveis com selo2, preservando lista e seletorD17",()
 it("SSR de lista usa o mesmo instante serializado mesmo com relógio cliente posterior",()=>{
  const T=Date.UTC(2026,9,22,12);vi.useFakeTimers({toFake:["Date"]});try{vi.setSystemTime(T+60_000);const h=html({agoraInicial:T,itens:[{...item,prazoRespostaEm:new Date(T-29*60_000).toISOString()}]});expect(h).toContain("29 min");expect(h).not.toContain("30 min");}finally{vi.useRealTimers();}
 });
+it("lista vazia de vendedor desconectado mostra o aviso ao gerente", () => {
+  const h = html({ itens: [], whatsappDesconectado: true });
+  expect(h).toContain("WhatsApp desconectado, entre em contato com seu gerente!");
+  expect(h).not.toContain("Nenhuma conversa neste filtro.");
+});
+
 it("atalho exigeCtrl/MetaK e não captura composição,Alt ou evento já consumido",()=>{
  expect(ehAtalhoBusca({key:"k",metaKey:true,ctrlKey:false})).toBe(true);expect(ehAtalhoBusca({key:"K",metaKey:false,ctrlKey:true})).toBe(true);
  for(const f of [{key:"j",metaKey:true,ctrlKey:false},{key:"k",metaKey:false,ctrlKey:false},{key:"k",metaKey:false,ctrlKey:true,isComposing:true},{key:"k",metaKey:false,ctrlKey:true,altKey:true},{key:"k",metaKey:true,ctrlKey:false,defaultPrevented:true}])expect(ehAtalhoBusca(f)).toBe(false);

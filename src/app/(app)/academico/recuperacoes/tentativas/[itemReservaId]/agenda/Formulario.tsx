@@ -7,6 +7,7 @@ import { CampoFuso } from "@/components/CampoFuso";
 import { useInicioDoPeriodo } from "@/lib/periodo-form";
 import { executarAcaoCliente, type DesfechoAcao } from "@/lib/acao-cliente";
 import { CampoTexto } from "@/components/CampoTexto";
+import { CampoSelect, CampoInstante, Caixa, SelectItem } from "@/app/(app)/academico/controles";
 
 const resposta = (d: DesfechoAcao<unknown>) => d.tipo === "ok" ? { ok: true as const } : { ok: false as const, erro: d.mensagem };
 
@@ -22,8 +23,8 @@ export function ProporAgenda({ itemReservaId, versaoEsperada, fusoInstitucional 
     return resposta(await executarAcaoCliente(() => proporAgendaRecuperacao({ ...d, chaveIdempotencia }), { idempotente: true }));
   }}>
     <p>A proposta preserva os horários e a conferência para revisão. Não agenda a avaliação.</p>
-    <label className="block">Início<input name="inicio" type="datetime-local" required {...periodo.propsInicio} className="block rounded border p-2" /></label>
-    <label className="block">Fim<input name="fim" type="datetime-local" required min={periodo.min} className="block rounded border p-2" /></label>
+    <label className="block">Início<CampoInstante name="inicio" required {...periodo.propsInicio} className="block rounded border p-2" /></label>
+    <label className="block">Fim<CampoInstante name="fim" required min={periodo.min} className="block rounded border p-2" /></label>
     <label className="block">Fuso dos horários<CampoFuso padrao={fusoInstitucional ?? ""} className="block rounded border p-2" /></label>
     <p>Exemplo: America/Sao_Paulo. Confira também a data final ao atravessar a meia-noite.</p>
     <label className="block">Motivo<CampoTexto name="motivo" required minLength={5} maxLength={2000} className="block w-full rounded border p-2" /></label>
@@ -33,11 +34,8 @@ export function ProporAgenda({ itemReservaId, versaoEsperada, fusoInstitucional 
 export function DecidirAgenda({ propostaId, estadoConferido, podeAprovar }: { propostaId: string; estadoConferido: string; podeAprovar: boolean }) {
   return <Formulario titulo="Decidir proposta de horário" executar={async dados => resposta(await executarAcaoCliente(() => decidirAgendaRecuperacao({ propostaId, estadoConferido,
     aprovar: dados.get("decisao") === "aprovar", autorizarDiaNaoLetivo: dados.get("excecao") === "on", motivo: String(dados.get("motivo") ?? "") }), { idempotente: false }))}>
-    <label className="block">Decisão<select name="decisao" required defaultValue="" className="block rounded border p-2">
-      <option value="" disabled>Selecione</option><option value="rejeitar">Rejeitar proposta</option>
-      {podeAprovar && <option value="aprovar">Aprovar e publicar o horário</option>}
-    </select></label>
-    {podeAprovar && <label className="block"><input name="excecao" type="checkbox" /> Autorizar este encontro em dia não letivo, quando indicado na conferência</label>}
+    <label className="block">Decisão<CampoSelect name="decisao" required defaultValue="" className="block rounded border p-2" placeholder="Selecione"><SelectItem value={"rejeitar"}>Rejeitar proposta</SelectItem>{podeAprovar && <SelectItem value={"aprovar"}>Aprovar e publicar o horário</SelectItem>}</CampoSelect></label>
+    {podeAprovar && <label className="block"><Caixa name="excecao" /> Autorizar este encontro em dia não letivo, quando indicado na conferência</label>}
     <label className="block">Justificativa da decisão<CampoTexto name="motivo" required minLength={5} maxLength={2000} className="block w-full rounded border p-2" /></label>
     <p>A aprovação confere novamente os conflitos e publica o horário. Se houver exceção de calendário, justifique expressamente sua autorização.</p>
   </Formulario>;

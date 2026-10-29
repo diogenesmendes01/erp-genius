@@ -31,7 +31,7 @@ export default async function EquivalenciasPage({ searchParams }: { searchParams
   const primeiraPagina = hrefLista("/academico/equivalencias", { matriculaId });
 
   const lista = (propostas: typeof itens) => <div className="space-y-3">{propostas.map((proposta) => <article key={proposta.id} className="space-y-2 rounded border p-4">
-    <header className="flex flex-wrap items-start justify-between gap-2"><div><h2 className="font-medium">Versão {proposta.versao}</h2><p className="text-sm">{turma(proposta.turmaOrigem)} → {turma(proposta.turmaDestino)}</p></div><span className="rounded bg-gray-100 px-2 py-1 text-xs">{nomeEstado(proposta.estado)}</span></header>
+    <header className="flex flex-wrap items-start justify-between gap-2"><div><h2 className="font-medium">Versão {proposta.versao}</h2><p className="text-sm">{turma(proposta.turmaOrigem)} → {turma(proposta.turmaDestino)}</p></div><span className="rounded bg-surface-muted px-2 py-1 text-xs">{nomeEstado(proposta.estado)}</span></header>
     <p className="text-sm">Preparada em {formatarInstanteExibicao(proposta.criadaEm, preferenciaFusoExibicao, "America/Sao_Paulo").texto} (horário exibido em {fusoExibicao}).</p>
     <p className="whitespace-pre-wrap text-sm">{proposta.motivo}</p>
     <Link className="inline-block underline" href={`/academico/equivalencias/${encodeURIComponent(proposta.id)}`}>{proposta.estado === "APROVADA" ? "Conferir e efetivar autorização" : "Consultar proposta"}</Link>

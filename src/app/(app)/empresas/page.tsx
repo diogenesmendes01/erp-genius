@@ -7,7 +7,7 @@ import { destinoPaginaEmpresas, lerFiltrosEmpresas, sanearFiltrosEmpresas } from
 import { listarPaisesSimples } from "@/server/paises/consultas";
 import { EmpresasCliente } from "./EmpresasCliente";
 
-const PAPEIS: Papel[] = [Papel.FINANCEIRO];
+const PAPEIS: Papel[] = [Papel.FINANCEIRO, Papel.GERENTE_COMERCIAL, Papel.VENDEDOR];
 
 export default async function EmpresasPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   const papeis = await exigirPapelLeitura(...PAPEIS);
@@ -26,6 +26,7 @@ export default async function EmpresasPage({ searchParams }: { searchParams: Pro
       totalBase={pagina.totalBase}
       filtros={filtros}
       paises={paises}
+      podeEditar={papeis.includes(Papel.ADMINISTRADOR) || papeis.includes(Papel.FINANCEIRO)}
     />
   );
 }

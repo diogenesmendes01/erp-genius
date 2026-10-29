@@ -4,6 +4,8 @@ import { useState } from "react";
 import { classificarMensagemWhatsApp, revisarFalhaEnvio, type RevisaoEnvio, type ItemTriagem } from "@/server/whatsapp/operacoes-atendimento";
 import { formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
 import { FeedbackAcao } from "@/components/FeedbackAcao";
+import { Combobox } from "@/components/ui/combobox";
+import { garantirEstilo } from "@/app/(app)/inbox/garantir-estilo";
 import { useAcaoCliente } from "@/lib/acao-cliente";
 import { botaoClasses } from "@/components/Botao";
 import { TIPO_MENSAGEM_LABEL, rotular } from "@/lib/labels";
@@ -30,6 +32,7 @@ export function PainelTriagem({ triagem, revisoes, preferenciaFusoExibicao }: { 
 }
 
 function Item({ item, preferenciaFusoExibicao, aoResolver }: { item: ItemTriagem; preferenciaFusoExibicao: string | null; aoResolver(id: string): void }) {
+  garantirEstilo();
   const [atendimentoId, setAtendimentoId] = useState("");
   const [motivo, setMotivo] = useState("");
   const acao = useAcaoCliente({ idempotente: false });
@@ -42,10 +45,7 @@ function Item({ item, preferenciaFusoExibicao, aoResolver }: { item: ItemTriagem
     <p className="whitespace-pre-wrap break-words text-gray-700">{item.corpo ?? `[${rotular(TIPO_MENSAGEM_LABEL, item.tipo).toLowerCase()}]`}</p>
     {item.midiaPath && <a className="text-blue-700 underline" href={item.midiaPath} target="_blank" rel="noreferrer">Abrir anexo para revisão</a>}
     <label className="grid gap-1">Atendimento do mesmo contato e canal
-      <select required value={atendimentoId} onChange={(e) => setAtendimentoId(e.target.value)} className="rounded border p-1.5">
-        <option value="">Selecione após revisar</option>
-        {item.atendimentos.map((a) => <option key={a.id} value={a.id}>{a.nome}</option>)}
-      </select>
+      <Combobox aria-label="Atendimento do mesmo contato e canal" required value={atendimentoId} onValueChange={setAtendimentoId} vazio="Selecione após revisar" className="rounded border p-1.5" opcoes={item.atendimentos.map((a) => ({ valor: a.id, rotulo: a.nome }))} />
     </label>
     <label className="grid gap-1">Motivo da classificação
       <input required minLength={12} maxLength={1000} value={motivo} onChange={(e) => setMotivo(e.target.value)} className="rounded border p-1.5" />
@@ -56,6 +56,7 @@ function Item({ item, preferenciaFusoExibicao, aoResolver }: { item: ItemTriagem
 }
 
 function Revisao({ item }: { item: RevisaoEnvio }) {
+  garantirEstilo();
   const [concluida, setConcluida] = useState(false);
   const [decisao, setDecisao] = useState<"CANCELAR" | "REENVIAR_APOS_VERIFICACAO">("CANCELAR");
   const [evidencia, setEvidencia] = useState("");
@@ -69,10 +70,7 @@ function Revisao({ item }: { item: RevisaoEnvio }) {
     <p className="font-medium">{item.contato} · {item.motivo}</p>
     <p className="whitespace-pre-wrap">{item.corpo}</p>
     <label className="grid gap-1">Decisão após conferência
-      <select value={decisao} onChange={(e) => setDecisao(e.target.value as typeof decisao)} className="rounded border p-1.5">
-        <option value="CANCELAR">Encerrar sem novo envio</option>
-        <option value="REENVIAR_APOS_VERIFICACAO">Provedor não enviou; autorizar nova tentativa</option>
-      </select>
+      <Combobox aria-label="Decisão após conferência" value={decisao} onValueChange={(valor) => setDecisao(valor as typeof decisao)} className="rounded border p-1.5" opcoes={[{ valor: "CANCELAR", rotulo: "Encerrar sem novo envio" }, { valor: "REENVIAR_APOS_VERIFICACAO", rotulo: "Provedor não enviou; autorizar nova tentativa" }]} />
     </label>
     <label className="grid gap-1">Evidência da conferência
       <input required minLength={12} maxLength={1000} value={evidencia} onChange={(e) => setEvidencia(e.target.value)} className="rounded border p-1.5" />

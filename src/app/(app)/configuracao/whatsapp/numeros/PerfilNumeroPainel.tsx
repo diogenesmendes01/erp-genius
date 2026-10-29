@@ -9,8 +9,9 @@ import { botaoClasses } from "@/components/Botao";
 import { useAcaoCliente } from "@/lib/acao-cliente";
 import { privacidadeInicial } from "./privacidade-inicial";
 
+import { CampoSelect } from "@/components/ui/select";
 const btn = botaoClasses({ tamanho: "sm" });
-const input = "w-full rounded-md border border-gray-300 px-3 py-1.5 text-sm outline-none focus:border-brand-500";
+const input = "w-full rounded-md border border-gray-200 px-3 py-1.5 text-sm outline-none focus:border-brand-500";
 type Vis = "TODOS" | "CONTATOS" | "NINGUEM";
 const VIS: { v: Vis; l: string }[] = [
   { v: "TODOS", l: "Todos" },
@@ -87,13 +88,7 @@ function PainelDoNumero({ n }: { n: PerfilNumeroDados }) {
   const campoVis = (campo: keyof typeof priv, rotulo: string) => (
     <label className="block text-xs text-gray-600">
       {rotulo}
-      <select className={input + " mt-1"} value={priv[campo]} onChange={(e) => setPriv({ ...priv, [campo]: e.target.value as Vis })}>
-        {VIS.filter((o) => !(campo === "grupos" && o.v === "NINGUEM")).map((o) => (
-          <option key={o.v} value={o.v}>
-            {o.l}
-          </option>
-        ))}
-      </select>
+      <CampoSelect value={priv[campo]} onChange={(e) => setPriv({ ...priv, [campo]: e.target.value as Vis })} className={input + " mt-1"} opcoes={VIS.filter((o) => !(campo === "grupos" && o.v === "NINGUEM")).map((o) => ({ valor: String(o.v), rotulo: o.l }))} />
     </label>
   );
 
@@ -150,13 +145,7 @@ function PainelDoNumero({ n }: { n: PerfilNumeroDados }) {
         <div className="mt-2 grid gap-3 sm:grid-cols-2">
           <label className="block text-xs text-gray-600">
             Duração
-            <select className={input + " mt-1"} value={segundos} onChange={(e) => setSegundos(Number(e.target.value))}>
-              {DURACOES.map((o) => (
-                <option key={o.s} value={o.s}>
-                  {o.l}
-                </option>
-              ))}
-            </select>
+            <CampoSelect value={String(segundos)} onChange={(e) => setSegundos(Number(e.target.value))} className={input + " mt-1"} opcoes={DURACOES.map((o) => ({ valor: String(o.s), rotulo: o.l }))} />
           </label>
           {segundos > 0 && (
             <label className="block text-xs text-gray-600">

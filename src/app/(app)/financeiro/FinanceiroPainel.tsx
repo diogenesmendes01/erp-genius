@@ -1,13 +1,21 @@
 "use client";
 
 import { useEffect, useMemo, useState, type ReactNode } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { StatusComissao, TipoAprovacao, Vigencia } from "@prisma/client";
-import { STATUS_COMISSAO_LABEL, rotular, TIPO_APROVACAO_LABEL, VIGENCIA_LABEL } from "@/lib/labels";
+import type { StatusComissao, TipoAprovacao, Vigencia } from "@prisma/client";
+import { IconUser } from "@tabler/icons-react";
+import { STATUS_COMISSAO_LABEL, TIPO_APROVACAO_LABEL, VIGENCIA_LABEL } from "@/lib/labels";
 import { formatarMoeda, formatarValores, somarPorMoeda, consolidar, type ValorMoeda } from "@/lib/dinheiro";
 import type { CotacaoVigente, relatorioDescontosComissoes } from "@/server/financeiro/consultas";
 import { fecharMesComissoes, salvarConfigFinanceiro, salvarTaxasCambio, atualizarCotacoesAutomatico } from "@/server/financeiro/acoes";
 import { decidirAprovacao } from "@/server/ajustes/acoes";
+import { decidirPrecoPreparacao } from "@/server/matricula/preparacao-preco";
+import { Avatar } from "@/components/Avatar";
+import { BadgeEstado, type TomEstado } from "@/components/BadgeEstado";
+import { CONTROLE_CAMPO } from "@/components/Campo";
+import { CampoTexto } from "@/components/CampoTexto";
+import { LinhaCampo } from "@/components/LinhaCampo";
 import { formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
 import { FeedbackAcao } from "@/components/FeedbackAcao";
 import { ConfirmarAcao } from "@/components/ConfirmarAcao";
@@ -20,6 +28,9 @@ import { ColunaOrdenavel } from "@/components/ColunaOrdenavel";
 import type { Ordenacao } from "@/lib/ordenacao";
 import type { OrdemComissoes } from "@/server/financeiro/ordem-comissoes";
 
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
 export type RelatorioDados = Awaited<ReturnType<typeof relatorioDescontosComissoes>>;
 const MOEDA_CONS_KEY = "erpgenius:moedaConsolidacao";
 
@@ -57,10 +68,30 @@ export interface AprovacaoRow {
   valorPara: number;
   descontoValor: number;
   moeda: string;
+  origem?: "APROVACAO_COBRANCA" | "PREPARACAO_MATRICULA";
+  matriculaId?: string;
+  preparacaoId?: string;
+  podeAprovarDireto?: boolean;
 }
 
 const btnPri = botaoClasses();
 const btnSec = botaoClasses({ variante: "secundario", tamanho: "sm" });
+const TOM_STATUS: Record<StatusComissao, TomEstado> = {
+  PENDENTE: "aviso",
+  APROVADA: "aprovacao",
+  PAGA: "sucesso",
+  ESTORNADA: "perigo",
+};
+const CABECALHO_TABELA = "bg-surface-muted text-left text-xs text-gray-600";
+const LINHA_TABELA = "transition-colors hover:bg-surface-muted";
+
+function SeloComissao({ status }: { status: StatusComissao }) {
+  return <BadgeEstado tom={TOM_STATUS[status]} ponto>{STATUS_COMISSAO_LABEL[status]}</BadgeEstado>;
+}
+
+function Pessoa({ nome }: { nome: string }) {
+  return <span className="inline-flex items-center gap-2"><Avatar nome={nome} tamanho={32} />{nome}</span>;
+}
 
 function useExecutorFinanceiro() {
   const router = useRouter();
@@ -125,7 +156,14 @@ export function AprovacoesAba({ aprovacoes }: { aprovacoes: AprovacaoRow[] }) {
   return (
     <>
       <FeedbackAcao erro={acao.erro} sucesso={acao.sucesso} className="mb-4" />
-      <Aprovacoes aprovacoes={aprovacoes} onDecidir={(id, ok) => run(() => decidirAprovacao(id, { aprovar: ok }))} isPending={acao.ocupado} />
+      <Aprovacoes aprovacoes={aprovacoes} onDecidir={(id, ok, motivo) => {
+        const row = aprovacoes.find((a) => a.id === id);
+        const preparacaoId = row?.preparacaoId;
+        if (row?.origem === "PREPARACAO_MATRICULA" && preparacaoId) {
+          return run(() => decidirPrecoPreparacao({ preparacaoId, aprovar: ok, motivo: (motivo ?? "").trim() }));
+        }
+        return run(() => decidirAprovacao(id, { aprovar: ok, ...(motivo ? { motivo } : {}) }));
+      }} isPending={acao.ocupado} />
     </>
   );
 }
@@ -195,20 +233,14 @@ export function Comissoes({
 }) {
   const coluna = ordenacao ? { ordenacao: ordenacao.atual, rota: ordenacao.rota, parametros: ordenacao.parametros } : null;
   const cabecalho = (campo: OrdemComissoes, rotulo: string, direcaoInicial?: "asc" | "desc") =>
-    coluna ? <ColunaOrdenavel campo={campo} rotulo={rotulo} direcaoInicial={direcaoInicial} {...coluna} /> : <th className="px-4 py-2 font-medium">{rotulo}</th>;
+    coluna ? <ColunaOrdenavel campo={campo} rotulo={rotulo} direcaoInicial={direcaoInicial} {...coluna} /> : <TableHead className="px-4 py-2 font-medium">{rotulo}</TableHead>;
   return (
     <div>
       <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-        <p className="text-sm text-gray-500">A pagar (aprovadas): <strong>{formatarValores(aPagar)}</strong></p>
+        <p className="text-sm text-gray-500"><span className="font-mono tabular-nums">A pagar (aprovadas): <strong>{formatarValores(aPagar)}</strong></span></p>
         {podePagar && <span className="flex items-center gap-3">
           <label className="flex items-center gap-1.5 text-xs text-gray-600">
-            <input
-              type="checkbox"
-              className="h-4 w-4 accent-brand-600"
-              checked={fechamentoAutomatico}
-              disabled={isPending}
-              onChange={(e) => onToggleAutomatico(e.target.checked)}
-            />
+            <Switch checked={fechamentoAutomatico} disabled={isPending} onCheckedChange={(marcado) => onToggleAutomatico((marcado === true))} />
             Fechamento mensal automático
           </label>
           <button className={btnPri} disabled={isPending} onClick={onFechar}>
@@ -217,30 +249,30 @@ export function Comissoes({
         </span>}
       </div>
       <div className="overflow-x-auto rounded-lg border border-gray-200">
-        <table className="w-full text-sm">
-          <thead className="bg-gray-100 text-left text-xs text-gray-500">
-            <tr>
+        <Table className="w-full text-sm">
+          <TableHeader className={CABECALHO_TABELA}>
+            <TableRow>
               {cabecalho("vendedor", "Vendedor")}
-              <th className="px-4 py-2 font-medium">%</th>
+              <TableHead className="px-4 py-2 font-medium">%</TableHead>
               {cabecalho("valor", "Valor", "desc")}
               {cabecalho("status", "Status")}
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-100">
+            </TableRow>
+          </TableHeader>
+          <TableBody className="divide-y divide-gray-100">
             {comissoes.length === 0 ? (
               <EstadoVazioLinha colSpan={4}>{vazio ?? "Sem comissões."}</EstadoVazioLinha>
             ) : (
               comissoes.map((c) => (
-                <tr key={c.id} className="hover:bg-gray-50">
-                  <td className="px-4 py-3 text-gray-800">{c.vendedor}</td>
-                  <td className="px-4 py-3 text-gray-600">{c.tipo === "VALOR_FIXO" ? "Fixa" : `${c.percentual}%`}</td>
-                  <td className="px-4 py-3 text-gray-700">{formatarMoeda(c.valor, c.moeda)}</td>
-                  <td className="px-4 py-3 text-gray-600">{STATUS_COMISSAO_LABEL[c.status]}</td>
-                </tr>
+                <TableRow key={c.id} className={LINHA_TABELA}>
+                  <TableCell className="px-4 py-3 text-gray-800"><Pessoa nome={c.vendedor} /></TableCell>
+                  <TableCell className="px-4 py-3 font-mono tabular-nums text-gray-600">{c.tipo === "VALOR_FIXO" ? "Fixa" : `${c.percentual}%`}</TableCell>
+                  <TableCell className="px-4 py-3 font-mono tabular-nums text-gray-700">{formatarMoeda(c.valor, c.moeda)}</TableCell>
+                  <TableCell className="px-4 py-3"><SeloComissao status={c.status} /></TableCell>
+                </TableRow>
               ))
             )}
-          </tbody>
-        </table>
+          </TableBody>
+        </Table>
       </div>
     </div>
   );
@@ -252,17 +284,27 @@ export function Aprovacoes({
   isPending,
 }: {
   aprovacoes: AprovacaoRow[];
-  onDecidir: (id: string, aprovar: boolean) => void;
+  onDecidir: (id: string, aprovar: boolean, motivo?: string) => void;
   isPending: boolean;
 }) {
+  const [aberta, setAberta] = useState<{ id: string; aprovar: boolean } | null>(null);
+  const [motivo, setMotivo] = useState("");
   const impactoMensal = somarPorMoeda(aprovacoes.map((a) => ({ moeda: a.moeda, valor: a.impactoMensal })));
   const impactoAnual = impactoMensal.map((v) => ({ moeda: v.moeda, valor: v.valor * 12 }));
+  function pedir(a: AprovacaoRow, aprovar: boolean) {
+    if (aprovar && a.origem !== "PREPARACAO_MATRICULA") {
+      onDecidir(a.id, true);
+      return;
+    }
+    setAberta({ id: a.id, aprovar });
+    setMotivo("");
+  }
   return (
     <div>
       <div className="mb-3 flex flex-wrap gap-4 text-sm text-gray-600">
-        <span>Pendentes: <strong>{aprovacoes.length}</strong></span>
-        <span>Impacto mensal: <strong>{formatarValores(impactoMensal)}</strong></span>
-        <span>Impacto anual: <strong>{formatarValores(impactoAnual)}</strong></span>
+        <span className="font-mono tabular-nums">Pendentes: <strong>{aprovacoes.length}</strong></span>
+        <span className="font-mono tabular-nums">Impacto mensal: <strong>{formatarValores(impactoMensal)}</strong></span>
+        <span className="font-mono tabular-nums">Impacto anual: <strong>{formatarValores(impactoAnual)}</strong></span>
       </div>
       {aprovacoes.length === 0 ? (
         <EstadoVazio bloco>Nenhum pedido pendente.</EstadoVazio>
@@ -271,29 +313,46 @@ export function Aprovacoes({
           {aprovacoes.map((a) => (
             <li key={a.id} className="rounded-lg border border-gray-200 bg-surface p-4">
               <div className="flex items-start justify-between gap-4">
-                <div className="text-sm">
-                  <div className="font-medium text-gray-800">
-                    {a.alunoNome} — {TIPO_APROVACAO_LABEL[a.tipo]}
-                  </div>
-                  <div className="text-gray-600">
-                    {formatarMoeda(a.valorDe, a.moeda)} → {formatarMoeda(a.valorPara, a.moeda)}{" "}
-                    <span className="text-gray-500">(desconto {formatarMoeda(a.descontoValor, a.moeda)})</span>
-                  </div>
-                  <div className="text-xs text-gray-500">
-                    {a.vigencia ? VIGENCIA_LABEL[a.vigencia] + " · " : ""}solicitante: {a.solicitante}
-                    {a.motivo ? ` · ${a.motivo}` : ""}
+                <div className="flex min-w-0 items-start gap-3 text-sm">
+                  <Avatar nome={a.alunoNome} tamanho={40} />
+                  <div className="min-w-0">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <div className="font-medium text-gray-800">
+                        {a.alunoNome} — {a.origem === "PREPARACAO_MATRICULA" ? "Exceção de preço" : TIPO_APROVACAO_LABEL[a.tipo]}
+                      </div>
+                      <BadgeEstado tom="aprovacao" ponto>Pendente</BadgeEstado>
+                    </div>
+                    <div className="font-mono tabular-nums text-xs text-gray-600">{a.matriculaId ?? "—"}</div>
+                    {a.origem === "PREPARACAO_MATRICULA" && a.matriculaId && (
+                      <div className="mt-1">
+                        <Link href={`/matriculas/${a.matriculaId}/preparacao`} className="text-brand-700 underline">Ver preparação</Link>
+                      </div>
+                    )}
+                    <div className="font-mono tabular-nums text-gray-600">
+                      {formatarMoeda(a.valorDe, a.moeda)} → {formatarMoeda(a.valorPara, a.moeda)}{" "}
+                      <span className="text-gray-500">(desconto {formatarMoeda(a.descontoValor, a.moeda)})</span>
+                    </div>
+                    <LinhaCampo
+                      icone={<IconUser size={18} />}
+                      valor={<>{a.vigencia ? `${VIGENCIA_LABEL[a.vigencia]} · ` : ""}solicitante: {a.solicitante}{a.motivo ? ` · ${a.motivo}` : ""}</>}
+                      rotulo="Solicitação"
+                    />
                   </div>
                 </div>
                 <div className="flex shrink-0 gap-2">
+                  {a.podeAprovarDireto !== false && (
+                    <button
+                      type="button"
+                      onClick={() => pedir(a, true)}
+                      disabled={isPending}
+                      className={botaoClasses({ tamanho: "sm" })}
+                    >
+                      Aprovar
+                    </button>
+                  )}
                   <button
-                    onClick={() => onDecidir(a.id, true)}
-                    disabled={isPending}
-                    className={botaoClasses({ tamanho: "sm" })}
-                  >
-                    Aprovar
-                  </button>
-                  <button
-                    onClick={() => onDecidir(a.id, false)}
+                    type="button"
+                    onClick={() => pedir(a, false)}
                     disabled={isPending}
                     className={botaoClasses({ variante: "perigo", tamanho: "sm" })}
                   >
@@ -301,6 +360,23 @@ export function Aprovacoes({
                   </button>
                 </div>
               </div>
+              {aberta?.id === a.id && (
+                <div className="mt-3 grid gap-2">
+                  <label className="grid gap-1 text-sm text-gray-700">
+                    <span>{aberta.aprovar ? "Motivo da aprovação" : "Motivo da rejeição"}</span>
+                    <CampoTexto className={CONTROLE_CAMPO} minLength={5} maxLength={2000} rows={2} value={motivo} onChange={(e) => setMotivo(e.target.value)} />
+                  </label>
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      disabled={isPending || motivo.trim().length < 5}
+                      className={botaoClasses({ tamanho: "sm" })}
+                      onClick={() => { onDecidir(a.id, aberta.aprovar, motivo.trim()); setAberta(null); }}
+                    >Confirmar</button>
+                    <button type="button" className={botaoClasses({ variante: "secundario", tamanho: "sm" })} disabled={isPending} onClick={() => setAberta(null)}>Cancelar</button>
+                  </div>
+                </div>
+              )}
             </li>
           ))}
         </ul>
@@ -310,11 +386,11 @@ export function Aprovacoes({
 }
 
 function ValoresEmpilhados({ valores }: { valores: ValorMoeda[] }) {
-  if (valores.length === 0) return <div className="text-2xl font-medium text-gray-300">—</div>;
+  if (valores.length === 0) return <div className="font-mono text-2xl font-medium tabular-nums text-gray-300">—</div>;
   return (
     <div className="flex flex-col leading-tight">
       {valores.map((v) => (
-        <span key={v.moeda} className="text-xl font-medium text-gray-800">{formatarMoeda(v.valor, v.moeda)}</span>
+        <span key={v.moeda} className="font-mono text-xl font-medium tabular-nums text-gray-800">{formatarMoeda(v.valor, v.moeda)}</span>
       ))}
     </div>
   );
@@ -343,14 +419,16 @@ export function VisaoGeral({
     <div>
       <div className="mb-3 flex flex-wrap items-center gap-2">
         <span id="financeiro-consolidar-rotulo" className="text-sm text-gray-500">Consolidar em</span>
-        <select
-          aria-labelledby="financeiro-consolidar-rotulo"
-          value={moedaCons}
-          onChange={(e) => onMoeda(e.target.value)}
-          className="rounded-md border border-gray-300 px-2 py-1 text-sm outline-none focus:border-brand-500"
-        >
-          {opcoes.map((m) => <option key={m} value={m}>{m}</option>)}
-        </select>
+        <div className="w-28">
+          <Select value={moedaCons} onValueChange={onMoeda}>
+            <SelectTrigger aria-labelledby="financeiro-consolidar-rotulo" className={CONTROLE_CAMPO}>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {opcoes.map((m) => <SelectItem key={m} value={m}>{m}</SelectItem>)}
+            </SelectContent>
+          </Select>
+        </div>
         <span className="text-xs text-gray-400">câmbio de referência · só leitura</span>
       </div>
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
@@ -360,7 +438,7 @@ export function VisaoGeral({
             <div key={t} className="rounded-lg border border-gray-200 bg-surface p-4">
               <ValoresEmpilhados valores={valores} />
               {valores.length > 0 && (
-                <div className="mt-0.5 text-xs text-gray-500">
+                <div className="mt-0.5 font-mono text-xs tabular-nums text-gray-500">
                   ≈ {formatarMoeda(c.valor, moedaCons)}
                   {c.faltando.length > 0 && (
                     <span className="text-amber-600"> · faltam taxas: {c.faltando.join(", ")}</span>
@@ -372,7 +450,7 @@ export function VisaoGeral({
           );
         })}
       </div>
-      <p className="mt-4 text-sm text-gray-500">Novas matrículas no mês: <strong>{kpis.novasMatriculas}</strong></p>
+      <p className="mt-4 text-sm text-gray-500">Novas matrículas no mês: <strong className="font-mono tabular-nums">{kpis.novasMatriculas}</strong></p>
       <p className="mt-1 text-xs text-gray-400">
         Os valores por moeda são exatos. O consolidado &ldquo;≈&rdquo; é conversão de referência (câmbio manual), só para leitura — nunca entra na conta do aluno.
       </p>
@@ -427,42 +505,44 @@ export function CambioPainel({
         gerencial — nunca na conta do aluno. Cada alteração grava uma nova cotação (mantém histórico).
       </p>
       <div className="overflow-x-auto rounded-lg border border-gray-200">
-        <table className="w-full text-sm">
-          <thead className="bg-gray-100 text-left text-xs text-gray-500">
-            <tr>
-              <th className="px-4 py-2 font-medium">Moeda</th>
-              <th className="px-4 py-2 font-medium">1 US$ =</th>
-              <th className="px-4 py-2 font-medium">Atualizado</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-100">
-            <tr>
-              <td className="px-4 py-2 font-medium text-gray-700">USD <span className="text-xs text-gray-400">(pivô)</span></td>
-              <td className="px-4 py-2 text-gray-500">1</td>
-              <td className="px-4 py-2 text-xs text-gray-400">fixo</td>
-            </tr>
+        <Table className="w-full text-sm">
+          <TableHeader className={CABECALHO_TABELA}>
+            <TableRow>
+              <TableHead className="px-4 py-2 font-medium">Moeda</TableHead>
+              <TableHead className="px-4 py-2 font-medium">1 US$ =</TableHead>
+              <TableHead className="px-4 py-2 font-medium">Atualizado</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody className="divide-y divide-gray-100">
+            <TableRow>
+              <TableCell className="px-4 py-2 font-medium text-gray-700">USD <span className="text-xs text-gray-400">(pivô)</span></TableCell>
+              <TableCell className="px-4 py-2 font-mono tabular-nums text-gray-500">1</TableCell>
+              <TableCell className="px-4 py-2 text-xs text-gray-400">fixo</TableCell>
+            </TableRow>
             {editaveis.map((c) => (
-              <tr key={c.moeda}>
-                <td className="px-4 py-2 font-medium text-gray-700">{c.moeda}</td>
-                <td className="px-4 py-2">
-                  <input
-                    type="number"
-                    step="0.0001"
-                    min="0"
-                    aria-label={`Cotação: 1 US$ em ${c.moeda}`}
-                    value={vals[c.moeda] ?? ""}
-                    onChange={(e) => setVals((v) => ({ ...v, [c.moeda]: e.target.value }))}
-                    placeholder="ex.: 512"
-                    className="w-32 rounded-md border border-gray-300 px-2 py-1 text-sm outline-none focus:border-brand-500"
-                  />
-                </td>
-                <td className="px-4 py-2 text-xs text-gray-400">
+              <TableRow key={c.moeda}>
+                <TableCell className="px-4 py-2 font-medium text-gray-700">{c.moeda}</TableCell>
+                <TableCell className="px-4 py-2">
+                  <div className="w-32">
+                    <input
+                      type="number"
+                      step="0.0001"
+                      min="0"
+                      aria-label={`Cotação: 1 US$ em ${c.moeda}`}
+                      value={vals[c.moeda] ?? ""}
+                      onChange={(e) => setVals((v) => ({ ...v, [c.moeda]: e.target.value }))}
+                      placeholder="ex.: 512"
+                      className={CONTROLE_CAMPO}
+                    />
+                  </div>
+                </TableCell>
+                <TableCell className="px-4 py-2 font-mono text-xs tabular-nums text-gray-400">
                   {c.vigenteEm ? (() => { const exibicao = formatarInstanteExibicao(c.vigenteEm, preferenciaFusoExibicao, "UTC"); return `${exibicao.texto} (horário exibido em ${exibicao.fuso}; origem UTC)`; })() : "sem cotação"}
-                </td>
-              </tr>
+                </TableCell>
+              </TableRow>
             ))}
-          </tbody>
-        </table>
+          </TableBody>
+        </Table>
       </div>
       <div className="mt-3 flex flex-wrap items-center gap-2">
         <button className={btnPri} disabled={salvando || auto} onClick={salvar}>
@@ -493,24 +573,24 @@ export function Descontos({ relatorio }: { relatorio: RelatorioDados }) {
           <EstadoVazio>Sem descontos.</EstadoVazio>
         ) : (
           <div className="overflow-x-auto rounded-lg border border-gray-200">
-            <table className="w-full text-sm">
-              <thead className="bg-gray-100 text-left text-xs text-gray-500">
-                <tr>
-                  <th className="px-4 py-2 font-medium">Moeda</th>
-                  <th className="px-4 py-2 font-medium">Total concedido</th>
-                  <th className="px-4 py-2 font-medium">Ajustes</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100">
+            <Table className="w-full text-sm">
+              <TableHeader className={CABECALHO_TABELA}>
+                <TableRow>
+                  <TableHead className="px-4 py-2 font-medium">Moeda</TableHead>
+                  <TableHead className="px-4 py-2 font-medium">Total concedido</TableHead>
+                  <TableHead className="px-4 py-2 font-medium">Ajustes</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody className="divide-y divide-gray-100">
                 {descontoPorMoeda.map((d) => (
-                  <tr key={d.moeda}>
-                    <td className="px-4 py-2 font-medium text-gray-700">{d.moeda}</td>
-                    <td className="px-4 py-2 text-gray-700">{formatarMoeda(d.total, d.moeda)}</td>
-                    <td className="px-4 py-2 text-gray-500">{d.qtd}</td>
-                  </tr>
+                  <TableRow key={d.moeda} className={LINHA_TABELA}>
+                    <TableCell className="px-4 py-2 font-medium text-gray-700">{d.moeda}</TableCell>
+                    <TableCell className="px-4 py-2 font-mono tabular-nums text-gray-700">{formatarMoeda(d.total, d.moeda)}</TableCell>
+                    <TableCell className="px-4 py-2 font-mono tabular-nums text-gray-500">{d.qtd}</TableCell>
+                  </TableRow>
                 ))}
-              </tbody>
-            </table>
+              </TableBody>
+            </Table>
           </div>
         )}
       </section>
@@ -521,28 +601,28 @@ export function Descontos({ relatorio }: { relatorio: RelatorioDados }) {
           <EstadoVazio>Sem comissões.</EstadoVazio>
         ) : (
           <div className="mb-6 overflow-x-auto rounded-lg border border-gray-200">
-            <table className="w-full min-w-[640px] text-sm">
-              <thead className="bg-gray-100 text-left text-xs text-gray-500">
-                <tr>
-                  <th className="px-4 py-2 font-medium">Vendedor</th>
-                  <th className="px-4 py-2 font-medium">Moeda</th>
-                  <th className="px-4 py-2 font-medium">Status</th>
-                  <th className="px-4 py-2 font-medium">Total</th>
-                  <th className="px-4 py-2 font-medium">Qtd</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100">
+            <Table className="w-full min-w-[640px] text-sm">
+              <TableHeader className={CABECALHO_TABELA}>
+                <TableRow>
+                  <TableHead className="px-4 py-2 font-medium">Vendedor</TableHead>
+                  <TableHead className="px-4 py-2 font-medium">Moeda</TableHead>
+                  <TableHead className="px-4 py-2 font-medium">Status</TableHead>
+                  <TableHead className="px-4 py-2 font-medium">Total</TableHead>
+                  <TableHead className="px-4 py-2 font-medium">Qtd</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody className="divide-y divide-gray-100">
                 {comissoesPorVendedor.map((c, i) => (
-                  <tr key={i}>
-                    <td className="px-4 py-2 font-medium text-gray-700">{c.vendedor}</td>
-                    <td className="px-4 py-2 text-gray-700">{c.moeda}</td>
-                    <td className="px-4 py-2 text-gray-500">{rotular(STATUS_COMISSAO_LABEL, c.status)}</td>
-                    <td className="px-4 py-2 text-gray-700">{formatarMoeda(c.total, c.moeda)}</td>
-                    <td className="px-4 py-2 text-gray-500">{c.qtd}</td>
-                  </tr>
+                  <TableRow key={i} className={LINHA_TABELA}>
+                    <TableCell className="px-4 py-2 font-medium text-gray-700"><Pessoa nome={c.vendedor} /></TableCell>
+                    <TableCell className="px-4 py-2 text-gray-700">{c.moeda}</TableCell>
+                    <TableCell className="px-4 py-2"><SeloComissao status={c.status} /></TableCell>
+                    <TableCell className="px-4 py-2 font-mono tabular-nums text-gray-700">{formatarMoeda(c.total, c.moeda)}</TableCell>
+                    <TableCell className="px-4 py-2 font-mono tabular-nums text-gray-500">{c.qtd}</TableCell>
+                  </TableRow>
                 ))}
-              </tbody>
-            </table>
+              </TableBody>
+            </Table>
           </div>
         )}
 
@@ -551,26 +631,26 @@ export function Descontos({ relatorio }: { relatorio: RelatorioDados }) {
           <EstadoVazio>Sem descontos por vendedor.</EstadoVazio>
         ) : (
           <div className="overflow-x-auto rounded-lg border border-gray-200">
-            <table className="w-full text-sm">
-              <thead className="bg-gray-100 text-left text-xs text-gray-500">
-                <tr>
-                  <th className="px-4 py-2 font-medium">Vendedor</th>
-                  <th className="px-4 py-2 font-medium">Moeda</th>
-                  <th className="px-4 py-2 font-medium">Total concedido</th>
-                  <th className="px-4 py-2 font-medium">Ajustes</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100">
+            <Table className="w-full text-sm">
+              <TableHeader className={CABECALHO_TABELA}>
+                <TableRow>
+                  <TableHead className="px-4 py-2 font-medium">Vendedor</TableHead>
+                  <TableHead className="px-4 py-2 font-medium">Moeda</TableHead>
+                  <TableHead className="px-4 py-2 font-medium">Total concedido</TableHead>
+                  <TableHead className="px-4 py-2 font-medium">Ajustes</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody className="divide-y divide-gray-100">
                 {descontoPorVendedor.map((d, i) => (
-                  <tr key={`${d.vendedor}-${d.moeda}-${i}`}>
-                    <td className="px-4 py-2 text-gray-700">{d.vendedor}</td>
-                    <td className="px-4 py-2 text-gray-600">{d.moeda}</td>
-                    <td className="px-4 py-2 text-gray-700">{formatarMoeda(d.total, d.moeda)}</td>
-                    <td className="px-4 py-2 text-gray-500">{d.qtd}</td>
-                  </tr>
+                  <TableRow key={`${d.vendedor}-${d.moeda}-${i}`} className={LINHA_TABELA}>
+                    <TableCell className="px-4 py-2 text-gray-700"><Pessoa nome={d.vendedor} /></TableCell>
+                    <TableCell className="px-4 py-2 text-gray-600">{d.moeda}</TableCell>
+                    <TableCell className="px-4 py-2 font-mono tabular-nums text-gray-700">{formatarMoeda(d.total, d.moeda)}</TableCell>
+                    <TableCell className="px-4 py-2 font-mono tabular-nums text-gray-500">{d.qtd}</TableCell>
+                  </TableRow>
                 ))}
-              </tbody>
-            </table>
+              </TableBody>
+            </Table>
           </div>
         )}
       </section>
@@ -581,26 +661,26 @@ export function Descontos({ relatorio }: { relatorio: RelatorioDados }) {
           <EstadoVazio>Sem comissões.</EstadoVazio>
         ) : (
           <div className="overflow-x-auto rounded-lg border border-gray-200">
-            <table className="w-full text-sm">
-              <thead className="bg-gray-100 text-left text-xs text-gray-500">
-                <tr>
-                  <th className="px-4 py-2 font-medium">Moeda</th>
-                  <th className="px-4 py-2 font-medium">Status</th>
-                  <th className="px-4 py-2 font-medium">Total</th>
-                  <th className="px-4 py-2 font-medium">Qtde</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100">
+            <Table className="w-full text-sm">
+              <TableHeader className={CABECALHO_TABELA}>
+                <TableRow>
+                  <TableHead className="px-4 py-2 font-medium">Moeda</TableHead>
+                  <TableHead className="px-4 py-2 font-medium">Status</TableHead>
+                  <TableHead className="px-4 py-2 font-medium">Total</TableHead>
+                  <TableHead className="px-4 py-2 font-medium">Qtde</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody className="divide-y divide-gray-100">
                 {comissoesPorStatus.map((c, i) => (
-                  <tr key={`${c.moeda}-${c.status}-${i}`}>
-                    <td className="px-4 py-2 font-medium text-gray-700">{c.moeda}</td>
-                    <td className="px-4 py-2 text-gray-600">{STATUS_COMISSAO_LABEL[c.status]}</td>
-                    <td className="px-4 py-2 text-gray-700">{formatarMoeda(c.total, c.moeda)}</td>
-                    <td className="px-4 py-2 text-gray-500">{c.qtd}</td>
-                  </tr>
+                  <TableRow key={`${c.moeda}-${c.status}-${i}`} className={LINHA_TABELA}>
+                    <TableCell className="px-4 py-2 font-medium text-gray-700">{c.moeda}</TableCell>
+                    <TableCell className="px-4 py-2"><SeloComissao status={c.status} /></TableCell>
+                    <TableCell className="px-4 py-2 font-mono tabular-nums text-gray-700">{formatarMoeda(c.total, c.moeda)}</TableCell>
+                    <TableCell className="px-4 py-2 font-mono tabular-nums text-gray-500">{c.qtd}</TableCell>
+                  </TableRow>
                 ))}
-              </tbody>
-            </table>
+              </TableBody>
+            </Table>
           </div>
         )}
       </section>

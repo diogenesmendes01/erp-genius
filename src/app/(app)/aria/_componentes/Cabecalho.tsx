@@ -11,6 +11,8 @@ import { FeedbackAcao } from "@/components/FeedbackAcao";
 import { useAcaoCliente } from "@/lib/acao-cliente";
 import { ESTADO_POLITICA_LABEL } from "@/lib/labels";
 import { definirEstadoAria, pausarAria, reativarAria } from "@/server/aria/acoes";
+import { Input } from "@/components/ui/input";
+import { CampoSelect } from "@/components/ui/select";
 
 type Props = {
   nome: string;
@@ -53,7 +55,7 @@ export function Cabecalho({ nome, funcao, versaoPublicada, estado, pausada, moti
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <span className="rounded-full bg-gray-100 px-3 py-1 text-sm text-gray-800">{pausada ? "Pausada" : ESTADO_POLITICA_LABEL[estado]}</span>
+          <span className="rounded-full bg-surface-muted px-3 py-1 text-sm text-gray-800">{pausada ? "Pausada" : ESTADO_POLITICA_LABEL[estado]}</span>
           {supervisao && <span className="rounded-full bg-amber-100 px-3 py-1 text-sm text-amber-800">Supervisão ligada</span>}
           {podePausar && !pausada && !pedindoMotivo && (
             <Botao variante="secundario" onClick={() => setPedindoMotivo(true)}>Pausar</Botao>
@@ -78,7 +80,7 @@ export function Cabecalho({ nome, funcao, versaoPublicada, estado, pausada, moti
         <div className="mt-3 max-w-xl rounded-md border border-border-soft p-3">
           <Campo rotulo="Motivo da pausa" obrigatorio dica="Fica registrado no histórico de auditoria.">
             {(campo) => (
-              <input {...campo} type="text" maxLength={500} value={motivo} onChange={(e) => setMotivo(e.target.value)} className="w-full rounded-md border border-gray-300 px-2 py-1.5 text-sm" />
+              <Input {...campo} type="text" maxLength={500} value={motivo} onChange={(e) => setMotivo(e.target.value)} />
             )}
           </Campo>
           <div className="mt-3 flex flex-wrap gap-2">
@@ -92,15 +94,13 @@ export function Cabecalho({ nome, funcao, versaoPublicada, estado, pausada, moti
         <div className="mt-3 max-w-md">
           <Campo rotulo="Estado da Aria" dica={DICA_ESTADO}>
             {(campo) => (
-              <select
-                {...campo}
+              <CampoSelect
+                id={campo.id}
                 value={estado}
                 disabled={acao.ocupado}
-                onChange={(e) => executar(() => definirEstadoAria(e.target.value as EstadoPolitica), "Estado alterado.")}
-                className="w-full rounded-md border border-gray-300 px-2 py-1.5 text-sm"
-              >
-                {ESTADOS.map((e) => <option key={e} value={e}>{ESTADO_POLITICA_LABEL[e]}</option>)}
-              </select>
+                onValueChange={(v) => executar(() => definirEstadoAria(v as EstadoPolitica), "Estado alterado.")}
+                opcoes={ESTADOS.map((e) => ({ valor: e, rotulo: ESTADO_POLITICA_LABEL[e] }))}
+              />
             )}
           </Campo>
         </div>

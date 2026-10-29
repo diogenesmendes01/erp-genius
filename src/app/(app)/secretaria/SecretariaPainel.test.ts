@@ -28,7 +28,7 @@ const render = (mensalidades: Mensalidade[], cobertura: Matricula["cobertura"] =
   }] }));
 const mensalidade = (inicio: string | null, fim: string | null): Mensalidade => ({ id: "c1", versao: 1, valor: "350.00", moeda: "BRL", inicio, fim, vencimento: "2026-03-10" });
 const ISO = /\d{4}-\d{2}-\d{2}/;
-const foraDosCamposDeData = (html: string) => html.replace(/(<input[^>]*type="date"[^>]*?)\svalue="[^"]*"/g, "$1");
+const foraDosCamposDeData = (html: string) => html.replace(/<input\b[^>]*>/g, (tag) => (/type="hidden"/.test(tag) && /value="\d{4}-\d{2}-\d{2}"/.test(tag) ? tag.replace(/\svalue="[^"]*"/, "") : tag));
 
 describe("SecretariaPainel — datas civis da tela inteira", () => {
   it("o fuso negativo está mesmo em vigor (senão a prova contra new Date não vale)", () => {
@@ -58,8 +58,8 @@ describe("SecretariaPainel — datas civis da tela inteira", () => {
   it("cobertura preenchida: texto em dd/mm/aaaa; os campos de data abrem com a ISO (preenchidos)", () => {
     const html = render([], { cobrancaId: "cob1", versao: 2, vencimento: "2026-03-10", referencia: "MES_CIVIL", inicio: "2026-03-01", fim: "2026-03-31" });
     expect(html).toContain("Mês civil · 01/03/2026 até 31/03/2026.");
-    expect(html).toMatch(/<input[^>]*name="inicio"[^>]*type="date"[^>]*value="2026-03-01"/);
-    expect(html).toMatch(/<input[^>]*name="vencimento"[^>]*type="date"[^>]*value="2026-03-10"/);
+    expect(html).toMatch(/<input(?=[^>]*type="hidden")(?=[^>]*name="inicio")(?=[^>]*value="2026-03-01")[^>]*>/);
+    expect(html).toMatch(/<input(?=[^>]*type="hidden")(?=[^>]*name="vencimento")(?=[^>]*value="2026-03-10")[^>]*>/);
     expect(foraDosCamposDeData(html)).not.toMatch(ISO);
   });
 });
@@ -67,7 +67,7 @@ describe("SecretariaPainel — datas civis da tela inteira", () => {
 describe("SecretariaPainel — conferência visual (DS-C)", () => {
   it("links de ação da matrícula ficam numa linha que quebra, com espaço entre eles; cartão com superfície e borda de token", () => {
     const html = render([]);
-    expect(html).toMatch(/<nav aria-label="Ações da matrícula MAT-1" class="flex flex-wrap gap-x-4 gap-y-1">(?:(?!<\/nav>).)*Revisar proposta comercial(?:(?!<\/nav>).)*Consultar ou reservar vaga<\/a><\/nav>/);
+    expect(html).toMatch(/<nav aria-label="Ações da matrícula MAT-1" class="flex flex-wrap gap-2">(?:(?!<\/nav>).)*Revisar proposta comercial(?:(?!<\/nav>).)*Consultar ou reservar vaga<\/a><\/nav>/);
     expect(html).toContain('class="space-y-3 rounded-lg border border-gray-200 bg-surface p-4"');
   });
 });

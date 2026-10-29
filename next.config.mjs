@@ -3,6 +3,7 @@ const nextConfig = {
   reactStrictMode: true,
   output: "standalone",
   serverExternalPackages: ["pdfkit", "fontkit"],
+  typescript: { tsconfigPath: "./tsconfig.build.json" },
   async redirects() {
     return [
       { source: "/leads", destination: "/funil", permanent: true },

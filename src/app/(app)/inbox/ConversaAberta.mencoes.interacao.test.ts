@@ -20,8 +20,8 @@ vi.mock("./AcoesMensagem", () => ({ AcoesMensagem: () => null }));
 vi.mock("@/components/conversa/VirtualList", () => ({ VirtualList: () => null }));
 vi.mock("@/components/conversa/agora-thread", () => ({ useAgoraDaThread: () => Date.UTC(2026, 9, 24, 12) }));
 vi.mock("@/server/whatsapp/acoes", () => ({ enviarMidiaInbox: vi.fn(), enviarTextoInbox: vi.fn() }));
-vi.mock("@/server/whatsapp/acoes-conversa", () => ({ registrarNotaAtendimento: vi.fn() }));
-vi.mock("@/server/whatsapp/consultas-acoes-atendimento", () => ({ origemVisivelDaTransferencia: vi.fn() }));
+vi.mock("@/server/whatsapp/acoes-conversa", () => ({ registrarNotaAtendimento: vi.fn(), enviarPropostaNoAtendimento: vi.fn(), enviarMaterialDoCatalogo: vi.fn() }));
+vi.mock("@/server/whatsapp/consultas-acoes-atendimento", () => ({ origemVisivelDaTransferencia: vi.fn(), propostasDoAtendimento: vi.fn(async () => ({ oportunidadeId: null, propostas: [] })), catalogoDoAtendimento: vi.fn(async () => []) }));
 vi.mock("@/server/crm-config/acoes-respostas", () => ({ respostasRapidasDoCompositor: async () => [] }));
 
 vi.mock("./fluxos/transferir/ControladorTransferir",async original=>{
@@ -67,16 +67,17 @@ it("447 C2 identidade conserva status abertos mas distingue encerramento",async(
 });
 
 function handlers447(el:Elemento){const k=Object.keys(el).find(k=>k.startsWith("__reactProps"))!;return(el as unknown as Record<string,{onClick():void;onChange(e:unknown):void;onSubmit(e:unknown):void}>)[k];}
+function disparar447(el:Elemento,nome:string,arg?:unknown){const direto=handlers447(el) as unknown as Record<string,unknown>;if(typeof direto[nome]==="function"){(direto[nome] as (a?:unknown)=>void)(arg);return;}const fk=Object.keys(el).find(k=>k.startsWith("__reactFiber"));let f=fk?(el as unknown as Record<string,{return?:unknown;memoizedProps?:Record<string,unknown>}>)[fk]:undefined;while(f){const fn=f.memoizedProps?.[nome];if(typeof fn==="function"){(fn as (a?:unknown)=>void)(arg);return;}f=f.return as typeof f;}throw new Error("sem "+nome);}
 const clicar447=async(texto:string)=>act(async()=>handlers447(Array.from(document.body.querySelectorAll("button")).find(b=>b.textContent===texto) as unknown as Elemento).onClick());
-const mudar447=async(selector:string,value:string)=>act(async()=>handlers447(document.body.querySelector(selector) as unknown as Elemento).onChange({target:{value}}));
+const mudar447=async(selector:string,value:string)=>act(async()=>{const el=document.body.querySelector(selector) as unknown as Elemento;if(selector==="textarea")handlers447(el).onChange({target:{value}});else disparar447(el,"onValueChange",value);});
 const submit447=async()=>act(async()=>handlers447(document.body.querySelector("form") as unknown as Elemento).onSubmit({preventDefault(){}}));
 function props447(){const p=props();return{...p,usuario:{id:"u",papeis:["GERENTE_COMERCIAL" as const]},item:{...p.item!,finalidade:"COMERCIAL" as const,status:"AGUARDANDO_CLIENTE" as const,responsavelId:"u",numeroId:"n",contatoId:"c",setoresDoNumero:["COMERCIAL" as const,"SECRETARIA" as const]}};}
 it("447 C2 inbound preserva formulário real, contexto e chave de retry; C1 só anuncia ACK atual",async()=>{
- const p={...props447(),aoTransferirConcluido:vi.fn(),aoMudar:vi.fn()};m.executar.mockResolvedValueOnce({ok:false,erro:"Tente novamente"}).mockResolvedValueOnce({ok:true});await renderizar(p);await clicar447("Abrir transferência");await clicar447("Equipes e filas");await mudar447("select","SECRETARIA");await mudar447("textarea","Contexto preservado");await submit447();expect(p.aoTransferirConcluido).not.toHaveBeenCalled();const primeira=m.executar.mock.calls[0][0];
+ const p={...props447(),aoTransferirConcluido:vi.fn(),aoMudar:vi.fn()};m.executar.mockResolvedValueOnce({ok:false,erro:"Tente novamente"}).mockResolvedValueOnce({ok:true});await renderizar(p);await clicar447("Abrir transferência");await clicar447("Equipes e filas");await mudar447('button[aria-label="Equipe ou fila"]',"SECRETARIA");await mudar447("textarea","Contexto preservado");await submit447();expect(p.aoTransferirConcluido).not.toHaveBeenCalled();const primeira=m.executar.mock.calls[0][0];
  await renderizar({...p,item:{...p.item,status:"EM_ATENDIMENTO"}});expect((document.body.querySelector("textarea") as HTMLTextAreaElement).value).toBe("Contexto preservado");await submit447();expect(m.executar.mock.calls[1][0]).toEqual(primeira);expect(p.aoTransferirConcluido).toHaveBeenCalledExactlyOnceWith("Atendimento transferido para Secretaria.");expect(p.aoMudar).toHaveBeenCalledOnce();
 });
 for(const mudanca of ["owner","closed","cap"] as const)it(`447 C2 ${mudanca} continua invalidando formulário real`,async()=>{
- const p=props447();await renderizar(p);await clicar447("Abrir transferência");await clicar447("Equipes e filas");await mudar447("select","SECRETARIA");await mudar447("textarea","Não reutilizar");
+ const p=props447();await renderizar(p);await clicar447("Abrir transferência");await clicar447("Equipes e filas");await mudar447('button[aria-label="Equipe ou fila"]',"SECRETARIA");await mudar447("textarea","Não reutilizar");
  await renderizar(mudanca==="owner"?{...p,item:{...p.item,responsavelId:"outro"}}:mudanca==="closed"?{...p,item:{...p.item,status:"ENCERRADO"}}:{...p,usuario:{id:"u",papeis:[]}});expect(document.body.textContent).toContain("Feche e abra novamente");expect(document.body.querySelector("textarea")).toBeNull();expect(m.executar).not.toHaveBeenCalled();
 });
 

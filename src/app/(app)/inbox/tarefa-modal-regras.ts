@@ -1,4 +1,6 @@
 import {instanteDoCampoLocal} from "@/server/operacao/fuso-entrada";
+import {dentroDaJanelaEnvio,mensagemForaDaJanela} from "@/server/whatsapp/janela-envio";
+import {COMPLEMENTO_FORA_DA_JANELA,type JanelaEnvioTarefa} from "@/lib/selo-mensagem-agendada";
 export function validarTarefaModal(i:{titulo:string;descricao?:string;dataCivil:string|null;hora:string|null;lembreteAntecedenciaMin:number|null;fusoEscola:string}):string|null{
  if(!i.titulo.trim())return "Dê um título para a tarefa.";
  if(i.titulo.trim().length>200)return "O título deve ter até 200 caracteres.";
@@ -8,4 +10,22 @@ export function validarTarefaModal(i:{titulo:string;descricao?:string;dataCivil:
  if(i.dataCivil){const d=new Date(i.dataCivil+"T00:00:00Z");if(!Number.isFinite(d.getTime())||d.toISOString().slice(0,10)!==i.dataCivil)return "Informe uma data válida.";}
  if(i.dataCivil&&i.hora){const r=instanteDoCampoLocal(i.dataCivil+"T"+i.hora,i.fusoEscola);if(!r.ok)return r.erro;}
  return null;
+}
+export function mensagemNaDataAgendavel(i:{dataCivil:string|null;hora:string|null;fusoEscola:string},agora=new Date()):boolean{
+ if(!i.dataCivil||!i.hora)return false;
+ const r=instanteDoCampoLocal(i.dataCivil+"T"+i.hora,i.fusoEscola);
+ return r.ok&&r.instante.getTime()>agora.getTime();
+}
+export function validarMensagemNaData(texto:string):string|null{
+ if(!texto.trim())return "Escreva a mensagem que será enviada ao contato.";
+ if(texto.trim().length>4096)return "A mensagem deve ter até 4096 caracteres.";
+ return null;
+}
+export function avisoMensagemForaDaJanela(i:{dataCivil:string|null;hora:string|null;fusoEscola:string},janela:JanelaEnvioTarefa|null|undefined,agora=new Date()):string|null{
+ if(!janela||!mensagemNaDataAgendavel(i,agora)||!i.dataCivil||!i.hora)return null;
+ const r=instanteDoCampoLocal(i.dataCivil+"T"+i.hora,i.fusoEscola);
+ if(!r.ok)return null;
+ const politica={janelaInicio:janela.inicio,janelaFim:janela.fim,diasSemana:janela.diasSemana};
+ if(dentroDaJanelaEnvio(r.instante,i.fusoEscola,politica))return null;
+ return mensagemForaDaJanela(politica,i.fusoEscola)+COMPLEMENTO_FORA_DA_JANELA;
 }

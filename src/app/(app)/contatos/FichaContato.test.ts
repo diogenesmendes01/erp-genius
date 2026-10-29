@@ -104,9 +104,10 @@ describe("FichaContato", () => {
         vendedores: [], paises: [], abaInicial: "campos",
       }),
     );
-    expect(html).toMatch(/<select[^>]*>[\s\S]*<option value="B2" selected/);
-    expect(html).toMatch(/type="checkbox"[^>]*checked/);
-    expect(html).toContain('type="date"');
+    expect(html).toContain("B2");
+    expect(html).toMatch(/role="checkbox"[^>]*aria-checked="true"|aria-checked="true"[^>]*role="checkbox"/);
+    expect(html).toContain('value="2000-01-31"');
+    expect(html).toContain("31/01/2000");
     expect(html).toContain('inputMode="decimal"');
     expect(html).toContain("Salvar campos");
   });
@@ -114,7 +115,8 @@ describe("FichaContato", () => {
 
 describe("ListaContatos", () => {
   it("ações da linha visíveis sem hover e seleção por caixa sempre presente", () => {
-    expect(renderLista(linhas)).toMatch(/type="checkbox"[^>]*aria-label="Selecionar Ana"/);
+    expect(renderLista(linhas)).toMatch(/aria-label="Selecionar Ana"/);
+    expect(renderLista(linhas)).toMatch(/role="checkbox"/);
     const html = renderLista(linhas);
     expect(html).toContain('href="/contatos?c=p1"');
     expect(html).not.toContain("hover:opacity");

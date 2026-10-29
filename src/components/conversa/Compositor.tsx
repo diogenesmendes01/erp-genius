@@ -1,8 +1,10 @@
 "use client";
 import type { PublicarPortaRascunhoInsight } from "./rascunho-insight";
+import type {PublicarPortaRascunhoAgendamento} from "./porta-rascunho-agendamento";
 
+import Link from "next/link";
 import { Suspense, lazy, useCallback, useEffect, useId, useLayoutEffect, useRef, useState, type ChangeEvent, type KeyboardEvent } from "react";
-import { IconCalendarEvent, IconMicrophone, IconMoodSmile, IconPaperclip, IconPlayerStop, IconSend, IconTrash } from "@tabler/icons-react";
+import { IconBook, IconCalendarEvent, IconChevronLeft, IconFileCheck, IconUser, IconMicrophone, IconMoodSmile, IconPaperclip, IconPlayerStop, IconSend, IconTrash } from "@tabler/icons-react";
 import { comandoDaNota, consultaMencaoNoCursor, tokensAposEdicao, type CandidatoMencao, type TokenMencao } from "@/lib/mencoes-nota";
 import type { Resultado } from "@/server/_shared/resultado";
 import { executarAcaoCliente } from "@/lib/acao-cliente";
@@ -14,6 +16,13 @@ import { CLASSE_ITEM_MENU, CLASSE_PAINEL_MENU } from "@/components/Menu";
 import { aplicarVariaveisResposta, respostasDoAtalho, type RespostaDoCompositor } from "./respostas-rapidas";
 import { AVISO_RECURSO_MOTOR, mimeVozAceito, type RecursoMotor } from "./recursos-canal";
 import { ITENS_ANEXO, type IdItemAnexo } from "./itens-anexo";
+import type { PropostaAnexavel } from "@/server/whatsapp/proposta-atendimento";
+import type { ConteudoEspecial } from "@/server/whatsapp/canal";
+import type { ContatoCartao } from "@/server/whatsapp/contatos-cartao";
+import type { MaterialCatalogo } from "@/server/whatsapp/catalogo-atendimento";
+import { FormEnquete } from "./anexos/FormEnquete";
+import { FormLocalizacao } from "./anexos/FormLocalizacao";
+import { formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
 
 import { useRevisoesRascunhos, type RevisoesRascunhos } from "./rascunhos-conversa";
 
@@ -24,6 +33,10 @@ export const CARREGANDO_ENVIO = "Carregando…";
 export const FALHA_PERMISSAO_ENVIO = "Não foi possível verificar se você pode enviar nesta conversa.";
 export const AVISO_NOTA = "Nota interna: fica só para a equipe e não é enviada ao contato.";
 export const AVISO_ANEXO_EM_BREVE = "O envio deste tipo pelo Inbox ainda não está disponível.";
+export const SEM_PROPOSTAS = "Nenhuma proposta anexada a esta oportunidade.";
+export const SEM_CONTATOS_CARTAO = "Nenhum número da escola disponível para compartilhar.";
+export const ERRO_CONTATOS_CARTAO = "Não foi possível carregar os números da escola.";
+export const CARREGANDO_CONTATOS_CARTAO = "Carregando números…";
 const MAX_BYTES_MIDIA = 10 * 1024 * 1024;
 
 export interface PropsCompositor {
@@ -41,13 +54,23 @@ export interface PropsCompositor {
   buscarMencoes?: (busca: string, signal?: AbortSignal) => Promise<CandidatoMencao[]>;
   tentativasNota?: ChavesPorAlvo;
   revisoesRascunhos?: RevisoesRascunhos;
-  aoAgendar?: () => void;
+  aoAgendar?: (ancora?:HTMLElement) => void;
+  aoPortaRascunhoAgendamento?: PublicarPortaRascunhoAgendamento;
   aoPortaRascunhoInsight?: PublicarPortaRascunhoInsight;
   contido?: boolean;
   respostas?: readonly RespostaDoCompositor[];
-  propostas?: { oportunidadeId: string | null; aoAbrir: () => void };
+  propostas?: { oportunidadeId: string | null; itens: readonly PropostaAnexavel[]; fuso?: string | null };
+  aoEnviarProposta?(documentoId: string, chaveIdempotencia?: string): Promise<Resultado<unknown>>;
+  catalogo?: readonly MaterialCatalogo[];
+  aoEnviarCatalogo?(fonteId: string, chaveIdempotencia?: string): Promise<Resultado<unknown>>;
+  aoEnviarConteudo?(c: ConteudoEspecial): Promise<Resultado<unknown>>;
+  aoListarContatosCartao?(): Promise<ContatoCartao[]>;
   variaveisResposta?: { nome?: string | null; responsavel?: string | null; curso?: string | null };
 }
+
+type FormConteudo = "enquete" | "localizacao";
+const ehFormConteudo = (id: IdItemAnexo): id is FormConteudo => id === "enquete" || id === "localizacao";
+type ListaContatos = { estado: "carregando" } | { estado: "erro" } | { estado: "pronta"; itens: ContatoCartao[]; erroEnvio?: string };
 
 const chaveRascunho = (id: string, modo: string) => `conversa-rascunho:${id}:${modo}`;
 function lerRascunho(id: string, modo: string): string {
@@ -64,7 +87,7 @@ function formatoDeVoz(): string | null {
   return ["audio/ogg;codecs=opus", "audio/mp4"].find((t) => mimeVozAceito(t) && MediaRecorder.isTypeSupported(t)) ?? null;
 }
 
-export function Compositor({ atendimentoId, pedidoFoco, aoCampoResponder, modo, bloqueioExterno = false, podeEnviar, falhaPermissao, capacidades, aoEnviarTexto, aoEnviarMidia, aoNota, buscarMencoes, respostas = [], propostas, variaveisResposta = {}, tentativasNota, revisoesRascunhos, aoAgendar, aoPortaRascunhoInsight, contido = false }: PropsCompositor) {
+export function Compositor({ atendimentoId, pedidoFoco, aoCampoResponder, modo, bloqueioExterno = false, podeEnviar, falhaPermissao, capacidades, aoEnviarTexto, aoEnviarMidia, aoNota, buscarMencoes, respostas = [], propostas, aoEnviarProposta, catalogo, aoEnviarCatalogo, aoEnviarConteudo, aoListarContatosCartao, variaveisResposta = {}, tentativasNota, revisoesRascunhos, aoAgendar, aoPortaRascunhoInsight, aoPortaRascunhoAgendamento, contido = false }: PropsCompositor) {
   const idAvisosAnexos = useId();
   const [texto, setTexto] = useState(() => lerRascunho(atendimentoId, modo));
   const [arquivo, setArquivo] = useState<File | null>(null);
@@ -72,6 +95,11 @@ export function Compositor({ atendimentoId, pedidoFoco, aoCampoResponder, modo, 
   const [enviando, setEnviando] = useState(false);
   const [emoji, setEmoji] = useState(false);
   const [anexos, setAnexos] = useState(false);
+  const [listaPropostas, setListaPropostas] = useState(false);
+  const [listaCatalogo, setListaCatalogo] = useState(false);
+  const [formConteudo, setFormConteudo] = useState<FormConteudo | null>(null);
+  const [listaContatos, setListaContatos] = useState<ListaContatos | null>(null);
+  const pedidoContatos = useRef(0);
   const [gravando, setGravando] = useState(false);
   const entrada = useRef<HTMLTextAreaElement | null>(null);
   const focoAtendido=useRef<{atendimentoId:string;pedido:number}|null>(null);
@@ -93,6 +121,10 @@ export function Compositor({ atendimentoId, pedidoFoco, aoCampoResponder, modo, 
   const [opcaoMencao, setOpcaoMencao] = useState(0);
   const tentativasLocais = useChavesPorAlvo();
   const tentativas = tentativasNota ?? tentativasLocais;
+  const tentativasPropostas = useChavesPorAlvo();
+  const propostaDisponivel = !!propostas?.oportunidadeId && typeof aoEnviarProposta === "function";
+  const tentativasCatalogo = useChavesPorAlvo();
+  const catalogoDisponivel = !!catalogo?.length && typeof aoEnviarCatalogo === "function";
   const revisoesLocais = useRevisoesRascunhos();
   const revisoes = revisoesRascunhos ?? revisoesLocais;
 
@@ -113,6 +145,10 @@ export function Compositor({ atendimentoId, pedidoFoco, aoCampoResponder, modo, 
     setEnviando(false);
     setEmoji(false);
     setAnexos(false);
+    setListaPropostas(false);
+    setListaCatalogo(false);
+    setFormConteudo(null);
+    setListaContatos(null);
     setGravando(false);
   }
   useLayoutEffect(() => {
@@ -176,7 +212,7 @@ export function Compositor({ atendimentoId, pedidoFoco, aoCampoResponder, modo, 
 
   function registrarIntencao() {
     revisaoRascunho.current += 1;
-    if(aoPortaRascunhoInsight)setRevisaoPonteInsight(r=>r+1);
+    if(aoPortaRascunhoInsight||aoPortaRascunhoAgendamento)setRevisaoPonteInsight(r=>r+1);
     revisoes.alterar(chave, contexto);
   }
 
@@ -208,6 +244,18 @@ export function Compositor({ atendimentoId, pedidoFoco, aoCampoResponder, modo, 
       }});
     return()=>{viva=false;aoPortaRascunhoInsight(null);};
   },[aoPortaRascunhoInsight,atendimentoId,contexto,nota,bloqueioExterno,podeEnviar,enviando,texto,arquivo,revisaoPonteInsight,idAvisosAnexos]);
+  useLayoutEffect(()=>{
+    if(!aoPortaRascunhoAgendamento)return;
+    if(nota){aoPortaRascunhoAgendamento(null);return;}
+    let viva=true;const revisao=revisaoRascunho.current,token=`${idAvisosAnexos}:agendar:${revisao}`;
+    aoPortaRascunhoAgendamento({atendimentoId,textoAtual:texto,revisao:token,salvar(pedido){
+      if(!viva||contextoAtual.current!==contexto||revisaoRascunho.current!==revisao||emCurso.current.has(contexto)
+        ||pedido.revisaoEsperada!==token||typeof pedido.texto!=="string"||pedido.texto.length>4000)
+        return {ok:false,erro:"O rascunho mudou. Reabra o agendamento antes de salvar."};
+      editarTextoInsight.current(pedido.texto);return {ok:true};
+    }});
+    return()=>{viva=false;aoPortaRascunhoAgendamento(null);};
+  },[aoPortaRascunhoAgendamento,atendimentoId,contexto,nota,enviando,texto,arquivo,revisaoPonteInsight,idAvisosAnexos]);
   if (!nota && bloqueioExterno) return null;
   if (!nota && podeEnviar !== true && falhaPermissao) {
     return (
@@ -369,6 +417,88 @@ export function Compositor({ atendimentoId, pedidoFoco, aoCampoResponder, modo, 
     setAnexos(false);
   }
 
+  async function enviarProposta(documentoId: string) {
+    if (!contextoVigente() || !saidaPermitida() || nota || podeEnviar !== true || !aoEnviarProposta || enviando || emCurso.current.has(contexto)) return;
+    emCurso.current.add(contexto);
+    setEnviando(true);
+    setErro("");
+    try {
+      const tentativa = tentativasPropostas.para(JSON.stringify([atendimentoId, documentoId]));
+      const desfecho = await executarAcaoCliente(() => aoEnviarProposta(documentoId, tentativa.atual), { idempotente: true });
+      tentativa.depoisDo(desfecho);
+      if (!contextoVigente()) return;
+      if (desfecho.tipo === "ok") setListaPropostas(false);
+      else setErro(desfecho.mensagem);
+    } finally {
+      emCurso.current.delete(contexto);
+      if (contextoVigente()) setEnviando(false);
+    }
+  }
+
+  async function enviarMaterialCatalogo(fonteId: string) {
+    if (!contextoVigente() || !saidaPermitida() || nota || podeEnviar !== true || !aoEnviarCatalogo || enviando || emCurso.current.has(contexto)) return;
+    emCurso.current.add(contexto);
+    setEnviando(true);
+    setErro("");
+    try {
+      const tentativa = tentativasCatalogo.para(JSON.stringify([atendimentoId, fonteId]));
+      const desfecho = await executarAcaoCliente(() => aoEnviarCatalogo(fonteId, tentativa.atual), { idempotente: true });
+      tentativa.depoisDo(desfecho);
+      if (!contextoVigente()) return;
+      if (desfecho.tipo === "ok") setListaCatalogo(false);
+      else setErro(desfecho.mensagem);
+    } finally {
+      emCurso.current.delete(contexto);
+      if (contextoVigente()) setEnviando(false);
+    }
+  }
+
+  async function enviarConteudo(c: ConteudoEspecial): Promise<Resultado<unknown>> {
+    if (!contextoVigente() || !saidaPermitida() || nota || podeEnviar !== true || !aoEnviarConteudo) return { ok: false, erro: MOTIVO_SEM_ENVIO };
+    return aoEnviarConteudo(c);
+  }
+  function fecharConteudo() {
+    if (contextoVigente()) setFormConteudo(null);
+  }
+  const conteudoAtivo = (id: IdItemAnexo) => {
+    const item = ITENS_ANEXO.find((i) => i.id === id);
+    if (!item?.recurso || !capacidades.includes(item.recurso) || typeof aoEnviarConteudo !== "function") return false;
+    return ehFormConteudo(id) || (id === "contato" && typeof aoListarContatosCartao === "function");
+  };
+  function fecharContatos() {
+    pedidoContatos.current += 1;
+    setListaContatos(null);
+  }
+  async function abrirContatos() {
+    if (!aoListarContatosCartao) return;
+    const pedido = ++pedidoContatos.current;
+    const vigente = () => contextoVigente() && pedidoContatos.current === pedido;
+    setListaContatos({ estado: "carregando" });
+    try {
+      const itens = await aoListarContatosCartao();
+      if (vigente()) setListaContatos({ estado: "pronta", itens });
+    } catch {
+      if (vigente()) setListaContatos({ estado: "erro" });
+    }
+  }
+  async function enviarCartao(contatoJid: string) {
+    if (!contextoVigente() || !saidaPermitida() || nota || podeEnviar !== true || !aoEnviarConteudo || enviando || emCurso.current.has(contexto)) return;
+    const pedido = pedidoContatos.current;
+    const marcarErro = (erroEnvio?: string) => setListaContatos((l) => (l?.estado === "pronta" ? { ...l, erroEnvio } : l));
+    emCurso.current.add(contexto);
+    setEnviando(true);
+    marcarErro();
+    try {
+      const desfecho = await executarAcaoCliente(() => enviarConteudo({ tipo: "CONTATO", contatoJid }), { idempotente: false });
+      if (!contextoVigente() || pedidoContatos.current !== pedido) return;
+      if (desfecho.tipo === "ok") fecharContatos();
+      else marcarErro(desfecho.mensagem);
+    } finally {
+      emCurso.current.delete(contexto);
+      if (contextoVigente()) setEnviando(false);
+    }
+  }
+
   function selecionarAnexo(item: IdItemAnexo) {
     if (!contextoVigente() || !saidaPermitida() || nota || podeEnviar !== true) return;
     if (item === "documento") abrirSeletor("*/*");
@@ -379,9 +509,25 @@ export function Compositor({ atendimentoId, pedidoFoco, aoCampoResponder, modo, 
       mudar("/");
       setAnexos(false);
       entrada.current?.focus();
-    } else if (item === "proposta" && propostas?.oportunidadeId && typeof propostas.aoAbrir === "function") {
+    } else if (item === "proposta" && propostaDisponivel) {
       setAnexos(false);
-      propostas.aoAbrir();
+      setListaCatalogo(false);
+      setListaPropostas(true);
+    } else if (item === "catalogo" && catalogoDisponivel) {
+      setAnexos(false);
+      setListaPropostas(false);
+      setListaCatalogo(true);
+    } else if (ehFormConteudo(item) && conteudoAtivo(item)) {
+      setAnexos(false);
+      setListaPropostas(false);
+      setListaCatalogo(false);
+      setFormConteudo(item);
+    } else if (item === "contato" && conteudoAtivo(item)) {
+      setAnexos(false);
+      setListaPropostas(false);
+      setListaCatalogo(false);
+      setFormConteudo(null);
+      void abrirContatos();
     }
   }
   const vazio = !texto.trim() && !arquivo;
@@ -436,30 +582,109 @@ export function Compositor({ atendimentoId, pedidoFoco, aoCampoResponder, modo, 
         )}
         {!nota && (
           <>
-            <button type="button" aria-label="Anexar" aria-haspopup="menu" aria-expanded={anexos} onClick={() => setAnexos(!anexos)} className="grid h-11 w-11 shrink-0 place-items-center rounded-full text-gray-600 hover:bg-highlight">
+            <button type="button" aria-label="Anexar" aria-haspopup="menu" aria-expanded={anexos} onClick={() => { setListaPropostas(false); setListaCatalogo(false); setFormConteudo(null); fecharContatos(); setAnexos(!anexos); }} className="grid h-11 w-11 shrink-0 place-items-center rounded-full text-gray-600 hover:bg-highlight">
               <IconPaperclip size={20} aria-hidden />
             </button>
             {anexos && (
               <div role="menu" aria-label="Anexar" className={`absolute bottom-12 left-0 z-20 grid w-[340px] max-w-[calc(100vw-32px)] grid-cols-3 gap-1 ${CLASSE_PAINEL_MENU}`}>
                 {ITENS_ANEXO.filter(i => i.id !== "resposta" || respostas.length > 0)
-                  .filter(i => i.id !== "proposta" || (!!propostas?.oportunidadeId && typeof propostas.aoAbrir === "function"))
+                  .filter(i => i.id !== "proposta" || propostaDisponivel)
+                  .filter(i => i.id !== "catalogo" || catalogoDisponivel)
                   .map(i => {
                     const Icone = i.icone;
-                    const aviso = i.recurso ? (capacidades.includes(i.recurso) ? AVISO_ANEXO_EM_BREVE : AVISO_RECURSO_MOTOR) : null;
+                    const inativo = !!i.recurso && !conteudoAtivo(i.id);
+                    const aviso = inativo && i.recurso ? (capacidades.includes(i.recurso) ? AVISO_ANEXO_EM_BREVE : AVISO_RECURSO_MOTOR) : null;
                     return <div key={i.id} className="min-w-0">
-                      <button type="button" role="menuitem" aria-label={i.rotulo} disabled={!!i.recurso}
-                        aria-describedby={i.recurso ? idAvisosAnexos + "-" + i.recurso : undefined}
-                        className={`${CLASSE_ITEM_MENU} flex-col justify-center text-gray-800`} onClick={i.recurso ? undefined : () => selecionarAnexo(i.id)}>
+                      <button type="button" role="menuitem" aria-label={i.rotulo} disabled={inativo}
+                        aria-describedby={inativo ? idAvisosAnexos + "-" + i.recurso : undefined}
+                        className={`${CLASSE_ITEM_MENU} flex-col justify-center text-gray-800`} onClick={inativo ? undefined : () => selecionarAnexo(i.id)}>
                         <span aria-hidden className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg ${i.classeIcone}`}><Icone size={20} /></span><span className="text-center">{i.rotulo}</span>
                       </button>
-                      {i.recurso && <small id={idAvisosAnexos + "-" + i.recurso} className="block px-2 pb-1 text-center text-xs text-gray-600">{aviso}</small>}
+                      {inativo && <small id={idAvisosAnexos + "-" + i.recurso} className="block px-2 pb-1 text-center text-xs text-gray-600">{aviso}</small>}
                     </div>;
                   })}
               </div>
             )}
+            {formConteudo === "enquete" && conteudoAtivo("enquete") && <FormEnquete aoEnviar={enviarConteudo} aoFechar={fecharConteudo} />}
+            {formConteudo === "localizacao" && conteudoAtivo("localizacao") && <FormLocalizacao aoEnviar={enviarConteudo} aoFechar={fecharConteudo} />}
+            {listaContatos && conteudoAtivo("contato") && (
+              <div role="dialog" aria-label="Enviar contato" className={`absolute bottom-12 left-0 z-20 w-[340px] max-w-[calc(100vw-32px)] ${CLASSE_PAINEL_MENU}`}>
+                <div className="flex items-center gap-1 px-1 pb-1">
+                  <button type="button" aria-label="Voltar para anexos" onClick={() => { fecharContatos(); setAnexos(true); }} className="grid h-9 w-9 shrink-0 place-items-center rounded-full text-gray-600 hover:bg-highlight"><IconChevronLeft size={18} aria-hidden /></button>
+                  <p className="text-sm font-medium text-gray-800">Números da escola</p>
+                </div>
+                {listaContatos.estado === "carregando" ? <p role="status" className="px-3 pb-3 text-sm text-gray-600">{CARREGANDO_CONTATOS_CARTAO}</p>
+                  : listaContatos.estado === "erro" ? (
+                    <div className="flex items-center justify-between gap-2 px-3 pb-3">
+                      <p role="alert" className="text-sm text-red-700">{ERRO_CONTATOS_CARTAO}</p>
+                      <Botao variante="secundario" tamanho="sm" onClick={() => void abrirContatos()}>Tentar de novo</Botao>
+                    </div>
+                  ) : listaContatos.itens.length ? (
+                  <>
+                  {listaContatos.erroEnvio && <p role="alert" className="px-3 pb-2 text-sm text-red-700">{listaContatos.erroEnvio}</p>}
+                  <ul aria-label="Números da escola" className="max-h-64 overflow-y-auto">
+                    {listaContatos.itens.map((c) => (
+                      <li key={c.id}>
+                        <button type="button" aria-label={`Enviar contato ${c.rotulo} (${c.telefoneE164})`} disabled={enviando} aria-busy={enviando || undefined} onClick={() => void enviarCartao(c.contatoJid)} className={`${CLASSE_ITEM_MENU} w-full text-left text-gray-800 disabled:cursor-not-allowed disabled:opacity-50`}>
+                          <span aria-hidden className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-blue-100 text-blue-700"><IconUser size={18} /></span>
+                          <span className="min-w-0 flex-1">
+                            <span className="block truncate text-sm font-medium">{c.rotulo}</span>
+                            <span className="block truncate text-xs text-gray-600">{c.telefoneE164}</span>
+                          </span>
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                  </>
+                ) : <EstadoVazio role="status" className="mx-1 mb-1">{SEM_CONTATOS_CARTAO}</EstadoVazio>}
+              </div>
+            )}
+            {listaCatalogo && catalogoDisponivel && catalogo && (
+              <div role="dialog" aria-label="Enviar material do catálogo" className={`absolute bottom-12 left-0 z-20 w-[340px] max-w-[calc(100vw-32px)] ${CLASSE_PAINEL_MENU}`}>
+                <div className="flex items-center gap-1 px-1 pb-1">
+                  <button type="button" aria-label="Voltar para anexos" onClick={() => { setListaCatalogo(false); setAnexos(true); }} className="grid h-9 w-9 shrink-0 place-items-center rounded-full text-gray-600 hover:bg-highlight"><IconChevronLeft size={18} aria-hidden /></button>
+                  <p className="text-sm font-medium text-gray-800">Catálogo</p>
+                </div>
+                <ul aria-label="Materiais do catálogo" className="max-h-64 overflow-y-auto">
+                  {catalogo.map((m) => (
+                    <li key={m.id}>
+                      <button type="button" aria-label={`Enviar ${m.nome}`} disabled={enviando} aria-busy={enviando || undefined} onClick={() => void enviarMaterialCatalogo(m.id)} className={`${CLASSE_ITEM_MENU} w-full text-left text-gray-800 disabled:cursor-not-allowed disabled:opacity-50`}>
+                        <span aria-hidden className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-orange-100 text-orange-700"><IconBook size={18} /></span>
+                        <span className="min-w-0 flex-1 truncate text-sm font-medium">{m.nome}</span>
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            {listaPropostas && propostaDisponivel && propostas?.oportunidadeId && (
+              <div role="dialog" aria-label="Enviar proposta" className={`absolute bottom-12 left-0 z-20 w-[340px] max-w-[calc(100vw-32px)] ${CLASSE_PAINEL_MENU}`}>
+                <div className="flex items-center gap-1 px-1 pb-1">
+                  <button type="button" aria-label="Voltar para anexos" onClick={() => { setListaPropostas(false); setAnexos(true); }} className="grid h-9 w-9 shrink-0 place-items-center rounded-full text-gray-600 hover:bg-highlight"><IconChevronLeft size={18} aria-hidden /></button>
+                  <p className="text-sm font-medium text-gray-800">Propostas da oportunidade</p>
+                </div>
+                {propostas.itens.length ? (
+                  <ul aria-label="Propostas da oportunidade" className="max-h-64 overflow-y-auto">
+                    {propostas.itens.map((d) => (
+                      <li key={d.id}>
+                        <button type="button" aria-label={`Enviar ${d.nome}`} disabled={enviando} aria-busy={enviando || undefined} onClick={() => void enviarProposta(d.id)} className={`${CLASSE_ITEM_MENU} w-full text-left text-gray-800 disabled:cursor-not-allowed disabled:opacity-50`}>
+                          <span aria-hidden className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-green-100 text-green-700"><IconFileCheck size={18} /></span>
+                          <span className="min-w-0 flex-1">
+                            <span className="block truncate text-sm font-medium">{d.nome}</span>
+                            <time dateTime={d.criadoEm} className="block text-xs text-gray-600">{formatarInstanteExibicao(d.criadoEm, propostas.fuso, "UTC", "data").texto}</time>
+                          </span>
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <EstadoVazio role="status" className="mx-1 mb-1" acao={<Link href={`/funil?o=${encodeURIComponent(propostas.oportunidadeId)}`} className="text-sm font-medium text-brand-700 underline">Abrir oportunidade</Link>}>{SEM_PROPOSTAS}</EstadoVazio>
+                )}
+              </div>
+            )}
           </>
         )}
-        {!nota && aoAgendar && <button type="button" aria-label="Agendar mensagem" title="Agendar mensagem" onClick={aoAgendar} className="grid h-11 w-11 shrink-0 place-items-center rounded-full text-gray-600 hover:bg-highlight"><IconCalendarEvent size={18} aria-hidden /></button>}
+        {!nota && aoAgendar && <button type="button" aria-label="Agendar mensagem" title="Agendar mensagem" onClick={e=>aoAgendar(e?.currentTarget)} className="grid h-11 w-11 shrink-0 place-items-center rounded-full text-gray-600 hover:bg-highlight"><IconCalendarEvent size={18} aria-hidden /></button>}
         <button type="button" aria-label="Emojis" aria-pressed={emoji} onClick={() => setEmoji(!emoji)} className="grid h-11 w-11 shrink-0 place-items-center rounded-full text-gray-600 hover:bg-highlight">
           <IconMoodSmile size={20} aria-hidden />
         </button>

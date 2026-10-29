@@ -3,11 +3,12 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { expect,it,vi } from "vitest";
 import type { SugestaoAriaThread } from "@/server/aria/sugestoes-thread";
 vi.mock("@/server/aria/acoes",()=>({aprovarSugestaoNoInbox:vi.fn(),rejeitarSugestaoNoInbox:vi.fn()}));
-import { CartaoSugestaoAria } from "./CartaoSugestaoAria";
+import { CartaoPacoteAria, CartaoSugestaoAria } from "./CartaoSugestaoAria";
+import { intercalarSugestoes } from "./intercalar";
 import { botaoClasses } from "@/components/Botao";
 const s=(o:Partial<SugestaoAriaThread>={}):SugestaoAriaThread=>({id:"s",turnoId:"t",acao:"RESPONDER",status:"SUGERIDA",criadoEm:"2026-10-23T13:42Z",expiraEm:"2026-10-23T14:42Z",justificativa:"Motivo contextual",texto:"Olá!\nComo vai?",detalhe:{tipo:"enviar",documento:false},decididaPorId:null,decididaPorNome:null,decididaEm:null,...o});
 const montar=(x=s())=>renderToStaticMarkup(createElement(CartaoSugestaoAria,{atendimentoId:"thread",s:x,usuarioId:"u",fuso:"America/Sao_Paulo",aoDecidir(){}}));
-it("pendente mostra motivo/texto/expiração e dois botões sem edição",()=>{const h=montar();for(const texto of ["Aria sugere · aguardando aprovação","Responder ao contato","Motivo contextual","Como vai?","Expira às 11:42","Aprovar e enviar","Rejeitar","Isso será enviado agora no WhatsApp e não poderá ser desfeito."])expect(h).toContain(texto);expect(h.match(/<button/g)).toHaveLength(2);expect(h).not.toMatch(/>Editar|Editar tarefa/);expect(h).not.toContain("<form");expect(h).toContain('type="button"');});
+it("pendente mostra motivo/texto/expiração, duas decisões e edição355",()=>{const h=montar();for(const texto of ["Aria sugere · aguardando aprovação","Responder ao contato","Motivo contextual","Como vai?","Expira às 11:42","Aprovar e enviar","Rejeitar","Isso será enviado agora no WhatsApp e não poderá ser desfeito."])expect(h).toContain(texto);expect(h.match(/<button/g)).toHaveLength(3);expect(h).toContain(">Editar</button>");expect(h).not.toContain("Editar tarefa");expect(h).not.toContain("<form");expect(h).toContain('type="button"');});
 it.each(["APROVADA","REJEITADA","EXPIRADA"] as const)("%s não mostra ação nem aviso de envio",status=>{const h=montar(s({status,decididaPorId:"u",decididaEm:"2026-10-23T13:50Z"}));expect(h).not.toContain("<button");expect(h).not.toContain("não poderá ser desfeito");expect(h).not.toContain("Expira às");expect(h).toContain(status==="APROVADA"?"Aprovado por você · 10:50":status==="REJEITADA"?"Rejeitado · 10:50":"Expirou · 10:50");});
 it("escapa conteúdo sem HTML ativo e preserva quebras por estilo",()=>{const h=montar(s({texto:'<script>alert(1)</script>\nSegunda',justificativa:'<img src=x>'}));expect(h).toContain('&lt;script&gt;');expect(h).not.toContain('<script>');expect(h).not.toContain('<img src=');expect(h).toContain('whitespace-pre-wrap');});
 it("cartão usa tokens/layout flat e contorno sem duplicar botão",()=>{const h=montar();expect(h).toContain('w-[min(520px,80%)]');expect(h).toContain('ml-auto');expect(h).toContain('rounded-[14px]');expect(h).toContain('border-amber-600');expect(h).toContain('text-red-700');expect(h).toContain('max-sm:min-h-11');expect(h).not.toMatch(/shadow|#[0-9a-f]{3,8}/i);});
@@ -15,7 +16,7 @@ it("cartão usa tokens/layout flat e contorno sem duplicar botão",()=>{const h=
 it.each([
  [{tipo:"agendar",agendadaPara:"2026-10-24T12:00Z"},"Agendar","Ignorar"],
  [{tipo:"tarefa",titulo:"Ligar",venceEm:"2026-10-24T12:00Z"},"Aprovar","Rejeitar"]
-] as const)("rótulos reais da projeção aparecem nos dois botões",(detalhe,aprovar,rejeitar)=>{const h=montar(s({detalhe}));expect(h).toContain('>'+aprovar+'</button>');expect(h).toContain('>'+rejeitar+'</button>');expect(h.match(/<button/g)).toHaveLength(2);});
+] as const)("rótulos reais da projeção aparecem nos dois botões",(detalhe,aprovar,rejeitar)=>{const h=montar(s({detalhe}));expect(h).toContain('>'+aprovar+'</button>');expect(h).toContain('>'+rejeitar+'</button>');expect(h.match(/<button/g)).toHaveLength(3);});
 
 it.each([["EXECUTADA","Executado"],["DESFEITA","Desfeito por você"]] as const)("estado real %s mantém histórico nominal",(status,texto)=>{
  const h=montar(s({status,podeDecidir:false,podeDesfazer:false,desfeitaPorId:"u",desfeitaEm:"2026-10-23T13:52Z"}));expect(h).toContain(texto);expect(h).not.toContain("Expirou");
@@ -27,4 +28,30 @@ it("Desfazer usa a variante canônica neutro do Botao, com contorno cinza",()=>{
  expect(desfazer).toBeDefined();
  expect(desfazer).toContain('class="'+botaoClasses({variante:"neutro"})+'"');
  expect(desfazer).not.toContain("undefined");
+});
+
+it("editar_tarefa_aparece_so_na_linha_de_tarefa_pendente",()=>{const tarefa={tipo:"tarefa",titulo:"Ligar",venceEm:"2026-10-24T12:00Z"} as const;expect(montar(s({acao:"CRIAR_TAREFA",detalhe:tarefa}))).toContain(">Editar tarefa</button>");expect(montar(s({acao:"CRIAR_TAREFA",detalhe:tarefa,status:"APROVADA",podeDecidir:false,decididaPorId:"u",decididaEm:"2026-10-23T13:50Z"}))).not.toContain("Editar tarefa");expect(montar(s({acao:"MOVER_ETAPA",detalhe:{tipo:"etapa",para:"NOVO"} as SugestaoAriaThread["detalhe"]}))).not.toMatch(/>Editar/);});
+
+it("pacote do turno mostra um cartão com três linhas, decisão individual e decisão em bloco",()=>{
+ const pacote=[s(),s({id:"t2",acao:"CRIAR_TAREFA",texto:null,detalhe:{tipo:"tarefa",titulo:"Ligar",venceEm:"2026-10-24T12:00Z"}}),s({id:"t3",acao:"MOVER_ETAPA",texto:null,detalhe:{tipo:"etapa",para:"NOVO"} as SugestaoAriaThread["detalhe"]})];
+ const h=renderToStaticMarkup(createElement(CartaoPacoteAria,{atendimentoId:"thread",pacote,usuarioId:"u",fuso:"America/Sao_Paulo",aoDecidir(){}}));
+ expect(h.match(/<article/g)).toHaveLength(1);
+ expect(h.match(/<li/g)).toHaveLength(3);
+ for(const texto of ["Aria sugere 3 ações · aguardando aprovação","Como vai?","Criar tarefa: Ligar","Enviar a mensagem acima",">Aprovar tudo e enviar</button>",">Rejeitar tudo</button>",">Editar tarefa</button>",">Aprovar e enviar</button>","Isso será enviado agora no WhatsApp e não poderá ser desfeito."])expect(h).toContain(texto);
+ expect(h.indexOf("Criar tarefa: Ligar")).toBeLessThan(h.indexOf("Enviar a mensagem acima"));
+});
+it("turno com pendente fora do fio desabilita só a decisão em bloco",()=>{
+ const cartoes=[s({podeDecidir:true,pendentesNoTurno:3}),s({id:"t3",acao:"MOVER_ETAPA",texto:null,podeDecidir:true,pendentesNoTurno:3,detalhe:{tipo:"etapa",para:"NOVO"} as SugestaoAriaThread["detalhe"]})];
+ const item=intercalarSugestoes<never>([],()=>null,cartoes,{inicioJanela:null})[0];
+ const pacote=item&&"pacote" in item?item.pacote:undefined;
+ expect(pacote).toHaveLength(2);
+ const montarPacote=(p:SugestaoAriaThread[])=>renderToStaticMarkup(createElement(CartaoPacoteAria,{atendimentoId:"thread",pacote:p,usuarioId:"u",fuso:"UTC",aoDecidir(){}}));
+ const h=montarPacote(pacote!);
+ expect(h).toMatch(/<button[^>]*disabled=""[^>]*>Aprovar tudo e enviar<\/button>/);
+ expect(h).toMatch(/<button[^>]*disabled=""[^>]*>Rejeitar tudo<\/button>/);
+ expect(h).toMatch(/<button(?![^>]*disabled="")[^>]*>Aprovar e enviar<\/button>/);
+ expect(h).toContain("Este turno tem sugestões que não aparecem aqui. Decida as visíveis individualmente.");
+ const completo=montarPacote(pacote!.map(x=>({...x,pendentesNoTurno:2})));
+ expect(completo).toMatch(/<button(?![^>]*disabled="")[^>]*>Aprovar tudo e enviar<\/button>/);
+ expect(completo).not.toContain("não aparecem aqui");
 });

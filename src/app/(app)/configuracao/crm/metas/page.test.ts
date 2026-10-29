@@ -6,6 +6,7 @@ const mocks = vi.hoisted(() => ({
   findMany: vi.fn<(args?: unknown) => Promise<{ id: string; nome: string }[]>>(async () => []),
   progressoMetas: vi.fn<(args?: unknown) => Promise<unknown[]>>(async () => []),
   revalidatePath: vi.fn(),
+  usuario: { id: "g1", nome: "G", papeis: ["GERENTE_COMERCIAL"] as string[], permissoes: [] as string[] },
   redirect: vi.fn((url: string) => {
     throw Object.assign(new Error("NEXT_REDIRECT"), { url });
   }),
@@ -14,7 +15,7 @@ const mocks = vi.hoisted(() => ({
 vi.mock("next/cache", () => ({ revalidatePath: mocks.revalidatePath }));
 vi.mock("next/navigation", () => ({ redirect: mocks.redirect }));
 vi.mock("@/lib/guards", () => ({ exigirPapelLeitura: async () => true }));
-vi.mock("@/server/_shared", () => ({ exigirSessaoPagina: async () => ({ id: "g1", nome: "G", papeis: ["GERENTE_COMERCIAL"], permissoes: [] }) }));
+vi.mock("@/server/_shared", () => ({ exigirSessaoPagina: async () => mocks.usuario }));
 vi.mock("@/lib/prisma", () => ({ prisma: { usuario: { findMany: mocks.findMany } } }));
 vi.mock("@/server/relatorios/escopo", () => ({ escopoRelatorio: async () => ({ tipo: "USUARIOS", ids: ["g1"] }) }));
 vi.mock("@/server/relatorios/atendimento", () => ({ fusoDaEscola: async () => "America/Sao_Paulo" }));
@@ -36,7 +37,10 @@ async function destinoDe(p: Promise<unknown>): Promise<string> {
 }
 
 describe("/configuracao/crm/metas", () => {
-  beforeEach(() => vi.clearAllMocks());
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mocks.usuario.papeis = ["GERENTE_COMERCIAL"];
+  });
 
   it("erro_de_validacao_volta_para_a_tela_com_a_mensagem", async () => {
     mocks.salvarMeta.mockResolvedValue({ ok: false, erro: "Informe a moeda da meta de valor ganho." });
@@ -49,7 +53,7 @@ describe("/configuracao/crm/metas", () => {
   it("sucesso_revalida_e_avisa_salvo", async () => {
     mocks.salvarMeta.mockResolvedValue({ ok: true });
     const url = await destinoDe(definirMeta(form({ competencia: "2026-10", usuarioId: "v1", metrica: "MATRICULAS", valor: "12,5" })));
-    expect(url).toBe("/configuracao/crm/metas?salvo=1");
+    expect(url).toBe("/configuracao/crm/metas?competencia=2026-10&salvo=1");
     expect(mocks.salvarMeta).toHaveBeenCalledWith({ competencia: "2026-10", usuarioId: "v1", metrica: "MATRICULAS", valor: 12.5, moeda: undefined });
     expect(mocks.revalidatePath).toHaveBeenCalledWith("/configuracao/crm/metas");
   });
@@ -78,10 +82,18 @@ describe("/configuracao/crm/metas", () => {
       return [{ id: "g1", nome: "G" }, { id: "v1", nome: "Vera" }];
     });
     const html = renderToStaticMarkup(await Page());
-    expect(html).toContain('<td class="py-1">G</td>');
-    expect(html).toContain('<td class="py-1">Vera</td>');
+    expect(html).toMatch(/>G<\/td>/);
+    expect(html).toMatch(/>Vera<\/td>/);
     expect(html).not.toContain(">Vendedor<");
-    expect(html).toContain('<option value="g1" selected="">Eu</option>');
-    expect(html).not.toContain('<option value="g1">G</option>');
+    expect(html).toContain('name="usuarioId"');
+    expect(html).toContain('value="g1"');
+    expect(html).toContain(">Eu<");
+    expect(html).not.toContain("Equipe (geral)");
+  });
+
+  it("so_o_administrador_ve_a_meta_geral", async () => {
+    mocks.usuario.papeis = ["ADMINISTRADOR"];
+    const html = renderToStaticMarkup(await Page());
+    expect(html).toContain("Equipe (geral)");
   });
 });

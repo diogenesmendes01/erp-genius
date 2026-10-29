@@ -28,4 +28,21 @@ describe("ItemLista", () => {
     expect(h).toContain("INI");
     expect(h).toContain("10:32");
   });
+  it("tamanho sm é mais baixo, com hover de superfície e meta mono", () => {
+    const h = render({ titulo: "Ana", tamanho: "sm", meta: "10:32", onClick: () => {} });
+    for (const c of ["min-h-[52px]", "gap-2.5", "rounded-lg", "px-2.5", "py-2", "hover:bg-surface-muted", "font-mono", "text-[11.5px]", "tabular-nums"]) expect(h).toContain(c);
+    expect(h).not.toContain("min-h-[76px]");
+    expect(h).not.toContain("hover:bg-highlight");
+    const ativo = render({ titulo: "Ana", tamanho: "sm", selecionado: true, onClick: () => {} });
+    expect(ativo).toContain("bg-brand-bg text-brand-800");
+    expect(ativo).not.toContain("hover:bg-surface-muted");
+  });
+  it("badges ficam ao lado do título e metaMono aplica mono no tamanho md", () => {
+    const h = render({ titulo: "Ana", badges: "NOVO", meta: "R$ 10", metaMono: true, onClick: () => {} });
+    expect(h).toContain("NOVO");
+    expect(h).toMatch(/truncate[^>]*>Ana</);
+    expect(h.indexOf(">Ana<")).toBeLessThan(h.indexOf("NOVO"));
+    expect(h).toContain("min-h-[76px]");
+    expect(h).toContain('class="shrink-0 self-start font-mono text-[11.5px] tabular-nums text-gray-600">R$ 10<');
+  });
 });

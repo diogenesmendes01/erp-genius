@@ -4,12 +4,21 @@ import { expect, it, vi } from "vitest";
 
 vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh: vi.fn() }) }));
 vi.mock("@/server/catalogo/acoes", () => ({ criarModalidade: vi.fn(), editarModalidade: vi.fn() }));
+vi.mock("@/components/ui/select", async () => {
+  const React = await import("react");
+  return {
+    CampoSelect: ({ id, opcoes }: { id?: string; opcoes?: { valor: string; rotulo: React.ReactNode }[] }) =>
+      React.createElement("div", { id }, ...(opcoes ?? []).map((opcao) => React.createElement("span", { key: opcao.valor }, opcao.rotulo))),
+  };
+});
 
 import { ModalidadeFormulario } from "./ModalidadeFormulario";
 
 it("opções do segmento: rótulo do mapa central e ordem do enum (Adulto, Kids, Teens, Empresa)", () => {
   const html = renderToStaticMarkup(createElement(ModalidadeFormulario, { onClose: () => {} }));
-  const select = /<select[^>]*id="modalidade-segmento"[^>]*>([\s\S]*?)<\/select>/.exec(html)?.[1] ?? "";
-  const opcoes = [...select.matchAll(/<option[^>]*value="([^"]*)"[^>]*>([^<]*)<\/option>/g)].map((m) => [m[1], m[2]]);
-  expect(opcoes).toEqual([["ADULTO", "Adulto"], ["KIDS", "Kids"], ["TEENS", "Teens"], ["EMPRESA", "Empresa"]]);
+  expect(html).toContain('id="modalidade-segmento"');
+  const rotulos = ["Adulto", "Kids", "Teens", "Empresa"];
+  const posicoes = rotulos.map((rotulo) => html.indexOf(`>${rotulo}<`));
+  expect(posicoes.every((posicao) => posicao >= 0)).toBe(true);
+  expect(posicoes).toEqual([...posicoes].sort((a, b) => a - b));
 });

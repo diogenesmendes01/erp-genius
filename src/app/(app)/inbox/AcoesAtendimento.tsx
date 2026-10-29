@@ -5,11 +5,15 @@ import { useEffect, useRef, useState } from "react";
 import type { Papel, StatusAtendimentoWhatsApp } from "@prisma/client";
 import { Botao } from "@/components/Botao";
 import { Campo } from "@/components/Campo";
+import { Combobox } from "@/components/ui/combobox";
+import { Checkbox } from "@/components/ui/checkbox";
+import { garantirEstilo } from "@/app/(app)/inbox/garantir-estilo";
 import { CampoTexto } from "@/components/CampoTexto";
 import { ConfirmarAcao } from "@/components/ConfirmarAcao";
 import { EstadoVazio } from "@/components/EstadoVazio";
 import { recontarNaoLidasInbox } from "@/components/SeloNaoLidasInbox";
 import { FeedbackAcao } from "@/components/FeedbackAcao";
+import {validarQuando as validarQuandoAgendar} from "./fluxos/agendar/validar-quando";
 import { Modal } from "@/components/Modal";
 import { MensagemStatus } from "@/components/MensagemStatus";
 import { useSugestaoAgendamento } from "./insights/useSugestaoAgendamento";
@@ -20,7 +24,7 @@ import { podeExecutar } from "@/server/inbox/permissoes";
 import { PRAZO_MAXIMO_CONVITE_DIAS } from "@/server/whatsapp/participantes";
 import { assumirAtendimento, assumirConversaDaAria, atribuirAtendimento, convidarParticipante, devolverParaFila, revogarParticipante, transferirAtendimento } from "@/server/whatsapp/acoes-atendimento";
 import { agendarMensagemNoAtendimentoLocal, cancelarAgendamentoDoAtendimento, registrarNotaAtendimento } from "@/server/whatsapp/acoes-conversa";
-import { fusoDoCampoLocal, instanteDoCampoLocal } from "@/server/operacao/fuso-entrada";
+import { fusoDoCampoLocal } from "@/server/operacao/fuso-entrada";
 import { CampoDataHoraLocal } from "@/components/CampoDataHoraLocal";
 import { listarConvitesEAgendamentos, listarPessoasParaAtendimento, type AgendamentoAtivo, type ConviteAtivo } from "@/server/whatsapp/consultas-acoes-atendimento";
 import { encerrarAtendimentoWhatsApp } from "@/server/whatsapp/operacoes-atendimento";
@@ -39,6 +43,7 @@ export interface PropsAcoesAtendimento {
   podeAssumirAria?: boolean;
   grupo?: boolean;
   aoCriarTarefa?: () => void;
+  aoAgendar?: (ancora?:HTMLElement) => void;
   atendimento: { id: string; finalidade: Setor; responsavelId: string | null; status: StatusAtendimentoWhatsApp };
   usuario: { id: string; papeis: Papel[] };
   setoresDoNumero: Setor[];
@@ -52,14 +57,11 @@ export interface PropsAcoesAtendimento {
 }
 
 const SILENCIO_HORAS = 8;
-const CLASSE_CONTROLE = "w-full rounded-md border border-gray-300 px-2 py-1.5 text-sm";
+const CLASSE_CONTROLE = "w-full rounded-md border border-gray-200 px-2 py-1.5 text-sm";
 
-export function validarQuando(quando: string, fuso: string, agora: Date = new Date()): string | null {
-  if (!quando) return "Escolha o dia e a hora do envio.";
-  const r = instanteDoCampoLocal(quando, fuso);
-  if (!r.ok) return r.erro;
-  if (r.instante.getTime() <= agora.getTime()) return "Escolha um horário no futuro.";
-  return null;
+export function validarQuando(quando:string,fuso:string,agora:Date=new Date()):string|null {
+  const erro=validarQuandoAgendar(quando,fuso,agora);
+  return erro==="Esse horário já passou. Escolha uma data e hora no futuro."?"Escolha um horário no futuro.":erro;
 }
 
 export function setoresParaTransferir(setoresDoNumero: Setor[], atual: Setor): Setor[] {
@@ -68,7 +70,7 @@ export function setoresParaTransferir(setoresDoNumero: Setor[], atual: Setor): S
 
 type Dialogo = null | "atribuir" | "transferir" | "convidar" | "nota" | "agendar" | "pendentes" | "encerrar";
 
-export function useAcoesAtendimento({ versaoInsights=0, podeUsarInsights=false, contextoAria = false, podeAssumirAria = false, atendimento, usuario, setoresDoNumero, fixada, silenciada, linhaComercial = false, donoLinhaId = null, destinos = [], aoMudar, fuso, grupo = false, aoBuscar, aoCriarTarefa }: PropsAcoesAtendimento & { aoBuscar(): void }): AcoesCabecalho {
+export function useAcoesAtendimento({ versaoInsights=0, podeUsarInsights=false, contextoAria = false, podeAssumirAria = false, atendimento, usuario, setoresDoNumero, fixada, silenciada, linhaComercial = false, donoLinhaId = null, destinos = [], aoMudar, fuso, grupo = false, aoBuscar, aoCriarTarefa, aoAgendar }: PropsAcoesAtendimento & { aoBuscar(): void }): AcoesCabecalho {
   const [dialogo, setDialogo] = useState<Dialogo>(null);
   const [aviso, setAviso] = useState<string | null>(null);
   const direta = useAcaoCliente({ idempotente: false });
@@ -87,7 +89,7 @@ export function useAcoesAtendimento({ versaoInsights=0, podeUsarInsights=false, 
   const avisar = (qual: "convite" | "agendamento") => { setAviso(qual === "convite" ? "Convite revogado." : "Agendamento cancelado."); aoMudar?.(); };
 
   const ocupado = direta.ocupado || responsavel.ocupado;
-  const abrirAgendar = pode("agendar") ? () => setDialogo("agendar") : null;
+  const abrirAgendar = pode("agendar") ? (aoAgendar??(()=>setDialogo("agendar"))) : null;
   const chaveAssumir = JSON.stringify([atendimento.id, atendimento.responsavelId, usuario.id, usuario.papeis, contextoAria, podeAssumirAria, grupo, aberto, linhaComercial, donoLinhaId]);
   const [ofertaAssumir, setOfertaAssumir] = useState(() => ({ chave: chaveAssumir, token: Symbol("assumir") }));
   if (ofertaAssumir.chave !== chaveAssumir) setOfertaAssumir({ chave: chaveAssumir, token: Symbol("assumir") });
@@ -115,7 +117,7 @@ export function useAcoesAtendimento({ versaoInsights=0, podeUsarInsights=false, 
     fixar: () => void rodar(() => alternarFixada(atendimento.id), fixada ? "Conversa desafixada." : "Conversa fixada."),
     silenciar: () => void rodar(() => silenciarConversa(atendimento.id, silenciada ? null : new Date(Date.now() + SILENCIO_HORAS * 3_600_000).toISOString()), silenciada ? "Notificações reativadas." : "Silenciada por " + SILENCIO_HORAS + " horas."),
     ...(!grupo && aoCriarTarefa ? { criarTarefa: aoCriarTarefa } : {}),
-    nota: () => setDialogo("nota"), agendar: () => setDialogo("agendar"), pendentes: () => setDialogo("pendentes"), buscar: aoBuscar,
+    nota: () => setDialogo("nota"), agendar: () => abrirAgendar?.(), pendentes: () => setDialogo("pendentes"), buscar: aoBuscar,
     atribuir: () => setDialogo("atribuir"), devolver: () => void rodar(() => devolverParaFila(atendimento.id), "Devolvido para a fila.", responsavel),
     convidar: () => setDialogo("convidar"), encerrar: () => setDialogo("encerrar"), bloquear: () => {},
   }}).map(item => ({ ...item, desabilitado: item.desabilitado || ocupado }));
@@ -127,7 +129,7 @@ export function useAcoesAtendimento({ versaoInsights=0, podeUsarInsights=false, 
       {dialogo === "convidar" && <DialogoPessoa atendimentoId={atendimento.id} modo="convidar" aoFechar={() => setDialogo(null)} aoConcluir={() => concluir("Convite enviado.")} />}
       {dialogo === "transferir" && <DialogoTransferir atendimentoId={atendimento.id} finalidade={atendimento.finalidade} setoresDoNumero={setoresDoNumero} destinos={destinos} aoFechar={() => setDialogo(null)} aoConcluir={() => concluir("Atendimento transferido.")} />}
       {dialogo === "nota" && <DialogoNota atendimentoId={atendimento.id} aoFechar={() => setDialogo(null)} aoConcluir={() => concluir("Nota registrada.")} />}
-      {dialogo === "agendar" && <DialogoAgendar atendimentoId={atendimento.id} versaoInsights={versaoInsights} insightsAplicaveis={podeUsarInsights && atendimento.finalidade === "COMERCIAL" && !grupo} fuso={fusoDoCampoLocal(fuso, null)} aoFechar={() => setDialogo(null)} aoConcluir={() => concluir("Mensagem agendada.")} />}
+      {dialogo === "agendar" && !aoAgendar && <DialogoAgendar atendimentoId={atendimento.id} versaoInsights={versaoInsights} insightsAplicaveis={podeUsarInsights && atendimento.finalidade === "COMERCIAL" && !grupo} fuso={fusoDoCampoLocal(fuso, null)} aoFechar={() => setDialogo(null)} aoConcluir={() => concluir("Mensagem agendada.")} />}
       {dialogo === "pendentes" && <DialogoPendentes atendimentoId={atendimento.id} fuso={fuso} aoFechar={() => setDialogo(null)} aoConcluir={avisar} />}
       {dialogo === "encerrar" && (
         <ConfirmarAcao
@@ -159,6 +161,7 @@ function Rodape({ ocupado, aoFechar, children }: { ocupado: boolean; aoFechar: (
 }
 
 export function DialogoTransferir({ atendimentoId, finalidade, setoresDoNumero, destinos = [], aoFechar, aoConcluir }: PropsDialogo & { atendimentoId: string; finalidade: Setor; setoresDoNumero: Setor[]; destinos?: DestinoTransferencia[] }) {
+  garantirEstilo();
   const acao = useAcaoCliente({ idempotente: true });
   const tentativa = useChaveIdempotencia();
   const setores = setoresParaTransferir(setoresDoNumero, finalidade);
@@ -184,18 +187,13 @@ export function DialogoTransferir({ atendimentoId, finalidade, setoresDoNumero, 
           <>
             <Campo rotulo="Setor de destino" obrigatorio>
               {(c) => (
-                <select {...c} className={CLASSE_CONTROLE} value={destino} onChange={(e) => { setDestino(e.target.value as Setor); setChave(""); }}>
-                  {setores.map((s) => <option key={s} value={s}>{rotular(SETOR_ATENDIMENTO_LABEL, s)}</option>)}
-                </select>
+                <Combobox id={c.id} className={CLASSE_CONTROLE} value={destino} onValueChange={(valor) => { setDestino(valor as Setor); setChave(""); }} opcoes={setores.map((s) => ({ valor: s, rotulo: rotular(SETOR_ATENDIMENTO_LABEL, s) }))} />
               )}
             </Campo>
             {exigeChave && (
               <Campo rotulo="Contexto do destino" obrigatorio dica={opcoes.length === 0 ? "Nenhuma matrícula ou aluno disponível para este setor." : undefined}>
                 {(c) => (
-                  <select {...c} className={CLASSE_CONTROLE} value={chave} onChange={(e) => setChave(e.target.value)}>
-                    <option value="">Escolha…</option>
-                    {opcoes.map((o) => <option key={o.chave} value={o.chave}>{o.nome}</option>)}
-                  </select>
+                  <Combobox id={c.id} className={CLASSE_CONTROLE} value={chave} vazio="Escolha…" onValueChange={setChave} opcoes={opcoes.map((o) => ({ valor: o.chave, rotulo: o.nome }))} />
                 )}
               </Campo>
             )}
@@ -212,6 +210,7 @@ export function DialogoTransferir({ atendimentoId, finalidade, setoresDoNumero, 
 }
 
 export function DialogoPessoa({ atendimentoId, modo, aoFechar, aoConcluir }: PropsDialogo & { atendimentoId: string; modo: "atribuir" | "convidar" }) {
+  garantirEstilo();
   const acao = useAcaoCliente({ idempotente: true });
   const tentativa = useChaveIdempotencia();
   const fimDaTentativa = useRef<{ chave: string; dias: number; fim: string } | null>(null);
@@ -248,10 +247,7 @@ export function DialogoPessoa({ atendimentoId, modo, aoFechar, aoConcluir }: Pro
       <form onSubmit={(e) => void enviar(e)} className="space-y-3">
         <Campo rotulo="Pessoa" obrigatorio dica={pessoas && pessoas.length === 0 ? "Ninguém disponível." : undefined}>
           {(c) => (
-            <select {...c} className={CLASSE_CONTROLE} value={usuarioId} onChange={(e) => setUsuarioId(e.target.value)} disabled={!pessoas}>
-              <option value="">{pessoas ? "Escolha…" : "Carregando…"}</option>
-              {(pessoas ?? []).map((p) => <option key={p.id} value={p.id}>{p.nome}</option>)}
-            </select>
+            <Combobox id={c.id} aria-label="Pessoa" className={CLASSE_CONTROLE} value={usuarioId} onValueChange={setUsuarioId} disabled={!pessoas} vazio={pessoas ? "Escolha…" : "Carregando…"} busca="Buscar pessoa" opcoes={(pessoas ?? []).map((p) => ({ valor: p.id, rotulo: p.nome }))} />
           )}
         </Campo>
         {modo === "convidar" && (
@@ -259,7 +255,7 @@ export function DialogoPessoa({ atendimentoId, modo, aoFechar, aoConcluir }: Pro
             <Campo rotulo="Duração do convite (dias)" obrigatorio dica={`No máximo ${PRAZO_MAXIMO_CONVITE_DIAS} dias; começa agora.`}>
               {(c) => <input {...c} type="number" min={1} max={PRAZO_MAXIMO_CONVITE_DIAS} className={CLASSE_CONTROLE} value={dias} onChange={(e) => setDias(Math.min(PRAZO_MAXIMO_CONVITE_DIAS, Math.max(1, Number(e.target.value) || 1)))} />}
             </Campo>
-            <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={podeEnviar} onChange={(e) => setPodeEnviar(e.target.checked)} /> Pode enviar mensagens</label>
+            <label className="flex items-center gap-2 text-sm"><Checkbox checked={podeEnviar} onCheckedChange={(valor) => setPodeEnviar(valor === true)} /> Pode enviar mensagens</label>
             <Campo rotulo="Motivo do convite" obrigatorio>
               {(c) => <CampoTexto {...c} className={CLASSE_CONTROLE} rows={3} minLength={10} maxLength={500} value={motivo} onChange={(e) => setMotivo(e.target.value)} />}
             </Campo>

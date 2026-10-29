@@ -5,6 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 const m = vi.hoisted(() => ({
   ganchos: null as null | import("@/test/tela-sem-dom").Ganchos,
   efeitos: [] as (() => void)[],
+  noCliente: true,
   definir: vi.fn(), replace: vi.fn(), refresh: vi.fn(), replaceState: vi.fn(),
 }));
 vi.mock("react", async (original) => {
@@ -14,6 +15,7 @@ vi.mock("react", async (original) => {
     useState: ((inicial: unknown) => m.ganchos!.useState(inicial)) as unknown as typeof real.useState,
     useCallback: ((f: unknown) => f) as unknown as typeof real.useCallback,
     useEffect: ((efeito: () => void) => { m.efeitos.push(efeito); }) as unknown as typeof real.useEffect,
+    useSyncExternalStore: ((_assinar: unknown, cliente: () => unknown, servidor: () => unknown) => (m.noCliente ? cliente() : servidor())) as unknown as typeof real.useSyncExternalStore,
   };
 });
 vi.mock("next/navigation", () => ({ useRouter: () => ({ replace: m.replace, refresh: m.refresh, push: vi.fn() }) }));
@@ -63,15 +65,27 @@ const botaoDeEnvio = () => elementos(tela()).find((n) => n.type === Botao);
 
 beforeEach(() => {
   vi.clearAllMocks();
+  m.noCliente = true;
   aba = abaFalsa();
 });
 afterEach(() => { vi.unstubAllGlobals(); });
 
 describe("ativar — o link de acesso", () => {
   it("antes de ler o link, não mostra formulário (o servidor não conhece o fragmento)", () => {
+    m.noCliente = false;
     m.ganchos = criarGanchos();
     expect(formularios(tela())).toHaveLength(0);
     expect(texto(tela())).toContain("Conferindo o link de acesso…");
+  });
+
+  it("na hidratação a primeira pintura repete a do servidor; o formulário vem logo depois, sem setState em efeito", () => {
+    m.noCliente = false;
+    m.ganchos = criarGanchos();
+    vi.stubGlobal("window", { location: { hash: `#token=${SEGREDO}`, pathname: "/portal-aluno/ativar" }, history: { replaceState: m.replaceState }, sessionStorage: aba });
+    expect(texto(tela())).toContain("Conferindo o link de acesso…");
+    expect(aba.dados.get(CHAVE_TOKEN_ATIVACAO)).toBe(SEGREDO);
+    m.noCliente = true;
+    expect(formularios(tela())).toHaveLength(1);
   });
 
   it("com o link: o segredo sai da barra, fica guardado nesta aba e o formulário aparece", () => {

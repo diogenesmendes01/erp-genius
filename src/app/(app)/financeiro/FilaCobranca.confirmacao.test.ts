@@ -38,6 +38,7 @@ import { MensagemStatus } from "@/components/MensagemStatus";
 import { botao, criarGanchos, elementos, texto, type Ganchos, type No } from "@/test/tela-sem-dom";
 import { anuncios } from "@/test/feedback-acao";
 import { confirmarNoDialogo } from "@/test/confirmacao-tela";
+import { Checkbox } from "@/components/ui/checkbox";
 import { MSG_RESULTADO_INCERTO_SEM_CHAVE } from "@/lib/mensagens";
 import { lerFiltrosFila } from "@/server/cobrancas/filtros-fila";
 
@@ -188,8 +189,8 @@ describe("FilaCobranca \u2014 enviar pela gaveta do detalhe passa pela confirma�
 });
 
 const marcarNoLote = (i = 0) => {
-  const caixas = elementos(tela()).filter((n: No) => n.type === "input" && n.props.type === "checkbox");
-  (caixas[i].props.onChange as () => void)();
+  const caixas = elementos(tela()).filter((n: No) => n.type === Checkbox);
+  (caixas[i].props.onCheckedChange as () => void)();
 };
 const usar = (g: Ganchos): Ganchos => { const anterior = m.ganchos!; m.ganchos = g; return anterior; };
 
@@ -228,7 +229,7 @@ describe("FilaCobranca — \"Aprovar e enviar lote\" passa pela confirmação (d
     const t = tela();
     expect(confirmacoes(t)).toHaveLength(0);
     expect(m.lote).not.toHaveBeenCalled();
-    expect(elementos(t).find((n: No) => n.type === "input" && n.props.type === "checkbox")!.props.checked).toBe(true);
+    expect(elementos(t).find((n: No) => n.type === Checkbox)!.props.checked).toBe(true);
     expect(botao(t, "Aprovar e enviar lote").props.disabled).toBe(false);
   });
 
@@ -247,15 +248,15 @@ describe("FilaCobranca — \"Aprovar e enviar lote\" passa pela confirmação (d
 describe("FilaCobranca — o lote só leva o que está na tela (docs/43 §6 item 9)", () => {
   const outra: FilaCobrancaItem = { ...item, id: "cobranca-2", aluno: { id: "aluno-2", nome: "Bruno Costa", telefone: null } };
   const noTrecho = (itens: FilaCobrancaItem[]) => m.ganchos!.renderizar(FilaCobranca, { ...props, itens, totalFila: 2 });
-  const caixas = (t: ReactNode) => elementos(t).filter((n: No) => n.type === "input" && n.props.type === "checkbox");
+  const caixas = (t: ReactNode) => elementos(t).filter((n: No) => n.type === Checkbox);
   const temBarra = (t: ReactNode) => elementos(t).some((n: No) => n.type === "button" && texto(n.props.children).trim() === "Aprovar e enviar lote");
   const barra = (t: ReactNode) => texto(elementos(t).find((n: No) => n.type === "span" && texto(n.props.children).includes("selecionada(s)"))!.props.children);
 
   it("marcada num trecho e fora da tela no seguinte: some da barra, não vai na revisão nem no envio", async () => {
-    (caixas(noTrecho([item]))[0].props.onChange as () => void)();
+    (caixas(noTrecho([item]))[0].props.onCheckedChange as () => void)();
     expect(temBarra(noTrecho([item]))).toBe(true);
     expect(temBarra(noTrecho([outra]))).toBe(false);
-    (caixas(noTrecho([outra]))[0].props.onChange as () => void)();
+    (caixas(noTrecho([outra]))[0].props.onCheckedChange as () => void)();
     const t = noTrecho([outra]);
     expect(barra(t)).toBe("1 selecionada(s) para envio em lote");
     (botao(t, "Aprovar e enviar lote").props.onClick as () => void)();
@@ -270,16 +271,16 @@ describe("FilaCobranca — o lote só leva o que está na tela (docs/43 §6 item
   });
 
   it("marcar no trecho atual descarta o que ficou marcado fora da tela: voltar não ressuscita a marcação", () => {
-    (caixas(noTrecho([item]))[0].props.onChange as () => void)();
-    (caixas(noTrecho([outra]))[0].props.onChange as () => void)();
+    (caixas(noTrecho([item]))[0].props.onCheckedChange as () => void)();
+    (caixas(noTrecho([outra]))[0].props.onCheckedChange as () => void)();
     const deVolta = caixas(noTrecho([item, outra]));
     expect(deVolta.map((n) => n.props.checked)).toEqual([false, true]);
   });
 
   it("as duas marcadas e uma sai do trecho (paga, ou outro filtro): a barra e o envio contam só a que ficou", async () => {
     const t0 = noTrecho([item, outra]);
-    (caixas(t0)[0].props.onChange as () => void)();
-    (caixas(noTrecho([item, outra]))[1].props.onChange as () => void)();
+    (caixas(t0)[0].props.onCheckedChange as () => void)();
+    (caixas(noTrecho([item, outra]))[1].props.onCheckedChange as () => void)();
     expect(barra(noTrecho([item, outra]))).toBe("2 selecionada(s) para envio em lote");
     const t = noTrecho([outra]);
     expect(barra(t)).toBe("1 selecionada(s) para envio em lote");
@@ -300,7 +301,7 @@ describe("FilaCobranca — lote: falha parcial em role=\"alert\", resumo em role
     (c.props.aoConcluir as (d: unknown) => void)(r.dado);
     const t = tela();
     expect(confirmacoes(t)).toHaveLength(0);
-    expect(elementos(t).filter((n: No) => n.type === "input" && n.props.type === "checkbox").every((n: No) => n.props.checked === false)).toBe(true);
+    expect(elementos(t).filter((n: No) => n.type === Checkbox).every((n: No) => n.props.checked === false)).toBe(true);
     return anuncios(t);
   }
 

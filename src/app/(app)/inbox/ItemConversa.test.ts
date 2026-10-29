@@ -25,7 +25,7 @@ describe("ItemConversa", () => {
   });
   it("seleção neutra e aria-current, hover somente fora da seleção", () => {
     const t = h({}, { selecionado: true });
-    expect(t).toContain('aria-current="true"'); expect(t).toContain("bg-gray-100"); expect(t).not.toContain("bg-brand-bg text-brand-800");
+    expect(t).toContain('aria-current="true"'); expect(t).toContain("bg-highlight"); expect(t).not.toContain("bg-brand-bg text-brand-800");
     expect(h()).toContain("hover:bg-surface-muted"); expect(h()).not.toContain('aria-current="true"');
   });
   it("contador da marca mono600, hora verde; zero sem contador/hora cinza", () => {
@@ -51,7 +51,7 @@ describe("ItemConversa", () => {
   });
   it("grupo é contrato de render: ícone44 neutro e nenhum badge", () => {
     const t = h({ grupo: true, prazoRespostaEm: "2026-10-22T12:12:00.000Z" });
-    expect(t).toContain('data-testid="icone-grupo"'); expect(t).toContain("h-11 w-11"); expect(t).toContain("bg-gray-100 text-gray-600");
+    expect(t).toContain('data-testid="icone-grupo"'); expect(t).toContain("h-11 w-11"); expect(t).toContain("bg-surface-muted text-gray-600");
     for (const c of ["Com você", "Financeiro", "Prazo estourado", "rounded-[6px]"]) expect(t).not.toContain(c);
   });
   it("fuso pessoal, ausência de instante e iniciais Unicode ficam nos produtores", () => {

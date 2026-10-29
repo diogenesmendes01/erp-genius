@@ -126,7 +126,7 @@ export function EncaminharMensagem({ mensagem, origem, aoFechar, aoMudar }: Omit
         <p className="text-gray-600">Conversas deste mesmo número em que você pode enviar.</p>
         <form role="search" onSubmit={(e) => void buscar(e)} className="flex gap-2">
           <input value={termo} onChange={(e) => setTermo(e.target.value)} maxLength={100} aria-label="Buscar conversa de destino"
-            placeholder="Nome ou telefone do contato" className="min-w-0 flex-1 rounded border border-gray-300 px-2 py-1.5 text-sm" />
+            placeholder="Nome ou telefone do contato" className="min-w-0 flex-1 rounded border border-gray-200 px-2 py-1.5 text-sm" />
           <Botao type="submit" tamanho="sm" variante="secundario" ocupado={ocupado}>Buscar</Botao>
         </form>
         <FeedbackAcao erro={erro} sucesso={null} />

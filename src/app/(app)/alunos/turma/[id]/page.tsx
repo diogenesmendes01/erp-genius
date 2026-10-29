@@ -9,6 +9,7 @@ import { diarioDaTurma, progressaoDaTurma } from "@/server/academico/consultas-l
 import { temPapel } from "@/server/_shared";
 import { TurmaAcademico } from "./TurmaAcademico";
 import { EstadoVazioLinha } from "@/components/EstadoVazio";
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
 
 export default async function FichaTurmaPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -44,34 +45,34 @@ export default async function FichaTurmaPage({ params }: { params: Promise<{ id:
       </header>
 
       <section className="overflow-x-auto rounded-lg border border-gray-200">
-        <table className="w-full text-sm">
-          <thead className="bg-gray-100 text-left text-xs text-gray-500">
-            <tr>
-              <th className="px-4 py-2 font-medium">Aluno</th>
-              <th className="px-4 py-2 font-medium">Código</th>
-              <th className="px-4 py-2 font-medium">Status</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-100">
+        <Table className="w-full text-sm">
+          <TableHeader className="bg-surface-muted text-left text-xs text-gray-500">
+            <TableRow>
+              <TableHead className="px-4 py-2 font-medium">Aluno</TableHead>
+              <TableHead className="px-4 py-2 font-medium">Código</TableHead>
+              <TableHead className="px-4 py-2 font-medium">Status</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody className="divide-y divide-gray-100">
             {turma.alocacoes.length === 0 ? (
               <EstadoVazioLinha colSpan={3}>
                   Nenhum aluno alocado.
                 </EstadoVazioLinha>
             ) : (
               turma.alocacoes.map((a) => (
-                <tr key={a.id} className="hover:bg-gray-50">
-                  <td className="px-4 py-3">
+                <TableRow key={a.id} className="hover:bg-surface-muted">
+                  <TableCell className="px-4 py-3">
                     <Link href={`/alunos/${a.aluno.id}`} className="font-medium text-brand-700 hover:underline">
                       {nomeCompleto(a.aluno)}
                     </Link>
-                  </td>
-                  <td className="px-4 py-3 text-gray-500">{a.aluno.codigo}</td>
-                  <td className="px-4 py-3 text-gray-600">{STATUS_ALUNO_LABEL[a.aluno.status]}</td>
-                </tr>
+                  </TableCell>
+                  <TableCell className="px-4 py-3 text-gray-500">{a.aluno.codigo}</TableCell>
+                  <TableCell className="px-4 py-3 text-gray-600">{STATUS_ALUNO_LABEL[a.aluno.status]}</TableCell>
+                </TableRow>
               ))
             )}
-          </tbody>
-        </table>
+          </TableBody>
+        </Table>
       </section>
 
       {diario && progressao && (

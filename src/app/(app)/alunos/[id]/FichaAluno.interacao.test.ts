@@ -15,7 +15,14 @@ vi.mock("@/server/alunos/acoes", () => ({ editarAluno: m.editar, pausarAluno: m.
 
 import { FichaAluno, type AlunoFicha } from "./FichaAluno";
 import { CampoTexto } from "@/components/CampoTexto";
-import { botao, campo, campos, clicar, criarGanchos, documentoQueRegistraFoco, errosDosCampos, preencher } from "@/test/tela-sem-dom";
+import { botao, campo, campos, clicar, criarGanchos, documentoQueRegistraFoco, errosDosCampos, preencher as preencherBase } from "@/test/tela-sem-dom";
+import { SeletorCampo } from "@/app/(app)/secretaria/controles";
+import { DatePicker } from "@/components/ui/date-picker";
+import { DateTimePicker } from "@/components/ui/date-time-picker";
+import { TimePicker } from "@/components/ui/time-picker";
+
+const preencher = (raiz: ReactNode, id: string, valor: string, extra: unknown[] = []) =>
+  preencherBase(raiz, id, valor, [SeletorCampo, DatePicker, DateTimePicker, TimePicker, ...extra]);
 
 const aluno: AlunoFicha = {
   id: "aluno-1", codigo: "A-1", nome: "Ana Silva", primeiroNome: "Ana", sobrenome: "Silva", nomePreferido: null,

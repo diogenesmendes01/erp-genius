@@ -8,6 +8,20 @@ const mocks = vi.hoisted(() => ({ useState: vi.fn() }));
 vi.mock("react", async original => ({ ...(await original<typeof import("react")>()), useState: mocks.useState }));
 
 vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh: vi.fn() }) }));
+vi.mock("@/components/ui/dialog", async (importOriginal) => {
+  const React = await import("react");
+  const real = await importOriginal<typeof import("@/components/ui/dialog")>();
+  return { ...real, DialogPortal: ({ children }: { children?: React.ReactNode }) => React.createElement(React.Fragment, null, children) };
+});
+vi.mock("@/components/ui/popover", async () => {
+  const React = await import("react");
+  return {
+    Popover: ({ children }: { children?: React.ReactNode }) => React.createElement(React.Fragment, null, children),
+    PopoverTrigger: ({ children }: { children?: React.ReactNode }) => children ?? null,
+    PopoverAnchor: ({ children }: { children?: React.ReactNode }) => children ?? null,
+    PopoverContent: ({ children }: { children?: React.ReactNode }) => React.createElement("div", null, children),
+  };
+});
 vi.mock("@/server/financeiro/acoes", () => ({ registrarCobrancaWhatsApp: vi.fn() }));
 vi.mock("@/server/financeiro/cobranca-manual", () => ({ prepararCobrancaManual: vi.fn() }));
 vi.mock("@/server/whatsapp/acoes", () => ({ aprovarLoteCobranca: vi.fn(), enfileirarCobrancaWhatsApp: vi.fn() }));

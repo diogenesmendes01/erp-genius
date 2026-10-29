@@ -16,8 +16,12 @@ import { AlteracaoPendente } from "@/components/AlteracaoPendente";
 import { useAvisoAoSair } from "@/lib/aviso-ao-sair";
 import { politicaAlterada } from "./alteracoes-pendentes";
 
+import { CampoCombobox } from "@/components/ui/combobox";
+import { Switch } from "@/components/ui/switch";
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
+import { CampoSelect } from "@/components/ui/select";
 const btnPri = botaoClasses({ tamanho: "md" });
-const inputCls = "rounded-md border border-gray-300 px-2 py-1 text-sm outline-none focus:border-brand-500";
+const inputCls = "rounded-md border border-gray-200 px-2 py-1 text-sm outline-none focus:border-brand-500";
 
 const DIAS = ["dom", "seg", "ter", "qua", "qui", "sex", "sáb"];
 
@@ -188,33 +192,13 @@ export function PoliticaPainel({
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           <label className="text-xs text-gray-600">
             Estado
-            <select
-              className={inputCls + " mt-1 w-full"}
-              value={form.estado}
-              onChange={(e) => setForm({ ...form, estado: e.target.value as typeof form.estado })}
-            >
-              <option value="DESLIGADA">desligada</option>
-              <option value="SHADOW">shadow (ensaio)</option>
-              <option value="ATIVA">ativa</option>
-            </select>
+            <CampoSelect value={form.estado} onChange={(e) => setForm({ ...form, estado: e.target.value as typeof form.estado })} className={inputCls + " mt-1 w-full"} opcoes={[{ valor: "DESLIGADA", rotulo: "desligada" }, { valor: "SHADOW", rotulo: <>shadow (ensaio)</> }, { valor: "ATIVA", rotulo: "ativa" }]} />
             <span className="mt-1 block text-[11px] text-gray-400">{ESTADO_HINT[form.estado]}</span>
           </label>
           <label className="text-xs text-gray-600">
             Número remetente
-            <select
-              className={inputCls + " mt-1 w-full"}
-              value={form.numeroRemetenteId}
-              onChange={(e) => setForm({ ...form, numeroRemetenteId: e.target.value })}
-            >
-              <option value="">— escolha —</option>
-              {numeros
-                .filter((n) => n.ativo)
-                .map((n) => (
-                  <option key={n.id} value={n.id}>
-                    {n.rotulo} ({rotular(DRIVER_WHATSAPP_LABEL, n.driver)})
-                  </option>
-                ))}
-            </select>
+            <CampoCombobox value={form.numeroRemetenteId} onChange={(e) => setForm({ ...form, numeroRemetenteId: e.target.value })} className={inputCls + " mt-1 w-full"} vazio={"— escolha —"} opcoes={numeros
+                .filter((n) => n.ativo).map((n) => ({ valor: String(n.id), rotulo: `${n.rotulo} (${rotular(DRIVER_WHATSAPP_LABEL, n.driver)})` }))} />
             {remetente && remetente.driver !== "MOTOR" && (
               <span className="mt-1 flex items-center gap-1 text-[11px] text-amber-700">
                 <IconAlertTriangle className="h-3 w-3" /> Degraus automáticos exigem número do motor WhatsApp.
@@ -264,7 +248,7 @@ export function PoliticaPainel({
                     "rounded-full px-2 py-0.5 text-[11px] " +
                     (form.diasSemana.includes(i)
                       ? "bg-brand-solid text-on-brand"
-                      : "border border-gray-300 text-gray-500 hover:bg-gray-50")
+                      : "border border-gray-200 text-gray-500 hover:bg-highlight")
                   }
                 >
                   {d}
@@ -299,26 +283,26 @@ export function PoliticaPainel({
         </div>
 
         <div className="mt-5 overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-gray-200 text-left text-xs text-gray-500">
-                <th className="py-2 pr-3 font-medium">Degrau</th>
-                <th className="py-2 pr-3 font-medium">Offset (dias)</th>
-                <th className="py-2 pr-3 font-medium">Modo</th>
-                <th className="py-2 pr-3 font-medium">Template</th>
-                <th className="py-2 font-medium">Ativo</th>
-              </tr>
-            </thead>
-            <tbody>
+          <Table className="w-full text-sm">
+            <TableHeader>
+              <TableRow className="border-b border-gray-200 text-left text-xs text-gray-500">
+                <TableHead className="py-2 pr-3 font-medium">Degrau</TableHead>
+                <TableHead className="py-2 pr-3 font-medium">Offset (dias)</TableHead>
+                <TableHead className="py-2 pr-3 font-medium">Modo</TableHead>
+                <TableHead className="py-2 pr-3 font-medium">Template</TableHead>
+                <TableHead className="py-2 font-medium">Ativo</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
               {form.degraus.map((d) => {
                 const bloquear = d.tipo === "bloquear";
                 return (
-                  <tr key={d.passo} className="border-b border-gray-100 last:border-0">
-                    <td className="py-2 pr-3">
+                  <TableRow key={d.passo} className="border-b border-gray-100 last:border-0">
+                    <TableCell className="py-2 pr-3">
                       <span className="font-medium text-gray-800">{d.passo}</span>
                       <span className="ml-2 text-xs text-gray-400">{d.rotulo}</span>
-                    </td>
-                    <td className="py-2 pr-3">
+                    </TableCell>
+                    <TableCell className="py-2 pr-3">
                       <input
                         type="number"
                         min={-30}
@@ -328,58 +312,31 @@ export function PoliticaPainel({
                         value={d.offsetDias}
                         onChange={(e) => mudarDegrau(d.passo, { offsetDias: Number(e.target.value) })}
                       />
-                    </td>
-                    <td className="py-2 pr-3">
+                    </TableCell>
+                    <TableCell className="py-2 pr-3">
                       {bloquear ? (
                         <span className="text-xs text-gray-500">manual (lei: aprovação humana sempre)</span>
                       ) : (
-                        <select
-                          aria-label={`${d.passo} — modo`}
-                          className={inputCls}
-                          value={d.modo}
-                          onChange={(e) => mudarDegrau(d.passo, { modo: e.target.value })}
-                        >
-                          <option value="AUTOMATICO">automático</option>
-                          <option value="LOTE">lote com aprovação</option>
-                          <option value="MANUAL">manual</option>
-                        </select>
+                        <CampoCombobox value={d.modo} onChange={(e) => mudarDegrau(d.passo, { modo: e.target.value })} className={inputCls} aria-label={`${d.passo} — modo`} opcoes={[{ valor: "AUTOMATICO", rotulo: "automático" }, { valor: "LOTE", rotulo: "lote com aprovação" }, { valor: "MANUAL", rotulo: "manual" }]} />
                       )}
-                    </td>
-                    <td className="py-2 pr-3">
+                    </TableCell>
+                    <TableCell className="py-2 pr-3">
                       {bloquear ? (
                         <span className="text-xs text-gray-400">—</span>
                       ) : (
                         <span className="flex items-center gap-1.5">
-                          <select
-                            aria-label={`${d.passo} — template`}
-                            className={inputCls + " max-w-48"}
-                            value={d.templateId ?? ""}
-                            onChange={(e) => mudarDegrau(d.passo, { templateId: e.target.value || null })}
-                          >
-                            <option value="">— texto de fábrica —</option>
-                            {templates.map((t) => (
-                              <option key={t.id} value={t.id}>
-                                {t.nome}
-                              </option>
-                            ))}
-                          </select>
+                          <CampoCombobox value={d.templateId ?? ""} onChange={(e) => mudarDegrau(d.passo, { templateId: e.target.value || null })} className={inputCls + " max-w-48"} aria-label={`${d.passo} — template`} vazio={"— texto de fábrica —"} opcoes={templates.map((t) => ({ valor: String(t.id), rotulo: t.nome }))} />
                         </span>
                       )}
-                    </td>
-                    <td className="py-2">
-                      <input
-                        type="checkbox"
-                        aria-label={`${d.passo} — ativo`}
-                        className="h-3.5 w-3.5 accent-brand-600"
-                        checked={d.ativo}
-                        onChange={(e) => mudarDegrau(d.passo, { ativo: e.target.checked })}
-                      />
-                    </td>
-                  </tr>
+                    </TableCell>
+                    <TableCell className="py-2">
+                      <Switch checked={d.ativo} aria-label={`${d.passo} — ativo`} onCheckedChange={(marcado) => mudarDegrau(d.passo, { ativo: (marcado === true) })} />
+                    </TableCell>
+                  </TableRow>
                 );
               })}
-            </tbody>
-          </table>
+            </TableBody>
+          </Table>
         </div>
 
         <div className="mt-4 flex items-center justify-between">

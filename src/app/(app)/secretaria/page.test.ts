@@ -62,11 +62,11 @@ describe("/secretaria — busca e páginas (E4)", () => {
     expect(html).toContain('href="/secretaria?busca=ana&amp;pagina=3"');
   });
 
-  it("escopo comercial em AND com a busca para quem não é secretaria", async () => {
-    mocks.sessao.mockResolvedValueOnce({ id: "v1", nome: "V", papeis: ["VENDEDOR"] });
+  it("o guard é só SECRETARIA_ACADEMICA; a busca não aplica escopo comercial", async () => {
     await render({ busca: "ana" });
+    expect(mocks.sessao).toHaveBeenCalledWith("SECRETARIA_ACADEMICA");
     const where = (mocks.count.mock.calls[0] as unknown as [{ where: { AND: unknown[] } }])[0].where;
-    expect(where.AND[0]).toEqual({ lead: { is: { vendedorDonoId: { in: ["v1"] } } } });
+    expect(where.AND[0]).toEqual({});
     expect(where.AND[1]).toEqual(whereBuscaMatriculas("ana"));
   });
 

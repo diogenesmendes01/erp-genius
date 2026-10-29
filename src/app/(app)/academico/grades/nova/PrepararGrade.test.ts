@@ -10,7 +10,7 @@ vi.mock("next/navigation", () => ({ useRouter: () => ({ push: vi.fn() }) }));
 import { PrepararGrade } from "./PrepararGrade";
 
 const turmas = [{ id: "t1", codigo: "T-1", versao: 0, dataInicio: "2026-10-01", horario: "19:00", dias: [1], quantidade: 10, duracao: 60, frequencia: "SEMANAL", professor: "Ana" }];
-const campoFuso = (html: string) => /<label[^>]*>Fuso de origem da turma<input[^>]*>/.exec(html)?.[0] ?? "";
+const campoFuso = (html: string) => /<label[^>]*>Fuso de origem da turma(?:<[^>]+>)*<input[^>]*>/.exec(html)?.[0] ?? "";
 
 beforeEach(() => {
   vi.clearAllMocks();

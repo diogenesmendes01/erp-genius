@@ -4,6 +4,9 @@ import { useId, useRef, useState, type ChangeEvent, type ReactNode } from "react
 import { Modal } from "@/components/Modal";
 import { Botao } from "@/components/Botao";
 import { FeedbackAcao } from "@/components/FeedbackAcao";
+import { AlertDialog } from "@/components/ui/alert-dialog";
+import { CLASSE_CAIXA } from "@/components/ui/checkbox";
+import { CLASSE_INPUT } from "@/components/ui/input";
 import { useAcaoCliente, type DesfechoAcao } from "@/lib/acao-cliente";
 import type { Resultado } from "@/server/_shared/resultado";
 
@@ -48,13 +51,14 @@ export function ConfirmarAcao<T>({ titulo, children, confirmacao, conferencia, d
   }
 
   return (
+    <AlertDialog open onOpenChange={(aberto) => { if (!aberto) cancelar(); }}>
     <Modal titulo={titulo} folha={folha} papel="alertdialog" descricaoId={descricaoId} focoInicial={voltar} aoFechar={cancelar} bloquearFechamento={ocupado}>
       <div id={descricaoId} className="space-y-2 text-sm text-gray-700">{children}</div>
       {conferencia !== undefined && (
         <label className="mt-3 flex items-start gap-2 text-sm text-gray-800">
           <input
             type="checkbox"
-            className="mt-0.5 h-4 w-4 shrink-0 accent-brand-600"
+            className={CLASSE_CAIXA}
             checked={conferido}
             disabled={ocupado}
             onChange={(e: ChangeEvent<HTMLInputElement>) => setConferido(e.target.checked)}
@@ -67,7 +71,7 @@ export function ConfirmarAcao<T>({ titulo, children, confirmacao, conferencia, d
           <span>{digitacao.rotulo}</span>
           <input
             type="text"
-            className="rounded-md border border-gray-300 px-2 py-1.5 text-sm"
+            className={CLASSE_INPUT}
             value={digitado}
             disabled={ocupado}
             autoComplete="off"
@@ -86,5 +90,6 @@ export function ConfirmarAcao<T>({ titulo, children, confirmacao, conferencia, d
         </Botao>
       </div>
     </Modal>
+    </AlertDialog>
   );
 }

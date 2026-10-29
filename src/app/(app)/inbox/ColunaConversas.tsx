@@ -18,6 +18,7 @@ export interface PropsColunaConversas extends PropsListaAtendimentos {
  filtros: FiltrosInbox; opcoesFiltro?: OpcoesFiltroInbox; contagens?: ContagensChipsInbox; resumo?: ResumoListaInbox; faixaAria?: ReactNode;
  aoNovaConversa(): void; novaConversa?: ReactNode; novaConversaAberta?: boolean; aoFecharNovaConversa?(): void;
  usuarioId: string; fuso: string | null; podeGerenciarNumeros: boolean; sino?: ReactNode; focoAoFecharPopover?: MutableRefObject<HTMLElement | null>;
+ whatsappDesconectado?: boolean;
 }
 export function ehAtalhoBusca(e: { key: string; metaKey: boolean; ctrlKey: boolean; altKey?: boolean; isComposing?: boolean; defaultPrevented?: boolean }): boolean {
  return !e.defaultPrevented && !e.isComposing && !e.altKey && (e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k";

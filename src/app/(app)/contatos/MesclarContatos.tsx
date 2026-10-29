@@ -10,8 +10,8 @@ import { useAcaoCliente } from "@/lib/acao-cliente";
 import { mesclarContatosDaLista, previaMesclaDaLista } from "@/server/crm/contatos-acoes";
 import type { PreviaMescla } from "@/server/crm/duplicados";
 import type { ParDuplicado, PessoaMesclavel } from "@/server/crm/ficha-dados";
+import { CampoSelect } from "@/components/ui/select";
 
-const CONTROLE = "w-full rounded-md border border-border-soft bg-surface-raised px-2 py-1.5 text-sm max-sm:min-h-11";
 const CAMPOS = [
   { chave: "nome", rotulo: "Nome" },
   { chave: "email", rotulo: "E-mail" },
@@ -89,19 +89,13 @@ export function PainelMescla({ a, b, aoFechar, aoMesclar }: { a: PessoaMesclavel
       <h3 className="text-sm font-medium">Mesclar {a.nome} e {b.nome}</h3>
       <Campo rotulo="Contato que permanece">
         {(campo) => (
-          <select {...campo} className={CONTROLE} value={principal} onChange={(e) => setPrincipal(e.target.value as Lado)}>
-            <option value="a">{a.nome}</option>
-            <option value="b">{b.nome}</option>
-          </select>
+          <CampoSelect id={campo.id} value={principal} onValueChange={(v) => setPrincipal(v as Lado)} opcoes={[{ valor: "a", rotulo: a.nome }, { valor: "b", rotulo: b.nome }]} />
         )}
       </Campo>
       {CAMPOS.filter(({ chave }) => pessoa.a[chave] !== pessoa.b[chave]).map(({ chave, rotulo }) => (
         <Campo key={chave} rotulo={`${rotulo} que fica`}>
           {(campo) => (
-            <select {...campo} className={CONTROLE} value={escolhido[chave]} onChange={(e) => setEscolhido((atual) => ({ ...atual, [chave]: e.target.value as Lado }))}>
-              <option value="a">{pessoa.a[chave] ?? "Vazio"} (de {a.nome})</option>
-              <option value="b">{pessoa.b[chave] ?? "Vazio"} (de {b.nome})</option>
-            </select>
+            <CampoSelect id={campo.id} value={escolhido[chave]} onValueChange={(v) => setEscolhido((atual) => ({ ...atual, [chave]: v as Lado }))} opcoes={[{ valor: "a", rotulo: `${pessoa.a[chave] ?? "Vazio"} (de ${a.nome})` }, { valor: "b", rotulo: `${pessoa.b[chave] ?? "Vazio"} (de ${b.nome})` }]} />
           )}
         </Campo>
       ))}

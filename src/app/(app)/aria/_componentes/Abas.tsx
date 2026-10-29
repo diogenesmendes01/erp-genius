@@ -1,26 +1,21 @@
 import Link from "next/link";
-import { botaoClasses } from "@/components/Botao";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ABAS_ARIA, ROTULO_ABA, type AbaAria } from "./abas-aria";
 
 export function Abas({ ativa }: { ativa: AbaAria }) {
   return (
     <nav aria-label="Seções da Aria" className="mt-4 overflow-x-auto">
-      <ul className="flex min-w-max gap-1">
-        {ABAS_ARIA.map((aba) => {
-          const ehAtiva = aba === ativa;
-          return (
-            <li key={aba}>
-              <Link
-                href={aba === "visao" ? "/aria" : `/aria?aba=${aba}`}
-                aria-current={ehAtiva ? "page" : undefined}
-                className={botaoClasses({ variante: ehAtiva ? "primario" : "fantasma" })}
-              >
+      <Tabs value={ativa}>
+        <TabsList className="h-auto min-w-max justify-start">
+          {ABAS_ARIA.map((aba) => (
+            <TabsTrigger key={aba} value={aba} asChild>
+              <Link href={aba === "visao" ? "/aria" : `/aria?aba=${aba}`}>
                 {ROTULO_ABA[aba]}
               </Link>
-            </li>
-          );
-        })}
-      </ul>
+            </TabsTrigger>
+          ))}
+        </TabsList>
+      </Tabs>
     </nav>
   );
 }

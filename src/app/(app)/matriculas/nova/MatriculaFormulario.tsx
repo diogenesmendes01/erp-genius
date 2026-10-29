@@ -16,9 +16,11 @@ import { useChaveIdempotencia } from "@/lib/chave-idempotencia";
 import { botaoClasses } from "@/components/Botao";
 import { CampoTexto } from "@/components/CampoTexto";
 import { Campo, CONTROLE_INVALIDO, focarPrimeiroComErro, type ErrosDeCampos, type LigacaoCampo } from "@/components/Campo";
+import { SeletorCampo, CaixaCampo } from "@/app/(app)/secretaria/controles";
+import { DatePicker } from "@/components/ui/date-picker";
 
 const inputCls =
-  "w-full rounded-md border border-gray-300 px-3 py-2 text-sm outline-none focus:border-brand-500 " +
+  "w-full rounded-md border border-gray-200 px-3 py-2 text-sm outline-none focus:border-brand-500 " +
   CONTROLE_INVALIDO;
 
 const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
@@ -356,16 +358,16 @@ export function MatriculaFormulario({
                 {(campo) => <input {...campo} className={inputCls} value={nomePreferido} onChange={(e) => setNomePreferido(e.target.value)} />}
               </Campo>
               <Campo id={IDS_PASSO1.nascimento} rotulo="Data de nascimento" obrigatorio erro={errosPasso1.nascimento}>
-                {(campo) => <input {...campo} type="date" className={inputCls} value={nascimento} onChange={(e) => setNasc(e.target.value)} />}
+                {(campo) => <DatePicker {...campo} className={inputCls} value={nascimento} onChange={(e) => setNasc(e.target.value)} />}
               </Campo>
               <Campo id={IDS_PASSO1.genero} rotulo="Gênero" obrigatorio erro={errosPasso1.genero}>
                 {(campo) => (
-                  <select {...campo} className={inputCls} value={genero} onChange={(e) => setGenero(e.target.value as Genero | "")}>
+                  <SeletorCampo {...campo} className={inputCls} value={genero} onChange={(e) => setGenero(e.target.value as Genero | "")}>
                     <option value="">—</option>
                     {Object.values(Genero).map((g) => (
                       <option key={g} value={g}>{GENERO_LABEL[g]}</option>
                     ))}
-                  </select>
+                  </SeletorCampo>
                 )}
               </Campo>
             </div>
@@ -377,21 +379,21 @@ export function MatriculaFormulario({
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:grid-cols-3">
               <Campo id={IDS_PASSO1.alunoPaisId} rotulo="País" obrigatorio erro={errosPasso1.alunoPaisId}>
                 {(campo) => (
-                  <select {...campo} className={inputCls} value={alunoPaisId} onChange={(e) => aoTrocarPais(e.target.value)}>
+                  <SeletorCampo {...campo} className={inputCls} value={alunoPaisId} onChange={(e) => aoTrocarPais(e.target.value)} busca>
                     {paises.map((p) => (
                       <option key={p.id} value={p.id}>{p.nome}</option>
                     ))}
-                  </select>
+                  </SeletorCampo>
                 )}
               </Campo>
               <Campo id={IDS_PASSO1.tipoDocumentoId} rotulo="Tipo de documento" obrigatorio erro={errosPasso1.tipoDocumentoId}>
                 {(campo) => (
-                  <select {...campo} className={inputCls} value={tipoDocumentoId} onChange={(e) => setTipoDoc(e.target.value)}>
+                  <SeletorCampo {...campo} className={inputCls} value={tipoDocumentoId} onChange={(e) => setTipoDoc(e.target.value)} busca>
                     <option value="">—</option>
                     {tiposDocDoPais.map((t) => (
                       <option key={t.id} value={t.id}>{t.nome}</option>
                     ))}
-                  </select>
+                  </SeletorCampo>
                 )}
               </Campo>
               <Campo id={IDS_PASSO1.documento} rotulo="Número do documento" obrigatorio erro={errosPasso1.documento}>
@@ -420,11 +422,11 @@ export function MatriculaFormulario({
               </Campo>
               <div className="flex items-end gap-4 pb-2">
                 <label className="flex items-center gap-2 text-sm text-gray-600">
-                  <input type="checkbox" checked={whatsapp} onChange={(e) => setWhatsapp(e.target.checked)} />
+                  <CaixaCampo checked={whatsapp} onChange={(e) => setWhatsapp(e.target.checked)} />
                   É WhatsApp
                 </label>
                 <label className="flex items-center gap-2 text-sm text-gray-600">
-                  <input type="checkbox" checked={aceitaComunicacoes} onChange={(e) => setAceitaCom(e.target.checked)} />
+                  <CaixaCampo checked={aceitaComunicacoes} onChange={(e) => setAceitaCom(e.target.checked)} />
                   Recebe comunicações
                 </label>
               </div>
@@ -466,12 +468,12 @@ export function MatriculaFormulario({
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:grid-cols-3">
               <Campo id="matricula-escolaridade" rotulo="Escolaridade">
                 {(campo) => (
-                  <select {...campo} className={inputCls} value={escolaridade} onChange={(e) => setEscolaridade(e.target.value as Escolaridade | "")}>
+                  <SeletorCampo {...campo} className={inputCls} value={escolaridade} onChange={(e) => setEscolaridade(e.target.value as Escolaridade | "")}>
                     <option value="">—</option>
                     {Object.values(Escolaridade).map((e) => (
                       <option key={e} value={e}>{ESCOLARIDADE_LABEL[e]}</option>
                     ))}
-                  </select>
+                  </SeletorCampo>
                 )}
               </Campo>
               <Campo id="matricula-idioma-nativo" rotulo="Idioma nativo">
@@ -508,11 +510,11 @@ export function MatriculaFormulario({
 
           <section className="rounded-lg border border-gray-200 bg-surface p-5">
             <h2 id="matricula-pagador-titulo" className="mb-4 text-sm font-medium">Responsável financeiro (pagador)</h2>
-            <select aria-labelledby="matricula-pagador-titulo" className={inputCls + " mb-2 md:w-1/3"} value={pagador} onChange={(e) => setPagador(e.target.value as typeof pagador)}>
+            <SeletorCampo aria-labelledby="matricula-pagador-titulo" className={inputCls + " mb-2 md:w-1/3"} value={pagador} onChange={(e) => setPagador(e.target.value as typeof pagador)}>
               <option value="ALUNO">O próprio aluno (Adulto)</option>
               <option value="RESPONSAVEL">Responsável (Kids/Teens)</option>
               <option value="EMPRESA">Empresa (B2B)</option>
-            </select>
+            </SeletorCampo>
             {pagador !== "ALUNO" && (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:grid-cols-4">
                 <Campo id={IDS_PASSO1.respNome} rotulo={pagador === "EMPRESA" ? "Nome da empresa" : "Nome do responsável"} obrigatorio erro={errosPasso1.respNome}>
@@ -564,7 +566,7 @@ export function MatriculaFormulario({
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:grid-cols-3">
               <Campo id="matricula-produto" rotulo="Produto">
                 {(campo) => (
-                  <select
+                  <SeletorCampo
                     {...campo}
                     className={inputCls}
                     value={produtoId}
@@ -572,22 +574,22 @@ export function MatriculaFormulario({
                       setProduto(e.target.value);
                       prefillPrecos(alunoPaisId, e.target.value);
                     }}
-                  >
+                   busca>
                     {produtos.map((p) => (
                       <option key={p.id} value={p.id}>{p.label}</option>
                     ))}
-                  </select>
+                  </SeletorCampo>
                 )}
               </Campo>
               <div>
                 <Campo id="matricula-turma" rotulo="Turma (aberta com vaga)">
                   {(campo) => (
-                    <select {...campo} className={inputCls} value={turmaId} onChange={(e) => setTurma(e.target.value)}>
+                    <SeletorCampo {...campo} className={inputCls} value={turmaId} onChange={(e) => setTurma(e.target.value)} busca>
                       <option value="">Sem alocação / lista de espera</option>
                       {turmas.map((t) => (
                         <option key={t.id} value={t.id}>{t.label}</option>
                       ))}
-                    </select>
+                    </SeletorCampo>
                   )}
                 </Campo>
                 {!turmaId && (
@@ -599,25 +601,25 @@ export function MatriculaFormulario({
               </div>
               <Campo id="matricula-nivel-inicial" rotulo="Nível inicial">
                 {(campo) => (
-                  <select {...campo} className={inputCls} value={nivelInicialId} onChange={(e) => setNivel(e.target.value)}>
+                  <SeletorCampo {...campo} className={inputCls} value={nivelInicialId} onChange={(e) => setNivel(e.target.value)}>
                     <option value="">—</option>
                     {niveis.map((n) => (
                       <option key={n.id} value={n.id}>{n.label}</option>
                     ))}
-                  </select>
+                  </SeletorCampo>
                 )}
               </Campo>
               <Campo id="matricula-origem-nivel" rotulo="Origem do nível">
                 {(campo) => (
-                  <select {...campo} className={inputCls} value={origemNivel} onChange={(e) => setOrigem(e.target.value as OrigemNivel)}>
+                  <SeletorCampo {...campo} className={inputCls} value={origemNivel} onChange={(e) => setOrigem(e.target.value as OrigemNivel)}>
                     <option value={OrigemNivel.MANUAL}>Manual</option>
                     <option value={OrigemNivel.AVALIACAO}>Avaliação</option>
-                  </select>
+                  </SeletorCampo>
                 )}
               </Campo>
               {origemNivel === OrigemNivel.AVALIACAO && (
                 <Campo id="matricula-data-avaliacao" rotulo="Data da avaliação">
-                  {(campo) => <input {...campo} type="date" className={inputCls} value={dataAvaliacaoNivel} onChange={(e) => setDataAval(e.target.value)} />}
+                  {(campo) => <DatePicker {...campo} className={inputCls} value={dataAvaliacaoNivel} onChange={(e) => setDataAval(e.target.value)} />}
                 </Campo>
               )}
             </div>
@@ -642,11 +644,11 @@ export function MatriculaFormulario({
               </Campo>
               <Campo id="matricula-dia-vencimento" rotulo="Dia de vencimento">
                 {(campo) => (
-                  <select {...campo} className={inputCls} value={diaVencimento} onChange={(e) => setDia(Number(e.target.value))}>
+                  <SeletorCampo {...campo} className={inputCls} value={diaVencimento} onChange={(e) => setDia(Number(e.target.value))}>
                     {Array.from({ length: 31 }, (_, i) => i + 1).map((d) => (
                       <option key={d} value={d}>Dia {d}</option>
                     ))}
-                  </select>
+                  </SeletorCampo>
                 )}
               </Campo>
               <Campo id="matricula-meses-plano" rotulo="Meses do plano">
@@ -660,11 +662,11 @@ export function MatriculaFormulario({
                 erro={errosPasso2.referenciaCobertura}
               >
                 {(campo) => (
-                  <select {...campo} className={inputCls} value={referenciaCobertura} onChange={(e) => setReferenciaCobertura(e.target.value as typeof referenciaCobertura)}>
+                  <SeletorCampo {...campo} className={inputCls} value={referenciaCobertura} onChange={(e) => setReferenciaCobertura(e.target.value as typeof referenciaCobertura)}>
                     <option value="">Selecione a regra contratada</option>
                     <option value="MES_CIVIL">Mês civil</option>
                     <option value="CICLO_MATRICULA">Ciclo mensal da matrícula</option>
-                  </select>
+                  </SeletorCampo>
                 )}
               </Campo>
               <Campo
@@ -674,7 +676,7 @@ export function MatriculaFormulario({
                 dica="Informe a data acordada. As seguintes usam o dia de referência nos próximos meses; a cobertura permanece independente."
                 erro={errosPasso2.primeiroVencimento}
               >
-                {(campo) => <input {...campo} type="date" className={inputCls} value={primeiroVencimento} onChange={(e) => setPrimeiroVencimento(e.target.value)} />}
+                {(campo) => <DatePicker {...campo} className={inputCls} value={primeiroVencimento} onChange={(e) => setPrimeiroVencimento(e.target.value)} />}
               </Campo>
               <Campo
                 id={IDS_PASSO2.inicioCobertura}
@@ -683,7 +685,7 @@ export function MatriculaFormulario({
                 dica={`${referenciaCobertura === "MES_CIVIL" ? "Informe o primeiro dia do mês contratado." : "Esta data define a referência dos ciclos mensais."} A cobertura é independente do vencimento; a mensalidade permanece integral.`}
                 erro={errosPasso2.inicioCobertura}
               >
-                {(campo) => <input {...campo} type="date" className={inputCls} value={inicioCobertura} onChange={(e) => setInicioCobertura(e.target.value)} />}
+                {(campo) => <DatePicker {...campo} className={inputCls} value={inicioCobertura} onChange={(e) => setInicioCobertura(e.target.value)} />}
               </Campo>
               <div>
                 <p className="mb-1 block text-xs text-gray-600">Comissão da matrícula</p>
@@ -760,12 +762,12 @@ function SelectISO({
   comVazio?: boolean;
 }) {
   return (
-    <select id={id} {...ligacao} className={inputCls} value={value} onChange={(e) => onChange(e.target.value)}>
+    <SeletorCampo id={id} {...ligacao} className={inputCls} value={value} onChange={(e) => onChange(e.target.value)} busca>
       {comVazio && <option value="">—</option>}
       {PAISES_ISO.map((p) => (
         <option key={p.codigo} value={p.codigo}>{p.nome}</option>
       ))}
-    </select>
+    </SeletorCampo>
   );
 }
 
@@ -795,7 +797,7 @@ export function Stepper({ passo, onIr }: { passo: 1 | 2; onIr: (p: 1 | 2) => voi
               <span
                 className={
                   "flex h-7 w-7 items-center justify-center rounded-full text-xs font-medium " +
-                  (ativo || concluido ? "bg-brand-solid text-on-brand" : "bg-gray-100 text-gray-500")
+                  (ativo || concluido ? "bg-brand-solid text-on-brand" : "bg-surface-muted text-gray-500")
                 }
               >
                 {concluido ? "✓" : s.n}

@@ -101,7 +101,7 @@ export function ImportarTurmasModal() {
                   <p className="mb-1 text-xs font-medium text-amber-700">
                     {res.erros.length} linha(s) com problema:
                   </p>
-                  <ul className="max-h-40 overflow-auto rounded bg-gray-50 p-2 text-xs text-gray-600">
+                  <ul className="max-h-40 overflow-auto rounded bg-surface-muted p-2 text-xs text-gray-600">
                     {res.erros.map((e) => (
                       <li key={e.linha}>
                         Linha {e.linha}: {e.motivo}

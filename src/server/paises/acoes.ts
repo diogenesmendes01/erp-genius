@@ -10,6 +10,8 @@ import {
   ErroRegra,
   type Resultado,
 } from "@/server/_shared";
+import { marcaIdempotencia, repeticaoIdempotente } from "@/server/_shared/idempotencia";
+import { ChaveIdempotenciaSchema } from "@/server/_shared/validacao";
 import { PaisSchema, type PaisInput } from "./schema";
 import { planejarTiposDocumento } from "./tipos-documento";
 
@@ -42,15 +44,22 @@ export async function alternarProdutoPais(paisId: string, produtoId: string): Pr
   });
 }
 
-export async function criarPais(input: PaisInput): Promise<Resultado<{ id: string }>> {
+export async function criarPais(input: PaisInput & { chaveIdempotencia?: string }): Promise<Resultado<{ id: string }>> {
   return executarAcao(async () => {
     const autor = await exigirSessaoComPapel(Papel.ADMINISTRADOR);
     const dados = PaisSchema.parse(input);
-
-    const existente = await prisma.pais.findUnique({ where: { codigoISO: dados.codigoISO } });
-    if (existente) throw new ErroRegra(`Já existe país com código ${dados.codigoISO}.`);
+    const marca = marcaIdempotencia(ChaveIdempotenciaSchema.optional().parse(input.chaveIdempotencia), dados);
 
     const id = await prisma.$transaction(async (tx) => {
+      if (marca) {
+        const repetido = await repeticaoIdempotente(tx, {
+          tipo: "PaisCriado", agregadoTipo: "Pais", autorId: autor.id, marca,
+          mensagemConflito: "Esta tentativa já foi usada com outros dados. Recarregue a página e confira se o país já aparece antes de repetir.",
+        });
+        if (repetido) return repetido.agregadoId;
+      }
+      const existente = await tx.pais.findUnique({ where: { codigoISO: dados.codigoISO } });
+      if (existente) throw new ErroRegra(`Já existe país com código ${dados.codigoISO}.`);
       const pais = await tx.pais.create({
         data: {
           nome: dados.nome,
@@ -68,7 +77,7 @@ export async function criarPais(input: PaisInput): Promise<Resultado<{ id: strin
         agregadoTipo: "Pais",
         agregadoId: pais.id,
         autorId: autor.id,
-        payload: { nome: pais.nome, codigoISO: pais.codigoISO },
+        payload: { nome: pais.nome, codigoISO: pais.codigoISO, ...marca },
       });
       return pais.id;
     });

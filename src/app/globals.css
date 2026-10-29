@@ -39,6 +39,12 @@
 
   --danger-solid: #ea0038;
   --success-solid: #1b8755;
+  --brand-soft: var(--brand-bg);
+  --info-soft: var(--info-bg);
+  --warning-soft: var(--warning-bg);
+  --danger-soft: var(--danger-bg);
+  --warning-solid: var(--warning-text);
+  --info-solid: var(--info-text);
 
   --ai-bg: #f2f0f9;
   --ai-text: #6a53bd;

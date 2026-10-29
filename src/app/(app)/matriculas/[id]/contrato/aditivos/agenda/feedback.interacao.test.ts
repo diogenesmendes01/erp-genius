@@ -17,6 +17,7 @@ import { ConferenciaAgendaFormulario, RegistrarFotografia } from "./ConferenciaA
 import { MSG_RESULTADO_INCERTO } from "@/lib/mensagens";
 import { adiada, anuncios, contratoFeedbackSeparado, novosAnuncios, type Adiada } from "@/test/feedback-acao";
 import { FormDataFalso, criarGanchos, elementos, submeter, texto } from "@/test/tela-sem-dom";
+import { CaixaCampo } from "@/app/(app)/secretaria/controles";
 import type { ReactNode } from "react";
 
 beforeEach(() => { vi.clearAllMocks(); m.ganchos = criarGanchos(); vi.stubGlobal("FormData", FormDataFalso); });
@@ -30,7 +31,7 @@ describe("ConferenciaAgendaFormulario", () => {
   const tela = () => m.ganchos!.renderizar(ConferenciaAgendaFormulario, props);
   const valores = { "professor-e": "atual", "fuso-e": "UTC", "inicio-e": "2099-10-11T10:00", "fim-e": "2099-10-11T11:00" };
   const conferir = async () => {
-    (elementos(tela()).find((n) => n.type === "input" && n.props.type === "checkbox")!.props.onChange as () => void)();
+    (elementos(tela()).find((n) => n.type === CaixaCampo)!.props.onChange as () => void)();
     const antes = anuncios(tela());
     await submeter(tela(), valores);
     return novosAnuncios(antes, anuncios(tela()));
@@ -60,7 +61,7 @@ describe("ConferenciaAgendaFormulario", () => {
   });
 
   it("ocupado enquanto a consulta roda; sai do ocupado depois de erro, falha e sucesso", async () => {
-    (elementos(tela()).find((n) => n.type === "input" && n.props.type === "checkbox")!.props.onChange as () => void)();
+    (elementos(tela()).find((n) => n.type === CaixaCampo)!.props.onChange as () => void)();
     expect(botaoOcupado(tela(), "Conferindo…")).toBe(false);
     const desfechos: [string, (p: Adiada<unknown>) => void][] = [
       ["erro", (p) => p.resolver({ ok: false, erro: "Docente indisponível no horário." })],

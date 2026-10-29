@@ -6,6 +6,7 @@ import { MSG_DECISAO_INCERTA, MSG_RESULTADO_INCERTO } from "@/lib/mensagens";
 import { botaoClasses } from "@/components/Botao";
 import { CampoTexto } from "@/components/CampoTexto";
 import { ConfirmarAcao } from "@/components/ConfirmarAcao";
+import { CampoSelect, Caixa, SelectItem } from "@/app/(app)/academico/controles";
 
 export function LancarNota({ realizacaoId, versaoEsperada, nota, comentarioAluno }: { realizacaoId: string; versaoEsperada: number; nota: string | null; comentarioAluno: string }) {
   const [erro, setErro] = useState(""), [enviando, setEnviando] = useState(false);
@@ -24,7 +25,7 @@ export function LancarNota({ realizacaoId, versaoEsperada, nota, comentarioAluno
     <fieldset disabled={enviando} className="space-y-3">
       <label className="block">Nota (use ponto para decimais)<input name="nota" defaultValue={nota ?? ""} inputMode="decimal" maxLength={100} pattern="-?[0-9]+(\.[0-9]+)?" className="block rounded border p-2" /></label>
       <label className="block">Comentário destinado ao aluno<CampoTexto name="comentario" defaultValue={comentarioAluno} maxLength={2000} className="block w-full rounded border p-2" /></label>
-      <label className="block"><input type="checkbox" name="submetida" /> Submeter para conferência independente</label>
+      <label className="block"><Caixa name="submetida" /> Submeter para conferência independente</label>
       <button type="submit" className={botaoClasses({ variante: "secundario", tamanho: "lg" })}>{enviando ? "Salvando…" : "Salvar versão"}</button>
     </fieldset>
     {erro && <p role="alert">{erro}</p>}
@@ -49,7 +50,7 @@ export function ConferirNota({ notaId, entradaHash, podeAprovar, versao, nota }:
     void rejeitar(motivo);
   }}>
     <fieldset disabled={enviando || !!oficializando} className="space-y-2">
-      <label className="block">Decisão<select name="decisao" required defaultValue="" className="ml-2 rounded border p-2"><option value="" disabled>Selecione</option>{podeAprovar && <option value="aprovar">Oficializar esta versão</option>}<option value="rejeitar">Rejeitar esta versão</option></select></label>
+      <label className="block">Decisão<CampoSelect name="decisao" required defaultValue="" className="ml-2 rounded border p-2" placeholder="Selecione">{podeAprovar && <SelectItem value={"aprovar"}>Oficializar esta versão</SelectItem>}<SelectItem value={"rejeitar"}>Rejeitar esta versão</SelectItem></CampoSelect></label>
       <label className="block">Motivo<CampoTexto name="motivo" required minLength={5} maxLength={2000} className="block w-full rounded border p-2" /></label>
       <button className={botaoClasses({ variante: "secundario", tamanho: "lg" })} type="submit">{enviando ? "Conferindo…" : "Registrar decisão"}</button>
     </fieldset>{erro && <p role="alert">{erro}</p>}

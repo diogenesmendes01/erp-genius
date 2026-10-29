@@ -10,6 +10,7 @@ import { botaoClasses } from "@/components/Botao";
 import { useAcaoCliente } from "@/lib/acao-cliente";
 import { CampoTexto } from "@/components/CampoTexto";
 import { EstadoVazio } from "@/components/EstadoVazio";
+import { SeletorCampo, CaixaCampo } from "@/app/(app)/secretaria/controles";
 
 type Consulta = Awaited<ReturnType<typeof consultarFormularioParticipantesAditivo>>;
 type Formulario = NonNullable<Extract<Consulta, { ok: true }>["dado"]>;
@@ -43,10 +44,10 @@ export function ParticipantesFormulario({ matriculaId, propostaId }: { matricula
     <h2 className="text-xl">Conferir signatários do aditivo</h2>
     <p>Confira quem assina este documento conforme o modelo aprovado. Registre a classificação de maioridade segundo a regra aplicável e sua evidência quando necessária.</p>
     <label className="block">Classificação conferida de maioridade
-      <select className={campo} disabled={pendente || !!formulario} value={maioridade ?? ""}
-        onChange={e => setMaioridade(e.target.value === "MAIOR" ? "MAIOR" : e.target.value === "MENOR" ? "MENOR" : null)}>
+      <SeletorCampo className={campo} disabled={pendente || !!formulario} value={maioridade ?? ""}
+        onChange={e => setMaioridade(e.target.value === "MAIOR" ? "MAIOR" : e.target.value === "MENOR" ? "MENOR" : null)} busca>
         <option value="">Não informada — verificar exigências do modelo</option><option value="MAIOR">Maior</option><option value="MENOR">Menor</option>
-      </select>
+      </SeletorCampo>
     </label>
     {!formulario ? <button type="button" className={botaoClasses({ variante: "secundario", tamanho: "lg" })} disabled={pendente} onClick={() => carregar()}>Consultar exigências e participantes</button>
       : <button type="button" className={botaoClasses({ variante: "perigo", tamanho: "lg" })} disabled={pendente} onClick={() => { setFormulario(null); setEvidencias({}); consulta.limpar(); registro.limpar(); }}>Reabrir formulário e descartar preenchimento</button>}
@@ -92,7 +93,7 @@ export function ParticipantesFormulario({ matriculaId, propostaId }: { matricula
               {evidencia(p.papel, "Evidência da representação")}</>}
         </fieldset>)}
         <label className="block">Motivo da conferência<CampoTexto className={campo} name="motivo" required minLength={5} maxLength={2000} disabled={pendente} /></label>
-        <label className="block"><input type="checkbox" required disabled={pendente} /> Conferi as identificações, os papéis e as evidências para este aditivo.</label>
+        <label className="block"><CaixaCampo required disabled={pendente} /> Conferi as identificações, os papéis e as evidências para este aditivo.</label>
         <button className={botaoClasses({ variante: "secundario", tamanho: "lg" })} disabled={pendente || formulario.plano.pendencias.length > 0 || formulario.participantesSugeridos.some(p => p.automatico && !p.identidade)}>{pendente ? "Aguarde…" : "Registrar conferência dos signatários"}</button>
       </form>
     </>}

@@ -20,7 +20,7 @@ export function itensDaThread(mensagens: MensagemThread[], notas: NotaInternaThr
   });
 }
 
-export type ItemSugestaoThread = { tipo: "sugestao-aria"; id: string; s: SugestaoAriaThread };
+export type ItemSugestaoThread = { tipo: "sugestao-aria"; id: string; s: SugestaoAriaThread; pacote?: SugestaoAriaThread[] };
 
 export type ItemTarefaThread = { tipo: "tarefa"; id: string; t: TarefaPainel };
 

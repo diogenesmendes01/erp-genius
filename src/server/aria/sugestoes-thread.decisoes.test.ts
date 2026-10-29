@@ -23,3 +23,11 @@ it("aprovação/executada reversível oferece desfazer, desfeita é histórico s
 it("vendedor apenas da carteira sem responsabilidade não recebe cartões decisórios",async()=>{
  const {db}=banco([linha("s")]);expect(await cartoesDaThread(db,u,{...a,responsavelId:"outro"},new Date())).toEqual([]);
 });
+it("cartão pendente informa quantas sugestões vigentes o turno tem, inclusive as que o usuário não vê",async()=>{
+ const {b,db}=banco([linha("visivel"),linha("outra-pessoa","SUGERIDA","lead","p2"),linha("decidida","APROVADA")]);
+ b.acaoAgenteIA.findMany.mockResolvedValueOnce([linha("visivel"),linha("outra-pessoa","SUGERIDA","lead","p2"),linha("decidida","APROVADA")]).mockResolvedValueOnce([{turnoId:"turno"},{turnoId:"turno"}]);
+ const agora=new Date("2026-10-25T13:00Z");
+ const cards=await cartoesDaThread(db,u,a,agora);
+ expect(cards.map(c=>[c.id,c.pendentesNoTurno])).toEqual([["visivel",2],["decidida",undefined]]);
+ expect(b.acaoAgenteIA.findMany.mock.calls[1][0]).toMatchObject({where:{AND:[{atendimentoId:"thread",turnoId:{in:["turno"]}},{status:"SUGERIDA",OR:[{expiraEm:null},{expiraEm:{gt:agora}}]}]}});
+});

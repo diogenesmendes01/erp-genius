@@ -6,6 +6,7 @@ import type { HABILIDADES } from "@/server/avaliacoes/calculo";
 import { executarAcaoCliente, type DesfechoAcao } from "@/lib/acao-cliente";
 import { CampoTexto } from "@/components/CampoTexto";
 import { HABILIDADE_LABEL, rotular } from "@/lib/labels";
+import { CampoSelect, SelectItem } from "@/app/(app)/academico/controles";
 type Habilidade = typeof HABILIDADES[number];
 const texto = (d: FormData, campo: string) => String(d.get(campo) ?? "");
 const resposta = (d: DesfechoAcao<unknown>) => d.tipo === "ok" ? { ok: true as const } : { ok: false as const, erro: d.mensagem };
@@ -18,7 +19,7 @@ export function ProporExtra({ alocacaoId, habilidades }: { alocacaoId: string; h
     if (!chaves.current.has(assinatura)) chaves.current.set(assinatura, crypto.randomUUID());
     return resposta(await executarAcaoCliente(() => proporExtraRecuperacao({ ...entrada, chaveIdempotencia: chaves.current.get(assinatura)! }), { idempotente: true }));
   }}>
-    <label className="block">Habilidade<select name="habilidade" required className="block rounded border p-2">{habilidades.map(h => <option key={h} value={h}>{rotular(HABILIDADE_LABEL, h)}</option>)}</select></label>
+    <label className="block">Habilidade<CampoSelect name="habilidade" required className="block rounded border p-2" placeholder="Selecionar">{habilidades.map(h => <SelectItem key={h} value={h}>{rotular(HABILIDADE_LABEL, h)}</SelectItem>)}</CampoSelect></label>
     <label className="block">Quantidade adicional<input type="number" name="quantidade" min={1} max={2147483647} step={1} required className="block rounded border p-2" /></label>
     <label className="block">Motivo<CampoTexto name="motivo" minLength={5} maxLength={2000} required className="block w-full rounded border p-2" /></label>
     <label className="block">Evidências para a análise<CampoTexto name="evidencias" minLength={5} maxLength={4000} required className="block w-full rounded border p-2" /></label>
@@ -27,7 +28,7 @@ export function ProporExtra({ alocacaoId, habilidades }: { alocacaoId: string; h
 
 export function DecidirExtra({ propostaId, entradaHash, podeAprovar }: { propostaId: string; entradaHash: string; podeAprovar: boolean }) {
   return <Formulario titulo="Registrar decisão" executar={async d => resposta(await executarAcaoCliente(() => decidirExtraRecuperacao({ propostaId, entradaHash, aprovada: texto(d, "decisao") === "aprovar", motivo: texto(d, "motivo") }), { idempotente: false }))}>
-    <label className="block">Decisão<select name="decisao" required defaultValue="" className="block rounded border p-2"><option value="" disabled>Selecione</option>{podeAprovar && <option value="aprovar">Aprovar a quantidade proposta</option>}<option value="rejeitar">Rejeitar</option></select></label>
+    <label className="block">Decisão<CampoSelect name="decisao" required defaultValue="" className="block rounded border p-2" placeholder="Selecione">{podeAprovar && <SelectItem value={"aprovar"}>Aprovar a quantidade proposta</SelectItem>}<SelectItem value={"rejeitar"}>Rejeitar</SelectItem></CampoSelect></label>
     <label className="block">Justificativa da decisão<CampoTexto name="motivo" required minLength={5} maxLength={2000} className="block w-full rounded border p-2" /></label>
   </Formulario>;
 }

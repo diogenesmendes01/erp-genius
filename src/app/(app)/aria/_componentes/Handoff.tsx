@@ -6,6 +6,8 @@ import { CampoTexto } from "@/components/CampoTexto";
 import { ETAPA_LABEL } from "@/lib/labels";
 import { ETAPAS_ARIA, type ConfigAria } from "@/server/aria/config-schema";
 import { CONTROLE, Interruptor, emLinhas } from "./Campos";
+import { CampoCombobox } from "@/components/ui/combobox";
+import { CampoSelect } from "@/components/ui/select";
 import type { RascunhoAberto } from "@/server/aria/versoes";
 import { Salvar } from "./Salvar";
 
@@ -54,10 +56,7 @@ export function Handoff({ config, baseVersaoId, rascunho, podeEditar }: Props) {
         <div className="grid grid-cols-1 gap-4">
           <Campo rotulo="Etapa que dispara a transferência">
             {(campo) => (
-              <select {...campo} className={CONTROLE} disabled={ro} value={h.etapaGatilho ?? ""} onChange={(e) => setH({ etapaGatilho: (e.target.value || undefined) as ConfigAria["handoff"]["etapaGatilho"] })}>
-                <option value="">Nenhuma</option>
-                {ETAPAS_ARIA.map((e) => <option key={e} value={e}>{ETAPA_LABEL[e]}</option>)}
-              </select>
+              <CampoCombobox id={campo.id} disabled={ro} value={h.etapaGatilho ?? ""} onValueChange={(valor) => setH({ etapaGatilho: (valor || undefined) as ConfigAria["handoff"]["etapaGatilho"] })} vazio="Nenhuma" opcoes={ETAPAS_ARIA.map((e) => ({ valor: e, rotulo: ETAPA_LABEL[e] }))} />
             )}
           </Campo>
           <Campo rotulo="Valor da oportunidade a partir do qual transfere">
@@ -69,17 +68,12 @@ export function Handoff({ config, baseVersaoId, rascunho, podeEditar }: Props) {
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <Campo rotulo="Para quem transferir">
           {(campo) => (
-            <select {...campo} className={CONTROLE} disabled={ro} value={h.destino} onChange={(e) => setH({ destino: e.target.value as ConfigAria["handoff"]["destino"] })}>
-              {DESTINOS.filter((d) => d.valor !== "USUARIO" || h.destino === "USUARIO").map((d) => <option key={d.valor} value={d.valor}>{d.rotulo}</option>)}
-            </select>
+            <CampoSelect id={campo.id} disabled={ro} value={h.destino} onValueChange={(valor) => setH({ destino: valor as ConfigAria["handoff"]["destino"] })} opcoes={DESTINOS.filter((d) => d.valor !== "USUARIO" || h.destino === "USUARIO").map((d) => ({ valor: d.valor, rotulo: d.rotulo }))} />
           )}
         </Campo>
         <Campo rotulo="Fora do horário comercial">
           {(campo) => (
-            <select {...campo} className={CONTROLE} disabled={ro} value={h.foraHorario} onChange={(e) => setH({ foraHorario: e.target.value as ConfigAria["handoff"]["foraHorario"] })}>
-              <option value="AVISAR_E_AGUARDAR">Avisar o contato e aguardar</option>
-              <option value="CONTINUAR">Continuar atendendo</option>
-            </select>
+            <CampoSelect id={campo.id} disabled={ro} value={h.foraHorario} onValueChange={(valor) => setH({ foraHorario: valor as ConfigAria["handoff"]["foraHorario"] })} opcoes={[{ valor: "AVISAR_E_AGUARDAR", rotulo: "Avisar o contato e aguardar" }, { valor: "CONTINUAR", rotulo: "Continuar atendendo" }]} />
           )}
         </Campo>
       </div>

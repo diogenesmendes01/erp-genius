@@ -7,7 +7,7 @@ vi.mock("next/navigation", () => ({ useRouter: () => mocks.router }));
 import { DevolucaoCredito } from "./DevolucaoCredito";
 
 type No = { type?: unknown; props?: Record<string, unknown> };
-function todos(no: unknown, tipo: string): No[] { if (Array.isArray(no)) return no.flatMap(n => todos(n, tipo)); if (!no || typeof no !== "object") return []; const n = no as No; if (typeof n.type === "function") return todos((n.type as (p: Record<string, unknown>) => unknown)(n.props ?? {}), tipo); const filhos = n.props?.children; return [...(n.type === tipo ? [n] : []), ...todos(Array.isArray(filhos) ? filhos : [filhos], tipo)]; }
+function todos(no: unknown, tipo: string): No[] { if (Array.isArray(no)) return no.flatMap(n => todos(n, tipo)); if (!no || typeof no !== "object") return []; const n = no as No; if (typeof n.type === "function") { try { return todos((n.type as (p: Record<string, unknown>) => unknown)(n.props ?? {}), tipo); } catch { return []; } } const filhos = n.props?.children; return [...(n.type === tipo ? [n] : []), ...todos(Array.isArray(filhos) ? filhos : [filhos], tipo)]; }
 function encontrar(no: unknown, tipo: string) { return todos(no, tipo)[0]; }
 const dados = { creditoId: "c", valorCredito: "200.00", reservaDevolucao: "0.00", devolvido: "0.00", moeda: "CRC", devolucoes: [], cobrancas: [], propostas: [], matriculaId: "m", aplicacaoDisponivel: true as const } as any;
 afterEach(() => vi.unstubAllGlobals());

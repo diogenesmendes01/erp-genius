@@ -12,6 +12,7 @@ import { useAcaoCliente } from "@/lib/acao-cliente";
 import { useChaveIdempotencia } from "@/lib/chave-idempotencia";
 import { STATUS_COMISSAO_LABEL, rotular } from "@/lib/labels";
 import { botaoClasses } from "@/components/Botao";
+import { CaixaCampo } from "@/app/(app)/secretaria/controles";
 
 export function ResumoFinanceiroComercial({ dados }: { dados: NonNullable<Awaited<ReturnType<typeof obterResumoComercialFinanceiro>>> }) {
   return <div className="space-y-4"><h1 className="text-2xl font-medium">Acompanhamento comercial · {dados.aluno.primeiroNome} {dados.aluno.sobrenome}</h1>
@@ -52,7 +53,7 @@ function LinhaAjustePreco({ preco, moeda }: { preco: Preco; moeda: string }) {
       <span>{preco.tipo === "MATRICULA" ? "Taxa" : "Mensalidade"}: {formatarMoeda(preco.valor, moeda)} · referência {formatarMoeda(preco.referencia, moeda)}</span>
       <CampoMoeda required name="valor" ariaLabel="Novo valor" moeda={moeda} value={valor} onChange={setValor} className="w-28 rounded border p-1.5" />
       <input required name="motivo" aria-label="Motivo do ajuste" placeholder="Motivo do ajuste" minLength={5} className="rounded border p-1.5" />
-      {preco.tipo === "MENSALIDADE" && <label><input type="checkbox" name="futuras" /> Mensalidades futuras</label>}
+      {preco.tipo === "MENSALIDADE" && <label><CaixaCampo name="futuras" /> Mensalidades futuras</label>}
       <button disabled={acao.ocupado} className={botaoClasses({ variante: "secundario" })}>{acao.ocupado ? "Enviando…" : "Solicitar desconto"}</button>
     </form>
     <FeedbackAcao erro={acao.erro} sucesso={acao.sucesso} />

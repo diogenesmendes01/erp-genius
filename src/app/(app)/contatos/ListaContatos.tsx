@@ -13,6 +13,9 @@ import type { ParDuplicado, PessoaMesclavel } from "@/server/crm/ficha-dados";
 import { paramsDaLista } from "./params-lista";
 import { ImportarContatos } from "./ImportarContatos";
 import { MesclarContatos } from "./MesclarContatos";
+import { Checkbox } from "@/components/ui/checkbox";
+import { CampoCombobox } from "@/components/ui/combobox";
+import { CampoSelect } from "@/components/ui/select";
 
 const CONTROLE = "rounded-md border border-border-soft bg-surface-raised px-2 text-sm min-h-11 sm:min-h-9";
 const CAIXA = "flex h-11 w-11 shrink-0 items-center justify-center";
@@ -57,41 +60,25 @@ export function ListaContatos({ itens, total, possuiMais, filtros, abertoId, tag
         </label>
         <label className="grid gap-1 text-sm">
           Tipo
-          <select name="tipo" defaultValue={filtros.tipo} className={CONTROLE}>
-            <option value="todos">Todos</option>
-            <option value="pessoas">Pessoas</option>
-            <option value="empresas">Empresas</option>
-          </select>
+          <CampoSelect name="tipo" defaultValue={filtros.tipo} opcoes={[{ valor: "todos", rotulo: "Todos" }, { valor: "pessoas", rotulo: "Pessoas" }, { valor: "empresas", rotulo: "Empresas" }]} />
         </label>
         <label className="grid gap-1 text-sm">
           Tag
-          <select name="tagId" defaultValue={filtros.tagId} className={CONTROLE}>
-            <option value="">Todas</option>
-            {tags.map((t) => <option key={t.id} value={t.id}>{t.nome}</option>)}
-          </select>
+          <CampoCombobox name="tagId" defaultValue={filtros.tagId} vazio="Todas" opcoes={tags.map((t) => ({ valor: t.id, rotulo: t.nome }))} />
         </label>
         <label className="grid gap-1 text-sm">
           Origem
-          <select name="origem" defaultValue={filtros.origem} className={CONTROLE}>
-            <option value="">Todas</option>
-            {Object.entries(ORIGEM_CANAL_LABEL).map(([valor, rotulo]) => <option key={valor} value={valor}>{rotulo}</option>)}
-          </select>
+          <CampoCombobox name="origem" defaultValue={filtros.origem} vazio="Todas" opcoes={Object.entries(ORIGEM_CANAL_LABEL).map(([valor, rotulo]) => ({ valor, rotulo }))} />
         </label>
         {comercial && (
           <>
             <label className="grid gap-1 text-sm">
               Responsável
-              <select name="donoId" defaultValue={filtros.donoId} className={CONTROLE}>
-                <option value="">Todos</option>
-                {vendedores.map((v) => <option key={v.id} value={v.id}>{v.nome}</option>)}
-              </select>
+              <CampoCombobox name="donoId" defaultValue={filtros.donoId} vazio="Todos" opcoes={vendedores.map((v) => ({ valor: v.id, rotulo: v.nome }))} />
             </label>
             <label className="grid gap-1 text-sm">
               Etapa
-              <select name="etapa" defaultValue={filtros.etapa} className={CONTROLE}>
-                <option value="">Todas</option>
-                {Object.entries(ETAPA_LABEL).map(([valor, rotulo]) => <option key={valor} value={valor}>{rotulo}</option>)}
-              </select>
+              <CampoCombobox name="etapa" defaultValue={filtros.etapa} vazio="Todas" opcoes={Object.entries(ETAPA_LABEL).map(([valor, rotulo]) => ({ valor, rotulo }))} />
             </label>
           </>
         )}
@@ -142,7 +129,7 @@ export function ListaContatos({ itens, total, possuiMais, filtros, abertoId, tag
               return (
                 <li key={empresa ? `e:${l.id}` : `p:${l.id}`} className="flex items-center pl-1">
                   <label className={CAIXA}>
-                    <input type="checkbox" aria-label={`Selecionar ${l.nome}`} checked={selecionados.includes(l.id)} onChange={() => alternar(l.id)} className="h-4 w-4" />
+                    <Checkbox aria-label={`Selecionar ${l.nome}`} checked={selecionados.includes(l.id)} onCheckedChange={() => alternar(l.id)} />
                   </label>
                   {empresa ? (
                     <div className={classe}>{corpo}</div>

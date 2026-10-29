@@ -8,6 +8,7 @@ import { FeedbackAcao } from "@/components/FeedbackAcao";
 import { useAcaoCliente } from "@/lib/acao-cliente";
 import { botaoClasses } from "@/components/Botao";
 import { CampoTexto } from "@/components/CampoTexto";
+import { CampoInstante } from "@/app/(app)/academico/controles";
 
 export function Formulario({ itemReservaId, fusoInstitucional }: { itemReservaId: string; fusoInstitucional: string | null }) {
   const router = useRouter();
@@ -29,7 +30,7 @@ export function Formulario({ itemReservaId, fusoInstitucional }: { itemReservaId
     <h2 className="text-xl font-medium">Autorizar realização especial</h2>
     <p>Informe a data e a hora limite para realizar esta recuperação e confira o fuso escolhido.</p>
     <fieldset disabled={acao.ocupado} className="space-y-3">
-      <label className="block" htmlFor="prazo-local">Prazo para realização<input id="prazo-local" name="prazoLocal" type="datetime-local" step="1" required className="block rounded border p-2" /></label>
+      <label className="block" htmlFor="prazo-local">Prazo para realização<CampoInstante id="prazo-local" name="prazoLocal" step="1" required className="block rounded border p-2" /></label>
       <label className="block" htmlFor="fuso">Fuso do prazo<CampoFuso id="fuso" padrao={fusoInstitucional ?? ""} className="block rounded border p-2" /></label>
       <p>Revise o fuso antes de registrar. Exemplos: America/Sao_Paulo e America/Costa_Rica. Horários ambíguos ou inexistentes exigem correção.</p>
       <label className="block" htmlFor="motivo">Motivo da autorização<CampoTexto id="motivo" name="motivo" required minLength={5} maxLength={2000} className="block w-full rounded border p-2" /></label>

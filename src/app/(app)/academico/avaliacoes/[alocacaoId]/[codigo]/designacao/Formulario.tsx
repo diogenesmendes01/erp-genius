@@ -7,6 +7,7 @@ import { botaoClasses } from "@/components/Botao";
 import { useAcaoCliente } from "@/lib/acao-cliente";
 import { CampoTexto } from "@/components/CampoTexto";
 import { MensagemStatus } from "@/components/MensagemStatus";
+import { CampoCombobox } from "@/app/(app)/academico/controles";
 
 type Professor = { id: string; nome: string };
 const normal = (t: string) => t.trim().toLocaleLowerCase("pt-BR");
@@ -45,16 +46,11 @@ export function FormularioDesignacao({ alocacaoId, codigoAvaliacao, versaoEspera
         <p className="text-sm">{local ? "A lista abaixo já está filtrada pelo nome digitado." : "Clique em Buscar para atualizar a lista."} O motivo digitado continua no formulário.</p>
         <MensagemStatus texto={refinarBusca ? "Exibindo os primeiros 50 professores. Refine a busca para localizar o nome desejado." : null} />
       </div>
-      <label className="block">Professor ou revogação<select required className="block rounded border p-2" value={professor} onChange={e => {
+      <label className="block">Professor ou revogação<CampoCombobox required className="block rounded border p-2" value={professor} onChange={e => {
         const id = e.target.value;
         setProfessor(id); chave.current = null;
         setEscolhido(professores.find(p => p.id === id) ?? (escolhido?.id === id ? escolhido : null));
-      }}>
-        <option value="" disabled>Selecione uma opção</option>
-        {atualId && <option value="revogar">Revogar a designação atual</option>}
-        {manter && <option value={manter.id}>{manter.nome}</option>}
-        {opcoes.map(p => <option key={p.id} value={p.id}>{p.nome}</option>)}
-      </select></label>
+      }} placeholder="Selecione uma opção" opcoes={[...(atualId ? [{ valor: "revogar", rotulo: "Revogar a designação atual" }] : []), ...(manter ? [{ valor: manter.id, rotulo: manter.nome }] : []), ...opcoes.map(p => ({ valor: p.id, rotulo: p.nome }))]} /></label>
       <label className="block">Motivo<CampoTexto required minLength={5} maxLength={2000} value={motivo} className="block w-full rounded border p-2" onChange={e => { setMotivo(e.target.value); chave.current = null; }} /></label>
       <button disabled={!professor} className={botaoClasses({ variante: professor === "revogar" ? "perigo" : "secundario", tamanho: "lg" })}>{acao.ocupado ? "Registrando…" : professor === "revogar" ? "Revogar designação" : "Registrar designação"}</button>
     </fieldset>

@@ -5,6 +5,8 @@ import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { EtapaLead } from "@prisma/client";
 import { Botao, botaoClasses } from "@/components/Botao";
+import { Combobox } from "@/components/ui/combobox";
+import { garantirEstilo } from "@/app/(app)/inbox/garantir-estilo";
 import { Chip } from "@/components/Chip";
 import { FeedbackAcao } from "@/components/FeedbackAcao";
 import { useAcaoCliente } from "@/lib/acao-cliente";
@@ -33,6 +35,7 @@ type Props = {
   capacidades: CapacidadeCrm[];
   podeAtribuir: boolean;
   vendedores: { id: string; nome: string }[];
+  professores?: { id: string; nome: string }[];
   paises: { id: string; nome: string }[];
   fuso?: string;
   preferenciaFusoExibicao?: string | null;
@@ -40,11 +43,12 @@ type Props = {
   preenchidoNova?: { pessoaId: string; nome: string } | null;
 };
 
-const CAMPO = "rounded-md border border-gray-300 bg-surface px-2 py-1.5 text-sm max-sm:min-h-11";
+const CAMPO = "rounded-md border border-gray-200 bg-surface px-2 py-1.5 text-sm max-sm:min-h-11";
 
 export function FunilCliente({
-  colunas, modo, filtros, dirOrdem, salvos, aberta, oportunidadeNaoEncontrada, capacidades, podeAtribuir, vendedores, paises, fuso = FUSO_PADRAO, preferenciaFusoExibicao = null, vazio, preenchidoNova = null,
+  colunas, modo, filtros, dirOrdem, salvos, aberta, oportunidadeNaoEncontrada, capacidades, podeAtribuir, vendedores, professores = [], paises, fuso = FUSO_PADRAO, preferenciaFusoExibicao = null, vazio, preenchidoNova = null,
 }: Props) {
+  garantirEstilo();
   const router = useRouter();
   const pathname = usePathname();
   const atuais = useSearchParams();
@@ -122,46 +126,24 @@ export function FunilCliente({
           <input name="busca" defaultValue={filtros.busca} maxLength={200} className={CAMPO} />
         </label>
         <label className="flex flex-col gap-1 text-xs text-gray-600">Tipo
-          <select name="tipo" defaultValue={filtros.tipo} className={CAMPO}>
-            <option value="">Todos</option>
-            <option value="pf">Pessoa</option>
-            <option value="b2b">Empresa</option>
-          </select>
+          <Combobox name="tipo" defaultValue={filtros.tipo} vazio="Todos" className={CAMPO} opcoes={[{ valor: "pf", rotulo: "Pessoa" }, { valor: "b2b", rotulo: "Empresa" }]} />
         </label>
         {podeAtribuir && (
           <label className="flex flex-col gap-1 text-xs text-gray-600">Dono
-            <select name="donoId" defaultValue={filtros.donoId} className={CAMPO}>
-              <option value="">Todos</option>
-              {vendedores.map((v) => <option key={v.id} value={v.id}>{v.nome}</option>)}
-            </select>
+            <Combobox name="donoId" defaultValue={filtros.donoId} vazio="Todos" busca="Buscar responsável" className={CAMPO} opcoes={vendedores.map((v) => ({ valor: v.id, rotulo: v.nome }))} />
           </label>
         )}
         <label className="flex flex-col gap-1 text-xs text-gray-600">Temperatura
-          <select name="temperatura" defaultValue={filtros.temperatura} className={CAMPO}>
-            <option value="">Todas</option>
-            {Object.entries(TEMPERATURA_LABEL).map(([v, r]) => <option key={v} value={v}>{r}</option>)}
-          </select>
+          <Combobox name="temperatura" defaultValue={filtros.temperatura} vazio="Todas" className={CAMPO} opcoes={Object.entries(TEMPERATURA_LABEL).map(([valor, rotulo]) => ({ valor, rotulo }))} />
         </label>
         <label className="flex flex-col gap-1 text-xs text-gray-600">Origem
-          <select name="origem" defaultValue={filtros.origem} className={CAMPO}>
-            <option value="">Todas</option>
-            {Object.entries(ORIGEM_CANAL_LABEL).map(([v, r]) => <option key={v} value={v}>{r}</option>)}
-          </select>
+          <Combobox name="origem" defaultValue={filtros.origem} vazio="Todas" className={CAMPO} opcoes={Object.entries(ORIGEM_CANAL_LABEL).map(([valor, rotulo]) => ({ valor, rotulo }))} />
         </label>
         <label className="flex flex-col gap-1 text-xs text-gray-600">Perdidos
-          <select name="perdidosDias" defaultValue={filtros.perdidosDias} className={CAMPO}>
-            <option value="todos">Todos</option>
-            <option value="30">Últimos 30 dias</option>
-            <option value="90">Últimos 90 dias</option>
-          </select>
+          <Combobox name="perdidosDias" defaultValue={filtros.perdidosDias} className={CAMPO} opcoes={[{ valor: "todos", rotulo: "Todos" }, { valor: "30", rotulo: "Últimos 30 dias" }, { valor: "90", rotulo: "Últimos 90 dias" }]} />
         </label>
         <label className="flex flex-col gap-1 text-xs text-gray-600">Ordem
-          <select name="ordem" defaultValue={filtros.ordem} className={CAMPO}>
-            <option value="recentes">Mais recentes</option>
-            <option value="valor">Maior valor</option>
-            <option value="proxima">Ação seguinte</option>
-            <option value="tempo">Tempo na etapa</option>
-          </select>
+          <Combobox name="ordem" defaultValue={filtros.ordem} className={CAMPO} opcoes={[{ valor: "recentes", rotulo: "Mais recentes" }, { valor: "valor", rotulo: "Maior valor" }, { valor: "proxima", rotulo: "Ação seguinte" }, { valor: "tempo", rotulo: "Tempo na etapa" }]} />
         </label>
         <Botao type="submit" variante="secundario" tamanho="md">Filtrar</Botao>
         <Link href={modo === "lista" ? "/funil?modo=lista" : "/funil"} className={botaoClasses({ variante: "fantasma", tamanho: "md" })}>Limpar</Link>
@@ -183,10 +165,7 @@ export function FunilCliente({
           {podeMover && selecionados.length > 0 && (
             <div className="flex flex-wrap items-center gap-2">
               <span className="text-sm">{selecionados.length} selecionada(s)</span>
-              <select aria-label="Mover para a etapa" value={etapaLote} onChange={(e) => setEtapaLote(e.target.value as EtapaLead | "")} className={CAMPO}>
-                <option value="">Mover para…</option>
-                {colunas.map((c) => <option key={c.etapa} value={c.etapa}>{ETAPA_LABEL[c.etapa]}</option>)}
-              </select>
+              <Combobox aria-label="Mover para a etapa" value={etapaLote} onValueChange={(valor) => setEtapaLote(valor as EtapaLead | "")} vazio="Mover para…" className={CAMPO} opcoes={colunas.map((c) => ({ valor: c.etapa, rotulo: ETAPA_LABEL[c.etapa] }))} />
               <Botao variante="secundario" tamanho="md" disabled={!etapaLote || acao.ocupado} onClick={moverLote}>Mover selecionadas</Botao>
             </div>
           )}
@@ -204,6 +183,7 @@ export function FunilCliente({
           conversa={aberta.conversa}
           capacidades={capacidades}
           vendedores={vendedores}
+          professores={professores}
           paises={paises}
           aoFechar={fechar}
           fuso={fuso}

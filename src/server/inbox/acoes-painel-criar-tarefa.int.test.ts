@@ -1,14 +1,23 @@
 import {Client} from "pg";
 import {CANAL_INBOX} from "./barramento";
-import {PrismaClient,type Prisma} from "@prisma/client";
+import {PrismaClient,Papel,type Prisma} from "@prisma/client";
 import {beforeEach,afterAll,expect,it,vi} from "vitest";
 const {authMock}=vi.hoisted(()=>({authMock:vi.fn()}));
 vi.mock("@/server/_shared/sessao",async original=>{const real=await original<typeof import("@/server/_shared/sessao")>();return {...real,exigirSessao:async()=>{const s=await authMock();const u=await real.carregarUsuarioFresco(s.user.id);if(!u)throw new real.ErroAutenticacao();return u;}};});
 vi.mock("next/cache",()=>({revalidatePath:vi.fn()}));
 import {prisma} from "@/lib/prisma";
-import {truncarBanco} from "@/test/integracao";
+import {criarUsuario,truncarBanco} from "@/test/integracao";
 import {cenarioPerda328} from "@/test/inbox-perda";
-import {dadosModalTarefaNoInbox,criarTarefaNoInbox,editarTarefaNoInbox,cancelarTarefaNoInbox} from "./acoes-painel";
+import {dadosModalTarefaNoInbox,criarTarefaNoInbox,editarTarefaNoInbox,cancelarTarefaNoInbox,concluirTarefaNoInbox,reagendarTarefaNoInbox} from "./acoes-painel";
+import {carregarTarefasDoAtendimento} from "./painel-tarefas";
+import {MOTIVO_CANCELADA_COM_TAREFA} from "./mensagem-agendada-tarefa";
+import {textoSeloMensagemAgendada} from "@/lib/selo-mensagem-agendada";
+import * as eventos from "@/server/_shared/evento";
+import {criarNumeroSetor} from "@/test/integracao-whatsapp";
+import {garantirAtendimento} from "@/server/whatsapp/atendimentos";
+import {valorCampoLocal} from "@/server/operacao/fuso-entrada";
+import {diaUtilAs} from "@/test/janela-envio";
+import {rodarRecorrenciasTarefas} from "@/server/crm/tarefa-recorrencia-materializacao";
 import * as aviso from "./aviso";
 beforeEach(async()=>{vi.restoreAllMocks();await truncarBanco();});
 afterAll(()=>prisma.$disconnect());
@@ -56,4 +65,198 @@ it.each(["editar","cancelar"])("CAS nativo após duas esperas: editar versus %s"
  let pronta!:()=>void,soltar!:()=>void;const pronto=new Promise<void>(r=>pronta=r),livre=new Promise<void>(r=>soltar=r);let a:ReturnType<typeof editarTarefaNoInbox>|undefined,b:ReturnType<typeof editarTarefaNoInbox>|undefined,trava:Promise<unknown>|undefined;
  const input={titulo:"Depois",vinculo:"manter" as const,contextoEsperado:esperado,fusoEscolaEsperado:"America/Sao_Paulo"};
  try{trava=holder.$transaction(async tx=>{await tx.$queryRaw`SELECT id FROM "AtendimentoWhatsApp" WHERE id=${c.a.id} FOR UPDATE`;pronta();await esperarBloqueadas(tx,2);await livre;},{timeout:10000});await Promise.race([pronto,trava]);a=editarTarefaNoInbox(c.a.id,t.id,1,input);b=outra==="editar"?editarTarefaNoInbox(c.a.id,t.id,1,{...input,titulo:"Outra edição"}):cancelarTarefaNoInbox(c.a.id,t.id,1,"Pedido331");await new Promise(r=>setTimeout(r,80));soltar();await trava;const rr=await Promise.all([a,b]);expect(rr.filter(r=>r.ok)).toHaveLength(1);expect((await prisma.tarefa.findUniqueOrThrow({where:{id:t.id}})).versao).toBe(2);expect(await prisma.evento.count({where:{agregadoTipo:"Tarefa",agregadoId:t.id}})).toBe(1);}finally{soltar();await Promise.allSettled([trava,a,b]);await holder.$disconnect();}
+});
+
+async function cenarioMensagem(assumido=true){
+ const vend=await criarUsuario([Papel.VENDEDOR],"Vend339");
+ const numero=await criarNumeroSetor({telefoneE164:"+5511999990339",setores:["COMERCIAL"],...(assumido?{donoId:vend.id}:{})});
+ const contato=await prisma.contatoWhatsApp.create({data:{telefoneE164:"+50688880339"}});
+ const op=await prisma.oportunidade.create({data:{nome:"Lead339",telefoneE164:contato.telefoneE164,vendedorDonoId:vend.id}});
+ await prisma.contatoWhatsApp.update({where:{id:contato.id},data:{leadId:op.id}});
+ const a=await prisma.$transaction(tx=>garantirAtendimento(tx,{numeroId:numero.id,contatoId:contato.id,finalidade:"COMERCIAL",leadId:op.id,responsavelId:assumido?vend.id:null}));
+ await prisma.configuracaoOperacional.upsert({where:{id:"escola"},create:{id:"escola",fusoInstitucional:"America/Sao_Paulo"},update:{fusoInstitucional:"America/Sao_Paulo"}});
+ await prisma.configIA.upsert({where:{id:"ia"},create:{id:"ia"},update:{}});
+ authMock.mockResolvedValue({user:{id:vend.id}});
+ return {vend,op,a};
+}
+async function entradaMensagem(id:string,quando:Date|null,extra:Record<string,unknown>={}){
+ const r=await dadosModalTarefaNoInbox(id);if(!r.ok||!r.dado)throw new Error(JSON.stringify(r));
+ const local=quando?valorCampoLocal(quando,"America/Sao_Paulo"):null;
+ return {titulo:"Retornar proposta",tipo:"WHATSAPP" as const,dataCivil:local?.slice(0,10)??null,hora:local?.slice(11,16)??null,vincularOportunidade:true,jaFeita:false,chaveIdempotencia:"339-tarefa-tentativa-0001",contextoEsperado:r.dado.contextoEsperado,fusoEscolaEsperado:r.dado.fusoEscola,mensagem:{texto:"Oi, passando para lembrar da proposta.",chaveIdempotencia:"339-mensagem-tentativa-0001"},...extra};
+}
+it("mensagem_agendada_com_tarefaId: agenda no início da tarefa, ligada a ela, e replay não duplica",async()=>{
+ const c=await cenarioMensagem(),quando=diaUtilAs(10);
+ const d=await dadosModalTarefaNoInbox(c.a.id);expect(d.ok&&d.dado?.podeAgendarMensagem).toBe(true);
+ const i=await entradaMensagem(c.a.id,quando),r=await criarTarefaNoInbox(c.a.id,i);
+ if(!r.ok||!r.dado)throw new Error(JSON.stringify(r));
+ const t=await prisma.tarefa.findUniqueOrThrow({where:{id:r.dado.id}});expect(t.inicioEm?.toISOString()).toBe(quando.toISOString());
+ const intencoes=await prisma.intencaoMensagem.findMany({where:{atendimentoId:c.a.id}});
+ expect(intencoes).toHaveLength(1);expect(intencoes[0]).toMatchObject({tarefaId:t.id,leadId:c.op.id,origem:"HUMANO",autorId:c.vend.id,status:"PENDENTE",perguntarSeResponder:true,corpoRenderizado:"Oi, passando para lembrar da proposta."});
+ expect(intencoes[0].agendadaPara?.toISOString()).toBe(quando.toISOString());
+ expect(await prisma.evento.findFirst({where:{tipo:"MensagemAgendada",agregadoId:c.a.id}})).toMatchObject({agregadoTipo:"AtendimentoWhatsApp",payload:expect.objectContaining({tarefaId:t.id,intencaoId:intencoes[0].id})});
+ expect(await criarTarefaNoInbox(c.a.id,i)).toEqual(r);
+ expect(await prisma.intencaoMensagem.count()).toBe(1);expect(await prisma.tarefa.count()).toBe(1);expect(await prisma.evento.count({where:{tipo:"MensagemAgendada"}})).toBe(1);
+ expect((await criarTarefaNoInbox(c.a.id,{...i,mensagem:{...i.mensagem,texto:"Outro texto"}})).ok).toBe(false);
+});
+it("horario_passado_nao_agenda: sem data ou com horário passado cria só a tarefa",async()=>{
+ const c=await cenarioMensagem();
+ const passado=await criarTarefaNoInbox(c.a.id,await entradaMensagem(c.a.id,new Date(Date.now()-86_400_000)));expect(passado.ok).toBe(true);
+ const semPrazo=await criarTarefaNoInbox(c.a.id,await entradaMensagem(c.a.id,null,{chaveIdempotencia:"339-tarefa-tentativa-0002",mensagem:{texto:"Sem prazo",chaveIdempotencia:"339-mensagem-tentativa-0002"}}));expect(semPrazo.ok).toBe(true);
+ expect(await prisma.tarefa.count()).toBe(2);expect(await prisma.intencaoMensagem.count()).toBe(0);expect(await prisma.evento.count({where:{tipo:"MensagemAgendada"}})).toBe(0);
+});
+it("repetir_nao_agenda_duas_vezes: concluir a recorrente cria a próxima sem nova mensagem",async()=>{
+ const c=await cenarioMensagem(),r=await criarTarefaNoInbox(c.a.id,await entradaMensagem(c.a.id,diaUtilAs(10),{recorrencia:"SEMANAL"}));
+ if(!r.ok||!r.dado)throw new Error(JSON.stringify(r));
+ const t=await prisma.tarefa.findUniqueOrThrow({where:{id:r.dado.id}});
+ expect((await concluirTarefaNoInbox(c.a.id,t.id,t.versao)).ok).toBe(true);
+ expect(await rodarRecorrenciasTarefas()).toEqual({criadas:1});
+ expect(await prisma.tarefa.count()).toBe(2);
+ const intencoes=await prisma.intencaoMensagem.findMany();expect(intencoes).toHaveLength(1);expect(intencoes[0].tarefaId).toBe(t.id);
+});
+it("sem ter assumido a conversa recusa sem criar tarefa nem mensagem",async()=>{
+ const c=await cenarioMensagem(false);
+ const d=await dadosModalTarefaNoInbox(c.a.id);expect(d.ok&&d.dado?.podeAgendarMensagem).toBe(false);
+ const r=await criarTarefaNoInbox(c.a.id,await entradaMensagem(c.a.id,diaUtilAs(10)));
+ expect(r).toEqual({ok:false,erro:"Assuma a conversa para agendar a mensagem."});
+ expect(await prisma.tarefa.count()).toBe(0);expect(await prisma.intencaoMensagem.count()).toBe(0);expect(await prisma.evento.count()).toBe(0);
+});
+it("tarefa já feita com mensagem é recusada",async()=>{
+ const c=await cenarioMensagem(),r=await criarTarefaNoInbox(c.a.id,await entradaMensagem(c.a.id,diaUtilAs(10),{jaFeita:true}));
+ expect(r.ok).toBe(false);expect(await prisma.tarefa.count()).toBe(0);expect(await prisma.intencaoMensagem.count()).toBe(0);
+});
+it("sem vincular à oportunidade e sem Pessoa agenda ligada à tarefa do atendimento",async()=>{
+ const c=await cenarioMensagem(),quando=diaUtilAs(10),r=await criarTarefaNoInbox(c.a.id,await entradaMensagem(c.a.id,quando,{vincularOportunidade:false}));
+ if(!r.ok||!r.dado)throw new Error(JSON.stringify(r));
+ expect(await prisma.tarefa.findUniqueOrThrow({where:{id:r.dado.id}})).toMatchObject({leadId:null,pessoaId:null,atendimentoId:c.a.id});
+ const intencoes=await prisma.intencaoMensagem.findMany();expect(intencoes).toHaveLength(1);expect(intencoes[0]).toMatchObject({tarefaId:r.dado.id,leadId:null});
+});
+it("atendimento da secretaria agenda a mensagem ligada à tarefa",async()=>{
+ const sec=await criarUsuario([Papel.SECRETARIA_ACADEMICA],"Sec339");
+ const numero=await criarNumeroSetor({telefoneE164:"+5511999991339",setores:["SECRETARIA"]});
+ const contato=await prisma.contatoWhatsApp.create({data:{telefoneE164:"+50688881339"}});
+ const a=await prisma.$transaction(tx=>garantirAtendimento(tx,{numeroId:numero.id,contatoId:contato.id,finalidade:"SECRETARIA",responsavelId:sec.id}));
+ await prisma.configuracaoOperacional.upsert({where:{id:"escola"},create:{id:"escola",fusoInstitucional:"America/Sao_Paulo"},update:{fusoInstitucional:"America/Sao_Paulo"}});
+ await prisma.configIA.upsert({where:{id:"ia"},create:{id:"ia"},update:{}});
+ authMock.mockResolvedValue({user:{id:sec.id}});
+ const d=await dadosModalTarefaNoInbox(a.id);expect(d.ok&&d.dado?.podeAgendarMensagem).toBe(true);
+ const r=await criarTarefaNoInbox(a.id,await entradaMensagem(a.id,diaUtilAs(10),{vincularOportunidade:false}));
+ if(!r.ok||!r.dado)throw new Error(JSON.stringify(r));
+ const intencoes=await prisma.intencaoMensagem.findMany();expect(intencoes).toHaveLength(1);expect(intencoes[0]).toMatchObject({tarefaId:r.dado.id,leadId:null,atendimentoId:a.id});
+});
+
+async function tarefaComMensagem(extra:Record<string,unknown>={}){
+ const c=await cenarioMensagem(),quando=diaUtilAs(10);
+ const r=await criarTarefaNoInbox(c.a.id,await entradaMensagem(c.a.id,quando,extra));
+ if(!r.ok||!r.dado)throw new Error(JSON.stringify(r));
+ const t=await prisma.tarefa.findUniqueOrThrow({where:{id:r.dado.id}});
+ const m=await prisma.intencaoMensagem.findFirstOrThrow({where:{tarefaId:t.id}});
+ return {c,t,m,quando};
+}
+it("selo carrega a mensagem ativa PENDENTE ou ADIADA e ignora as demais",async()=>{
+ const {c,t,m,quando}=await tarefaComMensagem();
+ const painel=await carregarTarefasDoAtendimento(c.vend,c.a,{soDaConversa:true});
+ const item=painel.find(x=>x.id===t.id);
+ expect(item?.mensagemAgendada?.id).toBe(m.id);
+ expect(item?.mensagemAgendada?.status).toBe("PENDENTE");
+ expect(item?.mensagemAgendada?.quando).toMatch(/^\d{2}\/\d{2} 10:00$/);
+ expect(textoSeloMensagemAgendada(item!.mensagemAgendada!.quando)).toBe("Mensagem agendada · "+item!.mensagemAgendada!.quando);
+ await prisma.intencaoMensagem.update({where:{id:m.id},data:{status:"ADIADA",motivoFalha:"aguarda_confirmacao_resposta"}});
+ const adiada=await carregarTarefasDoAtendimento(c.vend,c.a,{soDaConversa:true});
+ expect(adiada.find(x=>x.id===t.id)?.mensagemAgendada).toMatchObject({id:m.id,status:"ADIADA"});
+ await prisma.intencaoMensagem.update({where:{id:m.id},data:{status:"DESPACHADA"}});
+ expect((await carregarTarefasDoAtendimento(c.vend,c.a,{soDaConversa:true})).find(x=>x.id===t.id)?.mensagemAgendada).toBeNull();
+ expect(quando.toISOString()).toBe(m.agendadaPara?.toISOString());
+});
+it.each(["concluir","cancelar"] as const)("%s com manter preserva a mensagem e com cancelar cancela na mesma decisão",async acao=>{
+ const c=await cenarioMensagem(),quando=diaUtilAs(10);
+ async function abrir(sufixo:string){
+  const r=await criarTarefaNoInbox(c.a.id,await entradaMensagem(c.a.id,quando,{chaveIdempotencia:"379-"+acao+"-"+sufixo+"-tarefa",mensagem:{texto:sufixo+" "+acao,chaveIdempotencia:"379-"+acao+"-"+sufixo+"-mensagem"}}));
+  if(!r.ok||!r.dado)throw new Error(JSON.stringify(r));
+  const t=await prisma.tarefa.findUniqueOrThrow({where:{id:r.dado.id}});
+  const m=await prisma.intencaoMensagem.findFirstOrThrow({where:{tarefaId:t.id}});
+  return {t,m};
+ }
+ const manter=await abrir("manter");
+ if(acao==="concluir")expect(await concluirTarefaNoInbox(c.a.id,manter.t.id,manter.t.versao,"manter")).toEqual({ok:true});
+ else expect(await cancelarTarefaNoInbox(c.a.id,manter.t.id,manter.t.versao,"Segue o envio","manter")).toEqual({ok:true});
+ expect(await prisma.intencaoMensagem.findUniqueOrThrow({where:{id:manter.m.id}})).toMatchObject({status:"PENDENTE",motivoFalha:null});
+ expect(await prisma.evento.count({where:{tipo:"MensagemAgendadaCancelada",agregadoId:c.a.id}})).toBe(0);
+ const cancelar=await abrir("cancelar");
+ if(acao==="concluir"){
+  expect(await concluirTarefaNoInbox(c.a.id,cancelar.t.id,cancelar.t.versao,"cancelar")).toEqual({ok:true});
+  expect((await concluirTarefaNoInbox(c.a.id,cancelar.t.id,cancelar.t.versao,"cancelar")).ok).toBe(false);
+ }else{
+  expect(await cancelarTarefaNoInbox(c.a.id,cancelar.t.id,cancelar.t.versao,"Não enviar","cancelar")).toEqual({ok:true});
+  expect(await cancelarTarefaNoInbox(c.a.id,cancelar.t.id,cancelar.t.versao,"Não enviar","cancelar")).toEqual({ok:true});
+ }
+ expect(await prisma.intencaoMensagem.findUniqueOrThrow({where:{id:cancelar.m.id}})).toMatchObject({status:"CANCELADA",motivoFalha:MOTIVO_CANCELADA_COM_TAREFA});
+ const es=await prisma.evento.findMany({where:{tipo:"MensagemAgendadaCancelada",agregadoId:c.a.id}});
+ expect(es).toHaveLength(1);
+ expect(es[0]).toMatchObject({agregadoTipo:"AtendimentoWhatsApp",autorId:c.vend.id,payload:expect.objectContaining({contexto:"tarefa379",operacao:"CANCELAR",intencaoId:cancelar.m.id,tarefaId:cancelar.t.id,atendimentoId:c.a.id})});
+ expect((es[0].payload as {canceladaEm?:string}).canceladaEm).toMatch(/^\d{4}-\d{2}-\d{2}T/);
+});
+it("cancelar a mensagem falha junto com a tarefa: a transação não deixa estado parcial",async()=>{
+ const {c,t,m}=await tarefaComMensagem({chaveIdempotencia:"379-atomica-tarefa",mensagem:{texto:"Atômica",chaveIdempotencia:"379-atomica-mensagem"}});
+ const real=eventos.registrarEvento;
+ const spy=vi.spyOn(eventos,"registrarEvento").mockImplementation(async (tx,entrada)=>{
+  if(entrada.tipo==="MensagemAgendadaCancelada")throw new Error("falha injetada379");
+  return real(tx,entrada);
+ });
+ try{expect((await concluirTarefaNoInbox(c.a.id,t.id,t.versao,"cancelar")).ok).toBe(false);}finally{spy.mockRestore();}
+ expect(await prisma.tarefa.findUniqueOrThrow({where:{id:t.id}})).toMatchObject({status:"ABERTA",versao:t.versao});
+ expect(await prisma.intencaoMensagem.findUniqueOrThrow({where:{id:m.id}})).toMatchObject({status:"PENDENTE"});
+ expect(await prisma.evento.count({where:{tipo:"MensagemAgendadaCancelada"}})).toBe(0);
+ expect(await prisma.evento.count({where:{tipo:"TarefaConcluida",agregadoId:t.id}})).toBe(0);
+});
+it("horario fora da janela recusa tarefa e mensagem e explica como criar só a tarefa",async()=>{
+ const c=await cenarioMensagem();
+ const r=await criarTarefaNoInbox(c.a.id,await entradaMensagem(c.a.id,diaUtilAs(22)));
+ expect(r.ok).toBe(false);
+ if(r.ok)return;
+ expect(r.erro).toContain("Fora da janela de envio");
+ expect(r.erro).toContain("Enviar mensagem nesta data");
+ expect(await prisma.tarefa.count()).toBe(0);
+ expect(await prisma.intencaoMensagem.count()).toBe(0);
+});
+it("concluir e cancelar sem decisão cancelam a mensagem PENDENTE",async()=>{
+ const c=await cenarioMensagem(),quando=diaUtilAs(10);
+ async function abrir(sufixo:string){
+  const r=await criarTarefaNoInbox(c.a.id,await entradaMensagem(c.a.id,quando,{chaveIdempotencia:"379-omissao-"+sufixo+"-tarefa",mensagem:{texto:sufixo,chaveIdempotencia:"379-omissao-"+sufixo+"-mensagem"}}));
+  if(!r.ok||!r.dado)throw new Error(JSON.stringify(r));
+  const t=await prisma.tarefa.findUniqueOrThrow({where:{id:r.dado.id}});
+  const m=await prisma.intencaoMensagem.findFirstOrThrow({where:{tarefaId:t.id}});
+  return {t,m};
+ }
+ const feita=await abrir("concluir");
+ expect(await concluirTarefaNoInbox(c.a.id,feita.t.id,feita.t.versao)).toEqual({ok:true});
+ expect(await prisma.intencaoMensagem.findUniqueOrThrow({where:{id:feita.m.id}})).toMatchObject({status:"CANCELADA",motivoFalha:MOTIVO_CANCELADA_COM_TAREFA});
+ const cancelada=await abrir("cancelar");
+ expect(await cancelarTarefaNoInbox(c.a.id,cancelada.t.id,cancelada.t.versao,"Padrão da tarefa")).toEqual({ok:true});
+ expect(await prisma.intencaoMensagem.findUniqueOrThrow({where:{id:cancelada.m.id}})).toMatchObject({status:"CANCELADA",motivoFalha:MOTIVO_CANCELADA_COM_TAREFA});
+});
+it("remarcar move a mensagem PENDENTE e só sai da janela com confirmação",async()=>{
+ const dentro=diaUtilAs(11),fora=diaUtilAs(22);
+ const {c,t,m}=await tarefaComMensagem({chaveIdempotencia:"379-mover-tarefa",mensagem:{texto:"Mover",chaveIdempotencia:"379-mover-mensagem"}});
+ const local=valorCampoLocal(dentro,"America/Sao_Paulo");
+ expect(await reagendarTarefaNoInbox(c.a.id,t.id,t.versao,{dataCivil:local.slice(0,10),hora:local.slice(11,16),fusoEscolaEsperado:"America/Sao_Paulo"})).toEqual({ok:true});
+ expect((await prisma.intencaoMensagem.findUniqueOrThrow({where:{id:m.id}})).agendadaPara?.toISOString()).toBe(dentro.toISOString());
+ const atual=await prisma.tarefa.findUniqueOrThrow({where:{id:t.id}});
+ const localFora=valorCampoLocal(fora,"America/Sao_Paulo");
+ const recusa=await reagendarTarefaNoInbox(c.a.id,t.id,atual.versao,{dataCivil:localFora.slice(0,10),hora:localFora.slice(11,16),fusoEscolaEsperado:"America/Sao_Paulo"});
+ expect(recusa.ok).toBe(false);
+ if(!recusa.ok){expect(recusa.erro).toContain("Fora da janela");expect(recusa.erro).toContain("Confirme para mover");}
+ expect((await prisma.intencaoMensagem.findUniqueOrThrow({where:{id:m.id}})).agendadaPara?.toISOString()).toBe(dentro.toISOString());
+ expect((await prisma.tarefa.findUniqueOrThrow({where:{id:t.id}})).versao).toBe(atual.versao);
+ expect(await reagendarTarefaNoInbox(c.a.id,t.id,atual.versao,{dataCivil:localFora.slice(0,10),hora:localFora.slice(11,16),fusoEscolaEsperado:"America/Sao_Paulo",aceitarForaDaJanela:true})).toEqual({ok:true});
+ expect((await prisma.intencaoMensagem.findUniqueOrThrow({where:{id:m.id}})).agendadaPara?.toISOString()).toBe(fora.toISOString());
+});
+it("cancelar a mensagem da tarefa publica o aviso da agendada no commit",async()=>{
+ const {c,t}=await tarefaComMensagem({chaveIdempotencia:"379-aviso-tarefa",mensagem:{texto:"Aviso",chaveIdempotencia:"379-aviso-mensagem"}});
+ const client=new Client({connectionString:process.env.DATABASE_URL}),quadros:Record<string,unknown>[]=[];
+ client.on("notification",n=>{if(n.channel===CANAL_INBOX&&n.payload)quadros.push(JSON.parse(n.payload));});
+ await client.connect();await client.query("LISTEN "+CANAL_INBOX);
+ try{
+  expect(await cancelarTarefaNoInbox(c.a.id,t.id,t.versao,"Não enviar","cancelar")).toEqual({ok:true});
+  await vi.waitFor(()=>expect(quadros.some(q=>q.atendimentoId===c.a.id&&q.tipo==="atendimento.atualizado")).toBe(true));
+ }finally{await client.end();}
 });

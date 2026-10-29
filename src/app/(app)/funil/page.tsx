@@ -5,7 +5,7 @@ import { atendimentoParaAbrir } from "@/server/inbox/atalhos";
 import { prisma } from "@/lib/prisma";
 import { botaoClasses } from "@/components/Botao";
 import { EstadoVazio } from "@/components/EstadoVazio";
-import { listarVendedores } from "@/server/comercial/consultas";
+import { listarProfessoresAtivos, listarVendedores } from "@/server/comercial/consultas";
 import { listarPaisesOperacionais } from "@/server/paises/consultas";
 import { listarFiltros } from "@/server/crm/filtros-salvos";
 import { carregarFunil, lerFiltrosFunil } from "@/server/crm/funil";
@@ -30,10 +30,11 @@ export default async function FunilPage({ searchParams }: { searchParams: Promis
   const preenchidoNova = pessoaNovaId && capacidades.includes("funil.mover") ? await prisma.pessoa.findFirst({ where: { AND: [{ id: pessoaNovaId, responsavel: null }, await escopoPessoas(usuario)] }, select: { id: true, nome: true } }) : null;
   const podeAtribuir = capacidades.includes("funil.atribuir");
 
-  const [colunas, salvos, vendedores, paises, config, oportunidade, preferencia] = await Promise.all([
+  const [colunas, salvos, vendedores, professores, paises, config, oportunidade, preferencia] = await Promise.all([
     carregarFunil(usuario, filtros),
     listarFiltros(usuario, "FUNIL"),
     listarVendedores(),
+    listarProfessoresAtivos(),
     listarPaisesOperacionais(),
     prisma.configuracaoOperacional.findUnique({ where: { id: "escola" }, select: { fusoInstitucional: true } }),
     idAberto ? obterOportunidade(idAberto, usuario) : Promise.resolve(null),
@@ -82,6 +83,7 @@ export default async function FunilPage({ searchParams }: { searchParams: Promis
         capacidades={capacidades}
         podeAtribuir={podeAtribuir}
         vendedores={vendedores}
+        professores={professores}
         paises={paises.map((p) => ({ id: p.id, nome: p.nome }))}
         fuso={config?.fusoInstitucional ?? undefined}
         preferenciaFusoExibicao={(preferencia.ok ? preferencia.dado?.fusoExibicao : null) ?? null}

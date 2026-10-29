@@ -9,6 +9,8 @@ import { botaoClasses } from "@/components/Botao";
 import { useAcaoCliente } from "@/lib/acao-cliente";
 import { CampoTexto } from "@/components/CampoTexto";
 import { CampoFuso } from "@/components/CampoFuso";
+import { SeletorCampo } from "@/app/(app)/secretaria/controles";
+import { DatePicker } from "@/components/ui/date-picker";
 
 export function PrepararFechamento({ alunoId, matriculaId, fusoInicial = "" }: { alunoId: string; matriculaId: string; fusoInicial?: string }) {
   const router = useRouter(), acao = useAcaoCliente({ idempotente: true });
@@ -44,13 +46,13 @@ export function PrepararFechamento({ alunoId, matriculaId, fusoInicial = "" }: {
     setPreparado({ ...entrada, chaveIdempotencia: chave.current.valor });
   }}>
     <fieldset disabled={acao.ocupado} className="space-y-3"><legend className="font-medium">Preparar apuração mensal</legend>
-      <label className="block">Referência contratual<select className={classe} required value={referencia} onChange={e => setReferencia(e.target.value)}><option value="">Selecione</option><option value="MES_CIVIL">Mês civil</option><option value="CICLO_MATRICULA">Ciclo da matrícula</option></select></label>
-      {referencia === "CICLO_MATRICULA" && <label className="block">Data de referência do ciclo<input className={classe} type="date" name="ancora" required /></label>}
-      <label className="block">Uma data dentro do período a apurar<input className={classe} type="date" name="data" required /></label>
+      <label className="block">Referência contratual<SeletorCampo className={classe} required value={referencia} onChange={e => setReferencia(e.target.value)}><option value="">Selecione</option><option value="MES_CIVIL">Mês civil</option><option value="CICLO_MATRICULA">Ciclo da matrícula</option></SeletorCampo></label>
+      {referencia === "CICLO_MATRICULA" && <label className="block">Data de referência do ciclo<DatePicker className={classe} name="ancora" required /></label>}
+      <label className="block">Uma data dentro do período a apurar<DatePicker className={classe} name="data" required /></label>
       <label className="block">Fuso do período<CampoFuso padrao={fusoInicial} className={classe} /></label>
-      <label className="block">Vencimento contratado<input className={classe} type="date" name="vencimento" required /></label>
+      <label className="block">Vencimento contratado<DatePicker className={classe} name="vencimento" required /></label>
       <label className="block">Cláusula e condições do período<CampoTexto className={classe} name="clausula" minLength={5} maxLength={2000} required /></label>
-      <label className="block">Se houver encontros pendentes<select className={classe} name="escolha" required defaultValue=""><option value="">Selecione</option><option value="AGUARDAR">Aguardar conferência</option><option value="PROPOR_PARCIAL">Propor emissão parcial para aprovação</option></select></label>
+      <label className="block">Se houver encontros pendentes<SeletorCampo className={classe} name="escolha" required defaultValue=""><option value="">Selecione</option><option value="AGUARDAR">Aguardar conferência</option><option value="PROPOR_PARCIAL">Propor emissão parcial para aprovação</option></SeletorCampo></label>
       <label className="block">Motivo<CampoTexto className={classe} name="motivo" minLength={5} maxLength={2000} required /></label>
       <p>Os dados serão confrontados novamente ao salvar. Esta preparação não aprova o contrato nem emite cobrança.</p>
       <button className={botaoClasses({ variante: "secundario", tamanho: "lg" })}>{acao.ocupado ? "Conferindo…" : preparado ? "Salvar rascunho do período conferido" : "Conferir período e versão"}</button>

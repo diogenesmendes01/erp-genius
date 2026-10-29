@@ -20,6 +20,7 @@ vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh: m.refresh }) })
 vi.mock("@/server/paises/acoes", () => ({ alterarStatusPais: m.status, alternarProdutoPais: m.produto }));
 vi.mock("./PaisFormulario", () => ({ PaisFormulario: () => null }));
 
+import { TableCell, TableHead } from "@/components/ui/table";
 import { PaisesPainel, type PaisRow } from "./PaisesPainel";
 import { ConfirmarAcao } from "@/components/ConfirmarAcao";
 import { FeedbackAcao } from "@/components/FeedbackAcao";
@@ -36,7 +37,7 @@ let paises: PaisRow[];
 const tela = (): ReactNode => m.ganchos!.renderizar(PaisesPainel, { paises, produtos: [] });
 const confirmacoes = (t: ReactNode): No[] => elementos(t).filter((n: No) => n.type === ConfirmarAcao);
 const usar = (g: Ganchos): Ganchos => { const anterior = m.ganchos!; m.ganchos = g; return anterior; };
-const celulas = (t: ReactNode) => elementos(t).filter((n: No) => n.type === "td").map((n: No) => texto(n.props.children).trim());
+const celulas = (t: ReactNode) => elementos(t).filter((n: No) => n.type === TableCell).map((n: No) => texto(n.props.children).trim());
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -48,7 +49,7 @@ beforeEach(() => {
 describe("PaisesPainel — encerrar passa pela confirmação com o nome digitado", () => {
   it("a tabela mostra produtos habilitados, preços e alunos do país", () => {
     const t = tela();
-    const cabecalho = elementos(t).filter((n: No) => n.type === "th").map((n: No) => texto(n.props.children).trim());
+    const cabecalho = elementos(t).filter((n: No) => n.type === TableHead).map((n: No) => texto(n.props.children).trim());
     expect(cabecalho).toEqual(["País", "Moeda", "DDI", "Documentos", "Produtos", "Preços", "Alunos", "Status", "Ações"]);
     expect(celulas(t).slice(4, 7)).toEqual(["3", "12", "37"]);
   });

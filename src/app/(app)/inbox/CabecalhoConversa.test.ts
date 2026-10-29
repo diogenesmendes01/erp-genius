@@ -29,7 +29,7 @@ describe("cabeçalho315",()=>{
  it("busca316 ligada e painel efetivo único com corte1400",()=>{
   const html=h(); expect(html).not.toMatch(/disabled=""[^>]*aria-label="Buscar na conversa"|aria-label="Buscar na conversa"[^>]*disabled=""/);
   expect(html).not.toContain("Em breve"); expect(html).toContain('aria-controls="painel-contato"');
-  expect(html).toContain("min-[1400px]:bg-gray-100"); expect(h({painelAberto:true})).toContain('aria-pressed="true"');
+  expect(html).toContain("min-[1400px]:bg-highlight"); expect(h({painelAberto:true})).toContain('aria-pressed="true"');
  });
  it("não fabrica ações para grupo nem ausência de capacidade",()=>{
   const html=h({atendimento:{...at,grupo:true} as PropsCabecalhoConversa["atendimento"],acoes:{assumir:null,transferir:null,menu:[],dialogos:null,feedback:null,abrirAgendar:null}});

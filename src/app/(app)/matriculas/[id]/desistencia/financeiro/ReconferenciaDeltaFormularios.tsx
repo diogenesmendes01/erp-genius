@@ -9,6 +9,7 @@ import { MSG_RESULTADO_INCERTO } from "@/lib/mensagens";
 import { CampoTexto } from "@/components/CampoTexto";
 import { ConfirmarAcao, type FalhaConfirmacao } from "@/components/ConfirmarAcao";
 import { formatarValores, somarPorMoeda, type ValorMoeda } from "@/lib/dinheiro";
+import { SeletorCampo } from "@/app/(app)/secretaria/controles";
 
 type ResultadoAcao = { ok: boolean; erro?: string };
 type Tentativa = { acao: () => Promise<ResultadoAcao>; sucesso: string };
@@ -104,7 +105,7 @@ export function DecidirReconferenciaDeltaFormulario({ propostaId, fotografiaHash
     const entrada = { propostaId, fotografiaHash, aprovada: dados.get("decisao") === "aprovar", motivo: String(dados.get("motivo") ?? ""), chaveIdempotencia: op.chave.current };
     await op.iniciar({ acao: () => decidir(entrada), sucesso: "Decisão independente registrada." });
   }}>
-    <fieldset disabled={op.ocupado || op.incerta}><label>Decisão<select name="decisao" required className="ml-2 rounded border p-2"><option value="">Selecione</option><option value="aprovar">Aprovar</option><option value="rejeitar">Rejeitar</option></select></label><label className="mt-2 block">Justificativa<CampoTexto name="motivo" required minLength={5} maxLength={3000} className="mt-1 block w-full rounded border p-2" /></label><button className={`${botaoClasses({ variante: "secundario", tamanho: "lg" })} mt-3`}>{op.ocupado ? "Registrando…" : administrativo ? "Registrar decisão administrativa" : "Registrar decisão financeira"}</button></fieldset><ReconciliarTentativaDelta op={op} /><FeedbackAcao erro={op.erro} sucesso={op.sucesso} className="mt-3" />
+    <fieldset disabled={op.ocupado || op.incerta}><label>Decisão<SeletorCampo name="decisao" required className="ml-2 rounded border p-2"><option value="">Selecione</option><option value="aprovar">Aprovar</option><option value="rejeitar">Rejeitar</option></SeletorCampo></label><label className="mt-2 block">Justificativa<CampoTexto name="motivo" required minLength={5} maxLength={3000} className="mt-1 block w-full rounded border p-2" /></label><button className={`${botaoClasses({ variante: "secundario", tamanho: "lg" })} mt-3`}>{op.ocupado ? "Registrando…" : administrativo ? "Registrar decisão administrativa" : "Registrar decisão financeira"}</button></fieldset><ReconciliarTentativaDelta op={op} /><FeedbackAcao erro={op.erro} sucesso={op.sucesso} className="mt-3" />
   </form>;
 }
 

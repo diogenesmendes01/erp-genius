@@ -8,6 +8,7 @@ import { EstadoVazio } from "@/components/EstadoVazio";
 import { TIPO_PAGADOR_LABEL, rotular } from "@/lib/labels";
 import { consultarPreferenciaFusoEquipe } from "@/server/preferencias/fuso-exibicao";
 import { formatarInstanteExibicao, resolverFusoExibicao } from "@/server/operacao/fuso-exibicao";
+import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "@/components/ui/collapsible";
 export default async function PagadorPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ pagina?: string }> }) {
   await exigirSessaoPagina(Papel.SECRETARIA_ACADEMICA, Papel.FINANCEIRO);
   const { id } = await params, busca = await searchParams;
@@ -28,10 +29,10 @@ export default async function PagadorPage({ params, searchParams }: { params: Pr
     {d.podeEditar && <PagadorFormulario key={p?.id ?? "novo"} matriculaId={id} versao={p?.versao ?? 0} paises={d.paises} atual={p} />}
     <section className="space-y-3"><h2 className="text-xl">Histórico do pagador</h2>
       {!h.ok || !h.dado ? <p role="alert">{h.ok ? "Histórico indisponível." : h.erro}</p> : <>
-        {h.dado.registros.map((v) => <details key={v.id} className="rounded border p-3"><summary>Versão {v.versao} · {v.dados.nome} · {v.preparador.nome}</summary>
+        {h.dado.registros.map((v) => <Collapsible key={v.id} className="rounded border p-3"><CollapsibleTrigger className="flex w-full items-center justify-between py-2 text-left text-sm font-medium text-gray-800">Versão {v.versao} · {v.dados.nome} · {v.preparador.nome}</CollapsibleTrigger><CollapsibleContent forceMount className="data-[state=closed]:hidden">
           <p>Registrada em {formatarInstanteExibicao(v.criadaEm, fusoExibicao, "UTC").texto} ({fusoExibicao}; origem UTC). Tipo: {rotular(TIPO_PAGADOR_LABEL, v.tipo)}.</p>
           <p>Documento: {v.dados.documento || "Não informado"}</p><p>E-mail: {v.dados.email || "Não informado"}</p><p>Telefone: {v.dados.telefoneE164 || "Não informado"}</p><p>Endereço: {v.dados.endereco || "Não informado"}</p><p>Motivo: {v.motivo}</p>
-        </details>)}
+        </CollapsibleContent></Collapsible>)}
         {!h.dado.registros.length && (pagina > 1
           ? <EstadoVazio acao={<Link className="underline" href="?pagina=1">Ir para a primeira página</Link>}>Nenhum registro nesta página.</EstadoVazio>
           : <EstadoVazio>Nenhuma versão do pagador registrada para esta matrícula.</EstadoVazio>)}

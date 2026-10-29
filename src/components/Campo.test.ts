@@ -1,7 +1,7 @@
 import { createElement, type ReactNode } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { CONTROLE_INVALIDO, Campo, DICA_CAMPO, ERRO_CAMPO, ROTULO_CAMPO, focarPrimeiroComErro, type LigacaoCampo } from "./Campo";
+import { CONTROLE_CAMPO, CONTROLE_INVALIDO, Campo, DICA_CAMPO, ERRO_CAMPO, ROTULO_CAMPO, focarPrimeiroComErro, type LigacaoCampo } from "./Campo";
 import { CampoTexto } from "./CampoTexto";
 import { CampoMoeda } from "./CampoMoeda";
 import { CampoFuso } from "./CampoFuso";
@@ -34,6 +34,10 @@ describe("Campo (E1/E7): rótulo, dica, erro e obrigatoriedade ligados ao contro
     expect(DICA_CAMPO).toBe("mt-1 block text-xs text-gray-500");
     expect(ERRO_CAMPO).toBe("mt-1 block text-xs text-red-700");
     expect(CONTROLE_INVALIDO).toBe("aria-[invalid=true]:border-red-500");
+    expect(CONTROLE_CAMPO).toBe(`w-full min-h-11 md:min-h-[36px] rounded-md border border-gray-200 bg-surface-muted px-3 py-1.5 text-sm text-gray-800 transition-colors focus:border-brand-500 focus:bg-surface focus:outline-none ${CONTROLE_INVALIDO}`);
+    expect(CONTROLE_CAMPO).toContain("border-gray-200");
+    expect(CONTROLE_CAMPO).toContain("bg-surface-muted");
+    expect(CONTROLE_CAMPO).not.toContain("border-gray-300");
   });
 
   it("sem id fixo, useId: rótulo e controle combinam e dois Campos na mesma tela não colidem", () => {

@@ -2,6 +2,8 @@
 
 import { useId, useState } from "react";
 import type { OrigemCampo } from "@/server/contratos/campos";
+import { SeletorCampo } from "@/app/(app)/secretaria/controles";
+import { DatePicker } from "@/components/ui/date-picker";
 
 type Props = {
   campo: OrigemCampo;
@@ -84,7 +86,7 @@ export function ValorEstruturadoCampo({ campo, rotulo, disabled, onChange }: Pro
   }
 
   if (camposData.has(campo)) {
-    return <><label className="block" htmlFor={id}>{rotulo}</label><input id={id} className="mt-1 block rounded border p-2" type="date" value={texto(valor, "DATA", "data")}
+    return <><label className="block" htmlFor={id}>{rotulo}</label><DatePicker id={id} className="mt-1 block rounded border p-2" value={texto(valor, "DATA", "data")}
       onChange={event => atualizar({ tipo: "DATA", data: event.target.value })} disabled={disabled} /></>;
   }
 
@@ -99,11 +101,11 @@ export function ValorEstruturadoCampo({ campo, rotulo, disabled, onChange }: Pro
   }
 
   if (campo === "REGIME") {
-    return <><label className="block" htmlFor={id}>{rotulo}</label><select id={id} className="mt-1 block rounded border p-2" value={texto(valor, "REGIME", "regime")} onChange={event => atualizar({ tipo: "REGIME", regime: event.target.value })} disabled={disabled}>
+    return <><label className="block" htmlFor={id}>{rotulo}</label><SeletorCampo id={id} className="mt-1 block rounded border p-2" value={texto(valor, "REGIME", "regime")} onChange={event => atualizar({ tipo: "REGIME", regime: event.target.value })} disabled={disabled}>
       <option value="">Selecione o regime</option>
       <option value="MENSALIDADE">Mensalidade</option>
       <option value="HORA_PARTICULAR">Hora particular</option>
-    </select></>;
+    </SeletorCampo></>;
   }
 
   if (campo === "AGENDA_PARTICULAR") {

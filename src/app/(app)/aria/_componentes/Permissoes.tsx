@@ -8,6 +8,7 @@ import { ACAO_AGENTE_IA_LABEL, ETAPA_LABEL } from "@/lib/labels";
 import { ACOES_MATRIZ, ETAPAS_ARIA, PREDEFINICOES, type ConfigAria, type Matriz, type ModoAcao } from "@/server/aria/config-schema";
 import type { RascunhoAberto } from "@/server/aria/versoes";
 import { Salvar } from "./Salvar";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
 type Props = {
   config: ConfigAria;
@@ -22,7 +23,7 @@ const SIMBOLO: Record<ModoAcao, string> = { EXECUTA: "●", SUGERE: "◐", NAO_F
 const COR: Record<ModoAcao, string> = {
   EXECUTA: "bg-green-100 text-green-700",
   SUGERE: "bg-amber-100 text-amber-800",
-  NAO_FAZ: "bg-gray-100 text-gray-600",
+  NAO_FAZ: "bg-surface-muted text-gray-600",
 };
 const modoDe = (m: Matriz, etapa: EtapaLead, acao: AcaoAgenteIATipo): ModoAcao => m[etapa]?.[acao] ?? "NAO_FAZ";
 
@@ -59,24 +60,24 @@ export function Permissoes({ config, baseVersaoId, rascunho, podeEditar }: Props
       </ul>
 
       <div className="mt-3 overflow-x-auto rounded-lg border border-border-soft">
-        <table className="min-w-full border-collapse text-sm">
-          <thead>
-            <tr>
-              <th scope="col" className="sticky left-0 z-10 bg-surface px-3 py-2 text-left font-medium text-gray-800">Etapa</th>
+        <Table className="border-collapse">
+          <TableHeader>
+            <TableRow className="hover:bg-transparent">
+              <TableHead scope="col" className="sticky left-0 z-10 bg-surface px-3 py-2 text-left font-medium text-gray-800">Etapa</TableHead>
               {ACOES_MATRIZ.map((a) => (
-                <th key={a} scope="col" className="px-2 py-2 text-left text-xs font-medium text-gray-800">{ACAO_AGENTE_IA_LABEL[a]}</th>
+                <TableHead key={a} scope="col" className="px-2 py-2 text-left text-xs font-medium text-gray-800">{ACAO_AGENTE_IA_LABEL[a]}</TableHead>
               ))}
-            </tr>
-          </thead>
-          <tbody>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
             {ETAPAS_ARIA.map((etapa) => (
-              <tr key={etapa} className="border-t border-border-soft">
-                <th scope="row" className="sticky left-0 z-10 whitespace-nowrap bg-surface px-3 py-2 text-left font-medium text-gray-800">{ETAPA_LABEL[etapa]}</th>
+              <TableRow key={etapa}>
+                <TableHead scope="row" className="sticky left-0 z-10 whitespace-nowrap bg-surface px-3 py-2 text-left font-medium text-gray-800">{ETAPA_LABEL[etapa]}</TableHead>
                 {ACOES_MATRIZ.map((acao) => {
                   const modo = modoDe(matriz, etapa, acao);
                   const nome = `${ETAPA_LABEL[etapa]}, ${ACAO_AGENTE_IA_LABEL[acao]}: ${TEXTO[modo]}`;
                   return (
-                    <td key={acao} className="px-1 py-1">
+                    <TableCell key={acao} className="px-1 py-1">
                       {podeEditar ? (
                         <Botao
                           variante="fantasma"
@@ -96,13 +97,13 @@ export function Permissoes({ config, baseVersaoId, rascunho, podeEditar }: Props
                           {SIMBOLO[modo]} {TEXTO[modo]}
                         </span>
                       )}
-                    </td>
+                    </TableCell>
                   );
                 })}
-              </tr>
+              </TableRow>
             ))}
-          </tbody>
-        </table>
+          </TableBody>
+        </Table>
       </div>
       {podeEditar && <Salvar montar={() => ({ ...config, matriz })} baseVersaoId={baseVersaoId} rascunho={rascunho} alterado={alterado} />}
     </section>

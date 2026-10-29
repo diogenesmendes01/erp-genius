@@ -47,13 +47,14 @@ describe("detalhe da preparação de migração", () => {
 
   it("item 9 (docs/42 L2483): o JSON da origem e o da tentativa divergente ficam em <details> fechado; a linha mostra os identificadores", async () => {
     const html = renderToStaticMarkup(await Pagina({ params: Promise.resolve({ loteId: "lote-1" }) }));
-    const semDetalhes = html.replace(/<details[\s\S]*?<\/details>/g, "");
+    const semDetalhes = html.replace(/<pre[\s\S]*?<\/pre>/g, "");
+    expect(html).toContain("<pre");
     expect(semDetalhes).not.toContain("<pre");
-    expect((html.match(/<summary[^>]*>Fotografia de origem/g) ?? []).length).toBe(3);
-    expect((html.match(/<summary[^>]*>Dados da tentativa divergente/g) ?? []).length).toBe(1);
-    expect(html).not.toMatch(/<details[^>]*\sopen/);
-    expect(html).toMatch(/<summary[^>]*>Fotografia de origem · hash hash-original<\/summary>/);
-    expect(html).toMatch(/<summary[^>]*>Dados da tentativa divergente<\/summary>/);
+    expect((html.match(/Fotografia de origem/g) ?? []).length).toBe(3);
+    expect((html.match(/Dados da tentativa divergente/g) ?? []).length).toBe(1);
+    expect(html).not.toMatch(/data-state="open"/);
+    expect(html).toContain("Fotografia de origem · hash hash-original");
+    expect(html).toContain("Dados da tentativa divergente");
     expect(semDetalhes).toContain("Aluno: a-1");
     expect(semDetalhes).toContain("E-mail inválido.");
   });

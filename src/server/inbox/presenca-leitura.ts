@@ -8,11 +8,11 @@ export class ErroFotoPresenca extends Error{constructor(){super("Presença indis
 export type FotoPresenca={tokenModal:string;pessoas:{usuarioId:string;status:StatusPresencaInbox}[];validadeMs:number};
 async function fresco(db:Prisma.TransactionClient,id:string){const u=await db.usuario.findUnique({where:{id},select:{id:true,nome:true,ativo:true,papeis:true,permissoes:true}});if(!u?.ativo)throw new ErroAutenticacao();if(apenasPortal(u)||!temPapel(u,...PAPEIS_INBOX))throw new ErroPermissao();return u;}
 export async function lerPresencasTransferiveis(db:Prisma.TransactionClient,usuarioId:string,consulta:ConsultaPresenca):Promise<FotoPresenca>{
- const u=await fresco(db,usuarioId),c=await contextoPessoas(u,consulta.atendimentoId,"atribuir",db);
+ const u=await fresco(db,usuarioId),c=await contextoPessoas(u,consulta.atendimentoId,"transferir",db);
  if(!c||c.a.conversa?.grupoId)throw new ErroFotoPresenca();
  const ids=c.pessoas.map(p=>p.id).filter(id=>id!==u.id&&id!==c.a.responsavelId);
  const rows=ids.length?await db.presencaInbox.findMany({where:{usuarioId:{in:ids},desconectadaEm:null,confirmadaEm:{not:null}}}):[];
- const atual=await fresco(db,usuarioId),final=await contextoPessoas(atual,consulta.atendimentoId,"atribuir",db);
+ const atual=await fresco(db,usuarioId),final=await contextoPessoas(atual,consulta.atendimentoId,"transferir",db);
  if(!final||final.a.conversa?.grupoId||final.a.finalidade!==c.a.finalidade)throw new ErroFotoPresenca();
  const [{agora}]=await db.$queryRaw<{agora:Date}[]>`SELECT clock_timestamp()::timestamptz(3) AS agora`;
  const ms=agora.getTime();if(!Number.isFinite(ms))throw new Error("Relógio indisponível.");

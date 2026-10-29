@@ -13,6 +13,7 @@ import { botaoClasses } from "@/components/Botao";
 import { MSG_DECISAO_INCERTA, MSG_RESULTADO_INCERTO } from "@/lib/mensagens";
 import { CampoTexto } from "@/components/CampoTexto";
 import { EstadoVazio } from "@/components/EstadoVazio";
+import { CampoSelect, SelectItem } from "@/app/(app)/academico/controles";
 
 type Acao = "REGISTRAR_CANCELAMENTO" | "RECONFIRMAR_EXECUTADA" | "ENCAMINHAR_REGULARIZACAO";
 type Proposta = {
@@ -148,12 +149,9 @@ export function ResolucaoRevisaoProgressao({
     {permitirPreparacao && !acao && statusSolicitacao !== "APROVADA" && <p role="status">A situação atual da solicitação não permite preparar uma resolução.</p>}
 
     {permitirPreparacao && acao && <div className="space-y-3">
-      {statusSolicitacao === "EXECUTADA" && <label className="block">Ação de revisão<select value={acao} disabled={ocupado} onChange={(evento) => {
+      {statusSolicitacao === "EXECUTADA" && <label className="block">Ação de revisão<CampoSelect value={acao} disabled={ocupado} onChange={(evento) => {
         const proxima = evento.target.value as Acao; setAcao(proxima); invalidarPrevia(proxima);
-      }} className="mt-1 block w-full rounded border p-2">
-        <option value="RECONFIRMAR_EXECUTADA">{rotulosAcao.RECONFIRMAR_EXECUTADA}</option>
-        <option value="ENCAMINHAR_REGULARIZACAO">{rotulosAcao.ENCAMINHAR_REGULARIZACAO}</option>
-      </select></label>}
+      }} className="mt-1 block w-full rounded border p-2" placeholder="Selecionar"><SelectItem value={"RECONFIRMAR_EXECUTADA"}>{rotulosAcao.RECONFIRMAR_EXECUTADA}</SelectItem><SelectItem value={"ENCAMINHAR_REGULARIZACAO"}>{rotulosAcao.ENCAMINHAR_REGULARIZACAO}</SelectItem></CampoSelect></label>}
       <p>{efeitoAcao[acao]}</p>
       <button type="button" disabled={ocupado} onClick={conferirPrevia} className={botaoClasses({ variante: "secundario", tamanho: "lg" })}>Conferir prévia atual</button>
 

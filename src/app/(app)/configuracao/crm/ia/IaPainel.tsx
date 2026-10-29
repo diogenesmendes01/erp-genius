@@ -9,6 +9,9 @@ import { botaoClasses } from "@/components/Botao";
 import { EstadoVazio } from "@/components/EstadoVazio";
 import { formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
 
+import { Switch } from "@/components/ui/switch";
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
+import { CampoSelect } from "@/components/ui/select";
 export interface ConfigIATela {
   modeloConversa: string;
   modeloClassificacao: string;
@@ -24,7 +27,7 @@ const MODELOS = [
   { v: "claude-sonnet-5-5", t: "Claude Sonnet 5.5" },
   { v: "claude-haiku-5-5", t: "Claude Haiku 5.5" },
 ];
-const input = "mt-1 w-full rounded-md border border-gray-300 px-3 py-1.5 text-sm";
+const input = "mt-1 w-full rounded-md border border-gray-200 px-3 py-1.5 text-sm";
 const usd = (n: number) => `US$ ${n.toFixed(2).replace(".", ",")}`;
 
 export function IaPainel({ chave, config, orcamento, chamadas, fusoExibicao }: { chave: "configurada" | "ausente"; config: ConfigIATela; orcamento: OrcamentoTela; chamadas: ChamadaTela[]; fusoExibicao: string }) {
@@ -48,7 +51,7 @@ export function IaPainel({ chave, config, orcamento, chamadas, fusoExibicao }: {
 
     <section aria-label="Uso do mês" className="rounded-lg border border-gray-200 p-4 text-sm">
       <h3 className="text-base font-medium">Uso do mês</h3>
-      <div className="relative mt-2 h-3 rounded bg-gray-100" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(pct)}>
+      <div className="relative mt-2 h-3 rounded bg-surface-muted" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(pct)}>
         <div className={`h-3 rounded ${cor}`} style={{ width: `${pct}%` }} />
         <div className="absolute top-[-2px] h-4 w-px bg-gray-700" style={{ left: "80%" }} title="Alerta em 80%" />
       </div>
@@ -59,25 +62,18 @@ export function IaPainel({ chave, config, orcamento, chamadas, fusoExibicao }: {
       <h3 className="text-base font-medium">Modelos, orçamento e triagem</h3>
       <div className="mt-3 grid gap-3 sm:grid-cols-2">
         <label className="text-xs text-gray-600">Modelo da conversa, resumo e leitura de PDF
-          <select className={input} value={f.modeloConversa} onChange={(e) => setF({ ...f, modeloConversa: e.target.value })}>
-            {MODELOS.map((m) => <option key={m.v} value={m.v}>{m.t}</option>)}
-          </select>
+          <CampoSelect value={f.modeloConversa} onChange={(e) => setF({ ...f, modeloConversa: e.target.value })} className={input} opcoes={MODELOS.map((m) => ({ valor: String(m.v), rotulo: m.t }))} />
         </label>
         <label className="text-xs text-gray-600">Modelo da classificação de setor
-          <select className={input} value={f.modeloClassificacao} onChange={(e) => setF({ ...f, modeloClassificacao: e.target.value })}>
-            {MODELOS.map((m) => <option key={m.v} value={m.v}>{m.t}</option>)}
-          </select>
+          <CampoSelect value={f.modeloClassificacao} onChange={(e) => setF({ ...f, modeloClassificacao: e.target.value })} className={input} opcoes={MODELOS.map((m) => ({ valor: String(m.v), rotulo: m.t }))} />
         </label>
         <label className="text-xs text-gray-600">Orçamento mensal (US$)
           <input className={input} type="number" min={0.01} step={0.01} value={f.orcamentoMensalUsd} onChange={(e) => setF({ ...f, orcamentoMensalUsd: Number(e.target.value) })} />
         </label>
         <label className="text-xs text-gray-600">Ao estourar o orçamento
-          <select className={input} value={f.acaoAoEstourar} onChange={(e) => setF({ ...f, acaoAoEstourar: e.target.value as ConfigIATela["acaoAoEstourar"] })}>
-            <option value="SO_SUGERIR">Só sugerir (a Aria não age sozinha)</option>
-            <option value="PAUSAR">Pausar a Aria</option>
-          </select>
+          <CampoSelect value={f.acaoAoEstourar} onChange={(e) => setF({ ...f, acaoAoEstourar: e.target.value as ConfigIATela["acaoAoEstourar"] })} className={input} opcoes={[{ valor: "SO_SUGERIR", rotulo: "Só sugerir (a Aria não age sozinha)" }, { valor: "PAUSAR", rotulo: "Pausar a Aria" }]} />
         </label>
-        <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={f.triagemAtiva} onChange={(e) => setF({ ...f, triagemAtiva: e.target.checked })} /> Triagem automática ativa</label>
+        <label className="flex items-center gap-2 text-sm"><Switch checked={f.triagemAtiva} onCheckedChange={(marcado) => setF({ ...f, triagemAtiva: (marcado === true) })} /> Triagem automática ativa</label>
         <label className="text-xs text-gray-600">Limiar da triagem (50 a 100)
           <input className={input} type="number" min={50} max={100} step={1} value={f.limiarTriagem} onChange={(e) => setF({ ...f, limiarTriagem: Number(e.target.value) })} />
         </label>
@@ -92,12 +88,12 @@ export function IaPainel({ chave, config, orcamento, chamadas, fusoExibicao }: {
     <section aria-label="Chamadas recentes" className="rounded-lg border border-gray-200 p-4">
       <h3 className="text-base font-medium">Chamadas recentes</h3>
       {chamadas.length === 0 ? <EstadoVazio>Nenhuma chamada registrada.</EstadoVazio> :
-        <div className="mt-2 overflow-x-auto"><table className="w-full text-left text-xs">
-          <thead><tr className="text-gray-500"><th className="py-1">Quando</th><th>Origem</th><th>Modelo</th><th>Latência</th><th>Tokens</th><th>Resultado</th></tr></thead>
-          <tbody>{chamadas.map((c, i) => <tr key={i} className="border-t border-gray-100">
-            <td className="py-1">{formatarInstanteExibicao(c.quando, fusoExibicao, "UTC").texto}</td><td>{c.origem}</td><td>{c.modelo}</td><td>{c.latenciaMs} ms</td><td>{c.tokens}</td><td>{c.resultado}</td>
-          </tr>)}</tbody>
-        </table></div>}
+        <div className="mt-2 overflow-x-auto"><Table className="w-full text-left text-xs">
+          <TableHeader><TableRow className="text-gray-500"><TableHead className="py-1">Quando</TableHead><TableHead>Origem</TableHead><TableHead>Modelo</TableHead><TableHead>Latência</TableHead><TableHead>Tokens</TableHead><TableHead>Resultado</TableHead></TableRow></TableHeader>
+          <TableBody>{chamadas.map((c, i) => <TableRow key={i} className="border-t border-gray-100">
+            <TableCell className="py-1">{formatarInstanteExibicao(c.quando, fusoExibicao, "UTC").texto}</TableCell><TableCell>{c.origem}</TableCell><TableCell>{c.modelo}</TableCell><TableCell>{c.latenciaMs} ms</TableCell><TableCell>{c.tokens}</TableCell><TableCell>{c.resultado}</TableCell>
+          </TableRow>)}</TableBody>
+        </Table></div>}
     </section>
   </div>;
 }
