@@ -204,6 +204,17 @@ describe("/financeiro por rota (E8)", () => {
     expect(mocks.informes).not.toHaveBeenCalled();
   });
 
+  it("gerente abre comissões sem a configuração exclusiva do financeiro", async () => {
+    mocks.guard.mockResolvedValue([Papel.GERENTE_COMERCIAL]);
+    mocks.configFinanceiro.mockRejectedValue(new Error("Você não tem permissão para esta ação."));
+    const pagina = await html(Comissoes());
+    expect(pagina).toContain("[comissoes|");
+    expect(mocks.configFinanceiro).not.toHaveBeenCalled();
+    const props = mocks.componente.mock.calls.at(-1)?.[0] as { podePagar: boolean; fechamentoAutomatico: boolean };
+    expect(props.podePagar).toBe(false);
+    expect(props.fechamentoAutomatico).toBe(false);
+  });
+
   it("Gerente pedindo uma aba de cobrança direto: acesso negado, sem consultar a fila nem os informes", async () => {
     mocks.guard.mockResolvedValue([Papel.GERENTE_COMERCIAL]);
     for (const aba of [Cobrancas, Informes, Retomadas, Geral, Cambio]) expect(await html(aba())).toContain("Acesso negado");

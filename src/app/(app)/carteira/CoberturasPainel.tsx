@@ -4,7 +4,6 @@ import { useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { revogarCobertura } from "@/server/acesso/coberturas";
 import { concederCoberturaLocal } from "@/server/acesso/coberturas-local";
-import { formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
 import { useInicioDoPeriodo } from "@/lib/periodo-form";
 import { botaoClasses } from "@/components/Botao";
 import { CampoFuso } from "@/components/CampoFuso";
@@ -15,7 +14,7 @@ import { FeedbackAcao } from "@/components/FeedbackAcao";
 import { MensagemStatus } from "@/components/MensagemStatus";
 import { CampoCombobox } from "@/components/ui/combobox";
 
-type Cobertura = { id: string; titular: string; substituto: string; inicio: string; fim: string; revogada: boolean; motivo: string };
+type Cobertura = { id: string; titular: string; substituto: string; inicio: string; fim: string; fuso: string; revogada: boolean; motivo: string };
 
 type PeriodoExibido = { inicio: { texto: string; fuso: string }; fim: { texto: string } };
 
@@ -36,12 +35,10 @@ export function CoberturasPainel({
   vendedores,
   coberturas,
   fusoPadrao = "",
-  preferenciaFusoExibicao = null,
 }: {
   vendedores: { id: string; nome: string }[];
   coberturas: Cobertura[];
   fusoPadrao?: string;
-  preferenciaFusoExibicao?: string | null;
 }) {
   const [erro, setErro] = useState<string | null>(null);
   const [nota, setNota] = useState<string | null>(null);
@@ -91,8 +88,8 @@ export function CoberturasPainel({
     router.refresh();
   }
   const periodoDe = (c: Cobertura) => ({
-    inicio: formatarInstanteExibicao(c.inicio, preferenciaFusoExibicao, "UTC"),
-    fim: formatarInstanteExibicao(c.fim, preferenciaFusoExibicao, "UTC"),
+    inicio: { texto: c.inicio, fuso: c.fuso },
+    fim: { texto: c.fim },
   });
   const estilo = "min-h-11 rounded-md border border-border-soft bg-surface-raised p-2 text-sm sm:min-h-9";
   return (
