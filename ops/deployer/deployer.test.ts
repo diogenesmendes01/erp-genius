@@ -1057,13 +1057,17 @@ describe("fluxo · ordem, latest-wins, health e aviso", () => {
     expect(result.stderr).toContain('"event":"notify"');
   });
 
-  it("os 5 checks batem com os jobs do image.yml", () => {
+  it("os 5 checks batem com o ci.yml e com o build do image.yml", () => {
     const image = readFileSync(join(process.cwd(), ".github/workflows/image.yml"), "utf8");
-    expect(image).toContain("name: typecheck");
-    expect(image).toContain("name: lint");
-    expect(image).toContain("name: test (${{ matrix.tz }})");
-    expect(image).toContain("name: build Next.js");
-    expect(image).toContain("tz: [UTC, America/Sao_Paulo]");
+    const ci = readFileSync(join(process.cwd(), ".github/workflows/ci.yml"), "utf8");
+    expect(ci).toContain("name: typecheck");
+    expect(ci).toContain("name: lint");
+    expect(ci).toContain("name: test (${{ matrix.tz }})");
+    expect(ci).toContain("tz: [UTC, America/Sao_Paulo]");
+    expect(image).toContain("|| 'build Next.js' }}");
+    expect(image).not.toContain("name: typecheck");
+    expect(image).not.toContain("name: lint");
+    expect(image).not.toContain("tz: [UTC, America/Sao_Paulo]");
     const common = readFileSync(join(ROOT, "lib/common.sh"), "utf8");
     for (const name of CHECKS) expect(common).toContain(`"${name}"`);
   });

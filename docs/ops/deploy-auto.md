@@ -61,8 +61,8 @@ Se o Coolify não tiver escopo por app, crie um time dedicado que contenha somen
 
 1. Se existir `/etc/erp-deployer/PAUSE`, sai sem deploy.
 2. `flock -n` em `/var/lib/erp-deployer/deploy.lock`. Sem o lock, sai com código 0 (outro tick está no meio).
-3. Lê a ponta da `main`. Se os 5 checks ainda não fecharam, espera. Se a ponta está verde, ela é o único candidato (latest-wins: dois merges seguidos viram um deploy, o do commit mais novo). Se a ponta falhou de vez, usa o ancestral verde mais novo. Um nome de check repetido (o `ci.yml` e o `image.yml` publicam `typecheck`, `lint` e `test`) só passa se todas as cópias estiverem verdes.
-4. Resolve os digests `sha-<7>` de `ghcr.io/diogenesmendes01/erp-genius` e `.../migrate`. Um 404 na ponta (o `image.yml` usa `cancel-in-progress` na `main` e pode cancelar o build) não espera: o deployer percorre os commits anteriores, no máximo 20 commits, e fica com o primeiro que tenha os 5 checks verdes, os dois digests publicados e attestation válida. Se nenhum servir, grava `state.json.failed` com `result` `sem_imagem` e sai com código diferente de 0. Os digests desse marcador são zerados só para caber no formato do state; não são uma imagem para implantar. O tick seguinte não tenta de novo até `sudo erp-deployer clear-failed`. Digest fora de `^sha256:[a-f0-9]{64}$` aborta. Falha de rede no GHCR aborta sem marcador, para o próximo tick tentar de novo.
+3. Lê a ponta da `main`. Se os 5 checks ainda não fecharam, espera. Se a ponta está verde, ela é o único candidato (latest-wins: dois merges seguidos viram um deploy, o do commit mais novo). Se a ponta falhou de vez, usa o ancestral verde mais novo. Um nome de check repetido só passa se todas as cópias estiverem verdes. O `ci.yml` publica `typecheck`, `lint` e `test`; o `image.yml` não repete esses nomes.
+4. Resolve os digests `sha-<7>` de `ghcr.io/diogenesmendes01/erp-genius` e `.../migrate`. Um 404 na ponta (a tag ainda não foi publicada; o `image.yml` deixa `cancel-in-progress: false`, então um push novo não cancela o build) não espera: o deployer percorre os commits anteriores, no máximo 20 commits, e fica com o primeiro que tenha os 5 checks verdes, os dois digests publicados e attestation válida. Se nenhum servir, grava `state.json.failed` com `result` `sem_imagem` e sai com código diferente de 0. Os digests desse marcador são zerados só para caber no formato do state; não são uma imagem para implantar. O tick seguinte não tenta de novo até `sudo erp-deployer clear-failed`. Digest fora de `^sha256:[a-f0-9]{64}$` aborta. Falha de rede no GHCR aborta sem marcador, para o próximo tick tentar de novo.
 5. Para os dois digests, sem `|| true` e com `set -euo pipefail`:
 
 ```bash
@@ -83,7 +83,7 @@ O commit, a ref `refs/heads/main` e o digest têm de ser iguais aos campos do pr
 
 Log JSON em stderr e em `/var/lib/erp-deployer/deploy.log`: `event`, `result`, `sha`, `app_digest`, `migrate_digest`, `duration_ms`. O token, o cookie, o `DATABASE_URL` e o restante dos envs do Coolify não entram no log.
 
-Os 5 checks são os jobs atuais do `image.yml`: `typecheck`, `lint`, `test (UTC)`, `test (America/Sao_Paulo)`, `build Next.js`.
+Os 5 checks são `typecheck`, `lint`, `test (UTC)` e `test (America/Sao_Paulo)` do `ci.yml`, e `build Next.js` do `image.yml` no push da `main`.
 
 ## Deploy manual com migration-contract
 
