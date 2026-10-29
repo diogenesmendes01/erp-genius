@@ -30,7 +30,8 @@ export function baseFixaDoEvento(nomeEvento: string | undefined, evento: unknown
 /**
  * `MIGRATION_BASE_SHA` definido, mesmo inválido, não cai no evento.
  * `pull_request` compara com `HEAD^1` do merge commit. `push` usa `before`.
- * Sem isso, não há fallback para `origin/main`.
+ * `before` vazio ou zerado e evento que não é `pull_request` nem `push`
+ * não caem em `HEAD^1`. Sem base resolvível, não há fallback para `origin/main`.
  */
 export function resolverBaseFixa(
   env: { GITHUB_EVENT_NAME?: string; MIGRATION_BASE_SHA?: string },
@@ -49,7 +50,7 @@ export function resolverBaseFixa(
 }
 
 export function argumentosDiff(mergeBase: string): readonly string[] {
-  return ["diff", "--name-only", mergeBase, "--", "prisma/migrations"];
+  return ["diff", "--name-only", "--no-renames", mergeBase, "--", "prisma/migrations"];
 }
 
 export type RegraMigracao =
@@ -394,7 +395,8 @@ export function lintarMigrations(entrada: {
     .flatMap((arquivo) => encontrarViolacoes(arquivo.sql).map((violacao) => ({ ...violacao, caminho: arquivo.caminho })))
     .sort((a, b) => a.caminho.localeCompare(b.caminho) || a.linha - b.linha || ORDEM.indexOf(a.regra) - ORDEM.indexOf(b.regra));
   const editadas = [...new Set(entrada.editadas ?? [])].sort((a, b) => a.localeCompare(b));
-  return { ok: entrada.temLabelContrato || (violacoes.length === 0 && editadas.length === 0), violacoes, editadas };
+  const sqlLiberado = entrada.temLabelContrato || violacoes.length === 0;
+  return { ok: editadas.length === 0 && sqlLiberado, violacoes, editadas };
 }
 
 export function temLabelContrato(opcoes: { labels?: string; evento?: unknown }): boolean {
@@ -407,18 +409,28 @@ export function temLabelContrato(opcoes: { labels?: string; evento?: unknown }):
   return (evento?.pull_request?.labels ?? []).some((label) => label?.name === LABEL_CONTRATO);
 }
 
-function formatarRelatorio(resultado: ResultadoLint): string {
+function formatarRelatorio(resultado: ResultadoLint, temLabel: boolean): string {
   const linhas = [
     ...resultado.violacoes.map((v) => `${v.caminho}:${v.linha}: ${v.regra}: ${v.trecho}`),
     ...resultado.editadas.map((caminho) => `${caminho}: edição de migration aplicada é proibida`),
   ];
   if (linhas.length === 0) return "Migrations expand-only: nenhuma violação nas migrations novas.";
   const n = linhas.length;
-  const cabeca = resultado.ok
-    ? `Migrations expand-only: label ${LABEL_CONTRATO} presente; ${n === 1 ? "1 violação permitida" : `${n} violações permitidas`}.`
-    : `Migrations expand-only: ${n === 1 ? "1 violação" : `${n} violações`}.`;
-  const rodape = resultado.ok ? "" : `\nA fase contract exige o label ${LABEL_CONTRATO}. Veja docs/migrations.md.`;
-  return `${cabeca}\n${linhas.join("\n")}${rodape}`;
+  if (resultado.ok) {
+    const cabeca = `Migrations expand-only: label ${LABEL_CONTRATO} presente; ${n === 1 ? "1 violação permitida" : `${n} violações permitidas`}.`;
+    return `${cabeca}\n${linhas.join("\n")}`;
+  }
+  const cabeca = `Migrations expand-only: ${n === 1 ? "1 violação" : `${n} violações`}.`;
+  const notas: string[] = [];
+  if (resultado.editadas.length > 0) {
+    notas.push(
+      `Editar ou remover uma migration já aplicada falha com ou sem o label ${LABEL_CONTRATO}. O label libera somente violações de SQL destrutivo em migration nova.`,
+    );
+  }
+  if (!temLabel && resultado.violacoes.length > 0) {
+    notas.push(`A fase contract exige o label ${LABEL_CONTRATO}. Veja docs/migrations.md.`);
+  }
+  return `${cabeca}\n${linhas.join("\n")}${notas.length ? `\n${notas.join("\n")}` : ""}`;
 }
 
 function git(args: string[], cwd: string): string {
@@ -450,9 +462,18 @@ export function main(cwd = process.cwd(), env: NodeJS.ProcessEnv = process.env):
   );
   if (!base) {
     console.error(
-      "Migrations expand-only: base do evento não resolvida. pull_request usa HEAD^1 do merge commit, push usa before. Sem base resolvível o lint falha.",
+      "Migrations expand-only: base do evento não resolvida. pull_request usa HEAD^1 do merge commit, push usa before. before vazio ou zerado e evento que não é pull_request nem push não caem em HEAD^1. Sem base resolvível o lint falha.",
     );
     return 2;
+  }
+  if (base.origem === "head-primeiro-pai") {
+    const segundoPai = spawnSync("git", ["rev-parse", "--verify", "--quiet", "HEAD^2"], { cwd, encoding: "utf8" });
+    if (segundoPai.status !== 0) {
+      console.error(
+        "Migrations expand-only: no pull_request o HEAD precisa ser merge commit (HEAD^2). Sem o segundo pai o lint falha fechado e não compara com HEAD^1.",
+      );
+      return 2;
+    }
   }
   let mergeBase: string;
   try {
@@ -488,12 +509,13 @@ export function main(cwd = process.cwd(), env: NodeJS.ProcessEnv = process.env):
       : classificacao.novas
           .filter((caminho) => existsSync(resolve(cwd, caminho)))
           .map((caminho) => ({ caminho, sql: readFileSync(resolve(cwd, caminho), "utf8") }));
+  const temLabel = temLabelContrato({ labels: env.PR_LABELS, evento });
   const resultado = lintarMigrations({
     arquivos,
     editadas: classificacao.editadas,
-    temLabelContrato: temLabelContrato({ labels: env.PR_LABELS, evento }),
+    temLabelContrato: temLabel,
   });
-  const texto = formatarRelatorio(resultado);
+  const texto = formatarRelatorio(resultado, temLabel);
   if (resultado.ok) {
     console.log(texto);
     return 0;

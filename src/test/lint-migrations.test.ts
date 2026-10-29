@@ -82,6 +82,10 @@ describe("regras do blueprint", () => {
     expect(baseFixaDoEvento("pull_request", { pull_request: { base: { sha } } })).toBeNull();
     expect(baseFixaDoEvento("push", { before: antes })).toBe(antes);
     expect(baseFixaDoEvento("push", { before: "0".repeat(40) })).toBeNull();
+    expect(baseFixaDoEvento("push", { before: "" })).toBeNull();
+    expect(baseFixaDoEvento("push", { before: "   " })).toBeNull();
+    expect(baseFixaDoEvento("push", {})).toBeNull();
+    expect(baseFixaDoEvento("workflow_dispatch", { before: antes })).toBeNull();
     expect(baseFixaDoEvento("push", { pull_request: { base: { sha } } })).toBeNull();
     expect(baseFixaDoEvento(undefined, { pull_request: { base: { sha } } })).toBeNull();
     expect(resolverBaseFixa({ MIGRATION_BASE_SHA: "nao-e-sha" }, { pull_request: { base: { sha } } })).toBeNull();
@@ -90,7 +94,13 @@ describe("regras do blueprint", () => {
     });
     expect(resolverBaseFixa({ GITHUB_EVENT_NAME: "pull_request" }, {})).toEqual({ origem: "head-primeiro-pai" });
     expect(resolverBaseFixa({ GITHUB_EVENT_NAME: "push" }, { before: antes })).toEqual({ origem: "merge-base", sha: antes });
-    expect([...argumentosDiff(sha)]).toEqual(["diff", "--name-only", sha, "--", "prisma/migrations"]);
+    expect(resolverBaseFixa({ GITHUB_EVENT_NAME: "push" }, { before: "" })).toBeNull();
+    expect(resolverBaseFixa({ GITHUB_EVENT_NAME: "push" }, { before: "0".repeat(40) })).toBeNull();
+    expect(resolverBaseFixa({ GITHUB_EVENT_NAME: "push" }, {})).toBeNull();
+    expect(resolverBaseFixa({ GITHUB_EVENT_NAME: "workflow_dispatch" }, { before: antes })).toBeNull();
+    expect(resolverBaseFixa({ GITHUB_EVENT_NAME: "schedule" }, {})).toBeNull();
+    expect(resolverBaseFixa({}, { before: antes })).toBeNull();
+    expect([...argumentosDiff(sha)]).toEqual(["diff", "--name-only", "--no-renames", sha, "--", "prisma/migrations"]);
   });
 
   it("aponta a linha do SQL executável", () => {
@@ -169,14 +179,14 @@ describe("regras do blueprint", () => {
     });
   });
 
-  it("recusa edição de migration aplicada e só libera com o label", () => {
+  it("recusa edição de migration aplicada com ou sem o label", () => {
     const arquivos = [{ caminho: "prisma/migrations/nova/migration.sql", sql: "SELECT 1;" }];
     const editadas = ["prisma/migrations/antiga/migration.sql"];
     const semLabel = lintarMigrations({ arquivos, editadas, temLabelContrato: false });
     expect(semLabel.ok).toBe(false);
     expect(semLabel.editadas).toEqual(editadas);
     const comLabel = lintarMigrations({ arquivos, editadas, temLabelContrato: true });
-    expect(comLabel.ok).toBe(true);
+    expect(comLabel.ok).toBe(false);
     expect(comLabel.editadas).toEqual(editadas);
   });
 
@@ -260,6 +270,13 @@ describe("ci, docs e template", () => {
     expect(doc).toContain("DROP TYPE");
     expect(doc).toContain("EXECUTE");
     expect(doc).toContain("edição de migration aplicada é proibida");
+    expect(doc).toContain("libera somente violações de SQL destrutivo em migration nova");
+    expect(doc).toContain("com ou sem o label");
+    expect(doc).toContain("HEAD^2");
+    expect(doc).toContain("--no-renames");
+    expect(doc).toContain("force push");
+    expect(doc).toContain("`before` vazio ou zerado");
+    expect(doc).toContain("não cai em `HEAD^1`");
     expect(doc).toContain("Lint de migrations (expand-only)");
     expect(doc).toContain("check obrigatório na branch protection");
     expect(doc).toContain("pull_request.base.sha");
@@ -360,9 +377,10 @@ describe("CLI", () => {
     }
   }
 
-  it("falha ao editar migration já aplicada e só segue com migration-contract", () => {
+  it("edição de migration aplicada falha com label, sem label e no push", () => {
     const cwd = repositorio();
     const caminho = "prisma/migrations/20260101000000_historica/migration.sql";
+    const antes = shaHead(cwd);
     writeFileSync(join(cwd, caminho), "-- nota\nDROP TABLE \"Velha\";\n");
     const semLabel = capturarSaida(() => main(cwd, ambienteNaBase(cwd)));
     expect(semLabel.codigo).toBe(1);
@@ -370,17 +388,32 @@ describe("CLI", () => {
     expect(semLabel.stderr).not.toContain("DROP TABLE");
     expect(semLabel.stderr).toContain(LABEL_CONTRATO);
     const comLabel = capturarSaida(() => main(cwd, ambienteNaBase(cwd, { PR_LABELS: LABEL_CONTRATO })));
-    expect(comLabel.codigo).toBe(0);
-    expect(comLabel.stdout).toContain("edição de migration aplicada é proibida");
+    expect(comLabel.codigo).toBe(1);
+    expect(comLabel.stderr).toContain(`${caminho}: edição de migration aplicada é proibida`);
+    expect(comLabel.stdout).not.toContain("permitida");
+    git(cwd, ["add", caminho]);
+    git(cwd, ["commit", "-m", "edita aplicada"]);
+    const noPush = capturarSaida(() => main(cwd, ambienteEvento("push", antes, { PR_LABELS: LABEL_CONTRATO })));
+    expect(noPush.codigo).toBe(1);
+    expect(noPush.stderr).toContain(`${caminho}: edição de migration aplicada é proibida`);
   });
 
-  it("falha ao remover migration já aplicada", () => {
+  it("remoção de migration aplicada falha com label, sem label e no push", () => {
     const cwd = repositorio();
     const caminho = "prisma/migrations/20260101000000_historica/migration.sql";
+    const antes = shaHead(cwd);
     rmSync(dirname(join(cwd, caminho)), { recursive: true });
-    const saida = capturarSaida(() => main(cwd, ambienteNaBase(cwd)));
-    expect(saida.codigo).toBe(1);
-    expect(saida.stderr).toContain(`${caminho}: edição de migration aplicada é proibida`);
+    const semLabel = capturarSaida(() => main(cwd, ambienteNaBase(cwd)));
+    expect(semLabel.codigo).toBe(1);
+    expect(semLabel.stderr).toContain(`${caminho}: edição de migration aplicada é proibida`);
+    const comLabel = capturarSaida(() => main(cwd, ambienteNaBase(cwd, { PR_LABELS: LABEL_CONTRATO })));
+    expect(comLabel.codigo).toBe(1);
+    expect(comLabel.stderr).toContain(`${caminho}: edição de migration aplicada é proibida`);
+    git(cwd, ["add", "-A"]);
+    git(cwd, ["commit", "-m", "remove aplicada"]);
+    const noPush = capturarSaida(() => main(cwd, ambienteEvento("push", antes)));
+    expect(noPush.codigo).toBe(1);
+    expect(noPush.stderr).toContain(`${caminho}: edição de migration aplicada é proibida`);
   });
 
   it("falha fechado sem evento mesmo quando o repositório não tem origin/main", () => {
@@ -401,7 +434,11 @@ describe("CLI", () => {
     return caminho;
   }
 
-  function ambienteEvento(nome: "pull_request" | "push", sha: string | null): NodeJS.ProcessEnv {
+  function ambienteEvento(
+    nome: "pull_request" | "push",
+    sha: string | null,
+    extra: Record<string, string> = {},
+  ): NodeJS.ProcessEnv {
     const corpo =
       nome === "pull_request"
         ? { pull_request: { base: sha ? { sha } : {} } }
@@ -409,6 +446,7 @@ describe("CLI", () => {
     return ambiente({
       [CHAVE_NOME_EVENTO]: nome,
       [CHAVE_CAMINHO_EVENTO]: escreverEvento(corpo),
+      ...extra,
     });
   }
 
@@ -486,10 +524,12 @@ describe("CLI", () => {
 
   it("não muda o resultado quando origin/main avança durante o run", () => {
     const cwd = repositorio();
-    const base = shaHead(cwd);
+    git(cwd, ["checkout", "-b", "pr"]);
     escreverNova(cwd, "ALTER TABLE \"t\" ADD COLUMN \"a\" TEXT;\n");
     git(cwd, ["commit", "-m", "expand"]);
-    const env = ambienteEvento("pull_request", base);
+    git(cwd, ["checkout", "main"]);
+    git(cwd, ["merge", "pr", "--no-ff", "-m", "merge"]);
+    const env = ambienteEvento("pull_request", "d".repeat(40));
     const primeiro = capturarSaida(() => main(cwd, env));
     expect(primeiro.codigo).toBe(0);
 
@@ -534,6 +574,62 @@ describe("CLI", () => {
     const explicitaInvalida = capturarSaida(() => main(cwd, env));
     expect(explicitaInvalida.codigo).toBe(2);
     expect(explicitaInvalida.stdout).not.toContain("nenhuma violação");
+  });
+
+  it("renomear o diretório de uma migration aplicada falha mesmo com o label", () => {
+    const cwd = repositorio();
+    const antigo = "prisma/migrations/20260101000000_historica/migration.sql";
+    git(cwd, ["mv", "prisma/migrations/20260101000000_historica", "prisma/migrations/20260202000000_renomeada"]);
+    const saida = capturarSaida(() => main(cwd, ambienteNaBase(cwd, { PR_LABELS: LABEL_CONTRATO })));
+    expect(saida.codigo).toBe(1);
+    expect(saida.stderr).toContain(`${antigo}: edição de migration aplicada é proibida`);
+    expect(saida.stdout).not.toContain("permitida");
+  });
+
+  it("renomear migration.sql de uma migration aplicada falha mesmo com o label", () => {
+    const cwd = repositorio();
+    const antigo = "prisma/migrations/20260101000000_historica/migration.sql";
+    git(cwd, ["mv", antigo, "prisma/migrations/20260101000000_historica/old.sql"]);
+    const saida = capturarSaida(() => main(cwd, ambienteNaBase(cwd, { PR_LABELS: LABEL_CONTRATO })));
+    expect(saida.codigo).toBe(1);
+    expect(saida.stderr).toContain(`${antigo}: edição de migration aplicada é proibida`);
+    expect(saida.stdout).not.toContain("permitida");
+  });
+
+  it("no pull_request sem HEAD^2 falha fechado e não compara com HEAD^1", () => {
+    const cwd = repositorio();
+    git(cwd, ["commit", "--allow-empty", "-m", "segundo"]);
+    const saida = capturarSaida(() => main(cwd, ambienteEvento("pull_request", shaHead(cwd))));
+    expect(saida.codigo).toBe(2);
+    expect(saida.stdout).not.toContain("nenhuma violação");
+    expect(saida.stderr).toContain("HEAD^2");
+    expect(saida.stderr).toContain("não compara com HEAD^1");
+  });
+
+  it("push com before vazio ou zerado não cai no HEAD^1", () => {
+    const cwd = repositorio();
+    git(cwd, ["commit", "--allow-empty", "-m", "segundo"]);
+    const vazio = capturarSaida(() => main(cwd, ambienteEvento("push", "")));
+    expect(vazio.codigo).toBe(2);
+    expect(vazio.stdout).not.toContain("nenhuma violação");
+    expect(vazio.stderr).toContain("não caem em HEAD^1");
+    const zerado = capturarSaida(() => main(cwd, ambienteEvento("push", "0".repeat(40))));
+    expect(zerado.codigo).toBe(2);
+    expect(zerado.stdout).not.toContain("nenhuma violação");
+    expect(zerado.stderr).toContain("não caem em HEAD^1");
+  });
+
+  it("evento desconhecido não cai no HEAD^1", () => {
+    const cwd = repositorio();
+    git(cwd, ["commit", "--allow-empty", "-m", "segundo"]);
+    const env = ambiente({
+      [CHAVE_NOME_EVENTO]: "workflow_dispatch",
+      [CHAVE_CAMINHO_EVENTO]: escreverEvento({ before: shaHead(cwd) }),
+    });
+    const saida = capturarSaida(() => main(cwd, env));
+    expect(saida.codigo).toBe(2);
+    expect(saida.stdout).not.toContain("nenhuma violação");
+    expect(saida.stderr).toContain("não caem em HEAD^1");
   });
 
   it("executa o arquivo como CLI", () => {

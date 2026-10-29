@@ -2,7 +2,9 @@
 # ou SET NOT NULL sem DEFAULT. Registro auditado pelo teste
 # src/test/lint-migrations.test.ts — não é bypass do CI.
 # O lint só avalia migration nova no diff contra o merge-base da base fixa do evento.
-# A única exceção em PR é o label migration-contract.
+# A única exceção em PR é o label migration-contract, e só para SQL
+# destrutivo em migration nova. Editar ou remover migration já aplicada
+# falha com ou sem o label.
 20260618184300_precos_movimentacao_ativacao
 20260622130000_aluno_cadastro_completo
 20260622150000_turma_horario_inicio_fim
