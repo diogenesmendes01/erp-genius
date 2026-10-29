@@ -1,0 +1,1 @@
+ALTER TABLE "Turma" ALTER COLUMN "capacidade" SET DEFAULT 16, ALTER COLUMN "capacidade" SET NOT NULL;

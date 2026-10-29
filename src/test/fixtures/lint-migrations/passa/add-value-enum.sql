@@ -1,0 +1,1 @@
+ALTER TYPE "StatusAluno" ADD VALUE 'PAUSA';

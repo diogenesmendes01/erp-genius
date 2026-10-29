@@ -1,0 +1,2 @@
+ALTER TABLE "ConversaWhatsApp" ADD COLUMN "grupoId" TEXT,
+ALTER COLUMN "contatoId" DROP NOT NULL;
