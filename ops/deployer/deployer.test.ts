@@ -1329,6 +1329,15 @@ os.execv("${join(bin, "curl.real")}", ["curl.real", *args])
     expect(callsOf(ctx.mock).some((line) => line.includes(SMOKE_PATH))).toBe(true);
   });
 
+  it("SIGINT depois do backup sai 130 e não grava o marcador", async () => {
+    const ctx = arrange();
+    writeFileSync(join(ctx.mock, "curl-sleep-url"), SMOKE_PATH);
+    await expectSecretGoneAfterTerm(ctx.env, ctx.mock, "SIGINT", 130);
+    expect(existsSync(ctx.failed)).toBe(false);
+    expect(callsOf(ctx.mock).some((line) => line.startsWith("pg_dump"))).toBe(true);
+    expect(callsOf(ctx.mock).some((line) => line.includes(SMOKE_PATH))).toBe(true);
+  });
+
   it("migration-contract grava o marcador antes do backup e não repete o pg_dump", () => {
     const ctx = arrange({ contract: true });
     const result = run(ctx.env);
@@ -1638,10 +1647,15 @@ os.execv("${join(bin, "curl.real")}", ["curl.real", *args])
       healthSha: SHA_OTHER,
       ghcrCode: { role: "app", sha: SHA_OLD, code: "500" },
     });
+    ctx.envValues.DEPLOY_NOTIFY_URL = "https://hooks.example.test/deploy";
+    ctx.envValues.DEPLOY_NOTIFY_TOKEN = NOTIFY_TOKEN;
+    materializeEnv(ctx.envFile, ctx.envValues);
     const result = run(ctx.env);
     expect(result.status).not.toBe(0);
     expect(result.stderr).toContain("GHCR respondeu 500");
     const lines = callsOf(ctx.mock);
+    expect(lines).toContain("notify-auth-ok");
+    expect(lines.some((line) => line.includes("hooks.example.test") && line.includes('"result":"ghcr_erro"'))).toBe(true);
     expect(lines.some((line) => line.includes(`sha-${SHA_OLD.slice(0, 7)}`))).toBe(true);
     expect(lines.some((line) => line.includes(`sha-${SHA_OTHER.slice(0, 7)}`))).toBe(false);
     expect(lines.some((line) => line.startsWith("pg_dump") || line.startsWith("docker run"))).toBe(false);
@@ -1707,7 +1721,12 @@ function secretTextOutsideFixtures(root: string): string {
   return hits.join("\n");
 }
 
-async function expectSecretGoneAfterTerm(env: NodeJS.ProcessEnv, mock: string): Promise<void> {
+async function expectSecretGoneAfterTerm(
+  env: NodeJS.ProcessEnv,
+  mock: string,
+  signal: NodeJS.Signals = "SIGTERM",
+  code = 143,
+): Promise<void> {
   const child = spawn(DEPLOY, [], { env, detached: true, stdio: ["ignore", "ignore", "pipe"] });
   let stderr = "";
   child.stderr?.on("data", (chunk: Buffer) => {
@@ -1725,7 +1744,7 @@ async function expectSecretGoneAfterTerm(env: NodeJS.ProcessEnv, mock: string): 
     const headers = readFileSync(join(mock, "curl-headers"), "utf8").split("\n").filter(Boolean);
     expect(headers.length).toBeGreaterThan(0);
     for (const header of headers) expect(existsSync(header)).toBe(true);
-    if (child.pid) process.kill(-child.pid, "SIGTERM");
+    if (child.pid) process.kill(-child.pid, signal);
     const outcome = await new Promise<{ code: number | null; signal: NodeJS.Signals | null }>((resolve) => {
       const timer = setTimeout(() => resolve({ code: null, signal: null }), 5000);
       child.on("exit", (code, signal) => {
@@ -1734,7 +1753,7 @@ async function expectSecretGoneAfterTerm(env: NodeJS.ProcessEnv, mock: string): 
       });
     });
     expect(outcome.signal).toBeNull();
-    expect(outcome.code).toBe(143);
+    expect(outcome.code).toBe(code);
     for (const header of headers) {
       expect(existsSync(header)).toBe(false);
       expect(existsSync(dirname(header))).toBe(false);
