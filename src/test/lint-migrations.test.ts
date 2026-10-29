@@ -79,15 +79,17 @@ describe("regras do blueprint", () => {
     const sha = "a".repeat(40);
     const antes = "b".repeat(40);
     expect(LABEL_CONTRATO).toBe("migration-contract");
-    expect(baseFixaDoEvento("pull_request", { pull_request: { base: { sha } } })).toBe(sha);
+    expect(baseFixaDoEvento("pull_request", { pull_request: { base: { sha } } })).toBeNull();
     expect(baseFixaDoEvento("push", { before: antes })).toBe(antes);
-    expect(baseFixaDoEvento("pull_request", { before: antes })).toBeNull();
     expect(baseFixaDoEvento("push", { before: "0".repeat(40) })).toBeNull();
     expect(baseFixaDoEvento("push", { pull_request: { base: { sha } } })).toBeNull();
     expect(baseFixaDoEvento(undefined, { pull_request: { base: { sha } } })).toBeNull();
     expect(resolverBaseFixa({ MIGRATION_BASE_SHA: "nao-e-sha" }, { pull_request: { base: { sha } } })).toBeNull();
-    expect(resolverBaseFixa({ GITHUB_EVENT_NAME: "pull_request" }, { pull_request: { base: { sha } } })).toBe(sha);
-    expect(resolverBaseFixa({ GITHUB_EVENT_NAME: "push" }, { before: antes })).toBe(antes);
+    expect(resolverBaseFixa({ GITHUB_EVENT_NAME: "pull_request" }, { pull_request: { base: { sha } } })).toEqual({
+      origem: "head-primeiro-pai",
+    });
+    expect(resolverBaseFixa({ GITHUB_EVENT_NAME: "pull_request" }, {})).toEqual({ origem: "head-primeiro-pai" });
+    expect(resolverBaseFixa({ GITHUB_EVENT_NAME: "push" }, { before: antes })).toEqual({ origem: "merge-base", sha: antes });
     expect([...argumentosDiff(sha)]).toEqual(["diff", "--name-only", sha, "--", "prisma/migrations"]);
   });
 
@@ -239,6 +241,7 @@ describe("ci, docs e template", () => {
     expect(lint).toContain("name: Lint de migrations (expand-only)");
     expect(lint).not.toContain("continue-on-error");
     expect(lint).toContain("fetch-depth: 0");
+    expect(lint).toContain("refs/pull/{0}/merge");
     expect(lint).not.toContain("git fetch");
     expect(lint).toContain("npx tsx scripts/lint-migrations.ts");
     expect(lint).not.toMatch(/tsx scripts\/lint-migrations\.ts[\s\S]*\|\|\s*true/);
@@ -260,7 +263,10 @@ describe("ci, docs e template", () => {
     expect(doc).toContain("Lint de migrations (expand-only)");
     expect(doc).toContain("check obrigatório na branch protection");
     expect(doc).toContain("pull_request.base.sha");
+    expect(doc).toContain("HEAD^1");
+    expect(doc).toContain("refs/pull/");
     expect(doc).toContain("github.event.before");
+    expect(doc).toContain("No push o lint não relê o SQL de migration nova");
     expect(doc).toContain("merge-base");
     expect(doc).toContain("fetch-depth: 0");
     expect(doc).toContain("precisa entrar em `scripts/lint-migrations.allowlist.txt`");
@@ -408,32 +414,74 @@ describe("CLI", () => {
 
   it("compara com a base fixa do pull_request e ignora migration nova que só existe em origin/main", () => {
     const cwd = repositorio();
-    const base = shaHead(cwd);
-    git(cwd, ["checkout", "-B", "origin/main"]);
+    const c0 = shaHead(cwd);
+    git(cwd, ["checkout", "-b", "pr"]);
+    git(cwd, ["commit", "--allow-empty", "-m", "pr"]);
+    git(cwd, ["checkout", "main"]);
+    git(cwd, ["checkout", "-b", "ponta"]);
     const dir = join(cwd, "prisma/migrations/20260303000000_so_na_main");
     mkdirSync(dir, { recursive: true });
     writeFileSync(join(dir, "migration.sql"), "CREATE TABLE \"so_main\" (\"id\" TEXT);\n");
-    git(cwd, ["add", "."]);
+    git(cwd, ["add", "prisma/migrations/20260303000000_so_na_main"]);
     git(cwd, ["commit", "-m", "main anda"]);
     git(cwd, ["checkout", "main"]);
+    git(cwd, ["merge", "pr", "--no-ff", "-m", "merge"]);
+    git(cwd, ["branch", "-f", "origin/main", "ponta"]);
 
-    const saida = capturarSaida(() => main(cwd, ambienteEvento("pull_request", base)));
+    const saida = capturarSaida(() => main(cwd, ambienteEvento("pull_request", c0)));
     expect(saida.codigo).toBe(0);
     expect(saida.stderr).not.toContain("edição de migration aplicada é proibida");
     expect(`${saida.stdout}\n${saida.stderr}`).not.toContain("20260303000000_so_na_main");
   });
 
-  it("no push compara com o before do evento mesmo que origin/main aponte para o HEAD", () => {
+  it("no push uma migration de contract nova sai 0 porque o SQL já foi validado na PR", () => {
     const cwd = repositorio();
     const antes = shaHead(cwd);
-    escreverNova(cwd, "DROP TABLE \"Nova\";\n");
-    git(cwd, ["commit", "-m", "destrutiva"]);
+    escreverNova(cwd, "ALTER TABLE \"A\" DROP COLUMN \"y\";\n");
+    git(cwd, ["commit", "-m", "contract"]);
+    git(cwd, ["branch", "-f", "origin/main", "HEAD"]);
+
+    const saida = capturarSaida(() => main(cwd, ambienteEvento("push", antes)));
+    expect(saida.codigo).toBe(0);
+    expect(`${saida.stdout}\n${saida.stderr}`).not.toContain("DROP COLUMN");
+    expect(`${saida.stdout}\n${saida.stderr}`).not.toContain("migration-contract");
+    expect(saida.stdout).toContain("nenhuma violação");
+  });
+
+  it("no push editar migration antiga continua falhando", () => {
+    const cwd = repositorio();
+    const antes = shaHead(cwd);
+    const caminho = "prisma/migrations/20260101000000_historica/migration.sql";
+    writeFileSync(join(cwd, caminho), "-- nota\nDROP TABLE \"Velha\";\n");
+    git(cwd, ["add", caminho]);
+    git(cwd, ["commit", "-m", "edita aplicada"]);
     git(cwd, ["branch", "-f", "origin/main", "HEAD"]);
 
     const saida = capturarSaida(() => main(cwd, ambienteEvento("push", antes)));
     expect(saida.codigo).toBe(1);
-    expect(saida.stderr).toContain("DROP TABLE");
-    expect(saida.stderr).toContain("prisma/migrations/20260202000000_nova/migration.sql");
+    expect(saida.stderr).toContain(`${caminho}: edição de migration aplicada é proibida`);
+    expect(saida.stderr).not.toContain("DROP TABLE");
+  });
+
+  it("no pull_request compara com HEAD^1 e ignora base.sha velho de labeled ou reopened", () => {
+    const cwd = repositorio();
+    const c0 = shaHead(cwd);
+    git(cwd, ["checkout", "-b", "pr"]);
+    escreverNova(cwd, "ALTER TABLE \"t\" ADD COLUMN \"a\" TEXT;\n");
+    git(cwd, ["commit", "-m", "expand da pr"]);
+    git(cwd, ["checkout", "main"]);
+    const dir = join(cwd, "prisma/migrations/20260303000000_contract");
+    mkdirSync(dir, { recursive: true });
+    writeFileSync(join(dir, "migration.sql"), "ALTER TABLE \"A\" DROP COLUMN \"y\";\n");
+    git(cwd, ["add", "prisma/migrations/20260303000000_contract"]);
+    git(cwd, ["commit", "-m", "contract na main"]);
+    git(cwd, ["merge", "pr", "--no-ff", "-m", "merge"]);
+
+    const saida = capturarSaida(() => main(cwd, ambienteEvento("pull_request", c0)));
+    expect(saida.codigo).toBe(0);
+    expect(`${saida.stdout}\n${saida.stderr}`).not.toContain("DROP COLUMN");
+    expect(`${saida.stdout}\n${saida.stderr}`).not.toContain("20260303000000_contract");
+    expect(saida.stdout).toContain("nenhuma violação");
   });
 
   it("não muda o resultado quando origin/main avança durante o run", () => {

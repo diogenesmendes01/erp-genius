@@ -12,19 +12,19 @@ O deploy sobe o schema enquanto a versão anterior do app ainda pode estar no ar
 
 ## Com o que o lint compara
 
-O script `scripts/lint-migrations.ts` não olha a ponta de `origin/main` na hora em que o step roda. A base é a do evento, fixa:
+O script `scripts/lint-migrations.ts` não olha a ponta de `origin/main` na hora em que o step roda. O job `lint` faz checkout com `fetch-depth: 0`. Em `pull_request` o ref é `refs/pull/<número>/merge` (o `github.sha` desse evento é o merge commit). Em `push` o ref é o `github.sha` do push.
 
-- `pull_request`: `pull_request.base.sha`
-- `push`: `github.event.before`
+- `pull_request`: a base é `HEAD^1`, o primeiro pai do merge commit. `pull_request.base.sha` fica para trás em `labeled` e `reopened`, depois que a main andou, e não entra na conta.
+- `push`: a base é o `merge-base` do `HEAD` com `github.event.before`.
 
-O diff é contra o `merge-base` do `HEAD` com esse sha. O job `lint` faz checkout com `fetch-depth: 0` para o sha e o histórico até o merge-base existirem no clone. Se a base não resolve (evento sem sha, `before` zerado, `MIGRATION_BASE_SHA` inválido, ou `merge-base` impossível), o script sai com código 2. Não há fallback para `origin/main`: o lint não passa em silêncio.
+Se a base não resolve (`before` zerado, `HEAD^1` ausente, `MIGRATION_BASE_SHA` inválido, ou `merge-base` impossível), o script sai com código 2. Não há fallback para `origin/main`: o lint não passa em silêncio.
 
 Há dois resultados no diff:
 
-- `migration.sql` que **não** existe nesse merge-base é migration nova. O lint lê o SQL.
-- `migration.sql` que **já** existe nesse merge-base e aparece no diff foi modificada ou removida. Editar migration aplicada é proibido: o relatório diz `edição de migration aplicada é proibida`. O SQL antigo não é reavaliado; a falha é a edição em si.
+- `migration.sql` que **não** existe nessa base é migration nova. No `pull_request`, o lint lê o SQL. No push o lint não relê o SQL de migration nova: ela já foi validada na PR, e o evento de push não traz o label `migration-contract`. Reler o SQL deixaria o `lint` vermelho na main e travaria o deployer.
+- `migration.sql` que **já** existe nessa base e aparece no diff foi modificada ou removida. Editar migration aplicada é proibido, no `pull_request` e no `push`: o relatório diz `edição de migration aplicada é proibida`. O SQL antigo não é reavaliado; a falha é a edição em si. Pular o step inteiro no `push` deixaria essa edição passar.
 
-Uma migration que entrou em `origin/main` depois do evento não entra nesse diff. O resultado não muda se a main avança durante o `npm ci`.
+Uma migration que entrou em `origin/main` depois do checkout não entra nesse diff. O resultado não muda se a main avança durante o `npm ci`.
 
 ## O que o lint barra
 
@@ -73,7 +73,7 @@ O lint de migrations fica no job `lint`, no step `Lint de migrations (expand-onl
 
 ## Como rodar
 
-No CI a base vem do evento (`pull_request.base.sha` ou `github.event.before`). Localmente, passe o sha com que o `merge-base` deve ser calculado:
+No CI, `pull_request` usa `HEAD^1` e `push` usa `github.event.before`. Localmente, passe o sha com que o `merge-base` deve ser calculado:
 
 ```bash
 MIGRATION_BASE_SHA=$(git rev-parse origin/main) npx tsx scripts/lint-migrations.ts

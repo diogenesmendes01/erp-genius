@@ -15,30 +15,37 @@ export function shaResolvivel(valor: unknown): string | null {
   return sha;
 }
 
+export type BaseResolvida = { origem: "merge-base"; sha: string } | { origem: "head-primeiro-pai" };
+
 /**
- * Base fixa do evento. `pull_request` usa `pull_request.base.sha`.
- * `push` usa `before`. Qualquer outro evento, ou sha ausente, não resolve.
+ * Sha explícito do evento. Só o `push` traz um: `before`.
+ * `pull_request.base.sha` fica velho em `labeled` e `reopened`, então não é base.
  */
 export function baseFixaDoEvento(nomeEvento: string | undefined, evento: unknown): string | null {
-  const corpo = (evento ?? null) as {
-    before?: unknown;
-    pull_request?: { base?: { sha?: unknown } };
-  } | null;
-  if (nomeEvento === "pull_request") return shaResolvivel(corpo?.pull_request?.base?.sha);
+  const corpo = (evento ?? null) as { before?: unknown } | null;
   if (nomeEvento === "push") return shaResolvivel(corpo?.before);
   return null;
 }
 
 /**
  * `MIGRATION_BASE_SHA` definido, mesmo inválido, não cai no evento.
- * Sem essa variável, a base sai só do evento. Não há fallback para `origin/main`.
+ * `pull_request` compara com `HEAD^1` do merge commit. `push` usa `before`.
+ * Sem isso, não há fallback para `origin/main`.
  */
 export function resolverBaseFixa(
   env: { GITHUB_EVENT_NAME?: string; MIGRATION_BASE_SHA?: string },
   evento: unknown,
-): string | null {
-  if (env.MIGRATION_BASE_SHA !== undefined) return shaResolvivel(env.MIGRATION_BASE_SHA);
-  return baseFixaDoEvento(env.GITHUB_EVENT_NAME, evento);
+): BaseResolvida | null {
+  if (env.MIGRATION_BASE_SHA !== undefined) {
+    const sha = shaResolvivel(env.MIGRATION_BASE_SHA);
+    return sha ? { origem: "merge-base", sha } : null;
+  }
+  if (env.GITHUB_EVENT_NAME === "pull_request") return { origem: "head-primeiro-pai" };
+  if (env.GITHUB_EVENT_NAME === "push") {
+    const sha = baseFixaDoEvento("push", evento);
+    return sha ? { origem: "merge-base", sha } : null;
+  }
+  return null;
 }
 
 export function argumentosDiff(mergeBase: string): readonly string[] {
@@ -443,19 +450,23 @@ export function main(cwd = process.cwd(), env: NodeJS.ProcessEnv = process.env):
   );
   if (!base) {
     console.error(
-      "Migrations expand-only: base do evento não resolvida. pull_request usa pull_request.base.sha, push usa before. Sem base resolvível o lint falha.",
+      "Migrations expand-only: base do evento não resolvida. pull_request usa HEAD^1 do merge commit, push usa before. Sem base resolvível o lint falha.",
     );
     return 2;
   }
   let mergeBase: string;
   try {
-    const saida = git(["merge-base", "HEAD", base], cwd).trim();
+    const saida =
+      base.origem === "head-primeiro-pai"
+        ? git(["rev-parse", "--verify", "HEAD^1"], cwd).trim()
+        : git(["merge-base", "HEAD", base.sha], cwd).trim();
     const sha = shaResolvivel(saida);
-    if (!sha) throw new Error("merge-base não devolveu um sha.");
+    if (!sha) throw new Error(base.origem === "head-primeiro-pai" ? "HEAD^1 não é um commit." : "merge-base não devolveu um sha.");
     mergeBase = sha;
   } catch (erro) {
     const detalhe = erro instanceof Error ? erro.message : String(erro);
-    console.error(`Migrations expand-only: merge-base com a base do evento falhou.\n${detalhe}`);
+    const contexto = base.origem === "head-primeiro-pai" ? "HEAD^1 do merge commit" : "merge-base com a base do evento";
+    console.error(`Migrations expand-only: ${contexto} não resolveu.\n${detalhe}`);
     return 2;
   }
   let diff: string;
@@ -468,9 +479,15 @@ export function main(cwd = process.cwd(), env: NodeJS.ProcessEnv = process.env):
   const classificacao = classificarMigrationsDoDiff(diff.split("\n"), (caminho) =>
     existeNoCommit(cwd, mergeBase, caminho),
   );
-  const arquivos = classificacao.novas
-    .filter((caminho) => existsSync(resolve(cwd, caminho)))
-    .map((caminho) => ({ caminho, sql: readFileSync(resolve(cwd, caminho), "utf8") }));
+  // No push o evento não traz labels. Migration nova já passou no pull_request;
+  // reler o SQL aqui deixaria a contract vermelha na main. Edição de migration
+  // já aplicada continua valendo, porque o push direto ainda precisa ser barrado.
+  const arquivos =
+    env.GITHUB_EVENT_NAME === "push"
+      ? []
+      : classificacao.novas
+          .filter((caminho) => existsSync(resolve(cwd, caminho)))
+          .map((caminho) => ({ caminho, sql: readFileSync(resolve(cwd, caminho), "utf8") }));
   const resultado = lintarMigrations({
     arquivos,
     editadas: classificacao.editadas,
