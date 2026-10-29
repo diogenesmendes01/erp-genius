@@ -8,6 +8,7 @@ import { hrefLista, lerPagina, type ParametrosUrl } from "@/lib/pagina-url";
 import { carregarCarteira, lerFiltrosCarteira } from "@/server/crm/carteira";
 import { listarCoberturas } from "@/server/acesso/consultas";
 import { consultarPreferenciaFusoEquipe } from "@/server/preferencias/fuso-exibicao";
+import { formatarInstanteExibicao } from "@/server/operacao/fuso-exibicao";
 import { CoberturasPainel } from "./CoberturasPainel";
 import { ListaCarteira } from "./ListaCarteira";
 
@@ -60,9 +61,12 @@ export default async function CarteiraPage({ searchParams }: { searchParams?: Pr
           <p className="text-sm text-gray-500">A cobertura permite atender temporariamente a carteira do titular. Comissão, exportação e aprovação mantêm suas próprias permissões.</p>
           <CoberturasPainel
             vendedores={cob.vendedores}
-            coberturas={cob.lista.itens.map((c) => ({ id: c.id, titular: c.titular, substituto: c.substituto, inicio: c.inicio.toISOString(), fim: c.fim.toISOString(), revogada: !!c.revogadaEm, motivo: c.motivo }))}
+            coberturas={cob.lista.itens.map((c) => {
+              const inicio = formatarInstanteExibicao(c.inicio, cob.fusoExibicao, "UTC");
+              const fim = formatarInstanteExibicao(c.fim, cob.fusoExibicao, "UTC");
+              return { id: c.id, titular: c.titular, substituto: c.substituto, inicio: inicio.texto, fim: fim.texto, fuso: inicio.fuso, revogada: !!c.revogadaEm, motivo: c.motivo };
+            })}
             fusoPadrao={cob.fusoPadrao}
-            preferenciaFusoExibicao={cob.fusoExibicao}
           />
           <Paginacao pagina={cob.pagina} temProxima={cob.lista.possuiMais} href={(p) => hrefLista("/carteira", { aba: "coberturas", pagina: p })} rotulo="Páginas de coberturas" />
         </>
