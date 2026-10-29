@@ -37,7 +37,11 @@ function textoLimite(valor: Limite) {
   return "";
 }
 
-function SeletorTempo({ rotulo, valor, opcoes, disabled, onChange }: { rotulo: string; valor: string; opcoes: readonly string[]; disabled?: boolean; onChange: (valor: string) => void }) {
+function dentroDoPicker(alvo: EventTarget | null) {
+  return alvo instanceof Element && !!alvo.closest("[data-seletor-data-hora]");
+}
+
+function SeletorTempo({ rotulo, valor, opcoes, disabled, onChange, aoFecharPicker }: { rotulo: string; valor: string; opcoes: readonly string[]; disabled?: boolean; onChange: (valor: string) => void; aoFecharPicker: () => void }) {
   const id = useId();
   return (
     <div className="flex min-w-0 flex-1 flex-col gap-1">
@@ -46,7 +50,11 @@ function SeletorTempo({ rotulo, valor, opcoes, disabled, onChange }: { rotulo: s
         <SelectTrigger id={id} aria-label={rotulo}>
           <SelectValue>{valor}</SelectValue>
         </SelectTrigger>
-        <SelectContent position="popper">
+        <SelectContent
+          position="popper"
+          onEscapeKeyDown={() => aoFecharPicker()}
+          onPointerDownOutside={(evento) => { if (!dentroDoPicker(evento.target)) aoFecharPicker(); }}
+        >
           <SelectGroup>
             {opcoes.map((item) => <SelectItem key={item} value={item}>{item}</SelectItem>)}
           </SelectGroup>
@@ -116,11 +124,11 @@ export const DateTimePicker = forwardRef<HTMLInputElement, Props>(function DateT
           <svg viewBox="0 0 16 16" aria-hidden="true" className="h-4 w-4 shrink-0 text-gray-500" fill="none" stroke="currentColor" strokeWidth="1.5"><rect x="2.5" y="3.5" width="11" height="10" rx="1.5" /><path d="M5 2.5v2M11 2.5v2M2.5 7h11" /></svg>
         </button>
       </PopoverTrigger>
-      <PopoverContent className="flex w-auto flex-col gap-3 p-3">
+      <PopoverContent data-seletor-data-hora="" className="flex w-auto flex-col gap-3 p-3">
         <Calendar mode="single" selected={data} defaultMonth={data} onSelect={(dia) => { if (dia) compor(dia, hora, minuto); }} />
         <div className="flex gap-2">
-          <SeletorTempo rotulo="Hora" valor={hora} opcoes={HORAS} disabled={!data} onChange={(proxima) => compor(data, proxima, minuto)} />
-          <SeletorTempo rotulo="Minuto" valor={minuto} opcoes={MINUTOS} disabled={!data} onChange={(proximo) => compor(data, hora, proximo)} />
+          <SeletorTempo rotulo="Hora" valor={hora} opcoes={HORAS} disabled={!data} aoFecharPicker={() => setAberto(false)} onChange={(proxima) => compor(data, proxima, minuto)} />
+          <SeletorTempo rotulo="Minuto" valor={minuto} opcoes={MINUTOS} disabled={!data} aoFecharPicker={() => setAberto(false)} onChange={(proximo) => compor(data, hora, proximo)} />
         </div>
       </PopoverContent>
       <input

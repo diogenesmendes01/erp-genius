@@ -121,6 +121,47 @@ describe("PainelOportunidade como Sheet", () => {
     expect(sheetAberto().getAttribute("data-state")).toBe("open");
   });
 
+  async function abrirPickerComHora() {
+    const aberto = await abrirPainel();
+    await aberto.user.click(screen.getByRole("button", { name: /Data e hora da experimental/ }));
+    await aberto.user.click(await screen.findByRole("button", { name: /15 de outubro de 2026/ }));
+    const hora = screen.getByRole("combobox", { name: "Hora" });
+    const minuto = screen.getByRole("combobox", { name: "Minuto" });
+    expect(hora.hasAttribute("disabled")).toBe(false);
+    expect(minuto.hasAttribute("disabled")).toBe(false);
+    await aberto.user.click(hora);
+    expect(await screen.findByRole("listbox")).toBeTruthy();
+    expect(screen.getByRole("option", { name: "13" })).toBeTruthy();
+    expect(screen.getByRole("combobox", { name: "Minuto", hidden: true })).toBeTruthy();
+    return aberto;
+  }
+
+  it("Esc com o popover e os selects de hora e minuto abertos fecha só o picker; o segundo Esc fecha o Sheet", async () => {
+    const { user, cartao } = await abrirPickerComHora();
+    await user.keyboard("{Escape}");
+    await waitFor(() => expect(screen.queryByRole("listbox")).toBeNull());
+    await waitFor(() => expect(screen.queryByRole("combobox", { name: "Hora" })).toBeNull());
+    expect(screen.queryByRole("combobox", { name: "Minuto" })).toBeNull();
+    expect(sheetAberto().getAttribute("data-state")).toBe("open");
+    await user.keyboard("{Escape}");
+    await waitFor(() => expect(screen.queryByRole("dialog", { name: "Maria Souza" })).toBeNull());
+    await waitFor(() => expect(document.activeElement).toBe(cartao));
+  });
+
+  it("clique fora com o select de hora aberto fecha só o picker; o segundo Esc fecha o Sheet", async () => {
+    const { user, cartao } = await abrirPickerComHora();
+    await actFlush();
+    const velo = document.body.querySelector(":scope > .fixed.inset-0");
+    expect(velo).toBeTruthy();
+    await user.pointer({ keys: "[MouseLeft]", target: velo! });
+    await waitFor(() => expect(screen.queryByRole("listbox")).toBeNull());
+    await waitFor(() => expect(screen.queryByRole("combobox", { name: "Hora" })).toBeNull());
+    expect(sheetAberto().getAttribute("data-state")).toBe("open");
+    await user.keyboard("{Escape}");
+    await waitFor(() => expect(screen.queryByRole("dialog", { name: "Maria Souza" })).toBeNull());
+    await waitFor(() => expect(document.activeElement).toBe(cartao));
+  });
+
   it("Esc e pointerdown no date picker e no select de hora não fecham o Sheet", async () => {
     const { user } = await abrirPainel();
     await user.click(screen.getByRole("button", { name: /Data e hora da experimental/ }));
