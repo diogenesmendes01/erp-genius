@@ -1,4 +1,4 @@
-import { beforeEach, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({ relatar: vi.fn(), ler: vi.fn() }));
 vi.mock("@/server/portal-aluno/entregas-reposicao", () => ({ relatarIndisponibilidadeMaterialPortalAluno: mocks.relatar }));
@@ -9,7 +9,8 @@ const request = (origem = "https://escola.example") => new Request("https://esco
   method: "POST", headers: { origin: origem, "content-type": "application/json" }, body: "{}",
 });
 
-beforeEach(() => { vi.resetAllMocks(); });
+beforeEach(() => { vi.resetAllMocks(); vi.stubEnv("APP_BASE_URL", "https://escola.example"); });
+afterEach(() => { vi.unstubAllEnvs(); });
 
 it("recusa origem externa antes de ler o corpo ou tocar no relato", async () => {
   const resposta = await POST(request("https://externa.example"), { params: Promise.resolve({ id: "reposicao-propria" }) });
