@@ -10,7 +10,10 @@ export function vincularInicio(alvo: AlvoInicio, definir: (valor: string) => voi
   definir(alvo.value);
   const form = alvo.form;
   if (!form) return () => {};
-  const aoResetar = () => definir(alvo.defaultValue);
+  // O input controlado faz o React reescrever defaultValue com o value atual.
+  // O reset precisa do padrão visto na montagem, não do Início que acabou de ser escolhido.
+  const padrao = alvo.defaultValue;
+  const aoResetar = () => definir(padrao);
   form.addEventListener("reset", aoResetar);
   return () => form.removeEventListener("reset", aoResetar);
 }

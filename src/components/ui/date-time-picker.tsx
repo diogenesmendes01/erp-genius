@@ -7,6 +7,8 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Calendar } from "@/components/ui/calendar";
 import { Select as SelectBase, SelectContent as SelectContentBase, SelectGroup as SelectGroupBase, SelectItem as SelectItemBase, SelectTrigger as SelectTriggerBase, SelectValue as SelectValueBase } from "@/components/ui/select";
 import { HORAS, MINUTOS, eventoCampo, isoDataHora, partirData, partirHora, textoDataHora } from "@/components/ui/datas";
+// Import à parte: a linha de cima é o texto da #526. Juntar useCallback nela conflita com o squash.
+import { useCallback } from "react";
 
 type PropsSimples = { children?: ReactNode } & Record<string, unknown>;
 const comoSelecao = (componente: unknown) => componente as (props: PropsSimples) => ReactNode;
@@ -100,6 +102,9 @@ function textoLimite(valor: Limite) {
   return "";
 }
 
+type EncaminharRef = (el: HTMLInputElement | null) => void;
+const coalescenciaDoRef = new WeakMap<EncaminharRef, { troca: boolean; ultimo: HTMLInputElement | null }>();
+
 function dentroDoPicker(alvo: EventTarget | null) {
   return alvo instanceof Element && !!alvo.closest("[data-seletor-data-hora]");
 }
@@ -153,12 +158,44 @@ export const DateTimePicker = forwardRef<HTMLInputElement, Props>(function DateT
     "aria-label": ariaLabel, "aria-invalid": ariaInvalid, "aria-required": ariaRequired, "aria-describedby": ariaDescribedBy,
     ...rest
   },
-  ref,
+  refExterno,
 ) {
   const [aberto, setAberto] = useState(false);
   const [erroRevelado, setErroRevelado] = useState(false);
   const [interno, setInterno] = useState(typeof defaultValue === "string" ? defaultValue : "");
   const val = value !== undefined ? String(value) : interno;
+  // A mesma função entre o null e o elemento do re-render. Sem useCallback o pai recebe o elemento de novo.
+  const ref: EncaminharRef | { current: HTMLInputElement | null } = useCallback(function atual(el: HTMLInputElement | null) {
+    let estado = coalescenciaDoRef.get(atual);
+    if (!estado) {
+      estado = { troca: false, ultimo: null };
+      coalescenciaDoRef.set(atual, estado);
+    }
+    const vigente = estado;
+    const encaminhar = (valor: HTMLInputElement | null) => {
+      if (typeof refExterno === "function") refExterno(valor);
+      else if (refExterno) refExterno.current = valor;
+    };
+    if (el === null) {
+      vigente.troca = true;
+      queueMicrotask(() => {
+        if (!vigente.troca) return;
+        vigente.troca = false;
+        vigente.ultimo = null;
+        encaminhar(null);
+      });
+      return;
+    }
+    if (vigente.troca && el === vigente.ultimo) {
+      vigente.troca = false;
+      return;
+    }
+    const anterior = vigente.ultimo;
+    vigente.troca = false;
+    vigente.ultimo = el;
+    if (anterior && anterior !== el) encaminhar(null);
+    encaminhar(el);
+  }, [refExterno]);
   const data = partirData(val);
   const { hora, minuto } = partirHora(val);
   const travado = Boolean(disabled || readOnly);
@@ -198,6 +235,13 @@ export const DateTimePicker = forwardRef<HTMLInputElement, Props>(function DateT
     if (!base) return;
     emitir(isoDataHora(base, h, m));
   }
+  useEffect(() => {
+    const formulario = campoRef.current?.form;
+    if (!formulario) return;
+    const aoResetar = () => setInterno(defaultValue ?? "");
+    formulario.addEventListener("reset", aoResetar);
+    return () => formulario.removeEventListener("reset", aoResetar);
+  }, [form, defaultValue]);
   return (
     <Popover open={aberto} onOpenChange={(proximo) => { if (!travado) setAberto(proximo); }}>
       <PopoverTrigger asChild>
