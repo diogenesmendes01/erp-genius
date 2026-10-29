@@ -83,6 +83,19 @@ describe("SolicitarAusencia — reset do DateTimePicker", () => {
     expect(gatilhoDo(fim).textContent).toContain(VAZIO);
   });
 
+  it("R2: depois do reset, o min do Fim não continua no Início antigo", async () => {
+    const user = userEvent.setup();
+    const { container } = render(createElement(SolicitarAusencia, { professores: [{ id: "p", nome: "Ana" }], fusoInicial: "America/Sao_Paulo" }));
+    await escolherDiaHora(user, botaoDoRotulo("Início da indisponibilidade"), /15 de outubro de 2026/, "09", "15");
+    await escolherDiaHora(user, botaoDoRotulo("Fim da indisponibilidade"), /15 de outubro de 2026/, "11", "45");
+    const fim = inputNome("fim");
+    expect(fim.getAttribute("min")).toBe("2026-10-15T09:15");
+
+    resetar(container);
+    expect(fim.value).toBe("");
+    expect(fim.getAttribute("min")).toBeNull();
+  });
+
   it("WARN-526-03: picker com defaultValue volta para o default no reset", async () => {
     const user = userEvent.setup();
     const { container } = render(createElement("form", null,
