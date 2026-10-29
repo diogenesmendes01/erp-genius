@@ -7,6 +7,7 @@ import {
   ARGUMENTOS_DIFF,
   LABEL_CONTRATO,
   REF_BASE,
+  classificarMigrationsDoDiff,
   encontrarViolacoes,
   lintarMigrations,
   main,
@@ -44,16 +45,29 @@ describe("fixtures de SQL", () => {
   });
 
   it("recusa as fixtures destrutivas", () => {
-    const esperado: Record<string, string> = {
-      "drop-table.sql": "DROP TABLE",
-      "drop-column.sql": "DROP COLUMN",
-      "rename.sql": "RENAME",
-      "alter-type.sql": "ALTER COLUMN TYPE",
-      "set-not-null.sql": "SET NOT NULL",
+    const esperado: Record<string, string[]> = {
+      "drop-table.sql": ["DROP TABLE"],
+      "drop-column.sql": ["DROP COLUMN"],
+      "drop-coluna-sem-column.sql": ["DROP COLUMN"],
+      "drop-coluna-if-exists.sql": ["DROP COLUMN"],
+      "rename.sql": ["RENAME"],
+      "alter-type.sql": ["ALTER COLUMN TYPE"],
+      "alter-type-sem-column.sql": ["ALTER COLUMN TYPE"],
+      "alter-set-data-type.sql": ["ALTER COLUMN TYPE"],
+      "set-not-null.sql": ["SET NOT NULL"],
+      "truncate.sql": ["TRUNCATE"],
+      "drop-schema.sql": ["DROP SCHEMA"],
+      "drop-type.sql": ["DROP TYPE"],
+      "execute-drop.sql": ["DROP TABLE"],
+      "execute-truncate.sql": ["TRUNCATE"],
+      "execute-alter.sql": ["DROP COLUMN", "ALTER COLUMN TYPE"],
+      "execute-drop-schema.sql": ["DROP SCHEMA"],
+      "execute-drop-type.sql": ["DROP TYPE"],
     };
-    for (const [nome, regra] of Object.entries(esperado)) {
+    expect(diretorios(join(FIXTURES, "falha")).sort()).toEqual(Object.keys(esperado).sort());
+    for (const [nome, regras] of Object.entries(esperado)) {
       const violacoes = encontrarViolacoes(sql(join("falha", nome)));
-      expect(violacoes.map((v) => v.regra), nome).toContain(regra);
+      expect(violacoes.map((v) => v.regra), nome).toEqual(regras);
     }
   });
 });
@@ -75,6 +89,19 @@ describe("regras do blueprint", () => {
   it("é insensível a maiúsculas e ignora DROP NOT NULL", () => {
     expect(encontrarViolacoes("drop table \"t\";").map((v) => v.regra)).toEqual(["DROP TABLE"]);
     expect(encontrarViolacoes("ALTER TABLE \"t\" ALTER COLUMN \"a\" DROP NOT NULL;")).toEqual([]);
+    expect(encontrarViolacoes("alter table \"t\" drop if exists \"c\";").map((v) => v.regra)).toEqual(["DROP COLUMN"]);
+    expect(encontrarViolacoes("ALTER TABLE t ALTER col SET DATA TYPE int;").map((v) => v.regra)).toEqual([
+      "ALTER COLUMN TYPE",
+    ]);
+  });
+
+  it("recusa SQL destrutivo no literal de EXECUTE e ignora texto que não executa", () => {
+    const corpo = "CREATE FUNCTION f() RETURNS void AS $$\nBEGIN\n  EXECUTE 'TRUNCATE t';\nEND $$;";
+    expect(encontrarViolacoes(corpo).map((v) => v.regra)).toEqual(["TRUNCATE"]);
+    expect(encontrarViolacoes("EXECUTE format('DROP SCHEMA s');").map((v) => v.regra)).toEqual(["DROP SCHEMA"]);
+    expect(encontrarViolacoes("EXECUTE $$DROP TYPE \"e\"$$;").map((v) => v.regra)).toEqual(["DROP TYPE"]);
+    expect(encontrarViolacoes("PERFORM 'DROP TABLE \"t\"';")).toEqual([]);
+    expect(encontrarViolacoes("EXECUTE 'ALTER TABLE \"t\" ADD COLUMN \"a\" int';")).toEqual([]);
   });
 
   it("recusa SET NOT NULL quando o DEFAULT foi removido no mesmo comando", () => {
@@ -97,7 +124,7 @@ describe("regras do blueprint", () => {
     expect(encontrarViolacoes(sqlComando).map((v) => v.regra)).toEqual(["SET NOT NULL"]);
   });
 
-  it("seleciona só migration.sql nova, fora da base", () => {
+  it("separa migration nova de migration já aplicada que entrou no diff", () => {
     const nomes = [
       "prisma/migrations/nova/migration.sql",
       "prisma/migrations/antiga/migration.sql",
@@ -106,9 +133,23 @@ describe("regras do blueprint", () => {
       "src/app/page.tsx",
     ];
     const base = new Set(["prisma/migrations/antiga/migration.sql"]);
-    expect(selecionarMigrationsNovas(nomes, (caminho) => base.has(caminho))).toEqual([
-      "prisma/migrations/nova/migration.sql",
-    ]);
+    const existe = (caminho: string) => base.has(caminho);
+    expect(selecionarMigrationsNovas(nomes, existe)).toEqual(["prisma/migrations/nova/migration.sql"]);
+    expect(classificarMigrationsDoDiff(nomes, existe)).toEqual({
+      novas: ["prisma/migrations/nova/migration.sql"],
+      editadas: ["prisma/migrations/antiga/migration.sql"],
+    });
+  });
+
+  it("recusa edição de migration aplicada e só libera com o label", () => {
+    const arquivos = [{ caminho: "prisma/migrations/nova/migration.sql", sql: "SELECT 1;" }];
+    const editadas = ["prisma/migrations/antiga/migration.sql"];
+    const semLabel = lintarMigrations({ arquivos, editadas, temLabelContrato: false });
+    expect(semLabel.ok).toBe(false);
+    expect(semLabel.editadas).toEqual(editadas);
+    const comLabel = lintarMigrations({ arquivos, editadas, temLabelContrato: true });
+    expect(comLabel.ok).toBe(true);
+    expect(comLabel.editadas).toEqual(editadas);
   });
 
   it("falha sem o label e passa com migration-contract, sem esconder a violação", () => {
@@ -169,8 +210,12 @@ describe("ci, docs e template", () => {
     const ci = readFileSync(resolve(".github/workflows/ci.yml"), "utf8");
     const lint = ci.split(/^ {2}test:/m)[0];
     expect(lint).toContain("name: lint");
+    expect(lint).toContain("name: Lint de migrations (expand-only)");
+    expect(lint).not.toContain("continue-on-error");
     expect(lint).toContain("git fetch --no-tags --depth=1 origin main");
     expect(lint).toContain("npx tsx scripts/lint-migrations.ts");
+    expect(lint).not.toMatch(/tsx scripts\/lint-migrations\.ts[\s\S]*\|\|\s*true/);
+    expect(ci).toContain("types: [opened, synchronize, reopened, labeled, unlabeled]");
     expect(readFileSync(resolve(".github/workflows/image.yml"), "utf8")).not.toContain("lint-migrations");
   });
 
@@ -180,6 +225,13 @@ describe("ci, docs e template", () => {
     expect(doc).toContain("origin/main");
     expect(doc).toContain("DROP TABLE");
     expect(doc).toContain("SET NOT NULL");
+    expect(doc).toContain("TRUNCATE");
+    expect(doc).toContain("DROP SCHEMA");
+    expect(doc).toContain("DROP TYPE");
+    expect(doc).toContain("EXECUTE");
+    expect(doc).toContain("edição de migration aplicada é proibida");
+    expect(doc).toContain("Lint de migrations (expand-only)");
+    expect(doc).toContain("check obrigatório na branch protection");
     const template = readFileSync(resolve(".github/pull_request_template.md"), "utf8");
     expect(template).toContain("migration-contract");
     expect(template).toContain("docs/migrations.md");
@@ -230,13 +282,46 @@ describe("CLI", () => {
     expect(main(cwd, ambiente({ PR_LABELS: LABEL_CONTRATO }))).toBe(0);
   });
 
-  it("não reavalia migration histórica mesmo se o diff a listar por uma edição", () => {
+  function capturarSaida(fn: () => number): { codigo: number; stdout: string; stderr: string } {
+    const saidas: string[] = [];
+    const erros: string[] = [];
+    const logOriginal = console.log;
+    const erroOriginal = console.error;
+    console.log = (msg?: unknown) => {
+      saidas.push(String(msg));
+    };
+    console.error = (msg?: unknown) => {
+      erros.push(String(msg));
+    };
+    try {
+      return { codigo: fn(), stdout: saidas.join("\n"), stderr: erros.join("\n") };
+    } finally {
+      console.log = logOriginal;
+      console.error = erroOriginal;
+    }
+  }
+
+  it("falha ao editar migration já aplicada e só segue com migration-contract", () => {
     const cwd = repositorio();
-    writeFileSync(
-      join(cwd, "prisma/migrations/20260101000000_historica/migration.sql"),
-      "-- nota\nDROP TABLE \"Velha\";\n",
-    );
-    expect(main(cwd, ambiente())).toBe(0);
+    const caminho = "prisma/migrations/20260101000000_historica/migration.sql";
+    writeFileSync(join(cwd, caminho), "-- nota\nDROP TABLE \"Velha\";\n");
+    const semLabel = capturarSaida(() => main(cwd, ambiente()));
+    expect(semLabel.codigo).toBe(1);
+    expect(semLabel.stderr).toContain(`${caminho}: edição de migration aplicada é proibida`);
+    expect(semLabel.stderr).not.toContain("DROP TABLE");
+    expect(semLabel.stderr).toContain(LABEL_CONTRATO);
+    const comLabel = capturarSaida(() => main(cwd, ambiente({ PR_LABELS: LABEL_CONTRATO })));
+    expect(comLabel.codigo).toBe(0);
+    expect(comLabel.stdout).toContain("edição de migration aplicada é proibida");
+  });
+
+  it("falha ao remover migration já aplicada", () => {
+    const cwd = repositorio();
+    const caminho = "prisma/migrations/20260101000000_historica/migration.sql";
+    rmSync(dirname(join(cwd, caminho)), { recursive: true });
+    const saida = capturarSaida(() => main(cwd, ambiente()));
+    expect(saida.codigo).toBe(1);
+    expect(saida.stderr).toContain(`${caminho}: edição de migration aplicada é proibida`);
   });
 
   it("encerra com erro quando origin/main não existe", () => {

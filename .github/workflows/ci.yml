@@ -3,6 +3,7 @@ name: CI
 on:
   pull_request:
     branches: [main]
+    types: [opened, synchronize, reopened, labeled, unlabeled]
   push:
     branches: [main]
 
@@ -53,7 +54,7 @@ jobs:
         run: npm ci
       - name: ESLint (eslint . --max-warnings 40)
         run: npx eslint . --max-warnings 40
-      - name: Lint de migrations expand-only
+      - name: Lint de migrations (expand-only)
         run: |
           git fetch --no-tags --depth=1 origin main
           npx tsx scripts/lint-migrations.ts

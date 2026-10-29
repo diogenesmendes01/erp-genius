@@ -9,6 +9,9 @@ export const ARGUMENTOS_DIFF = ["diff", "--name-only", REF_BASE, "--", "prisma/m
 
 export type RegraMigracao =
   | "DROP TABLE"
+  | "DROP SCHEMA"
+  | "DROP TYPE"
+  | "TRUNCATE"
   | "DROP COLUMN"
   | "RENAME"
   | "ALTER COLUMN TYPE"
@@ -23,17 +26,83 @@ export type ViolacaoMigracao = {
 export type ResultadoLint = {
   ok: boolean;
   violacoes: Array<ViolacaoMigracao & { caminho: string }>;
+  editadas: string[];
 };
 
-const ORDEM: RegraMigracao[] = ["DROP TABLE", "DROP COLUMN", "RENAME", "ALTER COLUMN TYPE", "SET NOT NULL"];
+const ORDEM: RegraMigracao[] = [
+  "DROP TABLE",
+  "DROP SCHEMA",
+  "DROP TYPE",
+  "TRUNCATE",
+  "DROP COLUMN",
+  "RENAME",
+  "ALTER COLUMN TYPE",
+  "SET NOT NULL",
+];
 
-const PADROES: { regra: RegraMigracao; re: RegExp; soSemDefault?: boolean }[] = [
+/** Objetos que `DROP` remove sem ser coluna. `COLUMN` é opcional no Postgres. */
+const NAO_E_COLUNA = [
+  "ACCESS",
+  "AGGREGATE",
+  "CAST",
+  "COLLATION",
+  "CONSTRAINT",
+  "CONVERSION",
+  "DATABASE",
+  "DEFAULT",
+  "DOMAIN",
+  "EVENT",
+  "EXPRESSION",
+  "EXTENSION",
+  "FOREIGN",
+  "FUNCTION",
+  "GROUP",
+  "IDENTITY",
+  "INDEX",
+  "LANGUAGE",
+  "MATERIALIZED",
+  "NOT",
+  "OPERATOR",
+  "OWNED",
+  "POLICY",
+  "PROCEDURE",
+  "PUBLICATION",
+  "ROLE",
+  "ROUTINE",
+  "RULE",
+  "SCHEMA",
+  "SEQUENCE",
+  "SERVER",
+  "STATISTICS",
+  "SUBSCRIPTION",
+  "TABLE",
+  "TABLESPACE",
+  "TEXT",
+  "TRANSFORM",
+  "TRIGGER",
+  "TYPE",
+  "USER",
+  "VIEW",
+].join("|");
+
+const PADROES: { regra: RegraMigracao; re: RegExp; soSemDefault?: boolean; exigeAlterTable?: boolean }[] = [
   { regra: "DROP TABLE", re: /\bDROP\s+TABLE\b/gi },
+  { regra: "DROP SCHEMA", re: /\bDROP\s+SCHEMA\b/gi },
+  { regra: "DROP TYPE", re: /\bDROP\s+TYPE\b/gi },
+  { regra: "TRUNCATE", re: /\bTRUNCATE\b/gi },
   { regra: "DROP COLUMN", re: /\bDROP\s+COLUMN\b/gi },
+  {
+    regra: "DROP COLUMN",
+    exigeAlterTable: true,
+    re: new RegExp(
+      String.raw`\bDROP\s+(?:COLUMN\s+)?(?:IF\s+EXISTS\s+)?(?!(?:${NAO_E_COLUNA})\b)(?:"[^"]+"|[A-Za-z_][\w$]*)`,
+      "gi",
+    ),
+  },
   { regra: "RENAME", re: /\bRENAME\b/gi },
   {
     regra: "ALTER COLUMN TYPE",
-    re: /\bALTER\s+COLUMN\s+(?:"[^"]+"|[A-Za-z_][\w$]*)\s+(?:SET\s+DATA\s+)?TYPE\b/gi,
+    re: /\bALTER\s+(?:COLUMN\s+)?(?:"[^"]+"|[A-Za-z_][\w$]*)\s+(?:SET\s+DATA\s+)?TYPE\b/gi,
   },
   { regra: "SET NOT NULL", re: /\bSET\s+NOT\s+NULL\b/gi, soSemDefault: true },
 ];
@@ -97,6 +166,7 @@ function preparar(sql: string): { visivel: string; separadores: number[] } {
       continue;
     }
     if (c === "'") {
+      const preservar = literalDeExecute(chars, i);
       apagar(i, i + 1);
       i++;
       while (i < n) {
@@ -110,7 +180,7 @@ function preparar(sql: string): { visivel: string; separadores: number[] } {
           i++;
           break;
         }
-        apagar(i, i + 1);
+        if (!preservar) apagar(i, i + 1);
         i++;
       }
       continue;
@@ -152,6 +222,25 @@ function temDefault(comando: string): boolean {
   return /\bDEFAULT\b/i.test(comando.replace(/\bDROP\s+DEFAULT\b/gi, " "));
 }
 
+/** `EXECUTE '...'` e `EXECUTE format('...')` executam o literal. Outro texto entre aspas não. */
+function literalDeExecute(chars: string[], posAspas: number): boolean {
+  let j = posAspas - 1;
+  if (j >= 0 && /[eEbBxX]/.test(chars[j]) && (j === 0 || !/[A-Za-z0-9_]/.test(chars[j - 1]))) j--;
+  while (j >= 0 && /\s/.test(chars[j])) j--;
+  if (j >= 0 && chars[j] === "(") {
+    j--;
+    while (j >= 0 && /\s/.test(chars[j])) j--;
+    while (j >= 0 && /[A-Za-z0-9_]/.test(chars[j])) j--;
+    while (j >= 0 && /\s/.test(chars[j])) j--;
+  }
+  const palavra = "EXECUTE";
+  const inicio = j - palavra.length + 1;
+  if (inicio < 0) return false;
+  if (chars.slice(inicio, j + 1).join("").toUpperCase() !== palavra) return false;
+  const antes = inicio > 0 ? chars[inicio - 1] : "";
+  return !/[A-Za-z0-9_]/.test(antes);
+}
+
 export function encontrarViolacoes(sql: string): ViolacaoMigracao[] {
   const fonte = normalizar(sql);
   const { visivel, separadores } = preparar(sql);
@@ -162,6 +251,7 @@ export function encontrarViolacoes(sql: string): ViolacaoMigracao[] {
     const comando = visivel.slice(inicio, fim);
     for (const padrao of PADROES) {
       if (padrao.soSemDefault && temDefault(comando)) continue;
+      if (padrao.exigeAlterTable && !/\bALTER\s+TABLE\b/i.test(comando)) continue;
       const re = new RegExp(padrao.re.source, padrao.re.flags);
       for (const encontrado of comando.matchAll(re)) {
         const indice = inicio + (encontrado.index ?? 0);
@@ -182,20 +272,34 @@ export function encontrarViolacoes(sql: string): ViolacaoMigracao[] {
     .sort((a, b) => a.linha - b.linha || ORDEM.indexOf(a.regra) - ORDEM.indexOf(b.regra));
 }
 
+export function classificarMigrationsDoDiff(
+  nomes: string[],
+  existeNaBase: (caminho: string) => boolean,
+): { novas: string[]; editadas: string[] } {
+  const novas: string[] = [];
+  const editadas: string[] = [];
+  for (const nome of nomes.map((item) => item.trim()).filter(Boolean)) {
+    if (!CAMINHO_MIGRATION.test(nome)) continue;
+    if (existeNaBase(nome)) editadas.push(nome);
+    else novas.push(nome);
+  }
+  return { novas, editadas };
+}
+
 export function selecionarMigrationsNovas(nomes: string[], existeNaBase: (caminho: string) => boolean): string[] {
-  return nomes
-    .map((nome) => nome.trim())
-    .filter((nome) => CAMINHO_MIGRATION.test(nome) && !existeNaBase(nome));
+  return classificarMigrationsDoDiff(nomes, existeNaBase).novas;
 }
 
 export function lintarMigrations(entrada: {
   arquivos: Array<{ caminho: string; sql: string }>;
+  editadas?: string[];
   temLabelContrato: boolean;
 }): ResultadoLint {
   const violacoes = entrada.arquivos
     .flatMap((arquivo) => encontrarViolacoes(arquivo.sql).map((violacao) => ({ ...violacao, caminho: arquivo.caminho })))
     .sort((a, b) => a.caminho.localeCompare(b.caminho) || a.linha - b.linha || ORDEM.indexOf(a.regra) - ORDEM.indexOf(b.regra));
-  return { ok: entrada.temLabelContrato || violacoes.length === 0, violacoes };
+  const editadas = [...new Set(entrada.editadas ?? [])].sort((a, b) => a.localeCompare(b));
+  return { ok: entrada.temLabelContrato || (violacoes.length === 0 && editadas.length === 0), violacoes, editadas };
 }
 
 export function temLabelContrato(opcoes: { labels?: string; evento?: unknown }): boolean {
@@ -209,12 +313,15 @@ export function temLabelContrato(opcoes: { labels?: string; evento?: unknown }):
 }
 
 function formatarRelatorio(resultado: ResultadoLint): string {
-  if (resultado.violacoes.length === 0) return "Migrations expand-only: nenhuma violação nas migrations novas.";
-  const n = resultado.violacoes.length;
+  const linhas = [
+    ...resultado.violacoes.map((v) => `${v.caminho}:${v.linha}: ${v.regra}: ${v.trecho}`),
+    ...resultado.editadas.map((caminho) => `${caminho}: edição de migration aplicada é proibida`),
+  ];
+  if (linhas.length === 0) return "Migrations expand-only: nenhuma violação nas migrations novas.";
+  const n = linhas.length;
   const cabeca = resultado.ok
     ? `Migrations expand-only: label ${LABEL_CONTRATO} presente; ${n === 1 ? "1 violação permitida" : `${n} violações permitidas`}.`
     : `Migrations expand-only: ${n === 1 ? "1 violação" : `${n} violações`}.`;
-  const linhas = resultado.violacoes.map((v) => `${v.caminho}:${v.linha}: ${v.regra}: ${v.trecho}`);
   const rodape = resultado.ok ? "" : `\nA fase contract exige o label ${LABEL_CONTRATO}. Veja docs/migrations.md.`;
   return `${cabeca}\n${linhas.join("\n")}${rodape}`;
 }
@@ -247,11 +354,13 @@ export function main(cwd = process.cwd(), env: NodeJS.ProcessEnv = process.env):
     console.error(erro instanceof Error ? erro.message : erro);
     return 2;
   }
-  const arquivos = selecionarMigrationsNovas(diff.split("\n"), (caminho) => existeNaBase(cwd, caminho))
+  const classificacao = classificarMigrationsDoDiff(diff.split("\n"), (caminho) => existeNaBase(cwd, caminho));
+  const arquivos = classificacao.novas
     .filter((caminho) => existsSync(resolve(cwd, caminho)))
     .map((caminho) => ({ caminho, sql: readFileSync(resolve(cwd, caminho), "utf8") }));
   const resultado = lintarMigrations({
     arquivos,
+    editadas: classificacao.editadas,
     temLabelContrato: temLabelContrato({ labels: env.PR_LABELS, evento }),
   });
   const texto = formatarRelatorio(resultado);

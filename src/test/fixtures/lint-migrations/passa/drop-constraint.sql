@@ -1,0 +1,3 @@
+ALTER TABLE "Aluno" DROP CONSTRAINT "Aluno_nome_key";
+ALTER TABLE "Aluno" ALTER "nome" DROP DEFAULT;
+ALTER TABLE "Aluno" ALTER "nome" DROP NOT NULL;
