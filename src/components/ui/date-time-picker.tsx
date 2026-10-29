@@ -1,12 +1,21 @@
 "use client";
 
-import { forwardRef, useId, useState, type ChangeEvent, type InputHTMLAttributes } from "react";
+import { forwardRef, useId, useRef, useState, type ChangeEvent, type InputHTMLAttributes, type ReactNode } from "react";
 import { cn } from "@/lib/utils";
 import { CONTROLE_CAMPO } from "@/components/Campo";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
-import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Select as SelectBase, SelectContent as SelectContentBase, SelectGroup as SelectGroupBase, SelectItem as SelectItemBase, SelectTrigger as SelectTriggerBase, SelectValue as SelectValueBase } from "@/components/ui/select";
 import { HORAS, MINUTOS, eventoCampo, isoDataHora, partirData, partirHora, textoDataHora } from "@/components/ui/datas";
+
+type PropsSimples = { children?: ReactNode } & Record<string, unknown>;
+const comoSelecao = (componente: unknown) => componente as (props: PropsSimples) => ReactNode;
+const Select = comoSelecao(SelectBase);
+const SelectContent = comoSelecao(SelectContentBase);
+const SelectGroup = comoSelecao(SelectGroupBase);
+const SelectItem = comoSelecao(SelectItemBase);
+const SelectTrigger = comoSelecao(SelectTriggerBase);
+const SelectValue = comoSelecao(SelectValueBase);
 
 type Limite = string | number | readonly string[] | undefined;
 
@@ -53,7 +62,7 @@ function SeletorTempo({ rotulo, valor, opcoes, disabled, onChange, aoFecharPicke
         <SelectContent
           position="popper"
           onEscapeKeyDown={() => aoFecharPicker()}
-          onPointerDownOutside={(evento) => { if (!dentroDoPicker(evento.target)) aoFecharPicker(); }}
+          onPointerDownOutside={(evento: { target: EventTarget | null }) => { if (!dentroDoPicker(evento.target)) aoFecharPicker(); }}
         >
           <SelectGroup>
             {opcoes.map((item) => <SelectItem key={item} value={item}>{item}</SelectItem>)}
@@ -64,10 +73,15 @@ function SeletorTempo({ rotulo, valor, opcoes, disabled, onChange, aoFecharPicke
   );
 }
 
-function EspelhoRestricao({ valor, required, disabled, form, min, max }: { valor: string; required?: boolean; disabled?: boolean; form?: string; min?: Limite; max?: Limite }) {
+function EspelhoRestricao({ valor, required, disabled, form, min, max, aoFocarGatilho }: { valor: string; required?: boolean; disabled?: boolean; form?: string; min?: Limite; max?: Limite; aoFocarGatilho: () => void }) {
   const mensagem = mensagemRestricaoDataHora(valor, { required, min, max });
+  function focarGatilho(evento: { preventDefault(): void }) {
+    evento.preventDefault();
+    aoFocarGatilho();
+  }
   return (
     <input
+      type="text"
       tabIndex={-1}
       aria-hidden="true"
       className="sr-only"
@@ -76,6 +90,8 @@ function EspelhoRestricao({ valor, required, disabled, form, min, max }: { valor
       disabled={disabled || undefined}
       form={form}
       onChange={() => {}}
+      onInvalid={focarGatilho}
+      onFocus={focarGatilho}
       ref={(el) => { el?.setCustomValidity?.(mensagem); }}
     />
   );
@@ -97,9 +113,15 @@ export const DateTimePicker = forwardRef<HTMLInputElement, Props>(function DateT
   const data = partirData(val);
   const { hora, minuto } = partirHora(val);
   const travado = Boolean(disabled || readOnly);
+  const gatilhoRef = useRef<HTMLButtonElement>(null);
+  const erroId = useId();
   const mensagem = mensagemRestricaoDataHora(val, { required, min, max });
   const restringe = Boolean(required || textoLimite(min) || textoLimite(max));
-  const invalido = ariaInvalid === true || ariaInvalid === "true" || ariaInvalid === "grammar" || ariaInvalid === "spelling";
+  const invalido = ariaInvalid === true || ariaInvalid === "true" || ariaInvalid === "grammar" || ariaInvalid === "spelling" || Boolean(mensagem);
+  const descrito = [ariaDescribedBy, mensagem ? erroId : null].filter(Boolean).join(" ") || undefined;
+  function focarGatilho() {
+    gatilhoRef.current?.focus();
+  }
   function emitir(proximo: string, nativo?: ChangeEvent<HTMLInputElement>) {
     if (value === undefined) setInterno(proximo);
     onValueChange?.(proximo);
@@ -112,17 +134,22 @@ export const DateTimePicker = forwardRef<HTMLInputElement, Props>(function DateT
   return (
     <Popover open={aberto} onOpenChange={(proximo) => { if (!travado) setAberto(proximo); }}>
       <PopoverTrigger asChild>
+        {/* eslint-disable jsx-a11y/role-supports-aria-props -- BLOCK-513-A11Y-03: o gatilho visível anuncia obrigatório e inválido */}
         <button
+          ref={gatilhoRef}
           type="button"
           id={id}
           disabled={travado}
           aria-label={ariaLabel}
-          aria-describedby={ariaDescribedBy}
+          aria-required={required || ariaRequired ? true : undefined}
+          aria-invalid={invalido || undefined}
+          aria-describedby={descrito}
           className={cn(CONTROLE_CAMPO, "inline-flex items-center justify-between gap-2 text-left", invalido && "border-red-500", className)}
         >
           <span className={cn(data ? "text-gray-800" : "text-gray-500")}>{data ? textoDataHora(data, hora, minuto) : placeholder}</span>
           <svg viewBox="0 0 16 16" aria-hidden="true" className="h-4 w-4 shrink-0 text-gray-500" fill="none" stroke="currentColor" strokeWidth="1.5"><rect x="2.5" y="3.5" width="11" height="10" rx="1.5" /><path d="M5 2.5v2M11 2.5v2M2.5 7h11" /></svg>
         </button>
+        {/* eslint-enable jsx-a11y/role-supports-aria-props */}
       </PopoverTrigger>
       <PopoverContent data-seletor-data-hora="" className="flex w-auto flex-col gap-3 p-3">
         <Calendar mode="single" selected={data} defaultMonth={data} onSelect={(dia) => { if (dia) compor(dia, hora, minuto); }} />
@@ -149,8 +176,8 @@ export const DateTimePicker = forwardRef<HTMLInputElement, Props>(function DateT
         aria-required={ariaRequired || (required ? true : undefined)}
         onChange={(e) => emitir(e.target.value, e)}
       />
-      {restringe ? <EspelhoRestricao valor={val} required={required} disabled={travado} form={typeof form === "string" ? form : undefined} min={min} max={max} /> : null}
-      {mensagem && val ? <span role="alert" className="text-xs text-red-700">{mensagem}</span> : null}
+      {restringe ? <EspelhoRestricao valor={val} required={required} disabled={travado} form={typeof form === "string" ? form : undefined} min={min} max={max} aoFocarGatilho={focarGatilho} /> : null}
+      {mensagem ? <span id={erroId} role="alert" className="text-xs text-red-700">{mensagem}</span> : null}
     </Popover>
   );
 });

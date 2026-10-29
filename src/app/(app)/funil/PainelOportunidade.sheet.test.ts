@@ -22,6 +22,8 @@ vi.mock("@/server/inbox/acoes-fechamento-painel", () => ({
 }));
 
 import { PainelOportunidade } from "./PainelOportunidade";
+import { DateTimePicker } from "@/components/ui/date-time-picker";
+import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 
 const GERENTE: CapacidadeCrm[] = ["funil.ver", "funil.mover", "funil.atribuir"];
 const base: DetalheOportunidade = {
@@ -231,5 +233,71 @@ describe("fonte do painel", () => {
     expect(fonte).toContain("md:w-[45%]");
     expect(fonte).toContain("max-w-none");
     expect(fonte).toContain("sr-only");
+  });
+});
+
+describe("DateTimePicker no Sheet — BLOCK-513-A11Y", () => {
+  function Agenda() {
+    const [valor, setValor] = useState("");
+    return createElement(Sheet, { open: true },
+      createElement(SheetContent, null,
+        createElement(SheetHeader, null,
+          createElement(SheetTitle, null, "Agendar experimental"),
+          createElement(SheetDescription, null, "Data da aula."),
+        ),
+        createElement("form", { "aria-label": "Agenda da experimental" },
+          createElement(DateTimePicker, {
+            name: "quando",
+            required: true,
+            "aria-label": "Data e hora da experimental",
+            value: valor,
+            onChange: (evento: { target: { value: string } }) => setValor(evento.target.value),
+          }),
+          createElement("button", { type: "submit" }, "Salvar"),
+        ),
+      ),
+    );
+  }
+
+  function oculto() {
+    return document.querySelector('input[aria-hidden="true"]');
+  }
+
+  it("Tab não para no input oculto e ele fica fora da árvore de acessibilidade", async () => {
+    const user = userEvent.setup();
+    render(createElement(Agenda));
+    const gatilho = await screen.findByRole("button", { name: "Data e hora da experimental" });
+    expect(screen.queryByRole("textbox")).toBeNull();
+    expect(oculto()?.getAttribute("aria-hidden")).toBe("true");
+    expect(oculto()?.getAttribute("tabindex")).toBe("-1");
+    expect(oculto()?.hasAttribute("name")).toBe(false);
+    gatilho.focus();
+    await user.tab();
+    expect(document.activeElement).not.toBe(oculto());
+    expect(document.activeElement).toBe(screen.getByRole("button", { name: "Salvar" }));
+    expect(screen.getByRole("dialog", { name: "Agendar experimental" }).getAttribute("data-state")).toBe("open");
+  });
+
+  it("submit vazio foca o trigger e mantém o Sheet aberto", async () => {
+    const user = userEvent.setup();
+    render(createElement(Agenda));
+    const gatilho = await screen.findByRole("button", { name: "Data e hora da experimental" });
+    await user.click(screen.getByRole("button", { name: "Salvar" }));
+    await waitFor(() => expect(document.activeElement).toBe(gatilho));
+    expect(screen.getByRole("dialog", { name: "Agendar experimental" }).getAttribute("data-state")).toBe("open");
+    expect(screen.getByRole("alert").textContent).toContain("Informe data e hora.");
+    expect(gatilho.getAttribute("aria-describedby")).toContain(screen.getByRole("alert").id);
+    expect(gatilho.getAttribute("aria-required")).toBe("true");
+    expect(gatilho.getAttribute("aria-invalid")).toBe("true");
+  });
+
+  it("Esc com o picker aberto fecha só o picker", async () => {
+    const user = userEvent.setup();
+    render(createElement(Agenda));
+    await user.click(await screen.findByRole("button", { name: "Data e hora da experimental" }));
+    expect(await screen.findByRole("combobox", { name: "Hora" })).toBeTruthy();
+    await user.keyboard("{Escape}");
+    await waitFor(() => expect(screen.queryByRole("combobox", { name: "Hora" })).toBeNull());
+    expect(screen.getByRole("dialog", { name: "Agendar experimental" }).getAttribute("data-state")).toBe("open");
   });
 });

@@ -40,14 +40,41 @@ describe("DateTimePicker — contrato do valor submetido", () => {
     expect(formularioDe(desligado).has("quando")).toBe(false);
   });
 
-  it("estado inválido pinta a borda do gatilho e deixa aria-invalid no hidden", () => {
+  it("estado inválido pinta a borda do gatilho e anuncia aria-invalid e aria-required nele", () => {
     const marcacao = html(createElement(DateTimePicker, { name: "quando", id: "quando", value: "2026-12-01T13:05", "aria-invalid": true, "aria-required": true }));
-    expect(marcacao).toMatch(/<button\b[^>]*id="quando"[^>]*class="[^"]*border-red-500/);
-    expect(marcacao).not.toMatch(/<button\b[^>]*\baria-invalid=/);
-    expect(marcacao).not.toMatch(/<button\b[^>]*\baria-required=/);
-    const campo = inputs(marcacao).find((tag) => /name="quando"/.test(tag));
-    expect(campo).toContain('aria-invalid="true"');
-    expect(campo).toContain('aria-required="true"');
+    const botao = /<button\b[^>]*>/.exec(marcacao)?.[0] ?? "";
+    expect(botao).toContain('id="quando"');
+    expect(botao).toContain("border-red-500");
+    expect(botao).toContain('aria-invalid="true"');
+    expect(botao).toContain('aria-required="true"');
+  });
+
+  it("espelho sem name não é datetime-local, fica fora do Tab e da árvore, e o valor sai só no hidden", () => {
+    const marcacao = html(createElement(DateTimePicker, { name: "quando", required: true, value: "", "aria-describedby": "dica", fuso: "UTC" }));
+    const todos = inputs(marcacao);
+    const nomeado = todos.find((tag) => /name="quando"/.test(tag));
+    const espelho = todos.find((tag) => !/\sname=/.test(tag));
+    expect(espelho).toBeTruthy();
+    expect(espelho).toContain('type="text"');
+    expect(espelho).not.toContain("datetime-local");
+    expect(espelho).toContain('tabindex="-1"');
+    expect(espelho).toContain('aria-hidden="true"');
+    expect(espelho).toMatch(/\srequired(?:=|\s|>)/);
+    expect(espelho).not.toMatch(/\sname=/);
+    expect(nomeado).toContain('type="hidden"');
+    expect(nomeado).toContain('value=""');
+    expect(formularioDe(marcacao).get("quando")).toBe("");
+    expect([...formularioDe(marcacao).keys()]).toEqual(["quando"]);
+    const botao = /<button\b[^>]*>/.exec(marcacao)?.[0] ?? "";
+    expect(botao).toContain('aria-required="true"');
+    expect(botao).toContain('aria-invalid="true"');
+    const descrito = /aria-describedby="([^"]*)"/.exec(botao)?.[1] ?? "";
+    expect(descrito.split(" ")).toContain("dica");
+    const idErro = descrito.split(" ").find((id) => id !== "dica");
+    expect(idErro).toBeTruthy();
+    expect(marcacao).toContain(`id="${idErro}"`);
+    expect(marcacao).toContain('role="alert"');
+    expect(marcacao).toContain("Informe data e hora.");
   });
 
   it("required vazio não valida pelo hidden: um espelho sem name carrega a restrição e não entra no FormData", () => {
