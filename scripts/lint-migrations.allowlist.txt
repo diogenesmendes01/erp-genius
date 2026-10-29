@@ -1,0 +1,23 @@
+# Migrations já versionadas cujo SQL executa drop, rename, mudança de tipo
+# ou SET NOT NULL sem DEFAULT. Registro auditado pelo teste
+# src/test/lint-migrations.test.ts — não é bypass do CI.
+# O lint só avalia migration nova no diff contra origin/main.
+# A única exceção em PR é o label migration-contract.
+20260618184300_precos_movimentacao_ativacao
+20260622130000_aluno_cadastro_completo
+20260622150000_turma_horario_inicio_fim
+20260702100000_dinheiro_decimal
+20260718180000_config_comercial_saudacao_estado
+20260907010000_politica_acesso_recebimentos
+20260911081000_nome_indice_encerramento
+20260914231000_indice_cancelamento_agenda_recuperacao
+20260915000000_regularizacao_reposicao_guardrails
+20260915082000_revisoes_periodo_integral
+20260917122000_correcao_fonte_agenda_aditivo
+20260917132000_destinacoes_recebimento
+20260917173000_reapresentacao_acerto_desistencia
+20260917174000_reconferencia_delta_desistencia
+20260917180000_ordem_guard_pedido_vigente
+20260918150000_revisao_correcao_consumo_horas
+20261018010000_aria_base
+20261020090000_remover_crm_antigo
