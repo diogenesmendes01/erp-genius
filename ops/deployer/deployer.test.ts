@@ -126,6 +126,10 @@ if args[0] == "attestation":
     if mode == "empty":
         sys.exit(0)
     oci = next(a[len("oci://"):] for a in args if a.startswith("oci://"))
+    fail_substr = mock / "attest-fail-substr"
+    if fail_substr.exists() and fail_substr.read_text(encoding="utf-8").strip() in oci:
+        sys.stderr.write("verify failed\\n")
+        sys.exit(1)
     digest = oci.split("@", 1)[1]
     hexd = digest.split(":", 1)[1]
     sha = (mock / "attest-sha").read_text(encoding="utf-8").strip()
@@ -384,6 +388,7 @@ type Scene = {
   digests?: Record<string, { app: string; migrate: string }>;
   attest?: string;
   attestSha?: string;
+  attestFailSubstr?: string;
   healthSha?: string;
   ready?: string;
   previousApp?: string;
@@ -443,6 +448,7 @@ function arrange(scene: Scene = {}): {
   }
   writeFileSync(join(mock, "attest-mode"), scene.attest ?? "ok");
   writeFileSync(join(mock, "attest-sha"), scene.attestSha ?? commits[0]);
+  if (scene.attestFailSubstr) writeFileSync(join(mock, "attest-fail-substr"), scene.attestFailSubstr);
   writeFileSync(join(mock, "health-sha"), scene.healthSha ?? (scene.attestSha ?? commits[0]));
   if (scene.ready) writeFileSync(join(mock, "ready-code"), scene.ready);
   if (scene.migrateFail) writeFileSync(join(mock, "migrate-fail"), "1");
@@ -516,6 +522,23 @@ function arrange(scene: Scene = {}): {
 
 function run(env: NodeJS.ProcessEnv) {
   return spawnSync(DEPLOY, [], { env, encoding: "utf8" });
+}
+
+const AFTER_BACKUP = "  arm_pos_backup\n  coolify_ler_imagens\n";
+
+function runAfterBackup(env: NodeJS.ProcessEnv, command: string) {
+  const copy = join(ROOT, "bin", `.deploy-after-backup-${process.pid}.sh`);
+  const source = readFileSync(DEPLOY, "utf8");
+  if (!source.includes(AFTER_BACKUP)) {
+    throw new Error("arm_pos_backup não é seguido de coolify_ler_imagens");
+  }
+  writeFileSync(copy, source.replace(AFTER_BACKUP, `  arm_pos_backup\n  ${command}\n  coolify_ler_imagens\n`));
+  chmodSync(copy, 0o755);
+  try {
+    return spawnSync(copy, [], { env, encoding: "utf8" });
+  } finally {
+    rmSync(copy, { force: true });
+  }
 }
 
 function callsOf(mock: string): string[] {
@@ -1518,6 +1541,87 @@ os.execv("${join(bin, "curl.real")}", ["curl.real", *args])
     expect(JSON.parse(readFileSync(ctx.failed, "utf8")).result).toBe("sem_imagem");
     expect(readFileSync(join(process.cwd(), "docs/ops/deploy-auto.md"), "utf8")).not.toContain("Imagem ainda não publicada: sai 0");
     expectNoRetryDump(ctx, false);
+  });
+
+  it("comando que falha depois do backup, sem die, grava o marcador e não sai 0", () => {
+    const ctx = arrange();
+    ctx.envValues.DEPLOY_NOTIFY_URL = "https://hooks.example.test/deploy";
+    ctx.envValues.DEPLOY_NOTIFY_TOKEN = NOTIFY_TOKEN;
+    materializeEnv(ctx.envFile, ctx.envValues);
+    const result = runAfterBackup(ctx.env, "false");
+    expect(result.status).not.toBe(0);
+    expect(existsSync(ctx.failed)).toBe(true);
+    expect(JSON.parse(readFileSync(ctx.failed, "utf8")).result).toBe("trap");
+    const lines = callsOf(ctx.mock);
+    expect(lines).toContain("notify-auth-ok");
+    expect(lines.some((line) => line.includes("hooks.example.test") && line.includes('"result":"trap"'))).toBe(true);
+    expect(lines.some((line) => line.startsWith("pg_dump"))).toBe(true);
+    expect(lines.some((line) => line.startsWith("docker run"))).toBe(false);
+    expectNoRetryDump(ctx, true);
+  });
+
+  it("exit depois do backup grava o marcador pos_backup", () => {
+    const ctx = arrange();
+    const result = runAfterBackup(ctx.env, "exit 1");
+    expect(result.status).not.toBe(0);
+    expect(existsSync(ctx.failed)).toBe(true);
+    expect(JSON.parse(readFileSync(ctx.failed, "utf8")).result).toBe("pos_backup");
+    const lines = callsOf(ctx.mock);
+    expect(lines.some((line) => line.startsWith("pg_dump"))).toBe(true);
+    expect(lines.some((line) => line.startsWith("docker run"))).toBe(false);
+    expect(lines).not.toContain("notify-auth-ok");
+    expectNoRetryDump(ctx, true);
+  });
+
+  it("fallback sem attestation nenhuma não publica a imagem", () => {
+    const ctx = arrange({
+      commits: [SHA_NEW, SHA_OLD],
+      checks: { [SHA_NEW]: "success", [SHA_OLD]: "success" },
+      digests: { [SHA_OLD]: { app: DIG_APP, migrate: DIG_MIG } },
+      attest: "fail",
+      attestSha: SHA_OLD,
+      healthSha: SHA_OLD,
+    });
+    const result = run(ctx.env);
+    expect(result.status).not.toBe(0);
+    expect(callsOf(ctx.mock).some((line) => line.startsWith("pg_dump") || line.startsWith("docker run"))).toBe(false);
+    expect(existsSync(ctx.failed)).toBe(true);
+    expect(JSON.parse(readFileSync(ctx.failed, "utf8")).result).toBe("sem_imagem");
+  });
+
+  it("fallback que não confere a attestation do migrate não publica a imagem", () => {
+    const ctx = arrange({
+      commits: [SHA_NEW, SHA_OLD],
+      checks: { [SHA_NEW]: "success", [SHA_OLD]: "success" },
+      digests: { [SHA_OLD]: { app: DIG_APP, migrate: DIG_MIG } },
+      attestSha: SHA_OLD,
+      attestFailSubstr: "/migrate@",
+      healthSha: SHA_OLD,
+    });
+    const result = run(ctx.env);
+    expect(result.status).not.toBe(0);
+    const lines = callsOf(ctx.mock);
+    expect(lines.some((line) => line.includes("gh attestation verify") && line.includes("/migrate@"))).toBe(true);
+    expect(lines.some((line) => line.startsWith("pg_dump") || line.startsWith("docker run"))).toBe(false);
+    expect(existsSync(ctx.failed)).toBe(true);
+    expect(JSON.parse(readFileSync(ctx.failed, "utf8")).result).toBe("sem_imagem");
+  });
+
+  it("fallback não aceita sha sem os checks verdes", () => {
+    const ctx = arrange({
+      commits: [SHA_NEW, SHA_OLD],
+      checks: { [SHA_NEW]: "success", [SHA_OLD]: "failure" },
+      digests: { [SHA_OLD]: { app: DIG_APP, migrate: DIG_MIG } },
+      attestSha: SHA_OLD,
+      healthSha: SHA_OLD,
+    });
+    const result = run(ctx.env);
+    expect(result.status).not.toBe(0);
+    const lines = callsOf(ctx.mock);
+    expect(lines.some((line) => line.includes(`/commits/${SHA_OLD}/check-runs`))).toBe(true);
+    expect(lines.some((line) => line.startsWith("pg_dump") || line.startsWith("docker run") || line.includes("gh attestation"))).toBe(false);
+    expect(existsSync(ctx.failed)).toBe(true);
+    expect(JSON.parse(readFileSync(ctx.failed, "utf8")).result).toBe("sem_imagem");
   });
 
   it("o runbook é de produção, restaura por env-file e deixa o BLOCK-12 pendente", () => {
