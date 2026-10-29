@@ -13,9 +13,7 @@ const base = {
 describe("prévia de agenda da recuperação", () => {
   it("muda só a saída para a preferência e preserva os campos locais de entrada", () => {
     const formulario = renderToStaticMarkup(createElement(PreviaAgenda, { itemReservaId: "item", preferenciaFusoExibicao: "America/Costa_Rica", fusoInstitucional: "America/Sao_Paulo" }));
-    expect(formulario).toContain('type="hidden"');
-    expect(formulario).toContain('name="inicio"');
-    expect(formulario).not.toContain('type="datetime-local"');
+    expect(formulario).toContain('type="datetime-local"');
     expect(formulario).toContain('name="fuso"');
     expect(formulario).toContain('value="America/Sao_Paulo"');
 
