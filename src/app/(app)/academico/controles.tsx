@@ -112,7 +112,7 @@ export const CampoInstante = forwardRef<HTMLInputElement, ComponentProps<typeof 
   const caixa = useRef<HTMLDivElement>(null);
   return (
     <div ref={caixa} className="contents">
-      <DateTimePicker {...props} ref={ref} tipoInput={props.tipoInput ?? "datetime-local"} onChange={(evento) => { props.onChange?.(evento); if (!veioDoDom(evento)) disparar(caixa.current); }} />
+      <DateTimePicker {...props} ref={ref} onChange={(evento) => { props.onChange?.(evento); if (!veioDoDom(evento)) disparar(caixa.current); }} />
     </div>
   );
 });

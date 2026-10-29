@@ -49,7 +49,7 @@ export function PoliticasComissao({ dados, preferenciaFusoExibicao = null, fusoE
       ) : (
         <label>Valor<CampoMoeda required value={valorFixo} onChange={setValorFixo} moeda={moedaSelecionada} className="block w-28 rounded border p-2" /></label>
       )}
-      <label>Vigência (vazio = agora)<DateTimePicker name="vigencia" fuso={fusoCampo} className="block rounded border p-2" tipoInput="datetime-local" /><span className="block text-xs text-gray-600">Horário em {fusoCampo}.</span></label>
+      <label>Vigência (vazio = agora)<DateTimePicker name="vigencia" fuso={fusoCampo} className="block rounded border p-2" /><span className="block text-xs text-gray-600">Horário em {fusoCampo}.</span></label>
       <button disabled={acao.ocupado} className={botaoClasses({ tamanho: "lg" })}>Publicar nova versão</button>
     </form>
     <FeedbackAcao erro={acao.erro} />
