@@ -252,6 +252,14 @@ elif "/api/v1/applications/" in url and url.endswith("/envs") and method == "PAT
         code = (mock / "patch-migrate-code").read_text(encoding="utf-8").strip()
     elif "APP_IMAGE" in body and (mock / "patch-app-code").exists():
         code = (mock / "patch-app-code").read_text(encoding="utf-8").strip()
+    elif "APP_IMAGE" in body and (mock / "patch-app-fail-after").exists():
+        count_path = mock / "patch-app-count"
+        seen = int(count_path.read_text(encoding="utf-8")) if count_path.exists() else 0
+        seen += 1
+        count_path.write_text(str(seen), encoding="utf-8")
+        limit = int((mock / "patch-app-fail-after").read_text(encoding="utf-8").strip())
+        if seen > limit:
+            code = "500"
     resp = "{}"
 elif "/api/v1/deploy?" in url and method == "POST":
     code = "500" if (mock / "deploy-fail").exists() else "200"
@@ -411,9 +419,11 @@ type Scene = {
   deployFail?: boolean;
   smoke?: string;
   envsGetCode?: string;
-  envs?: Array<{ key: string; value: string; is_preview?: boolean }>;
+  envs?: Array<{ key: string; value: string; is_preview?: boolean | string | number | null }>;
+  envsRaw?: string;
   patchMigrateCode?: string;
   patchAppCode?: string;
+  patchAppFailAfter?: number;
   ghcrCode?: { role: "app" | "migrate"; sha: string; code: string };
   contract?: boolean;
   migrateUrl?: boolean;
@@ -473,6 +483,7 @@ function arrange(scene: Scene = {}): {
   if (scene.envsGetCode) writeFileSync(join(mock, "envs-get-code"), scene.envsGetCode);
   if (scene.patchMigrateCode) writeFileSync(join(mock, "patch-migrate-code"), scene.patchMigrateCode);
   if (scene.patchAppCode) writeFileSync(join(mock, "patch-app-code"), scene.patchAppCode);
+  if (scene.patchAppFailAfter !== undefined) writeFileSync(join(mock, "patch-app-fail-after"), String(scene.patchAppFailAfter));
   if (scene.ghcrCode) {
     const tag = `sha-${scene.ghcrCode.sha.slice(0, 7)}`;
     writeFileSync(join(mock, `ghcr-code-${scene.ghcrCode.role}-${tag}`), scene.ghcrCode.code);
@@ -486,7 +497,7 @@ function arrange(scene: Scene = {}): {
     { key: "APP_MIGRATE_IMAGE", value: prevMig, is_preview: false },
     { key: "AUTH_SECRET", value: OTHER_SECRET },
   ];
-  writeFileSync(join(mock, "envs.json"), JSON.stringify(envs));
+  writeFileSync(join(mock, "envs.json"), scene.envsRaw ?? JSON.stringify(envs));
   const state = join(stateDir, "state.json");
   const failed = join(stateDir, "state.json.failed");
   if (scene.state) {
@@ -563,6 +574,20 @@ function callsOf(mock: string): string[] {
   const path = join(mock, "calls.log");
   if (!existsSync(path)) return [];
   return readFileSync(path, "utf8").split("\n").filter(Boolean);
+}
+
+function httpUrl(line: string): string {
+  return line.split(" ").find((part) => part.startsWith("http://") || part.startsWith("https://")) ?? "";
+}
+
+function deployUrls(lines: string[]): string[] {
+  return lines.map(httpUrl).filter((url) => {
+    try {
+      return new URL(url).pathname === "/api/v1/deploy";
+    } catch {
+      return false;
+    }
+  });
 }
 
 function combined(result: ReturnType<typeof run>, mock: string, log: string): string {
@@ -986,7 +1011,9 @@ describe("fluxo · ordem, latest-wins, health e aviso", () => {
     const migPatch = lines.findIndex((line) => line.includes("PATCH") && line.includes("APP_MIGRATE_IMAGE") && line.includes(DIG_MIG));
     const dockerAt = lines.findIndex((line) => line.startsWith("docker run"));
     const appPatch = lines.findIndex((line) => line.includes("PATCH") && line.includes('"key": "APP_IMAGE"') && line.includes(DIG_APP));
-    const deployAt = at(`/api/v1/deploy?uuid=${UUID}`);
+    const deployUrl = `http://172.16.5.5:8000/api/v1/deploy?uuid=${UUID}`;
+    expect(deployUrls(lines)).toEqual([deployUrl]);
+    const deployAt = lines.findIndex((line) => httpUrl(line) === deployUrl);
     const healthAt = at("/api/health");
     const readyAt = at("/api/ready");
     const smokeAt = at(SMOKE_PATH);
@@ -1561,7 +1588,7 @@ os.execv("${join(bin, "curl.real")}", ["curl.real", *args])
     const lines = callsOf(ctx.mock);
     expect(lines.some((line) => line.includes("/services/"))).toBe(false);
     expect(lines.some((line) => line.includes(`/api/v1/applications/${UUID}/envs`))).toBe(true);
-    expect(lines.some((line) => line.includes(`/api/v1/deploy?uuid=${UUID}`))).toBe(true);
+    expect(deployUrls(lines)).toEqual([`http://127.0.0.1:8000/api/v1/deploy?uuid=${UUID}`]);
     expect(result.status).toBe(0);
   });
 
@@ -1619,6 +1646,135 @@ os.execv("${join(bin, "curl.real")}", ["curl.real", *args])
     expect(lines.some((line) => line.includes("PATCH"))).toBe(false);
     expect(lines.join("\n")).not.toContain(dup);
     expect(lines.join("\n")).not.toContain(DIG_APP_PREVIEW);
+  });
+
+  it("JSON inválido na leitura de env aborta antes do PATCH e do deploy", () => {
+    const ctx = arrange({ envsRaw: "{" });
+    const result = run(ctx.env);
+    const lines = callsOf(ctx.mock);
+    expect(result.stderr).toContain("resposta de env do Coolify inválida");
+    expect(lines.some((line) => line.includes("PATCH"))).toBe(false);
+    expect(lines.some((line) => line.includes("/api/v1/deploy?"))).toBe(false);
+    expect(result.status).not.toBe(0);
+  });
+
+  it("valor de env com quebra de linha aborta antes do PATCH e do deploy", () => {
+    const ctx = arrange({
+      envs: [
+        { key: "APP_IMAGE", value: `${APP_REPO}@${DIG_APP_PREV}\n`, is_preview: false },
+        { key: "APP_MIGRATE_IMAGE", value: `${MIG_REPO}@${DIG_MIG_PREV}`, is_preview: false },
+      ],
+    });
+    const result = run(ctx.env);
+    const lines = callsOf(ctx.mock);
+    expect(result.stderr).toContain("resposta de env do Coolify inválida");
+    expect(lines.some((line) => line.includes("PATCH"))).toBe(false);
+    expect(lines.some((line) => line.includes("/api/v1/deploy?"))).toBe(false);
+    expect(result.status).not.toBe(0);
+  });
+
+  it.each([
+    ["com is_preview string false", "false"],
+    ["com is_preview 0", 0],
+    ["com is_preview null", null],
+  ] as const)("APP_IMAGE %s aborta antes do PATCH e do deploy", (_label, flag) => {
+    const image: { key: string; value: string; is_preview?: boolean | string | number | null } = {
+      key: "APP_IMAGE",
+      value: `${APP_REPO}@${DIG_APP_PREV}`,
+      is_preview: flag,
+    };
+    const ctx = arrange({
+      envs: [
+        image,
+        { key: "APP_MIGRATE_IMAGE", value: `${MIG_REPO}@${DIG_MIG_PREV}`, is_preview: false },
+      ],
+    });
+    const result = run(ctx.env);
+    const lines = callsOf(ctx.mock);
+    expect(result.stderr).toContain("linha não-preview ambígua");
+    expect(lines.some((line) => line.includes("PATCH"))).toBe(false);
+    expect(lines.some((line) => line.includes("/api/v1/deploy?"))).toBe(false);
+    expect(result.status).not.toBe(0);
+  });
+
+  it("value ausente aborta antes do PATCH", () => {
+    const ctx = arrange({
+      envsRaw: JSON.stringify([
+        { key: "APP_IMAGE", is_preview: false },
+        { key: "APP_MIGRATE_IMAGE", value: `${MIG_REPO}@${DIG_MIG_PREV}`, is_preview: false },
+      ]),
+    });
+    const result = run(ctx.env);
+    const lines = callsOf(ctx.mock);
+    expect(result.stderr).toContain("token sem read:sensitive ou variável is_shown_once");
+    expect(lines.some((line) => line.includes("PATCH"))).toBe(false);
+    expect(lines.some((line) => line.includes("/api/v1/deploy?"))).toBe(false);
+    expect(result.status).not.toBe(0);
+  });
+
+  it("value vazio aborta antes do PATCH", () => {
+    const ctx = arrange({
+      envs: [
+        { key: "APP_IMAGE", value: "", is_preview: false },
+        { key: "APP_MIGRATE_IMAGE", value: `${MIG_REPO}@${DIG_MIG_PREV}`, is_preview: false },
+      ],
+    });
+    const result = run(ctx.env);
+    const lines = callsOf(ctx.mock);
+    expect(result.stderr).toContain("resposta de env do Coolify inválida");
+    expect(lines.some((line) => line.includes("PATCH"))).toBe(false);
+    expect(lines.some((line) => line.includes("/api/v1/deploy?"))).toBe(false);
+    expect(result.status).not.toBe(0);
+  });
+
+  it("imagem anterior que não é digest pinado aborta antes do PATCH", () => {
+    const ctx = arrange({
+      envs: [
+        { key: "APP_IMAGE", value: `${APP_REPO}:latest`, is_preview: false },
+        { key: "APP_MIGRATE_IMAGE", value: `${MIG_REPO}@${DIG_MIG_PREV}`, is_preview: false },
+      ],
+    });
+    const result = run(ctx.env);
+    const lines = callsOf(ctx.mock);
+    expect(result.stderr).toContain("imagem anterior inválida");
+    expect(lines.some((line) => line.includes("PATCH"))).toBe(false);
+    expect(lines.some((line) => line.includes("/api/v1/deploy?"))).toBe(false);
+    expect(result.status).not.toBe(0);
+  });
+
+  it("is_preview ausente aborta com a mensagem própria", () => {
+    const ctx = arrange({
+      envs: [
+        { key: "APP_IMAGE", value: `${APP_REPO}@${DIG_APP_PREV}` },
+        { key: "APP_MIGRATE_IMAGE", value: `${MIG_REPO}@${DIG_MIG_PREV}`, is_preview: false },
+      ],
+    });
+    const result = run(ctx.env);
+    const lines = callsOf(ctx.mock);
+    expect(result.stderr).toContain("is_preview ausente");
+    expect(result.stderr).not.toContain("linha não-preview ambígua");
+    expect(lines.some((line) => line.includes("PATCH"))).toBe(false);
+    expect(lines.some((line) => line.includes("/api/v1/deploy?"))).toBe(false);
+    expect(result.status).not.toBe(0);
+  });
+
+  it("falha no meio do rollback registra rollback parcial", () => {
+    const ctx = arrange({
+      healthSha: SHA_OTHER,
+      state: { sha: SHA_OLD, app: DIG_APP_PREV, migrate: DIG_MIG_PREV },
+      patchAppFailAfter: 1,
+    });
+    const result = run(ctx.env);
+    expect(result.status).not.toBe(0);
+    const marker = JSON.parse(readFileSync(ctx.failed, "utf8")) as { result: string };
+    expect(marker.result).toContain("rollback parcial");
+    expect(marker.result).toContain("restauradas=APP_MIGRATE_IMAGE");
+    expect(marker.result).toContain("faltam=APP_IMAGE");
+    expect(result.stderr).toContain("rollback parcial");
+    expect(readFileSync(ctx.log, "utf8")).toContain("rollback parcial");
+    const lines = callsOf(ctx.mock);
+    expect(lines.some((line) => line.includes("PATCH") && line.includes("APP_MIGRATE_IMAGE") && line.includes(DIG_MIG_PREV))).toBe(true);
+    expect(lines.filter((line) => line.includes("PATCH") && line.includes('"key": "APP_IMAGE"')).length).toBeGreaterThanOrEqual(2);
   });
 
   it("ponta sem imagem deploya o commit anterior publicado e atestado", () => {

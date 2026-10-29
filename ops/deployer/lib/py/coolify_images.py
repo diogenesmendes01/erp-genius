@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
 """Extrai a única linha de produção de APP_IMAGE e APP_MIGRATE_IMAGE.
 
-Só vale is_preview false. A linha de preview é ignorada e não sai no stdout.
-Zero ou mais de uma linha não-preview da mesma chave sai com código 3.
+Só vale is_preview false. A linha de preview é ignorada.
+Códigos: 1 JSON inválido, 2 valor vazio ou com quebra de linha,
+3 linha não-preview ambígua ou is_preview não booleano,
+4 value ausente, 5 is_preview ausente.
 """
 import json
 import sys
@@ -24,13 +26,17 @@ def main() -> int:
         key = item.get("key")
         if key not in WANTED:
             continue
+        if "is_preview" not in item:
+            return 5
         flag = item.get("is_preview")
         if flag is True:
             continue
         if flag is not False:
             return 3
-        value = item.get("value", "")
-        if not isinstance(value, str) or "\n" in value or "\r" in value or "\x00" in value:
+        if "value" not in item:
+            return 4
+        value = item.get("value")
+        if not isinstance(value, str) or value == "" or "\n" in value or "\r" in value or "\x00" in value:
             return 2
         found[key].append(value)
     for key in WANTED:

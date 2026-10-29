@@ -55,6 +55,10 @@ Preencha `/etc/erp-deployer/env` (modo `0600`, dono `deployer:deployer`). Não h
 
 O script só chama `GET` e `PATCH /api/v1/applications/thpvwxk6figfp347ajznvzhl/envs` e `POST /api/v1/deploy?uuid=thpvwxk6figfp347ajznvzhl`, e só se a base for localhost ou RFC1918. Um `COOLIFY_APP_UUID` diferente no ambiente aborta. Na leitura e no PATCH entra só a variável com `is_preview` false, e o corpo do PATCH manda `is_preview: false`. A linha de preview não é alterada. Zero ou mais de uma linha não-preview aborta antes do deploy.
 
+JSON inválido, valor vazio ou com quebra de linha aborta com `resposta de env do Coolify inválida`. `is_preview` ausente aborta com `is_preview ausente`. `is_preview` não booleano (`"false"`, `0`, `null`) aborta com `linha não-preview ambígua`. `value` ausente aborta com `token sem read:sensitive ou variável is_shown_once`. Imagem anterior que não é digest pinado aborta com `imagem anterior inválida`. Qualquer uma dessas saídas acontece antes do PATCH e do `POST /deploy`.
+
+O token emitido no time da application precisa de `read`, `write` e `read:sensitive`. Nunca use um token root. `APP_IMAGE` e `APP_MIGRATE_IMAGE` não podem ter `is_shown_once`: sem `read:sensitive`, ou com a variável marcada assim, o GET volta sem `value` e o tick aborta.
+
 Se o Coolify não tiver escopo por app, crie um time dedicado que contenha somente a application `thpvwxk6figfp347ajznvzhl` e emita o token nesse time. Esta é a limitação conhecida: o produto pode não isolar o token num único app, e o time dedicado é o controle compensatório. Não reutilize o token de outro ambiente.
 
 ## O que cada tick faz
@@ -115,7 +119,9 @@ Sem esse comando o mesmo SHA não é tentado de novo. Se o incidente começou co
 
 ## Rollback
 
-Falha de health, ready, smoke ou do `POST /deploy` depois da troca de imagem: o script restaura `APP_IMAGE` e `APP_MIGRATE_IMAGE` e redeploya. A fonte é o state anterior. No primeiro deploy, sem state, usa as imagens que o Coolify já tinha, se forem digests válidos. O banco não é revertido. O código automático só chama `pg_restore --list`. Não há `prisma migrate reset`, `prisma db push` nem down-migration.
+Falha de health, ready, smoke ou do `POST /deploy` depois da troca de imagem: o script restaura `APP_IMAGE` e `APP_MIGRATE_IMAGE` e redeploya. A fonte é o state anterior. No primeiro deploy, sem state, usa as imagens que o Coolify já tinha, se forem digests válidos. O banco não é revertido. A migration não é desfeita: o lote com `migration-contract` continua barrado pelo guard, antes do backup. O código automático só chama `pg_restore --list`. Não há `prisma migrate reset`, `prisma db push` nem down-migration.
+
+Se um PATCH falha no meio dessa restauração, o marcador e o log registram `rollback parcial`, com `restauradas=` nas chaves já gravadas e `faltam=` nas que não foram. A saída é diferente de 0.
 
 Em seguida grava `/var/lib/erp-deployer/state.json.failed` com o SHA que falhou. Enquanto esse marcador existir para o mesmo SHA, o timer não tenta de novo e não roda outro `pg_dump`. Isso vale para `migration-contract`, dump corrompido, leitura ou escrita do Coolify depois do backup, migrate, health, smoke, o `POST /deploy`, a ausência de imagem publicada (`sem_imagem`) e o erro do GHCR no fallback (`ghcr_erro`). Um SIGTERM depois do backup encerra com 143 e não grava o marcador. A retomada é manual: `sudo erp-deployer clear-failed` apaga só o marcador, e `sudo erp-deployer resume` apaga o marcador e o `PAUSE`. Um commit mais novo da `main` é avaliado normalmente.
 

@@ -305,33 +305,41 @@ ref_migrate_valida() {
   return 0
 }
 
-coolify_set() {
+coolify_write() {
   local key="$1" value="$2" body="" resp="" code=""
+  COOLIFY_WRITE_ERR="chave de env não permitida"
   case "$key" in
     APP_IMAGE)
-      ref_app_valida "$value" || die "APP_IMAGE inválida"
+      ref_app_valida "$value" || { COOLIFY_WRITE_ERR="APP_IMAGE inválida"; return 1; }
       ;;
     APP_MIGRATE_IMAGE)
-      ref_migrate_valida "$value" || die "APP_MIGRATE_IMAGE inválida"
+      ref_migrate_valida "$value" || { COOLIFY_WRITE_ERR="APP_MIGRATE_IMAGE inválida"; return 1; }
       ;;
     *)
-      die "chave de env não permitida"
+      return 1
       ;;
   esac
   body="$(mktemp)" || die "mktemp falhou"
   resp="$(mktemp)" || die "mktemp falhou"
   if ! ENV_KEY="$key" ENV_VALUE="$value" run_allow ENV_KEY ENV_VALUE -- python3 "${DEPLOYER_ROOT}/lib/py/json_env.py" > "$body"; then
     rm -f "$body" "$resp"
-    die "não foi possível montar o env"
+    COOLIFY_WRITE_ERR="não foi possível montar o env"
+    return 1
   fi
   if ! code="$(http_code PATCH "${COOLIFY_BASE_URL}/api/v1/applications/${COOLIFY_APP_UUID_FIXO}/envs" "$resp" "" "$body" "$COOLIFY_TOKEN")"; then
     rm -f "$body" "$resp"
-    die "Coolify indisponível"
+    COOLIFY_WRITE_ERR="Coolify indisponível"
+    return 1
   fi
   rm -f "$body" "$resp"
   if [[ "$code" != "200" && "$code" != "201" ]]; then
-    die "Coolify recusou a escrita de env (${code})"
+    COOLIFY_WRITE_ERR="Coolify recusou a escrita de env (${code})"
+    return 1
   fi
+}
+
+coolify_set() {
+  coolify_write "$@" || die "$COOLIFY_WRITE_ERR"
 }
 
 coolify_deploy() {
@@ -360,10 +368,16 @@ coolify_ler_imagens() {
   fi
   parsed="$(run_allow -- python3 "${DEPLOYER_ROOT}/lib/py/coolify_images.py" < "$resp")" || parse_rc=$?
   rm -f "$resp"
-  if [[ "$parse_rc" -eq 3 ]]; then
-    die "linha não-preview ambígua"
-  fi
   if [[ "$parse_rc" -ne 0 ]]; then
+    if [[ "$parse_rc" -eq 3 ]]; then
+      die "linha não-preview ambígua"
+    fi
+    if [[ "$parse_rc" -eq 4 ]]; then
+      die "token sem read:sensitive ou variável is_shown_once"
+    fi
+    if [[ "$parse_rc" -eq 5 ]]; then
+      die "is_preview ausente"
+    fi
     die "resposta de env do Coolify inválida"
   fi
   PREV_APP=""
@@ -374,6 +388,8 @@ coolify_ler_imagens() {
       "APP_MIGRATE_IMAGE="*) PREV_MIG="${line#APP_MIGRATE_IMAGE=}" ;;
     esac
   done <<< "$parsed"
+  ref_app_valida "$PREV_APP" || die "imagem anterior inválida"
+  ref_migrate_valida "$PREV_MIG" || die "imagem anterior inválida"
 }
 
 run_migrate() {
@@ -489,7 +505,7 @@ write_json_atomic() {
 }
 
 rollback_from_state() {
-  local app="" mig="" app_ref="" mig_ref=""
+  local app="" mig="" app_ref="" mig_ref="" restored="" missing=""
   if [[ -f "$DEPLOYER_STATE_FILE" ]]; then
     if ! app="$(run_allow -- python3 "${DEPLOYER_ROOT}/lib/py/state_io.py" read app_digest "$DEPLOYER_STATE_FILE")"; then
       die "state file ilegível"
@@ -510,13 +526,34 @@ rollback_from_state() {
     log_event "rollback" "sem_state"
     return 1
   fi
-  coolify_set APP_MIGRATE_IMAGE "$mig_ref"
-  coolify_set APP_IMAGE "$app_ref"
+  if coolify_write APP_MIGRATE_IMAGE "$mig_ref"; then
+    restored="APP_MIGRATE_IMAGE"
+  else
+    missing="APP_MIGRATE_IMAGE APP_IMAGE"
+    registrar_rollback_parcial "$restored" "$missing"
+    return 1
+  fi
+  if ! coolify_write APP_IMAGE "$app_ref"; then
+    missing="APP_IMAGE"
+    registrar_rollback_parcial "$restored" "$missing"
+    return 1
+  fi
   if ! coolify_deploy; then
     log_event "rollback" "deploy_falhou" "" "$app" "$mig"
     return 1
   fi
   log_event "rollback" "ok" "" "$app" "$mig"
+}
+
+registrar_rollback_parcial() {
+  local restored="${1:-nenhuma}" missing="$2" note=""
+  if [[ -z "$restored" ]]; then
+    restored="nenhuma"
+  fi
+  note="rollback parcial restauradas=${restored} faltam=${missing}"
+  log_event "rollback" "$note" "${CANDIDATE:-}" "${app_digest:-}" "${mig_digest:-}"
+  write_json_atomic "$DEPLOYER_FAILED_FILE" "$CANDIDATE" "$app_digest" "$mig_digest" "$note"
+  POS_BACKUP_HANDLED=1
 }
 
 commit_has_contract() {
@@ -659,4 +696,4 @@ RANGE_SHAS=()
 MAIN_SHAS=()
 RESOLVED_APP=""
 RESOLVED_MIG=""
-: "${CANDIDATE:-}${PREV_APP:-}${PREV_MIG:-}${MAIN_SHAS[*]:-}${RESOLVED_APP}${RESOLVED_MIG}"
+: "${CANDIDATE:-}${PREV_APP:-}${PREV_MIG:-}${MAIN_SHAS[*]:-}${RESOLVED_APP}${RESOLVED_MIG}${POS_BACKUP_HANDLED:-}"
