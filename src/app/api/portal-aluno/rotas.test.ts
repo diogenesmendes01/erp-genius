@@ -60,6 +60,23 @@ it("token: senha recusada pelo schema devolve 400 com o campo, não o 422 do lin
   expect(await r.json()).toEqual({ erro: "Senha fora das regras.", campo: "senha" });
 });
 
+it("token inválido no bind interno do proxy segue 422, sem o 403 da origem", async () => {
+  mocks.token.mockRejectedValueOnce(new Error("Este link não está disponível."));
+  const r = await token(new Request("https://0.0.0.0:3000/api/portal-aluno/token", {
+    method: "POST",
+    headers: {
+      origin: "https://uat.geniusidiomas.com",
+      host: "app:3000",
+      "x-forwarded-host": "uat.geniusidiomas.com",
+      "x-forwarded-proto": "https",
+      "content-type": "application/json",
+    },
+    body: JSON.stringify({ token: "x".repeat(40), senha: "senha-boa-de-teste" }),
+  }));
+  expect(r.status).toBe(422);
+  expect(mocks.token).toHaveBeenCalledOnce();
+});
+
 it("token: token malformado, link vencido ou corpo ilegível continuam no 422 genérico", async () => {
   const { z } = await import("zod");
   const semToken = z.object({ token: z.string().min(32) }).safeParse({ token: "x" });

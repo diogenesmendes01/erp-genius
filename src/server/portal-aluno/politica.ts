@@ -75,14 +75,56 @@ export function cookieSessaoPortalAluno(valor: string, expiraEm: Date) {
   };
 }
 
-export function origemPortalAlunoPermitida(request: Request): boolean {
-  const origem = request.headers.get("origin");
-  if (!origem) return false;
+const PROTOCOLOS_HTTP = new Set(["http:", "https:"]);
+
+function protocoloHttp(valor: string): "http:" | "https:" | null {
+  if (valor === "http" || valor === "http:") return "http:";
+  if (valor === "https" || valor === "https:") return "https:";
+  return null;
+}
+
+function hostDeCabecalho(valor: string, protocolo: "http:" | "https:"): string | null {
+  const primeiro = valor.split(",")[0]?.trim();
+  if (!primeiro) return null;
   try {
-    const urlOrigem = new URL(origem);
-    const urlCanonica = new URL(request.url);
-    if (!['http:', 'https:'].includes(urlOrigem.protocol) || !['http:', 'https:'].includes(urlCanonica.protocol)) return false;
-    return urlOrigem.origin === urlCanonica.origin;
+    return new URL(`${protocolo}//${primeiro}`).host.toLowerCase();
+  } catch {
+    return null;
+  }
+}
+
+/** `request.url` no `next start` usa o bind do processo (`0.0.0.0:3000`, `app`), não o host público. */
+function hostDeBindInterno(hostname: string): boolean {
+  const nome = hostname.toLowerCase();
+  if (nome === "localhost" || nome === "0.0.0.0" || nome === "127.0.0.1" || nome === "::1" || nome === "[::1]") return true;
+  if (!nome.includes(".")) return true;
+  return /^\d{1,3}(\.\d{1,3}){3}$/.test(nome);
+}
+
+function protocoloEncaminhado(request: Request): "http:" | "https:" | null {
+  const partes = request.headers.get("x-forwarded-proto")?.split(",").map((p) => p.trim().toLowerCase()).filter(Boolean) ?? [];
+  const ultimo = partes.at(-1);
+  return ultimo ? protocoloHttp(ultimo) : null;
+}
+
+export function origemPortalAlunoPermitida(request: Request): boolean {
+  const bruto = request.headers.get("origin");
+  if (!bruto) return false;
+  try {
+    const origem = new URL(bruto);
+    const canonica = new URL(request.url);
+    if (!PROTOCOLOS_HTTP.has(origem.protocol) || !PROTOCOLOS_HTTP.has(canonica.protocol)) return false;
+    if (origem.origin === canonica.origin) return true;
+    if (origem.hostname.toLowerCase() === canonica.hostname.toLowerCase()) {
+      return origem.protocol === canonica.protocol || (origem.protocol === "https:" && canonica.protocol === "http:");
+    }
+    if (!hostDeBindInterno(canonica.hostname)) return false;
+    const protocoloPublico = protocoloEncaminhado(request);
+    if (protocoloPublico && origem.protocol !== protocoloPublico) return false;
+    if (!protocoloPublico && origem.protocol === "http:" && canonica.protocol === "https:") return false;
+    const publico = request.headers.get("x-forwarded-host") ?? request.headers.get("host");
+    if (!publico) return false;
+    return hostDeCabecalho(publico, origem.protocol as "http:" | "https:") === origem.host.toLowerCase();
   } catch {
     return false;
   }

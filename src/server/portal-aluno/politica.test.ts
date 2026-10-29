@@ -58,4 +58,50 @@ describe("política do portal do aluno", () => {
     expect(origemPortalAlunoPermitida(protocoloDiferente)).toBe(false);
     expect(origemPortalAlunoPermitida(semOrigin)).toBe(false);
   });
+
+  it("atrás do proxy, o bind interno não rejeita o Origin que coincide com o host público", () => {
+    const caddyReescreveHost = new Request("https://0.0.0.0:3000/api/portal-aluno/token", {
+      method: "POST",
+      headers: {
+        origin: "https://uat.geniusidiomas.com",
+        host: "app:3000",
+        "x-forwarded-host": "uat.geniusidiomas.com",
+        "x-forwarded-proto": "https",
+      },
+    });
+    const caddyPreservaHost = new Request("http://127.0.0.1:3000/api/portal-aluno/token", {
+      method: "POST",
+      headers: { origin: "https://uat.geniusidiomas.com", host: "uat.geniusidiomas.com" },
+    });
+    const soProtocoloInterno = new Request("http://uat.geniusidiomas.com:3000/api/portal-aluno/token", {
+      method: "POST",
+      headers: { origin: "https://uat.geniusidiomas.com", host: "uat.geniusidiomas.com" },
+    });
+    expect(origemPortalAlunoPermitida(caddyReescreveHost)).toBe(true);
+    expect(origemPortalAlunoPermitida(caddyPreservaHost)).toBe(true);
+    expect(origemPortalAlunoPermitida(soProtocoloInterno)).toBe(true);
+  });
+
+  it("no bind interno, Origin de outro site continua negado mesmo com host encaminhado", () => {
+    const csrf = new Request("https://0.0.0.0:3000/api/portal-aluno/token", {
+      method: "POST",
+      headers: {
+        origin: "https://atacante.example",
+        host: "app:3000",
+        "x-forwarded-host": "uat.geniusidiomas.com",
+        "x-forwarded-proto": "https",
+      },
+    });
+    const rebaixa = new Request("https://0.0.0.0:3000/api/portal-aluno/token", {
+      method: "POST",
+      headers: {
+        origin: "http://uat.geniusidiomas.com",
+        host: "app:3000",
+        "x-forwarded-host": "uat.geniusidiomas.com",
+        "x-forwarded-proto": "https",
+      },
+    });
+    expect(origemPortalAlunoPermitida(csrf)).toBe(false);
+    expect(origemPortalAlunoPermitida(rebaixa)).toBe(false);
+  });
 });
