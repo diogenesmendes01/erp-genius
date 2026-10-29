@@ -1,4 +1,4 @@
-import { beforeEach, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, expect, it, vi } from "vitest";
 const mocks = vi.hoisted(() => ({ entrar: vi.fn(), token: vi.fn(), recuperar: vi.fn() }));
 vi.mock("@/server/portal-aluno/identidade", () => ({ entrarPortalAluno: mocks.entrar, consumirTokenPortalAluno: mocks.token, solicitarRecuperacaoPortalAluno: mocks.recuperar }));
 vi.mock("@/server/portal-aluno/sessao", async () => {
@@ -12,7 +12,8 @@ import { POST as recuperar } from "./recuperacao/route";
 const requisicao = (body: string, headers: Record<string, string> = {}) => new Request("https://escola.example/api/portal-aluno/sessao", {
   method: "POST", headers: { origin: "https://escola.example", ...headers }, body,
 });
-beforeEach(() => { vi.resetAllMocks(); });
+beforeEach(() => { vi.resetAllMocks(); vi.stubEnv("APP_BASE_URL", "https://escola.example"); });
+afterEach(() => { vi.unstubAllEnvs(); });
 
 it.each([login, token, recuperar])("recusa origem externa antes de processar a identidade", async post => {
   const r = await post(requisicao("{}", { origin: "https://outra.example" }));
@@ -58,6 +59,73 @@ it("token: senha recusada pelo schema devolve 400 com o campo, não o 422 do lin
   expect(r.status).toBe(400);
   expect(r.headers.get("cache-control")).toBe("no-store");
   expect(await r.json()).toEqual({ erro: "Senha fora das regras.", campo: "senha" });
+});
+
+it("token inválido no bind interno do proxy segue 422 quando a Origin é a de APP_BASE_URL", async () => {
+  vi.stubEnv("APP_BASE_URL", "https://uat.geniusidiomas.com");
+  mocks.token.mockRejectedValueOnce(new Error("Este link não está disponível."));
+  const r = await token(new Request("https://0.0.0.0:3000/api/portal-aluno/token", {
+    method: "POST",
+    headers: {
+      origin: "https://uat.geniusidiomas.com",
+      host: "app:3000",
+      "x-forwarded-host": "atacante.example",
+      "x-forwarded-proto": "http",
+      "content-type": "application/json",
+    },
+    body: JSON.stringify({ token: "x".repeat(40), senha: "senha-boa-de-teste" }),
+  }));
+  expect(r.status).toBe(422);
+  expect(mocks.token).toHaveBeenCalledOnce();
+});
+
+it("F1: token em produção nega Origin http da URL canônica mesmo sem X-Forwarded-Proto", async () => {
+  vi.stubEnv("NODE_ENV", "production");
+  vi.stubEnv("APP_BASE_URL", "https://erp.geniusidiomas.com");
+  const r = await token(new Request("http://127.0.0.1:3000/api/portal-aluno/token", {
+    method: "POST",
+    headers: {
+      origin: "http://erp.geniusidiomas.com",
+      host: "erp.geniusidiomas.com",
+      "content-type": "application/json",
+    },
+    body: "{}",
+  }));
+  expect(r.status).toBe(403);
+  expect(mocks.token).not.toHaveBeenCalled();
+});
+
+it("F2: token em produção nega Origin https da URL canônica quando a porta é 8443", async () => {
+  vi.stubEnv("NODE_ENV", "production");
+  vi.stubEnv("APP_BASE_URL", "https://erp.geniusidiomas.com");
+  const r = await token(new Request("https://erp.geniusidiomas.com/api/portal-aluno/token", {
+    method: "POST",
+    headers: {
+      origin: "https://erp.geniusidiomas.com:8443",
+      host: "erp.geniusidiomas.com:8443",
+      "content-type": "application/json",
+    },
+    body: "{}",
+  }));
+  expect(r.status).toBe(403);
+  expect(mocks.token).not.toHaveBeenCalled();
+});
+
+it("token nega Origin forjado mesmo com X-Forwarded-Host e Host repetindo o golpe", async () => {
+  vi.stubEnv("NODE_ENV", "production");
+  const r = await token(new Request("https://atacante.example/api/portal-aluno/token", {
+    method: "POST",
+    headers: {
+      origin: "https://atacante.example",
+      host: "atacante.example",
+      "x-forwarded-host": "atacante.example",
+      "x-forwarded-proto": "https",
+      "content-type": "application/json",
+    },
+    body: "{}",
+  }));
+  expect(r.status).toBe(403);
+  expect(mocks.token).not.toHaveBeenCalled();
 });
 
 it("token: token malformado, link vencido ou corpo ilegível continuam no 422 genérico", async () => {

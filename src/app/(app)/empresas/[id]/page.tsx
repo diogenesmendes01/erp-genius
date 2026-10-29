@@ -15,8 +15,10 @@ export default async function EmpresaDetalhePage({ params }: { params: Promise<{
   const dados = await obterEmpresa(id);
   if (!dados) notFound();
   const podeOperarB2B = papeis.includes(Papel.ADMINISTRADOR) || papeis.includes(Papel.FINANCEIRO);
+  // listarProdutosParaMatricula exige vendedor, gerente ou secretaria e lança para o financeiro.
+  const podeListarProdutos = papeis.includes(Papel.ADMINISTRADOR) || papeis.includes(Papel.VENDEDOR) || papeis.includes(Papel.GERENTE_COMERCIAL) || papeis.includes(Papel.SECRETARIA_ACADEMICA);
   const [produtos, competencias] = await Promise.all([
-    listarProdutosParaMatricula(),
+    podeListarProdutos ? listarProdutosParaMatricula() : Promise.resolve([]),
     podeOperarB2B ? competenciasFaturaveis(id) : Promise.resolve([]),
   ]);
 
