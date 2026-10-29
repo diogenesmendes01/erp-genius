@@ -1,6 +1,6 @@
 "use client";
 
-import { forwardRef, useEffect, useId, useRef, useState, type ChangeEvent, type InputHTMLAttributes, type ReactNode } from "react";
+import { forwardRef, useCallback, useEffect, useId, useRef, useState, type ChangeEvent, type InputHTMLAttributes, type ReactNode } from "react";
 import { cn } from "@/lib/utils";
 import { CONTROLE_CAMPO } from "@/components/Campo";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -164,18 +164,21 @@ export const DateTimePicker = forwardRef<HTMLInputElement, Props>(function DateT
   const travado = Boolean(disabled || readOnly);
   const gatilhoRef = useRef<HTMLButtonElement>(null);
   const campoRef = useRef<HTMLInputElement | null>(null);
-  function ligarCampo(el: HTMLInputElement | null) {
+  const ligarCampo = useCallback((el: HTMLInputElement | null) => {
     campoRef.current = el;
     if (typeof ref === "function") ref(el);
     else if (ref) ref.current = el;
-  }
+  }, [ref]);
   useEffect(() => {
     const formulario = campoRef.current?.form;
     if (!formulario) return;
-    const aoResetar = () => setErroRevelado(false);
+    const aoResetar = () => {
+      setErroRevelado(false);
+      setInterno(defaultValue ?? "");
+    };
     formulario.addEventListener("reset", aoResetar);
     return () => formulario.removeEventListener("reset", aoResetar);
-  }, [form]);
+  }, [form, defaultValue]);
   const erroId = useId();
   const mensagem = mensagemRestricaoDataHora(val, { required, min, max, step });
   const restringe = Boolean(required || textoLimite(min) || textoLimite(max));
