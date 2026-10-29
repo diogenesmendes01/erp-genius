@@ -84,9 +84,17 @@ describe("image.yml produz o que o deployer consome", () => {
     for (const nome of nomes) expect(doCi, nome).not.toContain(nome);
   });
 
-  it("mantém o check build Next.js, que o deployer exige e o ci.yml não emite", () => {
-    expect(nomeDoJob(porId["build-next"] ?? "")).toBe("build Next.js");
+  it("em push o check é build Next.js; em workflow_dispatch o nome é outro", () => {
+    const nome = nomeDoJob(porId["build-next"] ?? "");
+    expect(nome).toBe(
+      "${{ github.event_name == 'workflow_dispatch' && 'imagens (dispatch)' || 'build Next.js' }}",
+    );
     expect(ler(CI)).not.toContain("name: build Next.js");
+    expect(ler(CI)).not.toContain("imagens (dispatch)");
+    for (const proibido of NOMES_DE_CHECK_DO_CI) {
+      expect(proibido).not.toBe("imagens (dispatch)");
+      expect(proibido).not.toBe("build Next.js");
+    }
   });
 
   it("só publica na main, em push ou workflow_dispatch", () => {

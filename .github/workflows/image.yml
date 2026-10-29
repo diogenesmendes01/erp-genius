@@ -20,7 +20,7 @@ env:
 
 jobs:
   build-next:
-    name: build Next.js
+    name: ${{ github.event_name == 'workflow_dispatch' && 'imagens (dispatch)' || 'build Next.js' }}
     runs-on: ubuntu-latest
     timeout-minutes: 30
     if: ${{ (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && github.ref == 'refs/heads/main' }}
