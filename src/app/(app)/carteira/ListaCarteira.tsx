@@ -14,7 +14,7 @@ import { CampoCombobox } from "@/components/ui/combobox";
 import { CampoSelect } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { reatribuirCarteiraEmLote } from "@/server/crm/carteira-acoes";
-import { MAX_LOTE_CARTEIRA, TEXTO_CONSEQUENCIA_REATRIBUICAO, type FiltrosCarteira, type LinhaCarteira, type VendedorCarteira } from "@/server/crm/carteira";
+import { MAX_LOTE_CARTEIRA, TEXTO_CONSEQUENCIA_REATRIBUICAO, type FiltrosCarteira, type LinhaCarteira, type VendedorCarteira } from "./modelo";
 
 const MAX_LOTE = MAX_LOTE_CARTEIRA;
 const CAIXA = "flex h-11 w-11 items-center justify-center";

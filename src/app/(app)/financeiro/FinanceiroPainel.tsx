@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { StatusComissao, TipoAprovacao, Vigencia } from "@prisma/client";
+import type { StatusComissao, TipoAprovacao, Vigencia } from "@prisma/client";
 import { IconUser } from "@tabler/icons-react";
 import { STATUS_COMISSAO_LABEL, TIPO_APROVACAO_LABEL, VIGENCIA_LABEL } from "@/lib/labels";
 import { formatarMoeda, formatarValores, somarPorMoeda, consolidar, type ValorMoeda } from "@/lib/dinheiro";
