@@ -31,6 +31,7 @@ import { AvisosAgendaPainel } from "./AvisosAgendaPainel";
 import { NumerosPainel, SetoresNumeroEditor } from "./NumerosPainel";
 import { PoliticaPainel } from "./PoliticaPainel";
 import { AlteracaoPendente } from "@/components/AlteracaoPendente";
+import { Botao } from "@/components/Botao";
 import { criarGanchos, elementos, texto, type No } from "@/test/tela-sem-dom";
 
 const sujo = () => m.aviso.mock.calls.at(-1)?.[0];
@@ -65,7 +66,7 @@ describe("NumerosPainel e SetoresNumeroEditor", () => {
     id: "n1", telefoneE164: "+5511999990001", rotulo: "Secretaria", driver: "MOTOR", finalidade: "COBRANCA",
     providerRef: "n1", sessao: "CONECTADO", donoId: null, donoNome: null, ativo: true, setores: [], triagemResponsavelId: null, ...o,
   });
-  const botaoTexto = (t: ReactNode, rotulo: string) => elementos(t).find((n: No) => n.type === "button" && texto(n.props.children).includes(rotulo))!;
+  const botaoTexto = (t: ReactNode, rotulo: string) => elementos(t).find((n: No) => (n.type === "button" || n.type === Botao) && texto(n.props.children).includes(rotulo))!;
 
   it("abrir o formulário sem mexer não avisa; digitar o rótulo liga; fechar desliga", () => {
     const tela = () => m.ganchos!.renderizar(NumerosPainel, { numeros: [numero()], vendedores: [] });

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState, type FormEvent, type ReactNode } from "react";
+import { useEffect, useState, useSyncExternalStore, type FormEvent, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { Botao, botaoClasses } from "@/components/Botao";
 import { Campo, CONTROLE_INVALIDO, focarPrimeiroComErro, type ErrosDeCampos } from "@/components/Campo";
@@ -17,6 +17,8 @@ import {
 const IDS: Record<CampoSenha, string> = { senha: "ativar-senha", confirmacao: "ativar-confirmacao" };
 const CONTROLE = `w-full rounded-md border border-gray-300 px-3 py-2 text-sm ${CONTROLE_INVALIDO}`;
 const MSG_ACESSO_CONFIRMADO = "Senha definida. Abrindo a sua área do aluno…";
+const semAssinatura = () => () => {};
+const lerTokenDaAba = () => (typeof window === "undefined" ? null : capturarTokenAtivacao(window.location.hash, armazenamentoDaAba()));
 const MSG_EMAIL_VALIDADO = "Seu novo e-mail foi validado. A escola vai liberar o acesso com ele; você receberá um aviso.";
 
 function Moldura({ children }: { children: ReactNode }) {
@@ -36,17 +38,17 @@ function SemLink({ indisponivel }: { indisponivel: boolean }) {
 
 export default function AtivarPortalAlunoPage() {
   const router = useRouter();
-  const [token, setToken] = useState<string | null | undefined>(undefined);
+  const noCliente = useSyncExternalStore(semAssinatura, () => true, () => false);
+  const [lido] = useState(lerTokenDaAba);
   const [indisponivel, setIndisponivel] = useState(false);
+  const token = !noCliente ? undefined : indisponivel ? null : lido;
   const [senha, setSenha] = useState("");
   const [confirmacao, setConfirmacao] = useState("");
   const [errosCampos, setErrosCampos] = useState<ErrosDeCampos<CampoSenha>>({});
   const acao = useAcaoCliente({ idempotente: false });
 
   useEffect(() => {
-    const lido = capturarTokenAtivacao(window.location.hash, armazenamentoDaAba());
     if (window.location.hash) window.history.replaceState(null, "", window.location.pathname);
-    setToken(lido);
   }, []);
 
   async function confirmar(evento: FormEvent<HTMLFormElement>) {
@@ -65,7 +67,6 @@ export default function AtivarPortalAlunoPage() {
     } else if (desfecho?.tipo === "erro" && desfecho.mensagem === ERRO_LINK_INDISPONIVEL) {
       esquecerTokenAtivacao(armazenamentoDaAba());
       setIndisponivel(true);
-      setToken(null);
     } else if (desfecho?.tipo === "incerto") {
       acao.setErro(MSG_ATIVACAO_INCERTA);
     }
