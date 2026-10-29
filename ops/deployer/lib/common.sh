@@ -18,6 +18,8 @@ DIGEST_RE='^sha256:[a-f0-9]{64}$'
 SHA_RE='^[a-f0-9]{40}$'
 SAFE_PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
 
+# ci.yml repete typecheck, lint e test (tz). O nome do job fica intacto por causa
+# da regra de proteção. checks_verdict trata nome duplicado como fail-closed.
 REQUIRED_CHECKS=(
   "typecheck"
   "lint"
@@ -116,8 +118,19 @@ assert_coolify_base_url() {
 
 assert_app_base_url() {
   local url="$1"
-  [[ "$url" =~ ^https?://[A-Za-z0-9.-]+(:[0-9]{1,5})?$ ]] || die "APP_BASE_URL rejeitada"
+  [[ "$url" =~ ^https://[A-Za-z0-9.-]+(:[0-9]{1,5})?$ ]] || die "APP_BASE_URL rejeitada"
   APP_BASE_URL="$url"
+}
+
+assert_smoke_cookie() {
+  local value="$1" re='^[A-Za-z0-9._%+=/;:-]{16,}$'
+  [[ "$value" =~ $re ]] || die "SMOKE_COOKIE ausente ou inválido"
+}
+
+assert_smoke_path() {
+  local value="$1"
+  [[ "$value" =~ ^/[A-Za-z0-9._~/-]+$ ]] || die "SMOKE_PATH inválido"
+  [[ "$value" != *..* ]] || die "SMOKE_PATH inválido"
 }
 
 assert_notify_url() {
@@ -125,10 +138,19 @@ assert_notify_url() {
   [[ "$url" =~ ^https://[A-Za-z0-9.-]+(:[0-9]{1,5})?(/[A-Za-z0-9._~/-]*)?$ ]] || die "DEPLOY_NOTIFY_URL rejeitada"
 }
 
+http_header_file() {
+  local line="$1" file=""
+  file="$(mktemp)" || return 1
+  chmod 0600 "$file" || { rm -f "$file"; return 1; }
+  printf '%s\n' "$line" > "$file" || { rm -f "$file"; return 1; }
+  printf '%s' "$file"
+}
+
 http_code() {
-  local method="$1" url="$2" body_out="$3" header_out="${4:-}" data_file="${5:-}" auth="${6:-}" accept="${7:-application/json}"
+  local method="$1" url="$2" body_out="$3" header_out="${4:-}" data_file="${5:-}" auth="${6:-}" accept="${7:-application/json}" extra="${8:-}"
   local -a args=()
-  local code=""
+  local -a temps=()
+  local code="" header_file=""
   args+=(--silent --show-error --max-redirs 0 --proto "=http,https")
   args+=(--connect-timeout 10 --max-time 60)
   args+=(-o "$body_out" -w "%{http_code}" -X "$method")
@@ -137,14 +159,27 @@ http_code() {
     args+=(-D "$header_out")
   fi
   if [[ -n "$auth" ]]; then
-    args+=(-H "Authorization: Bearer ${auth}")
+    header_file="$(http_header_file "Authorization: Bearer ${auth}")" || return 1
+    temps+=("$header_file")
+    args+=(-H "@${header_file}")
+  fi
+  if [[ -n "$extra" ]]; then
+    header_file="$(http_header_file "$extra")" || { rm -f "${temps[@]}"; return 1; }
+    temps+=("$header_file")
+    args+=(-H "@${header_file}")
   fi
   if [[ -n "$data_file" ]]; then
     args+=(-H "Content-Type: application/json" --data-binary "@${data_file}")
   fi
   args+=(--url "$url")
   if ! code="$(curl "${args[@]}")"; then
+    if [[ "${#temps[@]}" -gt 0 ]]; then
+      rm -f "${temps[@]}"
+    fi
     return 1
+  fi
+  if [[ "${#temps[@]}" -gt 0 ]]; then
+    rm -f "${temps[@]}"
   fi
   if [[ ! "$code" =~ ^[0-9]{3}$ ]]; then
     return 1
@@ -172,8 +207,9 @@ load_env_file() {
   fi
   while IFS= read -r -d '' key && IFS= read -r -d '' value; do
     case "$key" in
-      COOLIFY_TOKEN|GHCR_TOKEN|COOLIFY_BASE_URL|APP_BASE_URL|DATABASE_URL|MIGRATE_DATABASE_URL|BACKUP_DIR|BACKUP_RETENTION_DAYS|DEPLOYER_STATE_FILE|DEPLOYER_LOCK_FILE|DEPLOYER_LOG_FILE|DEPLOYER_FAILED_FILE|DEPLOYER_PAUSE_FILE|HEALTH_ATTEMPTS|HEALTH_INTERVAL_SECONDS|DOCKER_NETWORK|DEPLOY_NOTIFY_URL)
+      COOLIFY_TOKEN|GHCR_TOKEN|COOLIFY_BASE_URL|APP_BASE_URL|DATABASE_URL|MIGRATE_DATABASE_URL|BACKUP_DIR|BACKUP_RETENTION_DAYS|DEPLOYER_STATE_FILE|DEPLOYER_LOCK_FILE|DEPLOYER_LOG_FILE|DEPLOYER_FAILED_FILE|DEPLOYER_PAUSE_FILE|HEALTH_ATTEMPTS|HEALTH_INTERVAL_SECONDS|DOCKER_NETWORK|DEPLOY_NOTIFY_URL|DEPLOY_NOTIFY_TOKEN|SMOKE_COOKIE|SMOKE_PATH)
         printf -v "$key" '%s' "$value"
+        export "${key?}"
         ;;
       *)
         die "chave de env inesperada"

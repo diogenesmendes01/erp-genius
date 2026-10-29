@@ -21,11 +21,12 @@ apply_defaults() {
   : "${HEALTH_ATTEMPTS:=30}"
   : "${HEALTH_INTERVAL_SECONDS:=5}"
   : "${COOLIFY_BASE_URL:=http://127.0.0.1:8000}"
+  : "${SMOKE_PATH:=/api/inbox/nao-lidas}"
 }
 
 require_tools() {
   local c
-  for c in gh curl python3 pg_dump docker sha256sum flock timeout find mktemp; do
+  for c in gh curl python3 pg_dump pg_restore docker sha256sum flock timeout find mktemp; do
     if ! command -v "$c" >/dev/null 2>&1; then
       die "ferramenta ausente: ${c}"
     fi
@@ -61,8 +62,11 @@ validate_config() {
   [[ -n "${APP_BASE_URL:-}" ]] || die "APP_BASE_URL ausente"
   assert_app_base_url "${APP_BASE_URL%/}"
   [[ -n "${DATABASE_URL:-}" ]] || die "DATABASE_URL ausente"
+  assert_smoke_cookie "${SMOKE_COOKIE:-}"
+  assert_smoke_path "${SMOKE_PATH:-}"
   if [[ -n "${DEPLOY_NOTIFY_URL:-}" ]]; then
     assert_notify_url "$DEPLOY_NOTIFY_URL"
+    assert_token "DEPLOY_NOTIFY_TOKEN" "${DEPLOY_NOTIFY_TOKEN:-}"
   fi
   [[ "$HEALTH_ATTEMPTS" =~ ^[1-9][0-9]*$ ]] || die "HEALTH_ATTEMPTS inválido"
   [[ "$HEALTH_INTERVAL_SECONDS" =~ ^[0-9]+$ ]] || die "HEALTH_INTERVAL_SECONDS inválido"
@@ -90,28 +94,35 @@ failed_same() {
   [[ "$current" == "$1" ]]
 }
 
+rollback_or_note() {
+  if ! rollback_from_state; then
+    log_event "rollback" "indisponivel" "${1:-}"
+  fi
+}
+
 main() {
-  local rc=0 tool_root="" skip_env="" pause_file="" app_digest="" mig_digest=""
+  local rc=0 tool_root="" pause_file="" app_digest="" mig_digest=""
   START_MS="$(date +%s%3N)"
   DURATION_MS=0
   CANDIDATE=""
   tool_root="${DEPLOYER_TOOL_ROOT:-}"
-  skip_env="${DEPLOYER_SKIP_ENV_FILE:-}"
   pause_file="${DEPLOYER_PAUSE_FILE:-/etc/erp-deployer/PAUSE}"
   pin_path "$tool_root"
-  unset DEPLOYER_TOOL_ROOT DEPLOYER_SKIP_ENV_FILE
+  unset DEPLOYER_TOOL_ROOT
   apply_defaults
   if [[ -e "/etc/erp-deployer/PAUSE" || -e "$pause_file" ]]; then
     log_event "pause" "kill_switch"
     exit 0
   fi
-  if [[ "$skip_env" != "1" ]]; then
-    load_env_file "$DEPLOYER_ENV_FILE"
-    apply_defaults
-    if [[ -e "/etc/erp-deployer/PAUSE" || -e "$DEPLOYER_PAUSE_FILE" ]]; then
-      log_event "pause" "kill_switch"
-      exit 0
-    fi
+  load_env_file "$DEPLOYER_ENV_FILE"
+  apply_defaults
+  if [[ -n "${GHCR_TOKEN:-}" ]]; then
+    GH_TOKEN="$GHCR_TOKEN"
+    export GH_TOKEN
+  fi
+  if [[ -e "/etc/erp-deployer/PAUSE" || -e "$DEPLOYER_PAUSE_FILE" ]]; then
+    log_event "pause" "kill_switch"
+    exit 0
   fi
   validate_config
   acquire_lock
@@ -154,6 +165,7 @@ main() {
   verify_one "${APP_IMAGE_REPO}@${app_digest}" "$CANDIDATE" "$app_digest"
   verify_one "${MIGRATE_IMAGE_REPO}@${mig_digest}" "$CANDIDATE" "$mig_digest"
   backup_db "$CANDIDATE"
+  guard_migration_contract
   coolify_ler_imagens
   coolify_set APP_MIGRATE_IMAGE "${MIGRATE_IMAGE_REPO}@${mig_digest}"
   if ! run_migrate "${MIGRATE_IMAGE_REPO}@${mig_digest}"; then
@@ -166,13 +178,16 @@ main() {
     exit 1
   fi
   coolify_set APP_IMAGE "${APP_IMAGE_REPO}@${app_digest}"
-  coolify_deploy
+  if ! coolify_deploy; then
+    log_event "deploy" "coolify_falhou" "$CANDIDATE" "$app_digest" "$mig_digest"
+    write_json_atomic "$DEPLOYER_FAILED_FILE" "$CANDIDATE" "$app_digest" "$mig_digest" "deploy_fail"
+    rollback_or_note "$CANDIDATE"
+    exit 1
+  fi
   if ! wait_healthy "$CANDIDATE"; then
     log_event "health" "falhou" "$CANDIDATE" "$app_digest" "$mig_digest"
     write_json_atomic "$DEPLOYER_FAILED_FILE" "$CANDIDATE" "$app_digest" "$mig_digest" "health_fail"
-    if ! rollback_from_state; then
-      log_event "rollback" "indisponivel" "$CANDIDATE"
-    fi
+    rollback_or_note "$CANDIDATE"
     exit 1
   fi
   write_json_atomic "$DEPLOYER_STATE_FILE" "$CANDIDATE" "$app_digest" "$mig_digest" "success"

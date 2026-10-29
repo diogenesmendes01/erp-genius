@@ -12,6 +12,27 @@ if [[ -z "${DEPLOYER_ROOT:-}" ]]; then
   source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/common.sh"
 fi
 
+record_check() {
+  local name="$1" status="$2" conclusion="$3" prev="" pstatus="" pconclusion=""
+  # shellcheck disable=SC2154
+  prev="${seen[$name]:-}"
+  if [[ -z "$prev" ]]; then
+    seen["$name"]="${status} ${conclusion}"
+    return 0
+  fi
+  pstatus="${prev%% *}"
+  pconclusion="${prev#* }"
+  if [[ "$pstatus" != "completed" || "$status" != "completed" ]]; then
+    seen["$name"]="in_progress "
+    return 0
+  fi
+  if [[ "$pconclusion" != "success" || "$conclusion" != "success" ]]; then
+    seen["$name"]="completed failure"
+    return 0
+  fi
+  seen["$name"]="completed success"
+}
+
 checks_verdict() {
   local sha="$1" tsv name status conclusion req state any_pending any_failure
   assert_sha "$sha"
@@ -22,7 +43,7 @@ checks_verdict() {
   local -A seen=()
   while IFS=$'\t' read -r name status conclusion; do
     [[ -n "$name" ]] || continue
-    seen["$name"]="${status} ${conclusion}"
+    record_check "$name" "$status" "$conclusion"
   done <<< "$tsv"
   any_pending=0
   any_failure=0
@@ -188,6 +209,9 @@ backup_db() {
   if ! ( cd "$BACKUP_DIR" && sha256sum -c "${base}.sha256" >/dev/null ); then
     die "checksum do dump não confere"
   fi
+  if ! pg_restore --list "$file" >/dev/null; then
+    die "pg_restore --list falhou"
+  fi
   find "$BACKUP_DIR" -maxdepth 1 -type f -name '*.dump' -mtime "+${BACKUP_RETENTION_DAYS}" -delete
   find "$BACKUP_DIR" -maxdepth 1 -type f -name '*.sha256' -mtime "+${BACKUP_RETENTION_DAYS}" -delete
 }
@@ -239,14 +263,14 @@ coolify_set() {
 
 coolify_deploy() {
   local resp="" code=""
-  resp="$(mktemp)" || die "mktemp falhou"
+  resp="$(mktemp)" || return 1
   if ! code="$(http_code POST "${COOLIFY_BASE_URL}/api/v1/deploy?uuid=${COOLIFY_APP_UUID_FIXO}" "$resp" "" "" "$COOLIFY_TOKEN")"; then
     rm -f "$resp"
-    die "Coolify indisponível no deploy"
+    return 1
   fi
   rm -f "$resp"
   if [[ "$code" != "200" && "$code" != "201" ]]; then
-    die "Coolify recusou o deploy (${code})"
+    return 1
   fi
 }
 
@@ -277,33 +301,44 @@ coolify_ler_imagens() {
 }
 
 run_migrate() {
-  local image="$1" digest="" migrate_url=""
+  local image="$1" digest="" envfile="" rc=0
   local -a db_env=()
+  local -a net=()
   digest="${image#"${MIGRATE_IMAGE_REPO}@"}"
   [[ "$image" == "${MIGRATE_IMAGE_REPO}@${digest}" ]] || die "imagem de migrate inválida"
   assert_digest "$digest"
-  local -a net=()
   if [[ -n "${DOCKER_NETWORK:-}" ]]; then
     [[ "${DOCKER_NETWORK}" =~ ^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$ ]] || die "DOCKER_NETWORK inválida"
     net=(--network "$DOCKER_NETWORK")
   fi
   if [[ -n "${MIGRATE_DATABASE_URL:-}" ]]; then
     [[ "${MIGRATE_DATABASE_URL}" =~ ^postgres(ql)?://[^[:space:]]+$ ]] || die "MIGRATE_DATABASE_URL inválida"
-    migrate_url="$MIGRATE_DATABASE_URL"
-    db_env=(-e "DATABASE_URL=${migrate_url}")
+    envfile="$(mktemp)" || return 1
+    chmod 0600 "$envfile" || { rm -f "$envfile"; return 1; }
+    printf 'DATABASE_URL=%s\n' "$MIGRATE_DATABASE_URL" > "$envfile" || { rm -f "$envfile"; return 1; }
+    db_env=(--env-file "$envfile")
   else
     db_env=(-e DATABASE_URL)
   fi
-  docker pull "$image" || return 1
-  if [[ "${#net[@]}" -eq 0 ]]; then
-    docker run --rm --pull never "${db_env[@]}" --entrypoint npx "$image" prisma migrate deploy || return 1
-  else
-    docker run --rm --pull never "${net[@]}" "${db_env[@]}" --entrypoint npx "$image" prisma migrate deploy || return 1
+  if ! docker pull "$image"; then
+    if [[ -n "$envfile" ]]; then
+      rm -f "$envfile"
+    fi
+    return 1
   fi
+  if [[ "${#net[@]}" -eq 0 ]]; then
+    docker run --rm --pull never "${db_env[@]}" --entrypoint npx "$image" prisma migrate deploy || rc=$?
+  else
+    docker run --rm --pull never "${net[@]}" "${db_env[@]}" --entrypoint npx "$image" prisma migrate deploy || rc=$?
+  fi
+  if [[ -n "$envfile" ]]; then
+    rm -f "$envfile"
+  fi
+  [[ "$rc" -eq 0 ]]
 }
 
 wait_healthy() {
-  local sha="$1" i=1 body="" code="" got="" ready_body="" ready_code=""
+  local sha="$1" i=1 body="" code="" got="" ready_body="" ready_code="" smoke_body="" smoke_code=""
   assert_sha "$sha"
   while [[ "$i" -le "$HEALTH_ATTEMPTS" ]]; do
     body="$(mktemp)" || die "mktemp falhou"
@@ -330,7 +365,15 @@ wait_healthy() {
       ready_code="000"
     fi
     rm -f "$ready_body"
-    if [[ "$got" == "$sha" && "$ready_code" == "200" ]]; then
+    smoke_body="$(mktemp)" || die "mktemp falhou"
+    smoke_code="000"
+    if smoke_code="$(http_code GET "${APP_BASE_URL}${SMOKE_PATH}" "$smoke_body" "" "" "" "application/json" "Cookie: ${SMOKE_COOKIE}")"; then
+      :
+    else
+      smoke_code="000"
+    fi
+    rm -f "$smoke_body"
+    if [[ "$got" == "$sha" && "$ready_code" == "200" && "$smoke_code" == "200" ]]; then
       return 0
     fi
     if [[ "$i" -lt "$HEALTH_ATTEMPTS" && "$HEALTH_INTERVAL_SECONDS" != "0" ]]; then
@@ -363,23 +406,75 @@ write_json_atomic() {
 }
 
 rollback_from_state() {
-  local app="" mig=""
-  if [[ ! -f "$DEPLOYER_STATE_FILE" ]]; then
+  local app="" mig="" app_ref="" mig_ref=""
+  if [[ -f "$DEPLOYER_STATE_FILE" ]]; then
+    if ! app="$(python3 "${DEPLOYER_ROOT}/lib/py/state_io.py" read app_digest "$DEPLOYER_STATE_FILE")"; then
+      die "state file ilegível"
+    fi
+    if ! mig="$(python3 "${DEPLOYER_ROOT}/lib/py/state_io.py" read migrate_digest "$DEPLOYER_STATE_FILE")"; then
+      die "state file ilegível"
+    fi
+    assert_digest "$app"
+    assert_digest "$mig"
+    mig_ref="${MIGRATE_IMAGE_REPO}@${mig}"
+    app_ref="${APP_IMAGE_REPO}@${app}"
+  elif ref_app_valida "${PREV_APP:-}" && ref_migrate_valida "${PREV_MIG:-}"; then
+    app_ref="$PREV_APP"
+    mig_ref="$PREV_MIG"
+    app="${PREV_APP#"${APP_IMAGE_REPO}@"}"
+    mig="${PREV_MIG#"${MIGRATE_IMAGE_REPO}@"}"
+  else
     log_event "rollback" "sem_state"
     return 1
   fi
-  if ! app="$(python3 "${DEPLOYER_ROOT}/lib/py/state_io.py" read app_digest "$DEPLOYER_STATE_FILE")"; then
-    die "state file ilegível"
+  coolify_set APP_MIGRATE_IMAGE "$mig_ref"
+  coolify_set APP_IMAGE "$app_ref"
+  if ! coolify_deploy; then
+    log_event "rollback" "deploy_falhou" "" "$app" "$mig"
+    return 1
   fi
-  if ! mig="$(python3 "${DEPLOYER_ROOT}/lib/py/state_io.py" read migrate_digest "$DEPLOYER_STATE_FILE")"; then
-    die "state file ilegível"
-  fi
-  assert_digest "$app"
-  assert_digest "$mig"
-  coolify_set APP_MIGRATE_IMAGE "${MIGRATE_IMAGE_REPO}@${mig}"
-  coolify_set APP_IMAGE "${APP_IMAGE_REPO}@${app}"
-  coolify_deploy
   log_event "rollback" "ok" "" "$app" "$mig"
+}
+
+commit_has_contract() {
+  local sha="$1" names="" name=""
+  assert_sha "$sha"
+  if ! names="$(gh api --jq '.[] | .labels[]?.name' "repos/${GITHUB_REPO}/commits/${sha}/pulls")"; then
+    die "falha ao ler o label migration-contract"
+  fi
+  while IFS= read -r name; do
+    if [[ "$name" == "migration-contract" ]]; then
+      return 0
+    fi
+  done <<< "$names"
+  return 1
+}
+
+guard_migration_contract() {
+  local sha="" prev="" list=""
+  if commit_has_contract "$CANDIDATE"; then
+    die "migration-contract exige deploy manual"
+  fi
+  if [[ ! -f "$DEPLOYER_STATE_FILE" ]]; then
+    return 0
+  fi
+  if ! prev="$(python3 "${DEPLOYER_ROOT}/lib/py/state_io.py" read sha "$DEPLOYER_STATE_FILE")"; then
+    die "state file ilegível"
+  fi
+  assert_sha "$prev"
+  if [[ "$prev" == "$CANDIDATE" ]]; then
+    return 0
+  fi
+  if ! list="$(gh api --jq '.commits[].sha' "repos/${GITHUB_REPO}/compare/${prev}...${CANDIDATE}")"; then
+    die "falha ao comparar commits para migration-contract"
+  fi
+  while IFS= read -r sha; do
+    [[ -n "$sha" ]] || continue
+    assert_sha "$sha"
+    if commit_has_contract "$sha"; then
+      die "migration-contract exige deploy manual"
+    fi
+  done <<< "$list"
 }
 
 notify_line() {
@@ -391,7 +486,7 @@ notify_line() {
   body="$(mktemp)" || die "mktemp falhou"
   resp="$(mktemp)" || die "mktemp falhou"
   printf '%s\n' "$line" > "$body"
-  if code="$(http_code POST "$DEPLOY_NOTIFY_URL" "$resp" "" "$body" "")"; then
+  if code="$(http_code POST "$DEPLOY_NOTIFY_URL" "$resp" "" "$body" "$DEPLOY_NOTIFY_TOKEN")"; then
     if [[ "$code" != "200" && "$code" != "201" && "$code" != "202" && "$code" != "204" ]]; then
       log_event "notify" "http_${code}"
     fi

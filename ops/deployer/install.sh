@@ -17,12 +17,13 @@ if [[ "$(id -u)" -ne 0 && -z "${DESTDIR:-}" ]]; then
 fi
 
 base="${DESTDIR:-}"
-install -d -m 0755 "${base}${PREFIX}/bin" "${base}${PREFIX}/lib/py"
+install -d -m 0755 "${base}${PREFIX}/bin" "${base}${PREFIX}/lib/py" "${base}/usr/local/sbin"
 install -d -m 0750 "${base}${ETC}"
 install -d -m 0700 "${base}${STATE}" "${base}${BACKUP}"
 install -d -m 0755 "${base}${SYSTEMD_DIR}" "${base}${SYSUSERS_DIR}"
 
 install -m 0755 "${ROOT}/bin/deploy.sh" "${base}${PREFIX}/bin/deploy.sh"
+install -m 0755 "${ROOT}/bin/erp-deployer" "${base}/usr/local/sbin/erp-deployer"
 for f in "${ROOT}/lib/"*.sh; do
   install -m 0644 "$f" "${base}${PREFIX}/lib/$(basename "$f")"
 done

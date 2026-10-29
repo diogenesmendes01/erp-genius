@@ -16,7 +16,11 @@ const DIG_MIG_PREV = `sha256:${"d".repeat(64)}`;
 const COOLIFY_TOKEN = "coolify-token-test-value-0123456789";
 const GHCR_TOKEN = "ghcr-token-test-value-0123456789abcdef";
 const DB_SECRET = "db-secret-test";
+const MIGRATE_SECRET = "migrate-secret-test";
 const OTHER_SECRET = "super-segredo-coolify";
+const SMOKE_COOKIE = "smoke-cookie-test-value-0123456789";
+const NOTIFY_TOKEN = "notify-token-test-value-0123456789";
+const SMOKE_PATH = "/api/inbox/nao-lidas";
 const APP_REPO = "ghcr.io/diogenesmendes01/erp-genius";
 const MIG_REPO = "ghcr.io/diogenesmendes01/erp-genius/migrate";
 const UUID = "thpvwxk6figfp347ajznvzhl";
@@ -47,6 +51,15 @@ from pathlib import Path
 mock = Path(os.environ["MOCK_DIR"])
 calls = mock / "calls.log"
 args = sys.argv[1:]
+gh_token = os.environ.get("GH_TOKEN", "")
+ghcr = os.environ.get("GHCR_TOKEN", "")
+if not gh_token or gh_token != ghcr or not os.environ.get("DATABASE_URL", "").startswith("postgres"):
+    sys.stderr.write("gh sem variaveis exportadas\\n")
+    sys.exit(1)
+if not (mock / "gh-export-logged").exists():
+    (mock / "gh-export-logged").write_text("1", encoding="utf-8")
+    with calls.open("a", encoding="utf-8") as fh:
+        fh.write("gh-token-exportado\\n")
 with calls.open("a", encoding="utf-8") as fh:
     fh.write("gh " + " ".join(args) + "\\n")
 if not args:
@@ -63,6 +76,20 @@ if args[0] == "api":
         sys.exit(0)
     if "commits?per_page" in blob:
         sys.stdout.write((mock / "commits").read_text(encoding="utf-8"))
+        sys.exit(0)
+    if "/pulls" in blob:
+        import re
+        found = re.search(r"commits/([a-f0-9]{40})/pulls", blob)
+        if not found:
+            sys.exit(1)
+        labels = mock / f"labels-{found.group(1)}"
+        if labels.exists():
+            sys.stdout.write(labels.read_text(encoding="utf-8"))
+        sys.exit(0)
+    if "/compare/" in blob:
+        compared = mock / "compare-shas"
+        if compared.exists():
+            sys.stdout.write(compared.read_text(encoding="utf-8"))
         sys.exit(0)
     sys.exit(1)
 if args[0] == "attestation":
@@ -102,6 +129,21 @@ calls = mock / "calls.log"
 if (mock / "curl-exit").exists():
     sys.exit(1)
 args = sys.argv[1:]
+for arg in args:
+    if "Bearer " in arg or arg.startswith("Authorization:") or arg.startswith("Cookie:") or arg.startswith("DATABASE_URL="):
+        sys.stderr.write("argv com segredo\\n")
+        sys.exit(2)
+idx = 0
+while idx < len(args):
+    if args[idx] == "-H" and idx + 1 < len(args) and args[idx + 1].startswith("@"):
+        header_path = Path(args[idx + 1][1:])
+        mode = header_path.stat().st_mode & 0o777
+        if mode != 0o600:
+            sys.stderr.write("header sem 0600\\n")
+            sys.exit(3)
+        with calls.open("a", encoding="utf-8") as fh:
+            fh.write("curl-header-0600\\n")
+    idx += 1
 def take(flag):
     if flag in args:
         return args[args.index(flag) + 1]
@@ -138,8 +180,11 @@ elif url.endswith("/envs") and method == "PATCH":
     code = "201"
     resp = "{}"
 elif "/api/v1/deploy?" in url and method == "POST":
-    code = "200"
+    code = "500" if (mock / "deploy-fail").exists() else "200"
     resp = '{"deployments":[]}'
+elif url.endswith("${SMOKE_PATH}"):
+    code = (mock / "smoke-code").read_text(encoding="utf-8").strip() if (mock / "smoke-code").exists() else "200"
+    resp = '{"total":0}'
 elif url.endswith("/api/health"):
     sha = (mock / "health-sha").read_text(encoding="utf-8").strip()
     state = os.environ.get("DEPLOYER_STATE_FILE", "")
@@ -167,11 +212,37 @@ sys.stdout.write(code)
 import os, sys
 from pathlib import Path
 mock = Path(os.environ["MOCK_DIR"])
+args = sys.argv[1:]
+for arg in args:
+    if arg.startswith("DATABASE_URL=") or "Bearer " in arg or arg.startswith("Cookie:"):
+        sys.stderr.write("argv com segredo\\n")
+        sys.exit(2)
+safe = []
+idx = 0
+while idx < len(args):
+    if args[idx] == "--env-file" and idx + 1 < len(args):
+        env_path = Path(args[idx + 1])
+        mode = env_path.stat().st_mode & 0o777
+        text = env_path.read_text(encoding="utf-8")
+        if mode == 0o600 and text.startswith("DATABASE_URL=postgres") and "@db:" in text:
+            with (mock / "calls.log").open("a", encoding="utf-8") as fh:
+                fh.write("docker-env-file-ok\\n")
+        safe.extend(["--env-file", args[idx + 1]])
+        idx += 2
+        continue
+    safe.append(args[idx])
+    idx += 1
 with (mock / "calls.log").open("a", encoding="utf-8") as fh:
-    fh.write("docker " + " ".join(sys.argv[1:]) + "\\n")
-if sys.argv[1:2] == ["pull"]:
+    fh.write("docker " + " ".join(safe) + "\\n")
+if args[:1] == ["pull"]:
     sys.exit(0)
-if sys.argv[1:2] == ["run"]:
+if args[:1] == ["run"]:
+    if "--env-file" not in args and "DATABASE_URL" in args and not os.environ.get("DATABASE_URL", "").startswith("postgres"):
+        sys.stderr.write("docker sem DATABASE_URL\\n")
+        sys.exit(1)
+    if "--env-file" not in args and "DATABASE_URL" in args:
+        with (mock / "calls.log").open("a", encoding="utf-8") as fh:
+            fh.write("docker-saw-database-url\\n")
     sys.exit(1 if (mock / "migrate-fail").exists() else 0)
 sys.exit(1)
 `);
@@ -193,7 +264,19 @@ if not target:
     sys.exit(1)
 Path(target).write_text("PGDMP", encoding="utf-8")
 `);
-  for (const name of ["gh", "curl", "docker", "pg_dump"]) chmodSync(join(dir, name), 0o755);
+  writeFileSync(join(dir, "pg_restore"), `#!/usr/bin/env python3
+import os, sys
+from pathlib import Path
+mock = Path(os.environ["MOCK_DIR"])
+with (mock / "calls.log").open("a", encoding="utf-8") as fh:
+    fh.write("pg_restore " + " ".join(sys.argv[1:]) + "\\n")
+if (mock / "list-fail").exists():
+    sys.exit(1)
+if "--list" not in sys.argv:
+    sys.exit(2)
+sys.exit(0)
+`);
+  for (const name of ["gh", "curl", "docker", "pg_dump", "pg_restore"]) chmodSync(join(dir, name), 0o755);
 }
 
 type Scene = {
@@ -210,10 +293,33 @@ type Scene = {
   dumpFail?: boolean;
   curlExit?: boolean;
   notifyFail?: boolean;
+  listFail?: boolean;
+  deployFail?: boolean;
+  smoke?: string;
+  contract?: boolean;
+  migrateUrl?: boolean;
   state?: { sha: string; app: string; migrate: string } | null;
 };
 
-function arrange(scene: Scene = {}): { mock: string; env: NodeJS.ProcessEnv; state: string; backup: string; log: string; pause: string; lock: string; failed: string } {
+type EnvMap = Record<string, string>;
+
+function materializeEnv(file: string, values: EnvMap): void {
+  writeFileSync(file, Object.entries(values).map(([key, value]) => `${key}=${value}`).join("\n") + "\n");
+  chmodSync(file, 0o600);
+}
+
+function arrange(scene: Scene = {}): {
+  mock: string;
+  env: NodeJS.ProcessEnv;
+  envFile: string;
+  envValues: EnvMap;
+  state: string;
+  backup: string;
+  log: string;
+  pause: string;
+  lock: string;
+  failed: string;
+} {
   work = mkdtempSync(join(tmpdir(), "erp-deployer-"));
   const bin = join(work, "bin");
   const mock = join(work, "mock");
@@ -241,6 +347,10 @@ function arrange(scene: Scene = {}): { mock: string; env: NodeJS.ProcessEnv; sta
   if (scene.dumpFail) writeFileSync(join(mock, "dump-fail"), "1");
   if (scene.curlExit) writeFileSync(join(mock, "curl-exit"), "1");
   if (scene.notifyFail) writeFileSync(join(mock, "notify-fail"), "1");
+  if (scene.listFail) writeFileSync(join(mock, "list-fail"), "1");
+  if (scene.deployFail) writeFileSync(join(mock, "deploy-fail"), "1");
+  if (scene.smoke) writeFileSync(join(mock, "smoke-code"), scene.smoke);
+  if (scene.contract) writeFileSync(join(mock, `labels-${commits[0]}`), "migration-contract\n");
   const prevApp = scene.previousApp ?? `${APP_REPO}@${DIG_APP_PREV}`;
   const prevMig = scene.previousMigrate ?? `${MIG_REPO}@${DIG_MIG_PREV}`;
   writeFileSync(join(mock, "envs.json"), JSON.stringify([
@@ -262,19 +372,12 @@ function arrange(scene: Scene = {}): { mock: string; env: NodeJS.ProcessEnv; sta
   const log = join(stateDir, "deploy.log");
   const pause = join(work, "PAUSE");
   const lock = join(stateDir, "deploy.lock");
-  const env: NodeJS.ProcessEnv = {
-    PATH: `${bin}:/usr/bin:/bin`,
-    HOME: work,
-    NODE_ENV: "test",
-    TMPDIR: work,
-    LANG: "C.UTF-8",
-    MOCK_DIR: mock,
-    DEPLOYER_TOOL_ROOT: bin,
-    DEPLOYER_SKIP_ENV_FILE: "1",
+  const envFile = join(work, "env");
+  const envValues: EnvMap = {
     COOLIFY_TOKEN,
     GHCR_TOKEN,
     COOLIFY_BASE_URL: "http://127.0.0.1:8000",
-    APP_BASE_URL: "http://127.0.0.1:3000",
+    APP_BASE_URL: "https://127.0.0.1:3000",
     DATABASE_URL: `postgresql://erp:${DB_SECRET}@127.0.0.1:5432/erp`,
     BACKUP_DIR: backup,
     BACKUP_RETENTION_DAYS: "14",
@@ -286,8 +389,24 @@ function arrange(scene: Scene = {}): { mock: string; env: NodeJS.ProcessEnv; sta
     HEALTH_ATTEMPTS: "2",
     HEALTH_INTERVAL_SECONDS: "0",
     DOCKER_NETWORK: "coolify",
+    SMOKE_COOKIE,
+    SMOKE_PATH,
   };
-  return { mock, env, state, backup, log, pause, lock, failed };
+  if (scene.migrateUrl) {
+    envValues.MIGRATE_DATABASE_URL = `postgresql://erp:${MIGRATE_SECRET}@db:5432/erp`;
+  }
+  materializeEnv(envFile, envValues);
+  const env: NodeJS.ProcessEnv = {
+    PATH: `${bin}:/usr/bin:/bin`,
+    HOME: work,
+    NODE_ENV: "test",
+    TMPDIR: work,
+    LANG: "C.UTF-8",
+    MOCK_DIR: mock,
+    DEPLOYER_TOOL_ROOT: bin,
+    DEPLOYER_ENV_FILE: envFile,
+  };
+  return { mock, env, envFile, envValues, state, backup, log, pause, lock, failed };
 }
 
 function run(env: NodeJS.ProcessEnv) {
@@ -306,7 +425,7 @@ function combined(result: ReturnType<typeof run>, mock: string, log: string): st
 }
 
 function assertNoSecrets(text: string): void {
-  for (const secret of [COOLIFY_TOKEN, GHCR_TOKEN, DB_SECRET, OTHER_SECRET]) {
+  for (const secret of [COOLIFY_TOKEN, GHCR_TOKEN, DB_SECRET, MIGRATE_SECRET, OTHER_SECRET, SMOKE_COOKIE, NOTIFY_TOKEN]) {
     expect(text).not.toContain(secret);
   }
 }
@@ -338,7 +457,7 @@ describe("checklist 1 · token fora do repo, do log e de outro app", () => {
     const envFile = join(work, "env");
     writeFileSync(envFile, `COOLIFY_TOKEN=${COOLIFY_TOKEN}\nGHCR_TOKEN=${GHCR_TOKEN}\n`);
     chmodSync(envFile, 0o644);
-    const result = run({ ...ctx.env, DEPLOYER_SKIP_ENV_FILE: "0", DEPLOYER_ENV_FILE: envFile, DEPLOYER_TOOL_ROOT: "" });
+    const result = run({ ...ctx.env, DEPLOYER_ENV_FILE: envFile, DEPLOYER_TOOL_ROOT: "" });
     expect(result.status).not.toBe(0);
     expect(result.stderr).toContain("0600");
     assertNoSecrets(combined(result, ctx.mock, ctx.log));
@@ -358,13 +477,14 @@ describe("checklist 1 · token fora do repo, do log e de outro app", () => {
       `COOLIFY_TOKEN=${COOLIFY_TOKEN}`,
       `GHCR_TOKEN=${GHCR_TOKEN}`,
       "COOLIFY_BASE_URL=http://127.0.0.1:8000",
-      "APP_BASE_URL=http://127.0.0.1:3000",
+      "APP_BASE_URL=https://127.0.0.1:3000",
       `DATABASE_URL=postgresql://erp:${DB_SECRET}@127.0.0.1:5432/erp`,
+      `SMOKE_COOKIE=${SMOKE_COOKIE}`,
+      `SMOKE_PATH=${SMOKE_PATH}`,
     ].join("\n") + "\n");
     chmodSync(envFile, 0o600);
     const result = run({
       ...ctx.env,
-      DEPLOYER_SKIP_ENV_FILE: "0",
       DEPLOYER_ENV_FILE: envFile,
       DEPLOYER_TOOL_ROOT: "",
     });
@@ -382,9 +502,15 @@ describe("checklist 1 · token fora do repo, do log e de outro app", () => {
       { COOLIFY_BASE_URL: "http://token@127.0.0.1:8000" },
       { COOLIFY_BASE_URL: "http://127.0.0.1:8000/api" },
       { COOLIFY_TOKEN: "curto" },
-    ]) {
+      { APP_BASE_URL: "http://127.0.0.1:3000" },
+    ] as Array<Record<string, string>>) {
       const ctx = arrange();
-      const result = run({ ...ctx.env, ...extra });
+      if (extra.COOLIFY_APP_UUID) ctx.env.COOLIFY_APP_UUID = extra.COOLIFY_APP_UUID;
+      if (extra.COOLIFY_BASE_URL) ctx.envValues.COOLIFY_BASE_URL = extra.COOLIFY_BASE_URL;
+      if (extra.COOLIFY_TOKEN) ctx.envValues.COOLIFY_TOKEN = extra.COOLIFY_TOKEN;
+      if (extra.APP_BASE_URL) ctx.envValues.APP_BASE_URL = extra.APP_BASE_URL;
+      materializeEnv(ctx.envFile, ctx.envValues);
+      const result = run(ctx.env);
       expect(result.status, JSON.stringify(extra)).not.toBe(0);
       expect(callsOf(ctx.mock).some((line) => line.startsWith("curl"))).toBe(false);
       assertNoSecrets(combined(result, ctx.mock, ctx.log));
@@ -470,8 +596,12 @@ describe("checklist 3 · digests e shas só entram se passarem na regex", () => 
 describe("checklist 4 · rollback não mexe no banco", () => {
   it("o código não tem restore, reset, db push nem down-migration", () => {
     const blob = codeFiles().map((path) => readFileSync(path, "utf8")).join("\n");
-    expect(blob).not.toMatch(/pg_restore|migrate reset|db push|migrate down/);
-    const runbook = readFileSync(join(ROOT, "RUNBOOK.md"), "utf8");
+    expect(blob).not.toMatch(/migrate reset|db push|migrate down/);
+    expect(blob).toContain("pg_restore --list");
+    expect(blob).not.toContain("--dbname");
+    expect(blob).not.toContain("--clean");
+    expect(blob).not.toContain("pg_restore --clean");
+    const runbook = readFileSync(join(process.cwd(), "docs/ops/deploy-auto.md"), "utf8");
     expect(runbook).toContain("pg_restore");
     expect(runbook).toMatch(/manual/i);
   });
@@ -487,7 +617,8 @@ describe("checklist 4 · rollback não mexe no banco", () => {
     expect(patches.some((line) => line.includes("APP_MIGRATE_IMAGE") && line.includes(DIG_MIG_PREV))).toBe(true);
     expect(patches.some((line) => line.includes("APP_IMAGE"))).toBe(false);
     expect(lines.some((line) => line.includes("/api/v1/deploy?"))).toBe(false);
-    expect(lines.some((line) => line.includes("pg_restore"))).toBe(false);
+    expect(lines.join("\n")).not.toContain("pg_restore --clean");
+    expect(lines.join("\n")).not.toContain("--dbname");
     expect(readFileSync(ctx.state, "utf8")).toBe(before);
     assertNoSecrets(combined(result, ctx.mock, ctx.log));
   });
@@ -507,7 +638,8 @@ describe("checklist 4 · rollback não mexe no banco", () => {
     const lastApp = patches.filter((line) => line.includes("APP_IMAGE") && !line.includes("APP_MIGRATE_IMAGE")).at(-1) ?? "";
     expect(lastMig).toContain(DIG_MIG_PREV);
     expect(lastApp).toContain(DIG_APP_PREV);
-    expect(lines.join("\n")).not.toContain("pg_restore");
+    expect(lines.join("\n")).not.toContain("pg_restore --clean");
+    expect(lines.join("\n")).not.toContain("--dbname");
     const state = JSON.parse(readFileSync(ctx.state, "utf8")) as { sha: string };
     expect(state.sha).toBe(SHA_OLD);
     expect(JSON.parse(readFileSync(ctx.failed, "utf8")).sha).toBe(SHA_NEW);
@@ -523,7 +655,8 @@ describe("checklist 4 · rollback não mexe no banco", () => {
     expect(result.status).not.toBe(0);
     const lines = callsOf(ctx.mock);
     expect(lines.some((line) => line.includes(DIG_APP_PREV) && line.includes("APP_IMAGE"))).toBe(true);
-    expect(lines.join("\n")).not.toContain("pg_restore");
+    expect(lines.join("\n")).not.toContain("pg_restore --clean");
+    expect(lines.join("\n")).not.toContain("--dbname");
     expect(JSON.parse(readFileSync(ctx.state, "utf8")).sha).toBe(SHA_OLD);
   });
 });
@@ -650,7 +783,7 @@ describe("checklist 7 · kill switch PAUSE", () => {
     expect(result.stderr).toContain('"event":"pause"');
     expect(callsOf(ctx.mock)).toEqual([]);
     expect(readFileSync(DEPLOY, "utf8")).toContain("/etc/erp-deployer/PAUSE");
-    expect(readFileSync(join(ROOT, "RUNBOOK.md"), "utf8")).toContain("/etc/erp-deployer/PAUSE");
+    expect(readFileSync(join(process.cwd(), "docs/ops/deploy-auto.md"), "utf8")).toContain("/etc/erp-deployer/PAUSE");
   });
 });
 
@@ -685,6 +818,7 @@ describe("checklist 8 · systemd sem login e com sandbox", () => {
     expect(statSync(join(work, "var/lib/erp-deployer")).mode & 0o777).toBe(0o700);
     expect(statSync(join(work, "var/backups/erp-deployer")).mode & 0o777).toBe(0o700);
     expect(statSync(join(work, "opt/erp-deployer/bin/deploy.sh")).mode & 0o777).toBe(0o755);
+    expect(statSync(join(work, "usr/local/sbin/erp-deployer")).mode & 0o777).toBe(0o755);
     expect(readFileSync(join(work, "etc/systemd/system/erp-deployer.service"), "utf8")).toContain("NoNewPrivileges=yes");
     expect(result.stdout).toMatch(/não foi habilitado/i);
   });
@@ -693,30 +827,36 @@ describe("checklist 8 · systemd sem login e com sandbox", () => {
 describe("fluxo · ordem, latest-wins, health e aviso", () => {
   it("dump, migrate, app, redeploy e health do commit esperado", () => {
     const ctx = arrange({ state: { sha: SHA_OLD, app: DIG_APP_PREV, migrate: DIG_MIG_PREV } });
-    ctx.env.DEPLOY_NOTIFY_URL = "https://hooks.example.test/deploy";
-    ctx.env.COOLIFY_BASE_URL = "http://172.16.5.5:8000";
+    ctx.envValues.DEPLOY_NOTIFY_URL = "https://hooks.example.test/deploy";
+    ctx.envValues.DEPLOY_NOTIFY_TOKEN = NOTIFY_TOKEN;
+    ctx.envValues.COOLIFY_BASE_URL = "http://172.16.5.5:8000";
+    materializeEnv(ctx.envFile, ctx.envValues);
     const result = run(ctx.env);
     expect(result.status).toBe(0);
     const lines = callsOf(ctx.mock);
     const at = (needle: string) => lines.findIndex((line) => line.includes(needle));
     const dumpAt = lines.findIndex((line) => line.startsWith("pg_dump"));
+    const listAt = lines.findIndex((line) => line.startsWith("pg_restore --list"));
     const migPatch = lines.findIndex((line) => line.includes("PATCH") && line.includes("APP_MIGRATE_IMAGE") && line.includes(DIG_MIG));
     const dockerAt = lines.findIndex((line) => line.startsWith("docker run"));
     const appPatch = lines.findIndex((line) => line.includes("PATCH") && line.includes('"key": "APP_IMAGE"') && line.includes(DIG_APP));
     const deployAt = at(`/api/v1/deploy?uuid=${UUID}`);
     const healthAt = at("/api/health");
     const readyAt = at("/api/ready");
+    const smokeAt = at(SMOKE_PATH);
     const notifyAt = at("https://hooks.example.test/deploy");
-    for (const pos of [dumpAt, migPatch, dockerAt, appPatch, deployAt, healthAt, readyAt, notifyAt]) {
+    for (const pos of [dumpAt, listAt, migPatch, dockerAt, appPatch, deployAt, healthAt, readyAt, smokeAt, notifyAt]) {
       expect(pos).toBeGreaterThanOrEqual(0);
     }
-    expect(dumpAt).toBeLessThan(migPatch);
+    expect(dumpAt).toBeLessThan(listAt);
+    expect(listAt).toBeLessThan(migPatch);
     expect(migPatch).toBeLessThan(dockerAt);
     expect(dockerAt).toBeLessThan(appPatch);
     expect(appPatch).toBeLessThan(deployAt);
     expect(deployAt).toBeLessThan(healthAt);
     expect(healthAt).toBeLessThan(readyAt);
-    expect(readyAt).toBeLessThan(notifyAt);
+    expect(readyAt).toBeLessThan(smokeAt);
+    expect(smokeAt).toBeLessThan(notifyAt);
     expect(lines[dockerAt]).toContain("--network coolify");
     expect(lines[dockerAt]).toContain("prisma migrate deploy");
     expect(lines[dockerAt]).not.toContain("reset");
@@ -775,7 +915,9 @@ describe("fluxo · ordem, latest-wins, health e aviso", () => {
 
   it("aviso que falha não desfaz o deploy", () => {
     const ctx = arrange({ notifyFail: true });
-    ctx.env.DEPLOY_NOTIFY_URL = "https://hooks.example.test/deploy";
+    ctx.envValues.DEPLOY_NOTIFY_URL = "https://hooks.example.test/deploy";
+    ctx.envValues.DEPLOY_NOTIFY_TOKEN = NOTIFY_TOKEN;
+    materializeEnv(ctx.envFile, ctx.envValues);
     const result = run(ctx.env);
     expect(result.status).toBe(0);
     expect(JSON.parse(readFileSync(ctx.state, "utf8")).sha).toBe(SHA_NEW);
@@ -802,6 +944,144 @@ describe("fluxo · ordem, latest-wins, health e aviso", () => {
   });
 });
 
+describe("BLOCK-DEPLOY · env, argv, restore, contrato, smoke e pause", () => {
+  it("env file real chega em pgpass, docker e gh, e o argv não leva segredo", () => {
+    const ctx = arrange({ migrateUrl: true });
+    expect(ctx.env.COOLIFY_TOKEN).toBeUndefined();
+    expect(ctx.env.GHCR_TOKEN).toBeUndefined();
+    expect(ctx.env.DATABASE_URL).toBeUndefined();
+    expect(ctx.env.MIGRATE_DATABASE_URL).toBeUndefined();
+    expect(readFileSync(DEPLOY, "utf8")).not.toContain("DEPLOYER_SKIP_ENV_FILE");
+    const result = run(ctx.env);
+    expect(result.status).toBe(0);
+    const lines = callsOf(ctx.mock);
+    expect(lines).toContain("gh-token-exportado");
+    expect(lines).toContain("docker-env-file-ok");
+    expect(lines.some((line) => line.startsWith("pg_dump"))).toBe(true);
+    expect(lines.some((line) => line === "curl-header-0600")).toBe(true);
+    for (const line of lines) {
+      expect(line).not.toContain("Authorization:");
+      expect(line).not.toContain("Bearer ");
+      expect(line).not.toContain("Cookie:");
+      expect(line).not.toContain("DATABASE_URL=");
+    }
+    assertNoSecrets(combined(result, ctx.mock, ctx.log));
+  });
+
+  it("pg_restore --list que falha aborta antes do migrate", () => {
+    const ctx = arrange({ listFail: true });
+    const result = run(ctx.env);
+    expect(result.status).not.toBe(0);
+    expect(result.stderr).toContain("pg_restore --list falhou");
+    const lines = callsOf(ctx.mock);
+    expect(lines.some((line) => line.startsWith("pg_dump"))).toBe(true);
+    expect(lines.some((line) => line.startsWith("pg_restore --list"))).toBe(true);
+    expect(lines.some((line) => line.includes("PATCH") || line.startsWith("docker"))).toBe(false);
+  });
+
+  it("migration-contract no commit ou num ancestral exige deploy manual", () => {
+    const direct = arrange({ contract: true });
+    const blocked = run(direct.env);
+    expect(blocked.status).not.toBe(0);
+    expect(blocked.stderr).toContain("deploy manual");
+    expect(callsOf(direct.mock).some((line) => line.includes("PATCH") || line.startsWith("docker run"))).toBe(false);
+    const ctx = arrange({
+      commits: [SHA_NEW, SHA_OLD],
+      state: { sha: SHA_OLD, app: DIG_APP_PREV, migrate: DIG_MIG_PREV },
+    });
+    writeFileSync(join(ctx.mock, "compare-shas"), `${SHA_OTHER}\n`);
+    writeFileSync(join(ctx.mock, `labels-${SHA_OTHER}`), "migration-contract\n");
+    const result = run(ctx.env);
+    expect(result.status).not.toBe(0);
+    expect(result.stderr).toContain("deploy manual");
+    expect(callsOf(ctx.mock).some((line) => line.startsWith("docker run"))).toBe(false);
+    expect(readFileSync(join(process.cwd(), "docs/ops/deploy-auto.md"), "utf8")).toContain("migration-contract");
+  });
+
+  it("smoke autenticado que falha aciona rollback", () => {
+    const ctx = arrange({
+      smoke: "401",
+      state: { sha: SHA_OLD, app: DIG_APP_PREV, migrate: DIG_MIG_PREV },
+    });
+    const result = run(ctx.env);
+    expect(result.status).not.toBe(0);
+    const lines = callsOf(ctx.mock);
+    expect(lines.some((line) => line.includes(SMOKE_PATH))).toBe(true);
+    expect(lines.some((line) => line.includes(DIG_APP_PREV) && line.includes("APP_IMAGE"))).toBe(true);
+    expect(lines.join("\n")).not.toContain(SMOKE_COOKIE);
+    expect(JSON.parse(readFileSync(ctx.state, "utf8")).sha).toBe(SHA_OLD);
+    expect(JSON.parse(readFileSync(ctx.failed, "utf8")).sha).toBe(SHA_NEW);
+  });
+
+  it("primeiro deploy sem state restaura as imagens que o Coolify já tinha", () => {
+    const ctx = arrange({ healthSha: SHA_OTHER });
+    const result = run(ctx.env);
+    expect(result.status).not.toBe(0);
+    const lines = callsOf(ctx.mock);
+    expect(lines.filter((line) => line.includes("/api/v1/deploy?")).length).toBeGreaterThanOrEqual(2);
+    expect(lines.some((line) => line.includes(DIG_APP_PREV) && line.includes('"key": "APP_IMAGE"'))).toBe(true);
+    expect(result.stderr).toContain('"event":"rollback"');
+  });
+
+  it("Coolify que recusa o deploy restaura os digests anteriores", () => {
+    const ctx = arrange({
+      deployFail: true,
+      state: { sha: SHA_OLD, app: DIG_APP_PREV, migrate: DIG_MIG_PREV },
+    });
+    const result = run(ctx.env);
+    expect(result.status).not.toBe(0);
+    const lines = callsOf(ctx.mock);
+    expect(lines.some((line) => line.includes(DIG_MIG_PREV) && line.includes("APP_MIGRATE_IMAGE"))).toBe(true);
+    expect(lines.some((line) => line.includes(DIG_APP_PREV) && line.includes('"key": "APP_IMAGE"'))).toBe(true);
+    expect(result.stderr).toContain("coolify_falhou");
+  });
+
+  it("nome de check repetido entre workflows fica fail-closed", () => {
+    const ctx = arrange();
+    writeFileSync(join(ctx.mock, `checks-${SHA_NEW}`), `${checksFile("success")}typecheck\tcompleted\tfailure\n`);
+    const result = run(ctx.env);
+    expect(result.status).toBe(0);
+    expect(result.stderr).toContain("nenhum_verde");
+    expect(callsOf(ctx.mock).some((line) => line.includes("PATCH"))).toBe(false);
+  });
+
+  it("pause cria o arquivo e para o timer; resume só religa se o timer já estava habilitado", () => {
+    work = mkdtempSync(join(tmpdir(), "erp-deployer-pause-"));
+    const bin = join(work, "bin");
+    const pause = join(work, "PAUSE");
+    const log = join(work, "sys.log");
+    const enabled = join(work, "enabled");
+    mkdirSync(bin);
+    writeFileSync(join(bin, "systemctl"), `#!/bin/sh
+printf '%s\\n' "$*" >> ${log}
+if [ "$1" = "is-enabled" ]; then
+  if [ -f ${enabled} ]; then exit 0; fi
+  exit 1
+fi
+exit 0
+`);
+    chmodSync(join(bin, "systemctl"), 0o755);
+    const env = { PATH: `${bin}:/usr/bin:/bin`, HOME: work, NODE_ENV: "test" as const, DEPLOYER_PAUSE_FILE: pause };
+    const script = join(ROOT, "bin/erp-deployer");
+    expect(spawnSync(script, ["pause"], { env, encoding: "utf8" }).status).toBe(0);
+    expect(existsSync(pause)).toBe(true);
+    const stopped = readFileSync(log, "utf8");
+    expect(stopped).toContain("stop erp-deployer.timer");
+    expect(stopped).toContain("stop erp-deployer.service");
+    writeFileSync(log, "");
+    expect(spawnSync(script, ["resume"], { env, encoding: "utf8" }).status).toBe(0);
+    expect(existsSync(pause)).toBe(false);
+    expect(readFileSync(log, "utf8")).not.toContain("start erp-deployer.timer");
+    writeFileSync(pause, "");
+    writeFileSync(enabled, "");
+    writeFileSync(log, "");
+    expect(spawnSync(script, ["resume"], { env, encoding: "utf8" }).status).toBe(0);
+    expect(existsSync(pause)).toBe(false);
+    expect(readFileSync(log, "utf8")).toContain("start erp-deployer.timer");
+    expect(readFileSync(script, "utf8")).not.toContain("systemctl enable");
+  });
+});
+
 describe("attest_check.py", () => {
   it("rejeita saída vazia", () => {
     const result = spawnSync("python3", [join(ROOT, "lib/py/attest_check.py")], {
@@ -811,5 +1091,32 @@ describe("attest_check.py", () => {
     });
     expect(result.status).not.toBe(0);
     expect(result.stderr).toContain("vazia");
+  });
+
+  it("compara commit, ref e digest por igualdade, não por substring", () => {
+    const hex = "a".repeat(64);
+    const bundle = (sha: string, digestHex: string, ref = "refs/heads/main", extra = "") => JSON.stringify([{
+      verificationResult: {
+        statement: {
+          subject: [{ digest: { sha256: digestHex } }],
+          predicate: {
+            note: extra,
+            buildDefinition: {
+              externalParameters: { workflow: { ref } },
+              resolvedDependencies: [{ digest: { gitCommit: sha } }],
+            },
+          },
+        },
+      },
+    }]);
+    const runCheck = (payload: string) => spawnSync("python3", [join(ROOT, "lib/py/attest_check.py")], {
+      input: payload,
+      encoding: "utf8",
+      env: { ...process.env, EXPECTED_SHA: SHA_NEW, EXPECTED_DIGEST: DIG_APP },
+    });
+    expect(runCheck(bundle(SHA_NEW, hex)).status).toBe(0);
+    expect(runCheck(bundle(SHA_OLD, hex, "refs/heads/main", SHA_NEW)).status).not.toBe(0);
+    expect(runCheck(bundle(SHA_NEW, hex, "refs/heads/main-extra")).status).not.toBe(0);
+    expect(runCheck(bundle(SHA_NEW, "b".repeat(64))).status).not.toBe(0);
   });
 });

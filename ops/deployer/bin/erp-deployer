@@ -1,0 +1,52 @@
+#!/usr/bin/env bash
+# Kill switch. pause cria /etc/erp-deployer/PAUSE e para o timer. resume faz o inverso.
+set -euo pipefail
+
+PAUSE_FILE="${DEPLOYER_PAUSE_FILE:-/etc/erp-deployer/PAUSE}"
+cmd="${1:-}"
+
+systemctl_present() {
+  command -v systemctl >/dev/null 2>&1
+}
+
+stop_units() {
+  local unit=""
+  if ! systemctl_present; then
+    return 0
+  fi
+  for unit in erp-deployer.timer erp-deployer.service; do
+    if ! systemctl stop "$unit"; then
+      printf 'erp-deployer: systemctl stop %s falhou\n' "$unit" >&2
+    fi
+  done
+}
+
+start_timer_if_enabled() {
+  if ! systemctl_present; then
+    return 0
+  fi
+  if ! systemctl is-enabled erp-deployer.timer >/dev/null 2>&1; then
+    return 0
+  fi
+  if ! systemctl start erp-deployer.timer; then
+    printf 'erp-deployer: systemctl start erp-deployer.timer falhou\n' >&2
+    return 1
+  fi
+}
+
+case "$cmd" in
+  pause)
+    mkdir -p "$(dirname "$PAUSE_FILE")"
+    : > "$PAUSE_FILE"
+    chmod 0644 "$PAUSE_FILE"
+    stop_units
+    ;;
+  resume)
+    rm -f "$PAUSE_FILE"
+    start_timer_if_enabled
+    ;;
+  *)
+    printf 'uso: erp-deployer pause|resume\n' >&2
+    exit 2
+    ;;
+esac
