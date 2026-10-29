@@ -153,6 +153,15 @@ mark_sem_imagem() {
   exit 1
 }
 
+mark_ghcr_erro() {
+  local zero=""
+  zero="$(printf 'sha256:%064d' 0)"
+  log_event "digest" "ghcr_erro" "$CANDIDATE"
+  write_json_atomic "$DEPLOYER_FAILED_FILE" "$CANDIDATE" "$zero" "$zero" "ghcr_erro"
+  notify_line "$LAST_LOG"
+  exit 1
+}
+
 arm_pos_backup() {
   POS_BACKUP=1
   set -E
@@ -217,7 +226,7 @@ main() {
       mark_sem_imagem
     fi
     if [[ "$rc" -ne 0 ]]; then
-      exit "$rc"
+      mark_ghcr_erro
     fi
     if already_deployed "$CANDIDATE"; then
       log_event "noop" "ja_deployado" "$CANDIDATE"

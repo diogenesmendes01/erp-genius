@@ -227,8 +227,11 @@ headers = "HTTP/1.1 200 OK\\r\\n"
 if "ghcr.io" in url:
     tag = url.rstrip("/").split("/")[-1]
     role = "migrate" if "/erp-genius/migrate/" in url else "app"
+    forced = mock / f"ghcr-code-{role}-{tag}"
     digest_file = mock / f"{role}-{tag}"
-    if not digest_file.exists():
+    if forced.exists():
+        code = forced.read_text(encoding="utf-8").strip()
+    elif not digest_file.exists():
         code = "404"
     else:
         headers += "docker-content-digest: " + digest_file.read_text(encoding="utf-8").strip() + "\\r\\n"
@@ -403,6 +406,7 @@ type Scene = {
   envsGetCode?: string;
   patchMigrateCode?: string;
   patchAppCode?: string;
+  ghcrCode?: { role: "app" | "migrate"; sha: string; code: string };
   contract?: boolean;
   migrateUrl?: boolean;
   state?: { sha: string; app: string; migrate: string } | null;
@@ -461,6 +465,10 @@ function arrange(scene: Scene = {}): {
   if (scene.envsGetCode) writeFileSync(join(mock, "envs-get-code"), scene.envsGetCode);
   if (scene.patchMigrateCode) writeFileSync(join(mock, "patch-migrate-code"), scene.patchMigrateCode);
   if (scene.patchAppCode) writeFileSync(join(mock, "patch-app-code"), scene.patchAppCode);
+  if (scene.ghcrCode) {
+    const tag = `sha-${scene.ghcrCode.sha.slice(0, 7)}`;
+    writeFileSync(join(mock, `ghcr-code-${scene.ghcrCode.role}-${tag}`), scene.ghcrCode.code);
+  }
   if (scene.contract) writeFileSync(join(mock, `labels-${commits[0]}`), "migration-contract\n");
   const prevApp = scene.previousApp ?? `${APP_REPO}@${DIG_APP_PREV}`;
   const prevMig = scene.previousMigrate ?? `${MIG_REPO}@${DIG_MIG_PREV}`;
@@ -1044,6 +1052,7 @@ describe("fluxo · ordem, latest-wins, health e aviso", () => {
     const result = run(ctx.env);
     expect(result.status).not.toBe(0);
     expect(callsOf(ctx.mock).some((line) => line.includes("PATCH"))).toBe(false);
+    expect(existsSync(ctx.failed)).toBe(false);
   });
 
   it("aviso que falha não desfaz o deploy", () => {
@@ -1309,6 +1318,15 @@ os.execv("${join(bin, "curl.real")}", ["curl.real", *args])
     const ctx = arrange();
     writeFileSync(join(ctx.mock, "curl-sleep-url"), SMOKE_PATH);
     await expectSecretGoneAfterTerm(ctx.env, ctx.mock);
+  });
+
+  it("SIGTERM depois do backup sai 143 e não grava o marcador", async () => {
+    const ctx = arrange();
+    writeFileSync(join(ctx.mock, "curl-sleep-url"), SMOKE_PATH);
+    await expectSecretGoneAfterTerm(ctx.env, ctx.mock);
+    expect(existsSync(ctx.failed)).toBe(false);
+    expect(callsOf(ctx.mock).some((line) => line.startsWith("pg_dump"))).toBe(true);
+    expect(callsOf(ctx.mock).some((line) => line.includes(SMOKE_PATH))).toBe(true);
   });
 
   it("migration-contract grava o marcador antes do backup e não repete o pg_dump", () => {
@@ -1611,6 +1629,28 @@ os.execv("${join(bin, "curl.real")}", ["curl.real", *args])
     expect(JSON.parse(readFileSync(ctx.failed, "utf8")).result).toBe("sem_imagem");
   });
 
+  it("erro do GHCR no fallback, fora do 404, grava o marcador e não pula o commit", () => {
+    const ctx = arrange({
+      commits: [SHA_NEW, SHA_OLD, SHA_OTHER],
+      checks: { [SHA_NEW]: "success", [SHA_OLD]: "success", [SHA_OTHER]: "success" },
+      digests: { [SHA_OTHER]: { app: DIG_APP, migrate: DIG_MIG } },
+      attestSha: SHA_OTHER,
+      healthSha: SHA_OTHER,
+      ghcrCode: { role: "app", sha: SHA_OLD, code: "500" },
+    });
+    const result = run(ctx.env);
+    expect(result.status).not.toBe(0);
+    expect(result.stderr).toContain("GHCR respondeu 500");
+    const lines = callsOf(ctx.mock);
+    expect(lines.some((line) => line.includes(`sha-${SHA_OLD.slice(0, 7)}`))).toBe(true);
+    expect(lines.some((line) => line.includes(`sha-${SHA_OTHER.slice(0, 7)}`))).toBe(false);
+    expect(lines.some((line) => line.startsWith("pg_dump") || line.startsWith("docker run"))).toBe(false);
+    expect(existsSync(ctx.state)).toBe(false);
+    const failed = JSON.parse(readFileSync(ctx.failed, "utf8")) as { sha: string; result: string };
+    expect(failed).toMatchObject({ sha: SHA_NEW, result: "ghcr_erro" });
+    expectNoRetryDump(ctx, false);
+  });
+
   it("fallback não aceita sha sem os checks verdes", () => {
     const ctx = arrange({
       commits: [SHA_NEW, SHA_OLD],
@@ -1639,6 +1679,8 @@ os.execv("${join(bin, "curl.real")}", ["curl.real", *args])
     expect(doc).toContain("cancel-in-progress");
     expect(doc).toContain("20 commits");
     expect(doc).toContain("sem_imagem");
+    expect(doc).toContain("ghcr_erro");
+    expect(doc).toContain("SIGTERM depois do backup encerra com 143 e não grava o marcador");
     expect(doc).toMatch(/## Incidente[\s\S]*erp-deployer pause/);
     expect(doc).not.toContain("Imagem ainda não publicada: sai 0");
   });
