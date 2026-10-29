@@ -1,7 +1,7 @@
 # Migrations já versionadas cujo SQL executa drop, rename, mudança de tipo
 # ou SET NOT NULL sem DEFAULT. Registro auditado pelo teste
 # src/test/lint-migrations.test.ts — não é bypass do CI.
-# O lint só avalia migration nova no diff contra origin/main.
+# O lint só avalia migration nova no diff contra o merge-base da base fixa do evento.
 # A única exceção em PR é o label migration-contract.
 20260618184300_precos_movimentacao_ativacao
 20260622130000_aluno_cadastro_completo

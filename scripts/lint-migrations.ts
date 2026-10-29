@@ -4,8 +4,46 @@ import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 export const LABEL_CONTRATO = "migration-contract";
-export const REF_BASE = "origin/main";
-export const ARGUMENTOS_DIFF = ["diff", "--name-only", REF_BASE, "--", "prisma/migrations"] as const;
+
+const SHA_COMPLETO = /^[0-9a-f]{40}$/i;
+
+/** Sha de commit utilizável. `000…0` (push que cria o ref) não resolve. */
+export function shaResolvivel(valor: unknown): string | null {
+  if (typeof valor !== "string") return null;
+  const sha = valor.trim().toLowerCase();
+  if (!SHA_COMPLETO.test(sha) || /^0{40}$/.test(sha)) return null;
+  return sha;
+}
+
+/**
+ * Base fixa do evento. `pull_request` usa `pull_request.base.sha`.
+ * `push` usa `before`. Qualquer outro evento, ou sha ausente, não resolve.
+ */
+export function baseFixaDoEvento(nomeEvento: string | undefined, evento: unknown): string | null {
+  const corpo = (evento ?? null) as {
+    before?: unknown;
+    pull_request?: { base?: { sha?: unknown } };
+  } | null;
+  if (nomeEvento === "pull_request") return shaResolvivel(corpo?.pull_request?.base?.sha);
+  if (nomeEvento === "push") return shaResolvivel(corpo?.before);
+  return null;
+}
+
+/**
+ * `MIGRATION_BASE_SHA` definido, mesmo inválido, não cai no evento.
+ * Sem essa variável, a base sai só do evento. Não há fallback para `origin/main`.
+ */
+export function resolverBaseFixa(
+  env: { GITHUB_EVENT_NAME?: string; MIGRATION_BASE_SHA?: string },
+  evento: unknown,
+): string | null {
+  if (env.MIGRATION_BASE_SHA !== undefined) return shaResolvivel(env.MIGRATION_BASE_SHA);
+  return baseFixaDoEvento(env.GITHUB_EVENT_NAME, evento);
+}
+
+export function argumentosDiff(mergeBase: string): readonly string[] {
+  return ["diff", "--name-only", mergeBase, "--", "prisma/migrations"];
+}
 
 export type RegraMigracao =
   | "DROP TABLE"
@@ -85,26 +123,31 @@ const NAO_E_COLUNA = [
   "VIEW",
 ].join("|");
 
-const PADROES: { regra: RegraMigracao; re: RegExp; soSemDefault?: boolean; exigeAlterTable?: boolean }[] = [
-  { regra: "DROP TABLE", re: /\bDROP\s+TABLE\b/gi },
-  { regra: "DROP SCHEMA", re: /\bDROP\s+SCHEMA\b/gi },
-  { regra: "DROP TYPE", re: /\bDROP\s+TYPE\b/gi },
-  { regra: "TRUNCATE", re: /\bTRUNCATE\b/gi },
-  { regra: "DROP COLUMN", re: /\bDROP\s+COLUMN\b/gi },
+const IDENTIFICADOR = String.raw`(?:"[^"]+"|[A-Za-z_][\w$]*)`;
+
+const PADROES: { regra: RegraMigracao; re: RegExp; exigeAlterTable?: boolean; ignoraCitacao?: boolean }[] = [
+  { regra: "DROP TABLE", re: /\bDROP\s+TABLE\b/gi, ignoraCitacao: true },
+  { regra: "DROP SCHEMA", re: /\bDROP\s+SCHEMA\b/gi, ignoraCitacao: true },
+  { regra: "DROP TYPE", re: /\bDROP\s+TYPE\b/gi, ignoraCitacao: true },
+  { regra: "TRUNCATE", re: /\bTRUNCATE\b/gi, ignoraCitacao: true },
+  { regra: "DROP COLUMN", re: /\bDROP\s+COLUMN\b/gi, ignoraCitacao: true },
   {
     regra: "DROP COLUMN",
     exigeAlterTable: true,
     re: new RegExp(
-      String.raw`\bDROP\s+(?:COLUMN\s+)?(?:IF\s+EXISTS\s+)?(?!(?:${NAO_E_COLUNA})\b)(?:"[^"]+"|[A-Za-z_][\w$]*)`,
+      String.raw`\bDROP\s+(?:COLUMN\s+)?(?:IF\s+EXISTS\s+)?(?!(?:${NAO_E_COLUNA})\b)${IDENTIFICADOR}`,
       "gi",
     ),
   },
-  { regra: "RENAME", re: /\bRENAME\b/gi },
+  { regra: "RENAME", re: /\bRENAME\b/gi, ignoraCitacao: true },
   {
     regra: "ALTER COLUMN TYPE",
-    re: /\bALTER\s+(?:COLUMN\s+)?(?:"[^"]+"|[A-Za-z_][\w$]*)\s+(?:SET\s+DATA\s+)?TYPE\b/gi,
+    re: new RegExp(String.raw`\bALTER\s+COLUMN\s+${IDENTIFICADOR}\s+(?:SET\s+DATA\s+)?TYPE\b`, "gi"),
   },
-  { regra: "SET NOT NULL", re: /\bSET\s+NOT\s+NULL\b/gi, soSemDefault: true },
+  {
+    regra: "ALTER COLUMN TYPE",
+    re: new RegExp(String.raw`\bALTER\s+(?!COLUMN\b)${IDENTIFICADOR}\s+(?:SET\s+DATA\s+)?TYPE\b`, "gi"),
+  },
 ];
 
 const CAMINHO_MIGRATION = /^prisma\/migrations\/[^/]+\/migration\.sql$/;
@@ -218,8 +261,47 @@ function trechoDaLinha(src: string, linha: number): string {
   return texto.length > 180 ? `${texto.slice(0, 177)}...` : texto;
 }
 
-function temDefault(comando: string): boolean {
-  return /\bDEFAULT\b/i.test(comando.replace(/\bDROP\s+DEFAULT\b/gi, " "));
+/** Identificador entre aspas não é palavra-chave. O tamanho fica igual para a linha não andar. */
+function apagarIdentificadoresCitados(sql: string): string {
+  return sql.replace(/"(?:[^"]|"")*"/g, (trecho) => " ".repeat(trecho.length));
+}
+
+function normalizarIdentificador(token: string): string {
+  if (token.startsWith('"') && token.endsWith('"') && token.length >= 2) {
+    return token.slice(1, -1).replace(/""/g, '"');
+  }
+  return token.toLowerCase();
+}
+
+function procurarAcaoColuna(comando: string, acao: string): Array<{ coluna: string; indice: number }> {
+  const padroes = [
+    new RegExp(String.raw`\bALTER\s+COLUMN\s+(${IDENTIFICADOR})\s+${acao}\b`, "gi"),
+    new RegExp(String.raw`\bALTER\s+(?!COLUMN\b)(${IDENTIFICADOR})\s+${acao}\b`, "gi"),
+  ];
+  const achados: Array<{ coluna: string; indice: number }> = [];
+  for (const re of padroes) {
+    for (const encontrado of comando.matchAll(re)) {
+      const verbo = new RegExp(acao, "i").exec(encontrado[0]);
+      achados.push({
+        coluna: normalizarIdentificador(encontrado[1] ?? ""),
+        indice: (encontrado.index ?? 0) + (verbo?.index ?? 0),
+      });
+    }
+  }
+  return achados;
+}
+
+/** `SET NOT NULL` só fica coberto por `SET DEFAULT` da mesma coluna, no mesmo comando. */
+function indicesSetNotNullInseguro(comando: string): number[] {
+  const comDefault = new Set(procurarAcaoColuna(comando, String.raw`SET\s+DEFAULT`).map((item) => item.coluna));
+  const notNull = procurarAcaoColuna(comando, String.raw`SET\s+NOT\s+NULL`);
+  const cobertos = new Set(notNull.map((item) => item.indice));
+  const indices = notNull.filter((item) => !comDefault.has(item.coluna)).map((item) => item.indice);
+  for (const encontrado of comando.matchAll(/\bSET\s+NOT\s+NULL\b/gi)) {
+    const indice = encontrado.index ?? 0;
+    if (!cobertos.has(indice)) indices.push(indice);
+  }
+  return indices;
 }
 
 /** `EXECUTE '...'` e `EXECUTE format('...')` executam o literal. Outro texto entre aspas não. */
@@ -249,15 +331,21 @@ export function encontrarViolacoes(sql: string): ViolacaoMigracao[] {
   let inicio = 0;
   for (const fim of pontos) {
     const comando = visivel.slice(inicio, fim);
+    const semCitacao = apagarIdentificadoresCitados(comando);
     for (const padrao of PADROES) {
-      if (padrao.soSemDefault && temDefault(comando)) continue;
       if (padrao.exigeAlterTable && !/\bALTER\s+TABLE\b/i.test(comando)) continue;
+      const alvo = padrao.ignoraCitacao ? semCitacao : comando;
       const re = new RegExp(padrao.re.source, padrao.re.flags);
-      for (const encontrado of comando.matchAll(re)) {
+      for (const encontrado of alvo.matchAll(re)) {
         const indice = inicio + (encontrado.index ?? 0);
         const linha = linhaDe(visivel, indice);
         achados.push({ regra: padrao.regra, linha, trecho: trechoDaLinha(fonte, linha) });
       }
+    }
+    for (const indiceLocal of indicesSetNotNullInseguro(comando)) {
+      const indice = inicio + indiceLocal;
+      const linha = linhaDe(visivel, indice);
+      achados.push({ regra: "SET NOT NULL", linha, trecho: trechoDaLinha(fonte, linha) });
     }
     inicio = fim + 1;
   }
@@ -333,28 +421,53 @@ function git(args: string[], cwd: string): string {
   return resultado.stdout;
 }
 
-function existeNaBase(cwd: string, caminho: string): boolean {
-  const resultado = spawnSync("git", ["cat-file", "-e", `${REF_BASE}:${caminho}`], { cwd, encoding: "utf8" });
+function existeNoCommit(cwd: string, commit: string, caminho: string): boolean {
+  const resultado = spawnSync("git", ["cat-file", "-e", `${commit}:${caminho}`], { cwd, encoding: "utf8" });
   return resultado.status === 0;
 }
 
+function lerEvento(env: NodeJS.ProcessEnv): unknown {
+  if (!env.GITHUB_EVENT_PATH || !existsSync(env.GITHUB_EVENT_PATH)) return undefined;
+  try {
+    return JSON.parse(readFileSync(env.GITHUB_EVENT_PATH, "utf8"));
+  } catch {
+    return undefined;
+  }
+}
+
 export function main(cwd = process.cwd(), env: NodeJS.ProcessEnv = process.env): number {
-  let evento: unknown;
-  if (env.GITHUB_EVENT_PATH && existsSync(env.GITHUB_EVENT_PATH)) {
-    try {
-      evento = JSON.parse(readFileSync(env.GITHUB_EVENT_PATH, "utf8"));
-    } catch {
-      evento = undefined;
-    }
+  const evento = lerEvento(env);
+  const base = resolverBaseFixa(
+    { GITHUB_EVENT_NAME: env.GITHUB_EVENT_NAME, MIGRATION_BASE_SHA: env.MIGRATION_BASE_SHA },
+    evento,
+  );
+  if (!base) {
+    console.error(
+      "Migrations expand-only: base do evento não resolvida. pull_request usa pull_request.base.sha, push usa before. Sem base resolvível o lint falha.",
+    );
+    return 2;
+  }
+  let mergeBase: string;
+  try {
+    const saida = git(["merge-base", "HEAD", base], cwd).trim();
+    const sha = shaResolvivel(saida);
+    if (!sha) throw new Error("merge-base não devolveu um sha.");
+    mergeBase = sha;
+  } catch (erro) {
+    const detalhe = erro instanceof Error ? erro.message : String(erro);
+    console.error(`Migrations expand-only: merge-base com a base do evento falhou.\n${detalhe}`);
+    return 2;
   }
   let diff: string;
   try {
-    diff = git(["-c", "core.quotepath=false", ...ARGUMENTOS_DIFF], cwd);
+    diff = git(["-c", "core.quotepath=false", ...argumentosDiff(mergeBase)], cwd);
   } catch (erro) {
     console.error(erro instanceof Error ? erro.message : erro);
     return 2;
   }
-  const classificacao = classificarMigrationsDoDiff(diff.split("\n"), (caminho) => existeNaBase(cwd, caminho));
+  const classificacao = classificarMigrationsDoDiff(diff.split("\n"), (caminho) =>
+    existeNoCommit(cwd, mergeBase, caminho),
+  );
   const arquivos = classificacao.novas
     .filter((caminho) => existsSync(resolve(cwd, caminho)))
     .map((caminho) => ({ caminho, sql: readFileSync(resolve(cwd, caminho), "utf8") }));
