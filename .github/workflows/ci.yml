@@ -36,7 +36,7 @@ jobs:
         run: npx next typegen
       - name: TypeScript (tsc --noEmit)
         env:
-          NODE_OPTIONS: --max-old-space-size=5120
+          NODE_OPTIONS: --max-old-space-size=6144
         run: npx tsc --noEmit
       - name: TypeScript do deployer (tsc --noEmit -p ops/deployer)
         run: npx tsc --noEmit -p ops/deployer
