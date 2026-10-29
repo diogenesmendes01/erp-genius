@@ -79,6 +79,38 @@ it("token inválido no bind interno do proxy segue 422 quando a Origin é a de A
   expect(mocks.token).toHaveBeenCalledOnce();
 });
 
+it("F1: token em produção nega Origin http da URL canônica mesmo sem X-Forwarded-Proto", async () => {
+  vi.stubEnv("NODE_ENV", "production");
+  vi.stubEnv("APP_BASE_URL", "https://erp.geniusidiomas.com");
+  const r = await token(new Request("http://127.0.0.1:3000/api/portal-aluno/token", {
+    method: "POST",
+    headers: {
+      origin: "http://erp.geniusidiomas.com",
+      host: "erp.geniusidiomas.com",
+      "content-type": "application/json",
+    },
+    body: "{}",
+  }));
+  expect(r.status).toBe(403);
+  expect(mocks.token).not.toHaveBeenCalled();
+});
+
+it("F2: token em produção nega Origin https da URL canônica quando a porta é 8443", async () => {
+  vi.stubEnv("NODE_ENV", "production");
+  vi.stubEnv("APP_BASE_URL", "https://erp.geniusidiomas.com");
+  const r = await token(new Request("https://erp.geniusidiomas.com/api/portal-aluno/token", {
+    method: "POST",
+    headers: {
+      origin: "https://erp.geniusidiomas.com:8443",
+      host: "erp.geniusidiomas.com:8443",
+      "content-type": "application/json",
+    },
+    body: "{}",
+  }));
+  expect(r.status).toBe(403);
+  expect(mocks.token).not.toHaveBeenCalled();
+});
+
 it("token nega Origin forjado mesmo com X-Forwarded-Host e Host repetindo o golpe", async () => {
   vi.stubEnv("NODE_ENV", "production");
   const r = await token(new Request("https://atacante.example/api/portal-aluno/token", {

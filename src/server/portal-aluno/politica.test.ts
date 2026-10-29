@@ -1,3 +1,4 @@
+import { readFileSync } from "fs";
 import { describe, expect, it } from "vitest";
 import {
   COOKIE_SESSAO_PORTAL_ALUNO,
@@ -93,6 +94,27 @@ describe("política do portal do aluno", () => {
     })).toBe(false);
   });
 
+  it("F1: em produção nega Origin http://erp.geniusidiomas.com mesmo sem X-Forwarded-Proto", () => {
+    const canonica = { NODE_ENV: "production", APP_BASE_URL: "https://erp.geniusidiomas.com" };
+    const noBindHttp = new Request("http://127.0.0.1:3000/api/portal-aluno/token", {
+      method: "POST",
+      headers: { origin: "http://erp.geniusidiomas.com", host: "erp.geniusidiomas.com" },
+    });
+    expect(noBindHttp.headers.get("x-forwarded-proto")).toBeNull();
+    expect(noBindHttp.headers.get("x-forwarded-host")).toBeNull();
+    expect(origemPortalAlunoPermitida(noBindHttp, canonica)).toBe(false);
+  });
+
+  it("F2: em produção nega Origin https://erp.geniusidiomas.com:8443 pela porta do origin", () => {
+    const canonica = { NODE_ENV: "production", APP_BASE_URL: "https://erp.geniusidiomas.com" };
+    const outraPorta = new Request("https://erp.geniusidiomas.com/api/portal-aluno/token", {
+      method: "POST",
+      headers: { origin: "https://erp.geniusidiomas.com:8443", host: "erp.geniusidiomas.com:8443" },
+    });
+    expect(new URL("https://erp.geniusidiomas.com:8443").origin).not.toBe(new URL(canonica.APP_BASE_URL).origin);
+    expect(origemPortalAlunoPermitida(outraPorta, canonica)).toBe(false);
+  });
+
   it("fora de produção também aceita http://localhost em qualquer porta", () => {
     const dev = { NODE_ENV: "development" };
     expect(origemPortalAlunoPermitida(pedido("http://localhost:3000"), dev)).toBe(true);
@@ -106,6 +128,13 @@ describe("política do portal do aluno", () => {
 const pedido = (origin: string) => new Request("https://0.0.0.0:3000/api/portal-aluno/token", { method: "POST", headers: { origin } });
 
 describe("APP_BASE_URL no boot", () => {
+  it("não lê X-Forwarded-Host, X-Forwarded-Proto nem o primeiro valor separado por vírgula", () => {
+    const fonte = readFileSync(new URL("./politica.ts", import.meta.url), "utf8");
+    expect(fonte).not.toMatch(/x-forwarded-host/i);
+    expect(fonte).not.toMatch(/x-forwarded-proto/i);
+    expect(fonte).not.toContain('.split(",")');
+  });
+
   it("em produção exige URL https e fora de produção não exige", () => {
     expect(() => validarAppBaseUrlNoBoot({ NODE_ENV: "production" })).toThrow(/APP_BASE_URL/);
     expect(() => validarAppBaseUrlNoBoot({ NODE_ENV: "production", APP_BASE_URL: "http://erp.geniusidiomas.com" })).toThrow(/APP_BASE_URL/);
