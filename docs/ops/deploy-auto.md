@@ -53,9 +53,9 @@ Preencha `/etc/erp-deployer/env` (modo `0600`, dono `deployer:deployer`). Não h
 
 ### Escopo do token do Coolify
 
-O script só chama `PATCH /api/v1/services/thpvwxk6figfp347ajznvzhl/envs` e `POST /api/v1/deploy?uuid=thpvwxk6figfp347ajznvzhl`, e só se a base for localhost ou RFC1918. Um `COOLIFY_APP_UUID` diferente no ambiente aborta.
+O script só chama `GET` e `PATCH /api/v1/applications/thpvwxk6figfp347ajznvzhl/envs` e `POST /api/v1/deploy?uuid=thpvwxk6figfp347ajznvzhl`, e só se a base for localhost ou RFC1918. Um `COOLIFY_APP_UUID` diferente no ambiente aborta. Na leitura e no PATCH entra só a variável com `is_preview` false, e o corpo do PATCH manda `is_preview: false`. A linha de preview não é alterada. Zero ou mais de uma linha não-preview aborta antes do deploy.
 
-Se o Coolify não tiver escopo por app, crie um time dedicado que contenha somente o serviço `thpvwxk6figfp347ajznvzhl` e emita o token nesse time. Esta é a limitação conhecida: o produto pode não isolar o token num único app, e o time dedicado é o controle compensatório. Não reutilize o token de outro ambiente.
+Se o Coolify não tiver escopo por app, crie um time dedicado que contenha somente a application `thpvwxk6figfp347ajznvzhl` e emita o token nesse time. Esta é a limitação conhecida: o produto pode não isolar o token num único app, e o time dedicado é o controle compensatório. Não reutilize o token de outro ambiente.
 
 ## O que cada tick faz
 
@@ -74,10 +74,10 @@ gh attestation verify "oci://<imagem>@<digest>" \
 
 O commit, a ref `refs/heads/main` e o digest têm de ser iguais aos campos do predicate, não uma substring. Rede, timeout (`timeout 60`), `gh` ausente, saída vazia ou commit diferente abortam. Não há deploy.
 
-6. `pg_dump` custom, arquivo `0600`, `sha256sum` ao lado. Em seguida `pg_restore --list` no dump. Falhou o dump, o checksum ou o `--list`: aborta antes de qualquer PATCH e grava o marcador. Depois que o backup termina, `falhar_pos_backup` fica armada com trap `ERR` e `EXIT`. Toda saída diferente de 0 dali grava o marcador antes de encerrar, exceto SIGINT (130) e SIGTERM (143). Um SIGTERM depois do backup encerra com 143 e não grava o marcador: o tick foi interrompido, não falhou, e o seguinte pode tentar de novo. O SIGINT segue a mesma regra. Os `die` do Coolify continuam gravando o marcador: leitura 401 ou 5xx, resposta inválida, escrita recusada de `APP_MIGRATE_IMAGE` e escrita recusada de `APP_IMAGE`. O tick seguinte vê o mesmo SHA e não roda outro `pg_dump`.
+6. `pg_dump` custom, arquivo `0600`, `sha256sum` ao lado. Em seguida `pg_restore --list` no dump. Falhou o dump, o checksum ou o `--list`: aborta antes de qualquer PATCH e grava o marcador. Depois que o backup termina, `falhar_pos_backup` fica armada com trap `ERR` e `EXIT`. Toda saída diferente de 0 dali grava o marcador antes de encerrar, exceto SIGINT (130) e SIGTERM (143). Um SIGTERM depois do backup encerra com 143 e não grava o marcador: o tick foi interrompido, não falhou, e o seguinte pode tentar de novo. O SIGINT segue a mesma regra. Os `die` do Coolify continuam gravando o marcador: leitura 401 ou 5xx, resposta inválida, linha não-preview ambígua (zero ou mais de uma), escrita recusada de `APP_MIGRATE_IMAGE` e escrita recusada de `APP_IMAGE`. O tick seguinte vê o mesmo SHA e não roda outro `pg_dump`. A escrita que não volta 2xx aborta antes do `POST /deploy`.
 7. Se o commit, ou algum ancestral desde o último state, tiver o label `migration-contract`, o tick aborta. O deploy desse lote é manual (seção abaixo).
-8. Grava só `APP_MIGRATE_IMAGE` e roda `npx prisma migrate deploy` na imagem atestada. Se o migrate falha, a `APP_MIGRATE_IMAGE` anterior (se for digest válido) é restaurada. `APP_IMAGE` não muda e não há redeploy.
-9. Grava `APP_IMAGE` e faz `POST /api/v1/deploy`. Se o Coolify recusar, restaura os digests anteriores.
+8. Grava só a linha de produção de `APP_MIGRATE_IMAGE` (`is_preview` false) e roda `npx prisma migrate deploy` na imagem atestada. Se o migrate falha, a `APP_MIGRATE_IMAGE` anterior (se for digest válido) é restaurada. `APP_IMAGE` não muda e não há redeploy.
+9. Grava a linha de produção de `APP_IMAGE` (`is_preview` false) e faz `POST /api/v1/deploy`. A linha de preview permanece. Se o Coolify recusar, restaura os digests anteriores.
 10. `/api/health` precisa devolver o SHA do commit, `/api/ready` precisa responder 200 e `SMOKE_PATH` precisa responder 200 com o cookie do usuário técnico. Qualquer falha restaura os digests.
 11. Só então o state `/var/lib/erp-deployer/state.json` é gravado em `0600`, com arquivo temporário no mesmo diretório e `mv -f` (rename atômico).
 

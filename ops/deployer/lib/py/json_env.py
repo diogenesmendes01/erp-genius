@@ -1,5 +1,8 @@
 #!/usr/bin/env python3
-"""Monta o JSON de escrita de env. A chave só pode ser uma das duas imagens."""
+"""Monta o JSON de escrita de env. A chave só pode ser uma das duas imagens.
+
+is_preview false aponta a linha de produção. A de preview não entra no corpo.
+"""
 import json
 import os
 import sys

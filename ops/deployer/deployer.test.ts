@@ -13,6 +13,7 @@ const DIG_APP = `sha256:${"a".repeat(64)}`;
 const DIG_MIG = `sha256:${"b".repeat(64)}`;
 const DIG_APP_PREV = `sha256:${"c".repeat(64)}`;
 const DIG_MIG_PREV = `sha256:${"d".repeat(64)}`;
+const DIG_APP_PREVIEW = `sha256:${"e".repeat(64)}`;
 const COOLIFY_TOKEN = "coolify-token-test-value-0123456789";
 const GHCR_TOKEN = "ghcr-token-test-value-0123456789abcdef";
 const DB_SECRET = "db-secret-test";
@@ -23,6 +24,7 @@ const NOTIFY_TOKEN = "notify-token-test-value-0123456789";
 const SMOKE_PATH = "/api/inbox/nao-lidas";
 const APP_REPO = "ghcr.io/diogenesmendes01/erp-genius";
 const MIG_REPO = "ghcr.io/diogenesmendes01/erp-genius/migrate";
+const PREVIEW_APP = `${APP_REPO}@${DIG_APP_PREVIEW}`;
 const UUID = "thpvwxk6figfp347ajznvzhl";
 
 const CHECKS = ["typecheck", "lint", "test (UTC)", "test (America/Sao_Paulo)", "build Next.js"];
@@ -236,10 +238,15 @@ if "ghcr.io" in url:
     else:
         headers += "docker-content-digest: " + digest_file.read_text(encoding="utf-8").strip() + "\\r\\n"
         code = "200"
-elif url.endswith("/envs") and method == "GET":
+elif "/api/v1/services/" in url:
+    code = "500"
+    resp = ""
+    with calls.open("a", encoding="utf-8") as fh:
+        fh.write("services-proibido\\n")
+elif "/api/v1/applications/" in url and url.endswith("/envs") and method == "GET":
     code = (mock / "envs-get-code").read_text(encoding="utf-8").strip() if (mock / "envs-get-code").exists() else "200"
     resp = (mock / "envs.json").read_text(encoding="utf-8") if code == "200" else ""
-elif url.endswith("/envs") and method == "PATCH":
+elif "/api/v1/applications/" in url and url.endswith("/envs") and method == "PATCH":
     code = "201"
     if "APP_MIGRATE_IMAGE" in body and (mock / "patch-migrate-code").exists():
         code = (mock / "patch-migrate-code").read_text(encoding="utf-8").strip()
@@ -404,6 +411,7 @@ type Scene = {
   deployFail?: boolean;
   smoke?: string;
   envsGetCode?: string;
+  envs?: Array<{ key: string; value: string; is_preview?: boolean }>;
   patchMigrateCode?: string;
   patchAppCode?: string;
   ghcrCode?: { role: "app" | "migrate"; sha: string; code: string };
@@ -472,11 +480,13 @@ function arrange(scene: Scene = {}): {
   if (scene.contract) writeFileSync(join(mock, `labels-${commits[0]}`), "migration-contract\n");
   const prevApp = scene.previousApp ?? `${APP_REPO}@${DIG_APP_PREV}`;
   const prevMig = scene.previousMigrate ?? `${MIG_REPO}@${DIG_MIG_PREV}`;
-  writeFileSync(join(mock, "envs.json"), JSON.stringify([
-    { key: "APP_IMAGE", value: prevApp },
-    { key: "APP_MIGRATE_IMAGE", value: prevMig },
+  const envs = scene.envs ?? [
+    { key: "APP_IMAGE", value: prevApp, is_preview: false },
+    { key: "APP_IMAGE", value: PREVIEW_APP, is_preview: true },
+    { key: "APP_MIGRATE_IMAGE", value: prevMig, is_preview: false },
     { key: "AUTH_SECRET", value: OTHER_SECRET },
-  ]));
+  ];
+  writeFileSync(join(mock, "envs.json"), JSON.stringify(envs));
   const state = join(stateDir, "state.json");
   const failed = join(stateDir, "state.json.failed");
   if (scene.state) {
@@ -1001,7 +1011,11 @@ describe("fluxo · ordem, latest-wins, health e aviso", () => {
     expect(lines[dockerAt]).toContain("--network coolify");
     expect(lines[dockerAt]).toContain("prisma migrate deploy");
     expect(lines[dockerAt]).not.toContain("reset");
-    expect(lines.some((line) => line.includes("http://172.16.5.5:8000/api/v1/services/"))).toBe(true);
+    expect(lines.some((line) => line.includes(`http://172.16.5.5:8000/api/v1/applications/${UUID}/envs`))).toBe(true);
+    expect(lines.some((line) => line.includes("/services/"))).toBe(false);
+    const envPatches = lines.filter((line) => line.includes("PATCH") && line.includes("/envs"));
+    expect(envPatches.length).toBeGreaterThan(0);
+    for (const line of envPatches) expect(line).toContain('"is_preview": false');
     const logged = readFileSync(ctx.log, "utf8");
     expect(logged).toContain('"result":"success"');
     expect(logged).toContain(SHA_NEW);
@@ -1529,7 +1543,7 @@ os.execv("${join(bin, "curl.real")}", ["curl.real", *args])
     expectNoRetryDump(ctx, true);
   });
 
-  it("escrita recusada de APP_IMAGE grava o marcador e não repete o pg_dump", () => {
+  it("escrita recusada de APP_IMAGE aborta antes do deploy e não repete o pg_dump", () => {
     const ctx = arrange({ patchAppCode: "401" });
     const result = run(ctx.env);
     expect(result.status).not.toBe(0);
@@ -1537,7 +1551,74 @@ os.execv("${join(bin, "curl.real")}", ["curl.real", *args])
     const lines = callsOf(ctx.mock);
     expect(lines.some((line) => line.startsWith("docker run"))).toBe(true);
     expect(lines.some((line) => line.includes("PATCH") && line.includes('"key": "APP_IMAGE"'))).toBe(true);
+    expect(lines.some((line) => line.includes("/api/v1/deploy?"))).toBe(false);
     expectNoRetryDump(ctx, true);
+  });
+
+  it("qualquer chamada a /services/ falha o teste", () => {
+    const ctx = arrange();
+    const result = run(ctx.env);
+    const lines = callsOf(ctx.mock);
+    expect(lines.some((line) => line.includes("/services/"))).toBe(false);
+    expect(lines.some((line) => line.includes(`/api/v1/applications/${UUID}/envs`))).toBe(true);
+    expect(lines.some((line) => line.includes(`/api/v1/deploy?uuid=${UUID}`))).toBe(true);
+    expect(result.status).toBe(0);
+  });
+
+  it("com as duas linhas de APP_IMAGE, só a de produção é alterada e o body tem is_preview false", () => {
+    const ctx = arrange();
+    const result = run(ctx.env);
+    expect(result.status).toBe(0);
+    const lines = callsOf(ctx.mock);
+    const patches = lines.filter((line) => line.includes("PATCH") && line.includes("/envs"));
+    expect(patches.length).toBeGreaterThan(0);
+    for (const line of patches) {
+      expect(line).toContain('"is_preview": false');
+      expect(line).not.toContain('"is_preview": true');
+      expect(line).not.toContain(PREVIEW_APP);
+      expect(line).not.toContain(DIG_APP_PREVIEW);
+    }
+    const appPatch = patches.find((line) => line.includes('"key": "APP_IMAGE"') && line.includes(DIG_APP));
+    expect(appPatch).toBeTruthy();
+    expect(lines.join("\n")).not.toContain(DIG_APP_PREVIEW);
+    expect(lines.some((line) => line.includes("/api/v1/deploy?"))).toBe(true);
+  });
+
+  it("sem a linha não-preview o deploy aborta", () => {
+    const ctx = arrange({
+      envs: [
+        { key: "APP_IMAGE", value: PREVIEW_APP, is_preview: true },
+        { key: "APP_MIGRATE_IMAGE", value: `${MIG_REPO}@${DIG_MIG_PREV}`, is_preview: false },
+        { key: "AUTH_SECRET", value: OTHER_SECRET },
+      ],
+    });
+    const result = run(ctx.env);
+    const lines = callsOf(ctx.mock);
+    expect(lines.some((line) => line.includes("/api/v1/deploy?"))).toBe(false);
+    expect(result.status).not.toBe(0);
+    expect(result.stderr).toContain("linha não-preview ambígua");
+    expect(lines.some((line) => line.includes("PATCH"))).toBe(false);
+    expect(lines.join("\n")).not.toContain(DIG_APP_PREVIEW);
+  });
+
+  it("com duas linhas não-preview o deploy aborta", () => {
+    const dup = `${APP_REPO}@sha256:${"f".repeat(64)}`;
+    const ctx = arrange({
+      envs: [
+        { key: "APP_IMAGE", value: `${APP_REPO}@${DIG_APP_PREV}`, is_preview: false },
+        { key: "APP_IMAGE", value: dup, is_preview: false },
+        { key: "APP_IMAGE", value: PREVIEW_APP, is_preview: true },
+        { key: "APP_MIGRATE_IMAGE", value: `${MIG_REPO}@${DIG_MIG_PREV}`, is_preview: false },
+      ],
+    });
+    const result = run(ctx.env);
+    const lines = callsOf(ctx.mock);
+    expect(lines.some((line) => line.includes("/api/v1/deploy?"))).toBe(false);
+    expect(result.status).not.toBe(0);
+    expect(result.stderr).toContain("linha não-preview ambígua");
+    expect(lines.some((line) => line.includes("PATCH"))).toBe(false);
+    expect(lines.join("\n")).not.toContain(dup);
+    expect(lines.join("\n")).not.toContain(DIG_APP_PREVIEW);
   });
 
   it("ponta sem imagem deploya o commit anterior publicado e atestado", () => {

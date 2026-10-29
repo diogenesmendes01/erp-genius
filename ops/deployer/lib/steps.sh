@@ -324,7 +324,7 @@ coolify_set() {
     rm -f "$body" "$resp"
     die "não foi possível montar o env"
   fi
-  if ! code="$(http_code PATCH "${COOLIFY_BASE_URL}/api/v1/services/${COOLIFY_APP_UUID_FIXO}/envs" "$resp" "" "$body" "$COOLIFY_TOKEN")"; then
+  if ! code="$(http_code PATCH "${COOLIFY_BASE_URL}/api/v1/applications/${COOLIFY_APP_UUID_FIXO}/envs" "$resp" "" "$body" "$COOLIFY_TOKEN")"; then
     rm -f "$body" "$resp"
     die "Coolify indisponível"
   fi
@@ -348,9 +348,9 @@ coolify_deploy() {
 }
 
 coolify_ler_imagens() {
-  local resp="" code="" parsed="" line=""
+  local resp="" code="" parsed="" line="" parse_rc=0
   resp="$(mktemp)" || die "mktemp falhou"
-  if ! code="$(http_code GET "${COOLIFY_BASE_URL}/api/v1/services/${COOLIFY_APP_UUID_FIXO}/envs" "$resp" "" "" "$COOLIFY_TOKEN")"; then
+  if ! code="$(http_code GET "${COOLIFY_BASE_URL}/api/v1/applications/${COOLIFY_APP_UUID_FIXO}/envs" "$resp" "" "" "$COOLIFY_TOKEN")"; then
     rm -f "$resp"
     die "Coolify indisponível na leitura"
   fi
@@ -358,11 +358,14 @@ coolify_ler_imagens() {
     rm -f "$resp"
     die "Coolify recusou a leitura de env (${code})"
   fi
-  if ! parsed="$(run_allow -- python3 "${DEPLOYER_ROOT}/lib/py/coolify_images.py" < "$resp")"; then
-    rm -f "$resp"
+  parsed="$(run_allow -- python3 "${DEPLOYER_ROOT}/lib/py/coolify_images.py" < "$resp")" || parse_rc=$?
+  rm -f "$resp"
+  if [[ "$parse_rc" -eq 3 ]]; then
+    die "linha não-preview ambígua"
+  fi
+  if [[ "$parse_rc" -ne 0 ]]; then
     die "resposta de env do Coolify inválida"
   fi
-  rm -f "$resp"
   PREV_APP=""
   PREV_MIG=""
   while IFS= read -r line; do
