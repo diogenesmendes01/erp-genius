@@ -22,6 +22,8 @@ vi.mock("@/server/inbox/acoes-fechamento-painel", () => ({
 }));
 
 import { PainelOportunidade } from "./PainelOportunidade";
+import { DateTimePicker } from "@/components/ui/date-time-picker";
+import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 
 const GERENTE: CapacidadeCrm[] = ["funil.ver", "funil.mover", "funil.atribuir"];
 const base: DetalheOportunidade = {
@@ -121,6 +123,47 @@ describe("PainelOportunidade como Sheet", () => {
     expect(sheetAberto().getAttribute("data-state")).toBe("open");
   });
 
+  async function abrirPickerComHora() {
+    const aberto = await abrirPainel();
+    await aberto.user.click(screen.getByRole("button", { name: /Data e hora da experimental/ }));
+    await aberto.user.click(await screen.findByRole("button", { name: /15 de outubro de 2026/ }));
+    const hora = screen.getByRole("combobox", { name: "Hora" });
+    const minuto = screen.getByRole("combobox", { name: "Minuto" });
+    expect(hora.hasAttribute("disabled")).toBe(false);
+    expect(minuto.hasAttribute("disabled")).toBe(false);
+    await aberto.user.click(hora);
+    expect(await screen.findByRole("listbox")).toBeTruthy();
+    expect(screen.getByRole("option", { name: "13" })).toBeTruthy();
+    expect(screen.getByRole("combobox", { name: "Minuto", hidden: true })).toBeTruthy();
+    return aberto;
+  }
+
+  it("Esc com o popover e os selects de hora e minuto abertos fecha só o picker; o segundo Esc fecha o Sheet", async () => {
+    const { user, cartao } = await abrirPickerComHora();
+    await user.keyboard("{Escape}");
+    await waitFor(() => expect(screen.queryByRole("listbox")).toBeNull());
+    await waitFor(() => expect(screen.queryByRole("combobox", { name: "Hora" })).toBeNull());
+    expect(screen.queryByRole("combobox", { name: "Minuto" })).toBeNull();
+    expect(sheetAberto().getAttribute("data-state")).toBe("open");
+    await user.keyboard("{Escape}");
+    await waitFor(() => expect(screen.queryByRole("dialog", { name: "Maria Souza" })).toBeNull());
+    await waitFor(() => expect(document.activeElement).toBe(cartao));
+  });
+
+  it("clique fora com o select de hora aberto fecha só o picker; o segundo Esc fecha o Sheet", async () => {
+    const { user, cartao } = await abrirPickerComHora();
+    await actFlush();
+    const velo = document.body.querySelector(":scope > .fixed.inset-0");
+    expect(velo).toBeTruthy();
+    await user.pointer({ keys: "[MouseLeft]", target: velo! });
+    await waitFor(() => expect(screen.queryByRole("listbox")).toBeNull());
+    await waitFor(() => expect(screen.queryByRole("combobox", { name: "Hora" })).toBeNull());
+    expect(sheetAberto().getAttribute("data-state")).toBe("open");
+    await user.keyboard("{Escape}");
+    await waitFor(() => expect(screen.queryByRole("dialog", { name: "Maria Souza" })).toBeNull());
+    await waitFor(() => expect(document.activeElement).toBe(cartao));
+  });
+
   it("Esc e pointerdown no date picker e no select de hora não fecham o Sheet", async () => {
     const { user } = await abrirPainel();
     await user.click(screen.getByRole("button", { name: /Data e hora da experimental/ }));
@@ -190,5 +233,113 @@ describe("fonte do painel", () => {
     expect(fonte).toContain("md:w-[45%]");
     expect(fonte).toContain("max-w-none");
     expect(fonte).toContain("sr-only");
+  });
+});
+
+describe("DateTimePicker no Sheet — BLOCK-513-A11Y", () => {
+  function Agenda() {
+    const [valor, setValor] = useState("");
+    return createElement(Sheet, { open: true },
+      createElement(SheetContent, null,
+        createElement(SheetHeader, null,
+          createElement(SheetTitle, null, "Agendar experimental"),
+          createElement(SheetDescription, null, "Data da aula."),
+        ),
+        createElement("form", { "aria-label": "Agenda da experimental" },
+          createElement(DateTimePicker, {
+            name: "quando",
+            required: true,
+            "aria-label": "Data e hora da experimental",
+            value: valor,
+            onChange: (evento: { target: { value: string } }) => setValor(evento.target.value),
+          }),
+          createElement("button", { type: "submit" }, "Salvar"),
+        ),
+      ),
+    );
+  }
+
+  function oculto() {
+    return document.querySelector('input[aria-hidden="true"]');
+  }
+
+  it("Tab não para no input oculto e ele fica fora da árvore de acessibilidade", async () => {
+    const user = userEvent.setup();
+    render(createElement(Agenda));
+    const gatilho = await screen.findByRole("button", { name: "Data e hora da experimental" });
+    expect(screen.queryByRole("textbox")).toBeNull();
+    expect(oculto()?.getAttribute("aria-hidden")).toBe("true");
+    expect(oculto()?.getAttribute("tabindex")).toBe("-1");
+    expect(oculto()?.hasAttribute("name")).toBe(false);
+    gatilho.focus();
+    await user.tab();
+    expect(document.activeElement).not.toBe(oculto());
+    expect(document.activeElement).toBe(screen.getByRole("button", { name: "Salvar" }));
+    expect(screen.getByRole("dialog", { name: "Agendar experimental" }).getAttribute("data-state")).toBe("open");
+  });
+
+  it("render inicial de obrigatório vazio não mostra alerta, borda vermelha nem aria-invalid", async () => {
+    render(createElement(Agenda));
+    const gatilho = await screen.findByRole("button", { name: "Data e hora da experimental" });
+    expect(screen.queryByRole("alert")).toBeNull();
+    expect(gatilho.hasAttribute("aria-invalid")).toBe(false);
+    expect(gatilho.className.split(/\s+/)).not.toContain("border-red-500");
+    expect(gatilho.getAttribute("aria-required")).toBe("true");
+  });
+
+  it("blur vazio mostra o erro no gatilho", async () => {
+    const user = userEvent.setup();
+    render(createElement(Agenda));
+    const gatilho = await screen.findByRole("button", { name: "Data e hora da experimental" });
+    expect(screen.queryByRole("alert")).toBeNull();
+    gatilho.focus();
+    await user.tab();
+    const alerta = await screen.findByRole("alert");
+    expect(alerta.textContent).toContain("Informe data e hora.");
+    expect(gatilho.getAttribute("aria-invalid")).toBe("true");
+    expect(gatilho.className.split(/\s+/)).toContain("border-red-500");
+    expect(gatilho.getAttribute("aria-describedby")).toContain(alerta.id);
+    expect(screen.getAllByRole("alert")).toHaveLength(1);
+  });
+
+  it("submit vazio foca o trigger, mostra o erro uma vez e mantém o Sheet aberto", async () => {
+    const user = userEvent.setup();
+    render(createElement(Agenda));
+    const gatilho = await screen.findByRole("button", { name: "Data e hora da experimental" });
+    expect(screen.queryByRole("alert")).toBeNull();
+    await user.click(screen.getByRole("button", { name: "Salvar" }));
+    await waitFor(() => expect(document.activeElement).toBe(gatilho));
+    expect(document.activeElement).not.toBe(oculto());
+    expect(screen.getByRole("dialog", { name: "Agendar experimental" }).getAttribute("data-state")).toBe("open");
+    const alertas = screen.getAllByRole("alert");
+    expect(alertas).toHaveLength(1);
+    expect(alertas[0].textContent).toContain("Informe data e hora.");
+    expect(document.body.textContent?.match(/Informe data e hora\./g)).toHaveLength(1);
+    expect(gatilho.getAttribute("aria-describedby")).toContain(alertas[0].id);
+    expect(gatilho.getAttribute("aria-required")).toBe("true");
+    expect(gatilho.getAttribute("aria-invalid")).toBe("true");
+  });
+
+  it("onFocus do espelho devolve o foco ao gatilho sem duplicar o alerta", async () => {
+    const user = userEvent.setup();
+    render(createElement(Agenda));
+    const gatilho = await screen.findByRole("button", { name: "Data e hora da experimental" });
+    gatilho.focus();
+    await user.tab();
+    const alerta = await screen.findByRole("alert");
+    const espelho = oculto() as HTMLElement;
+    espelho.focus();
+    expect(document.activeElement).toBe(gatilho);
+    expect(screen.getAllByRole("alert")).toEqual([alerta]);
+  });
+
+  it("Esc com o picker aberto fecha só o picker", async () => {
+    const user = userEvent.setup();
+    render(createElement(Agenda));
+    await user.click(await screen.findByRole("button", { name: "Data e hora da experimental" }));
+    expect(await screen.findByRole("combobox", { name: "Hora" })).toBeTruthy();
+    await user.keyboard("{Escape}");
+    await waitFor(() => expect(screen.queryByRole("combobox", { name: "Hora" })).toBeNull());
+    expect(screen.getByRole("dialog", { name: "Agendar experimental" }).getAttribute("data-state")).toBe("open");
   });
 });
