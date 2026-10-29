@@ -5,11 +5,6 @@
   "engines": {
     "node": ">=26 <27"
   },
-  "allowScripts": {
-    "prisma": true,
-    "@prisma/engines": true,
-    "esbuild": true
-  },
   "scripts": {
     "dev": "next dev",
     "build": "next build",

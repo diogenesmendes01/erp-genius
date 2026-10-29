@@ -5,8 +5,9 @@ RUN apk add --no-cache libatomic openssl
 
 FROM base AS deps
 WORKDIR /app
-COPY package.json package-lock.json ./
+COPY package.json package-lock.json .npmrc ./
 RUN npm ci
+RUN npm rebuild prisma @prisma/engines esbuild --ignore-scripts=false
 RUN node -e "require('esbuild')" && npx esbuild --version
 
 FROM base AS builder
