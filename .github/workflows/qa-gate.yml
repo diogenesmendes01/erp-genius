@@ -1,0 +1,71 @@
+name: QA gate
+
+# issue_comment usa o workflow da branch padrão. Sem checkout: não executa código da PR.
+# A regex e os rótulos repetem scripts/qa-gate/parse.ts; o teste compara os dois.
+on:
+  issue_comment:
+    types: [created]
+
+permissions:
+  statuses: write
+  pull-requests: read
+
+jobs:
+  homologacao:
+    name: homologacao
+    if: ${{ github.event.issue.pull_request }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Registrar status de homologação
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        with:
+          script: |
+            const QA_COMMAND = new RegExp("^/qa-(pass|fail) ([0-9a-f]{40})$");
+            const ALLOWED = new Set(["OWNER", "MEMBER", "COLLABORATOR"]);
+            const CONTEXT = "qa/homologacao";
+
+            function descricaoStatus(verdict, commentUrl, commentId) {
+              const rotulo =
+                verdict === "pass"
+                  ? "Homologação QA aprovada"
+                  : "Homologação QA reprovada";
+              const comUrl = `${rotulo}. Comentário: ${commentUrl}`;
+              if (commentUrl && comUrl.length <= 140) return comUrl;
+              const comId = `${rotulo} (comentário ${commentId})`;
+              return comId.length <= 140 ? comId : comId.slice(0, 140);
+            }
+
+            const comment = context.payload.comment || {};
+            const association = comment.author_association || "";
+            if (!ALLOWED.has(association)) return;
+
+            const body = typeof comment.body === "string" ? comment.body : "";
+            const firstLine = (body.split(/\r?\n/, 1)[0] || "").trim();
+            const match = QA_COMMAND.exec(firstLine);
+            if (!match) return;
+
+            const verdict = match[1];
+            const commandSha = match[2];
+            const issue = context.payload.issue || {};
+            const { data: pull } = await github.rest.pulls.get({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: issue.number,
+            });
+            const headSha = pull.head.sha;
+            if (headSha !== commandSha) {
+              core.setFailed(`sha desatualizado: head atual é ${headSha}`);
+              return;
+            }
+
+            const commentUrl = typeof comment.html_url === "string" ? comment.html_url : "";
+            await github.rest.repos.createCommitStatus({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              sha: headSha,
+              state: verdict === "pass" ? "success" : "failure",
+              context: CONTEXT,
+              target_url: commentUrl,
+              description: descricaoStatus(verdict, commentUrl, comment.id),
+            });

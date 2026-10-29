@@ -5,7 +5,7 @@ export default defineConfig({
   plugins: [tsconfigPaths()],
   test: {
     environment: "node",
-    include: ["src/**/*.test.ts"],
+    include: ["src/**/*.test.ts", "scripts/qa-gate/**/*.test.ts"],
     exclude: ["**/node_modules/**", "src/**/*.int.test.ts"],
     testTimeout: 30_000,
   },
