@@ -1,6 +1,6 @@
 # Runbook · deployer pull de produção
 
-Agente em `ops/deployer` que, na VPS, busca o commit mais novo da `main` com os 5 checks verdes, confere a attestation dos dois digests e só então faz backup, migrate e redeploy do serviço Coolify `thpvwxk6figfp347ajznvzhl`. O CI não recebe token do Coolify nem chave SSH.
+Agente em `ops/deployer` que, na VPS, busca o commit mais novo da `main` com os 5 checks verdes e com imagem publicada e atestada. Se a ponta não tiver imagem, usa a publicada e atestada mais recente entre os 20 commits mais novos. Confere a attestation dos dois digests e só então faz backup, migrate e redeploy do serviço Coolify `thpvwxk6figfp347ajznvzhl`. O CI não recebe token do Coolify nem chave SSH.
 
 A prova de rollback no app isolado (`BLOCK-DEPLOY-10/11`) fica com o DEVOPS e não faz parte deste agente. O backup off-site (`BLOCK-12`) está pendente e depende do Mendes.
 
@@ -62,7 +62,7 @@ Se o Coolify não tiver escopo por app, crie um time dedicado que contenha somen
 1. Se existir `/etc/erp-deployer/PAUSE`, sai sem deploy.
 2. `flock -n` em `/var/lib/erp-deployer/deploy.lock`. Sem o lock, sai com código 0 (outro tick está no meio).
 3. Lê a ponta da `main`. Se os 5 checks ainda não fecharam, espera. Se a ponta está verde, ela é o único candidato (latest-wins: dois merges seguidos viram um deploy, o do commit mais novo). Se a ponta falhou de vez, usa o ancestral verde mais novo. Um nome de check repetido (o `ci.yml` e o `image.yml` publicam `typecheck`, `lint` e `test`) só passa se todas as cópias estiverem verdes.
-4. Resolve os digests `sha-<7>` de `ghcr.io/diogenesmendes01/erp-genius` e `.../migrate`. Imagem ainda não publicada: sai 0 e tenta de novo. Digest fora de `^sha256:[a-f0-9]{64}$` aborta.
+4. Resolve os digests `sha-<7>` de `ghcr.io/diogenesmendes01/erp-genius` e `.../migrate`. Um 404 na ponta (o `image.yml` usa `cancel-in-progress` na `main` e pode cancelar o build) não espera: o deployer percorre os commits anteriores, no máximo 20 commits, e fica com o primeiro que tenha os 5 checks verdes, os dois digests publicados e attestation válida. Se nenhum servir, grava `state.json.failed` com `result` `sem_imagem` e sai com código diferente de 0. Os digests desse marcador são zerados só para caber no formato do state; não são uma imagem para implantar. O tick seguinte não tenta de novo até `sudo erp-deployer clear-failed`. Digest fora de `^sha256:[a-f0-9]{64}$` aborta. Falha de rede no GHCR aborta sem marcador, para o próximo tick tentar de novo.
 5. Para os dois digests, sem `|| true` e com `set -euo pipefail`:
 
 ```bash
@@ -74,7 +74,7 @@ gh attestation verify "oci://<imagem>@<digest>" \
 
 O commit, a ref `refs/heads/main` e o digest têm de ser iguais aos campos do predicate, não uma substring. Rede, timeout (`timeout 60`), `gh` ausente, saída vazia ou commit diferente abortam. Não há deploy.
 
-6. `pg_dump` custom, arquivo `0600`, `sha256sum` ao lado. Em seguida `pg_restore --list` no dump. Falhou o dump, o checksum ou o `--list`: aborta antes de qualquer PATCH.
+6. `pg_dump` custom, arquivo `0600`, `sha256sum` ao lado. Em seguida `pg_restore --list` no dump. Falhou o dump, o checksum ou o `--list`: aborta antes de qualquer PATCH e grava o marcador. Depois que o backup termina, `falhar_pos_backup` fica armada com trap `ERR` e `EXIT`. Toda saída dali grava o marcador antes de encerrar, inclusive os `die` do Coolify: leitura 401 ou 5xx, resposta inválida, escrita recusada de `APP_MIGRATE_IMAGE` e escrita recusada de `APP_IMAGE`. O tick seguinte vê o mesmo SHA e não roda outro `pg_dump`.
 7. Se o commit, ou algum ancestral desde o último state, tiver o label `migration-contract`, o tick aborta. O deploy desse lote é manual (seção abaixo).
 8. Grava só `APP_MIGRATE_IMAGE` e roda `npx prisma migrate deploy` na imagem atestada. Se o migrate falha, a `APP_MIGRATE_IMAGE` anterior (se for digest válido) é restaurada. `APP_IMAGE` não muda e não há redeploy.
 9. Grava `APP_IMAGE` e faz `POST /api/v1/deploy`. Se o Coolify recusar, restaura os digests anteriores.
@@ -97,11 +97,27 @@ Um PR com o label `migration-contract` não sobe sozinho.
 6. Grave o state só se o health fechou. Se o agente marcou o SHA, `sudo erp-deployer clear-failed` apaga `state.json.failed`.
 7. `sudo erp-deployer resume`
 
+## Incidente
+
+O primeiro passo é congelar o agente, antes de mexer no banco ou no Coolify:
+
+```bash
+sudo erp-deployer pause
+```
+
+Os motivos que gravam `state.json.failed` são `migration-contract`, dump inválido, leitura ou escrita recusada pelo Coolify depois do backup, migrate, health, smoke, `POST /deploy` e ponta sem imagem publicada (`sem_imagem`). Depois de corrigir a causa de cada um deles:
+
+```bash
+sudo erp-deployer clear-failed
+```
+
+Sem esse comando o mesmo SHA não é tentado de novo. Se o incidente começou com `pause`, termine com `sudo erp-deployer resume`.
+
 ## Rollback
 
 Falha de health, ready, smoke ou do `POST /deploy` depois da troca de imagem: o script restaura `APP_IMAGE` e `APP_MIGRATE_IMAGE` e redeploya. A fonte é o state anterior. No primeiro deploy, sem state, usa as imagens que o Coolify já tinha, se forem digests válidos. O banco não é revertido. O código automático só chama `pg_restore --list`. Não há `prisma migrate reset`, `prisma db push` nem down-migration.
 
-Em seguida grava `/var/lib/erp-deployer/state.json.failed` com o SHA que falhou. Enquanto esse marcador existir para o mesmo SHA, o timer não tenta de novo e não roda outro `pg_dump`. Isso vale para `migration-contract`, dump corrompido, migrate, health e o `POST /deploy`. A retomada é manual: `sudo erp-deployer clear-failed` apaga só o marcador, e `sudo erp-deployer resume` apaga o marcador e o `PAUSE`. Um commit mais novo da `main` é avaliado normalmente.
+Em seguida grava `/var/lib/erp-deployer/state.json.failed` com o SHA que falhou. Enquanto esse marcador existir para o mesmo SHA, o timer não tenta de novo e não roda outro `pg_dump`. Isso vale para `migration-contract`, dump corrompido, leitura ou escrita do Coolify depois do backup, migrate, health, smoke, o `POST /deploy` e a ausência de imagem publicada (`sem_imagem`). A retomada é manual: `sudo erp-deployer clear-failed` apaga só o marcador, e `sudo erp-deployer resume` apaga o marcador e o `PAUSE`. Um commit mais novo da `main` é avaliado normalmente.
 
 Se não houver state nem imagem anterior válida, pause o agente e use o restore manual abaixo, ou publique um commit de correção.
 

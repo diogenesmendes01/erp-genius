@@ -108,8 +108,65 @@ mark_and_stop() {
   exit 1
 }
 
+# die do common.sh não grava o marcador. Depois do backup, esta versão chama
+# falhar_pos_backup para que leitura e escrita do Coolify não escapem.
+die() {
+  printf 'deployer: %s\n' "$1" >&2
+  if [[ "${POS_BACKUP:-0}" == "1" && "${POS_BACKUP_HANDLED:-0}" != "1" ]]; then
+    falhar_pos_backup "$1"
+  fi
+  exit 1
+}
+
+falhar_pos_backup() {
+  local result="$1"
+  POS_BACKUP_HANDLED=1
+  POS_BACKUP=0
+  trap - ERR
+  set +E
+  log_event "falha" "$result" "${CANDIDATE:-}" "${app_digest:-}" "${mig_digest:-}"
+  write_json_atomic "$DEPLOYER_FAILED_FILE" "$CANDIDATE" "$app_digest" "$mig_digest" "$result"
+  notify_line "$LAST_LOG"
+  exit 1
+}
+
+pos_backup_exit() {
+  local code=$?
+  if [[ "$code" -ne 0 && "$code" -ne 130 && "$code" -ne 143 && "${POS_BACKUP:-0}" == "1" && "${POS_BACKUP_HANDLED:-0}" != "1" ]]; then
+    if [[ ! -f "${DEPLOYER_FAILED_FILE:-}" ]]; then
+      POS_BACKUP_HANDLED=1
+      POS_BACKUP=0
+      trap - ERR
+      set +E
+      write_json_atomic "$DEPLOYER_FAILED_FILE" "$CANDIDATE" "$app_digest" "$mig_digest" "pos_backup"
+    fi
+  fi
+  cleanup_secret_tmp
+}
+
+mark_sem_imagem() {
+  local zero=""
+  zero="$(printf 'sha256:%064d' 0)"
+  log_event "digest" "sem_imagem" "$CANDIDATE"
+  write_json_atomic "$DEPLOYER_FAILED_FILE" "$CANDIDATE" "$zero" "$zero" "sem_imagem"
+  notify_line "$LAST_LOG"
+  exit 1
+}
+
+arm_pos_backup() {
+  POS_BACKUP=1
+  set -E
+  trap 'falhar_pos_backup trap' ERR
+  trap 'pos_backup_exit' EXIT
+}
+
+POS_BACKUP=0
+POS_BACKUP_HANDLED=0
+app_digest=""
+mig_digest=""
+
 main() {
-  local rc=0 tool_root="" pause_file="" app_digest="" mig_digest=""
+  local rc=0 tool_root="" pause_file=""
   START_MS="$(date +%s%3N)"
   DURATION_MS=0
   CANDIDATE=""
@@ -151,25 +208,30 @@ main() {
     log_event "skip_failed" "aguardar_correcao" "$CANDIDATE"
     exit 0
   fi
-  SHORT="sha-${CANDIDATE:0:7}"
   rc=0
-  app_digest="$(resolve_digest "diogenesmendes01/erp-genius" "$SHORT")" || rc=$?
+  try_images "$CANDIDATE" || rc=$?
   if [[ "$rc" -eq 10 ]]; then
-    log_event "digest" "ausente" "$CANDIDATE"
-    exit 0
-  fi
-  if [[ "$rc" -ne 0 ]]; then
+    rc=0
+    fallback_published || rc=$?
+    if [[ "$rc" -eq 11 ]]; then
+      mark_sem_imagem
+    fi
+    if [[ "$rc" -ne 0 ]]; then
+      exit "$rc"
+    fi
+    if already_deployed "$CANDIDATE"; then
+      log_event "noop" "ja_deployado" "$CANDIDATE"
+      exit 0
+    fi
+    if failed_same "$CANDIDATE"; then
+      log_event "skip_failed" "aguardar_correcao" "$CANDIDATE"
+      exit 0
+    fi
+  elif [[ "$rc" -ne 0 ]]; then
     exit "$rc"
   fi
-  rc=0
-  mig_digest="$(resolve_digest "diogenesmendes01/erp-genius/migrate" "$SHORT")" || rc=$?
-  if [[ "$rc" -eq 10 ]]; then
-    log_event "digest" "ausente" "$CANDIDATE"
-    exit 0
-  fi
-  if [[ "$rc" -ne 0 ]]; then
-    exit "$rc"
-  fi
+  app_digest="$RESOLVED_APP"
+  mig_digest="$RESOLVED_MIG"
   verify_one "${APP_IMAGE_REPO}@${app_digest}" "$CANDIDATE" "$app_digest"
   verify_one "${MIGRATE_IMAGE_REPO}@${mig_digest}" "$CANDIDATE" "$mig_digest"
   if ! guard_migration_contract; then
@@ -178,12 +240,14 @@ main() {
   if ! backup_db "$CANDIDATE"; then
     mark_and_stop "backup" "dump_invalido"
   fi
+  arm_pos_backup
   coolify_ler_imagens
   coolify_set APP_MIGRATE_IMAGE "${MIGRATE_IMAGE_REPO}@${mig_digest}"
   if ! run_migrate "${MIGRATE_IMAGE_REPO}@${mig_digest}"; then
     local migrate_note=""
     log_event "migrate" "falhou" "$CANDIDATE" "$app_digest" "$mig_digest"
     write_json_atomic "$DEPLOYER_FAILED_FILE" "$CANDIDATE" "$app_digest" "$mig_digest" "migrate_fail"
+    POS_BACKUP_HANDLED=1
     migrate_note="$LAST_LOG"
     if ref_migrate_valida "$PREV_MIG"; then
       coolify_set APP_MIGRATE_IMAGE "$PREV_MIG"
@@ -197,6 +261,7 @@ main() {
   if ! coolify_deploy; then
     log_event "deploy" "coolify_falhou" "$CANDIDATE" "$app_digest" "$mig_digest"
     write_json_atomic "$DEPLOYER_FAILED_FILE" "$CANDIDATE" "$app_digest" "$mig_digest" "deploy_fail"
+    POS_BACKUP_HANDLED=1
     notify_line "$LAST_LOG"
     rollback_or_note "$CANDIDATE"
     exit 1
@@ -204,6 +269,7 @@ main() {
   if ! wait_healthy "$CANDIDATE"; then
     log_event "health" "falhou" "$CANDIDATE" "$app_digest" "$mig_digest"
     write_json_atomic "$DEPLOYER_FAILED_FILE" "$CANDIDATE" "$app_digest" "$mig_digest" "health_fail"
+    POS_BACKUP_HANDLED=1
     notify_line "$LAST_LOG"
     rollback_or_note "$CANDIDATE"
     exit 1

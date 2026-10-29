@@ -83,10 +83,14 @@ select_candidate() {
   [[ -n "$list" ]] || die "main sem commits"
   while IFS= read -r s; do
     [[ -n "$s" ]] || continue
+    if [[ "${#shas[@]}" -ge 20 ]]; then
+      break
+    fi
     assert_sha "$s"
     shas+=("$s")
   done <<< "$list"
   [[ "${#shas[@]}" -gt 0 ]] || die "main sem commits"
+  MAIN_SHAS=("${shas[@]}")
   tip="${shas[0]}"
   if ! verdict="$(checks_verdict "$tip")"; then
     die "falha ao ler os checks"
@@ -146,7 +150,7 @@ resolve_digest() {
   printf '%s\n' "$digest"
 }
 
-verify_one() {
+verify_attested() {
   local image_ref="$1" expected_sha="$2" expected_digest="$3" out=""
   assert_sha "$expected_sha"
   assert_digest "$expected_digest"
@@ -157,16 +161,79 @@ verify_one() {
       --repo "$GITHUB_REPO" \
       --signer-workflow "$SIGNER_WORKFLOW" \
       --format json)"; then
-    die "attestation falhou"
+    printf 'deployer: attestation falhou\n' >&2
+    return 1
   fi
   if [[ -z "${out//[[:space:]]/}" ]]; then
-    die "attestation saída vazia"
+    printf 'deployer: attestation saída vazia\n' >&2
+    return 1
   fi
   if ! printf '%s' "$out" | EXPECTED_SHA="$expected_sha" EXPECTED_DIGEST="$expected_digest" \
       run_allow EXPECTED_SHA EXPECTED_DIGEST -- \
       python3 "${DEPLOYER_ROOT}/lib/py/attest_check.py"; then
-    die "attestation não confere com o commit da main"
+    printf 'deployer: attestation não confere com o commit da main\n' >&2
+    return 1
   fi
+}
+
+verify_one() {
+  verify_attested "$@" || die "attestation falhou"
+}
+
+try_images() {
+  local sha="$1" short="" rc=0 app="" mig=""
+  assert_sha "$sha"
+  short="sha-${sha:0:7}"
+  rc=0
+  app="$(resolve_digest "diogenesmendes01/erp-genius" "$short")" || rc=$?
+  if [[ "$rc" -ne 0 ]]; then
+    return "$rc"
+  fi
+  rc=0
+  mig="$(resolve_digest "diogenesmendes01/erp-genius/migrate" "$short")" || rc=$?
+  if [[ "$rc" -ne 0 ]]; then
+    return "$rc"
+  fi
+  RESOLVED_APP="$app"
+  RESOLVED_MIG="$mig"
+  return 0
+}
+
+fallback_published() {
+  local i=0 sha="" verdict="" rc=0 start=-1
+  for ((i=0; i<${#MAIN_SHAS[@]} && i<20; i++)); do
+    if [[ "${MAIN_SHAS[$i]}" == "$CANDIDATE" ]]; then
+      start=$i
+      break
+    fi
+  done
+  if [[ "$start" -lt 0 ]]; then
+    return 11
+  fi
+  for ((i=start+1; i<${#MAIN_SHAS[@]} && i<20; i++)); do
+    sha="${MAIN_SHAS[$i]}"
+    if ! verdict="$(checks_verdict "$sha")"; then
+      die "falha ao ler os checks"
+    fi
+    if [[ "$verdict" != "success" ]]; then
+      continue
+    fi
+    rc=0
+    try_images "$sha" || rc=$?
+    if [[ "$rc" -eq 0 ]]; then
+      if verify_attested "${APP_IMAGE_REPO}@${RESOLVED_APP}" "$sha" "$RESOLVED_APP" \
+          && verify_attested "${MIGRATE_IMAGE_REPO}@${RESOLVED_MIG}" "$sha" "$RESOLVED_MIG"; then
+        CANDIDATE="$sha"
+        log_event "digest" "fallback" "$CANDIDATE" "$RESOLVED_APP" "$RESOLVED_MIG"
+        return 0
+      fi
+      continue
+    fi
+    if [[ "$rc" -ne 10 ]]; then
+      return "$rc"
+    fi
+  done
+  return 11
 }
 
 backup_db() {
@@ -584,6 +651,9 @@ notify_line() {
   rm -f "$body" "$resp"
 }
 
-# CANDIDATE, PREV_APP, PREV_MIG e RANGE_SHAS são lidos pelos passos do deploy.
+# CANDIDATE, PREV_APP, PREV_MIG, MAIN_SHAS e RANGE_SHAS são lidos pelos passos do deploy.
 RANGE_SHAS=()
-: "${CANDIDATE:-}${PREV_APP:-}${PREV_MIG:-}"
+MAIN_SHAS=()
+RESOLVED_APP=""
+RESOLVED_MIG=""
+: "${CANDIDATE:-}${PREV_APP:-}${PREV_MIG:-}${MAIN_SHAS[*]:-}${RESOLVED_APP}${RESOLVED_MIG}"

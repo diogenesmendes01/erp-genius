@@ -230,10 +230,14 @@ if "ghcr.io" in url:
         headers += "docker-content-digest: " + digest_file.read_text(encoding="utf-8").strip() + "\\r\\n"
         code = "200"
 elif url.endswith("/envs") and method == "GET":
-    resp = (mock / "envs.json").read_text(encoding="utf-8")
-    code = "200"
+    code = (mock / "envs-get-code").read_text(encoding="utf-8").strip() if (mock / "envs-get-code").exists() else "200"
+    resp = (mock / "envs.json").read_text(encoding="utf-8") if code == "200" else ""
 elif url.endswith("/envs") and method == "PATCH":
     code = "201"
+    if "APP_MIGRATE_IMAGE" in body and (mock / "patch-migrate-code").exists():
+        code = (mock / "patch-migrate-code").read_text(encoding="utf-8").strip()
+    elif "APP_IMAGE" in body and (mock / "patch-app-code").exists():
+        code = (mock / "patch-app-code").read_text(encoding="utf-8").strip()
     resp = "{}"
 elif "/api/v1/deploy?" in url and method == "POST":
     code = "500" if (mock / "deploy-fail").exists() else "200"
@@ -391,6 +395,9 @@ type Scene = {
   listFail?: boolean;
   deployFail?: boolean;
   smoke?: string;
+  envsGetCode?: string;
+  patchMigrateCode?: string;
+  patchAppCode?: string;
   contract?: boolean;
   migrateUrl?: boolean;
   state?: { sha: string; app: string; migrate: string } | null;
@@ -445,6 +452,9 @@ function arrange(scene: Scene = {}): {
   if (scene.listFail) writeFileSync(join(mock, "list-fail"), "1");
   if (scene.deployFail) writeFileSync(join(mock, "deploy-fail"), "1");
   if (scene.smoke) writeFileSync(join(mock, "smoke-code"), scene.smoke);
+  if (scene.envsGetCode) writeFileSync(join(mock, "envs-get-code"), scene.envsGetCode);
+  if (scene.patchMigrateCode) writeFileSync(join(mock, "patch-migrate-code"), scene.patchMigrateCode);
+  if (scene.patchAppCode) writeFileSync(join(mock, "patch-app-code"), scene.patchAppCode);
   if (scene.contract) writeFileSync(join(mock, `labels-${commits[0]}`), "migration-contract\n");
   const prevApp = scene.previousApp ?? `${APP_REPO}@${DIG_APP_PREV}`;
   const prevMig = scene.previousMigrate ?? `${MIG_REPO}@${DIG_MIG_PREV}`;
@@ -1441,6 +1451,75 @@ os.execv("${join(bin, "curl.real")}", ["curl.real", *args])
     expect(readFileSync(join(ROOT, "lib/common.sh"), "utf8")).toContain("env -i PATH=");
   });
 
+  it("leitura do Coolify recusada depois do backup grava o marcador e não repete o pg_dump", () => {
+    const ctx = arrange({ envsGetCode: "401" });
+    const result = run(ctx.env);
+    expect(result.status).not.toBe(0);
+    expect(result.stderr).toContain("Coolify recusou a leitura");
+    const lines = callsOf(ctx.mock);
+    expect(lines.some((line) => line.startsWith("pg_dump"))).toBe(true);
+    expect(lines.some((line) => line.includes("PATCH") || line.startsWith("docker run"))).toBe(false);
+    expect(readFileSync(DEPLOY, "utf8")).toContain("falhar_pos_backup");
+    expectNoRetryDump(ctx, true);
+  });
+
+  it("escrita recusada de APP_MIGRATE_IMAGE grava o marcador e não repete o pg_dump", () => {
+    const ctx = arrange({ patchMigrateCode: "500" });
+    const result = run(ctx.env);
+    expect(result.status).not.toBe(0);
+    expect(result.stderr).toContain("Coolify recusou a escrita");
+    const lines = callsOf(ctx.mock);
+    expect(lines.some((line) => line.startsWith("pg_dump"))).toBe(true);
+    expect(lines.some((line) => line.includes("APP_MIGRATE_IMAGE"))).toBe(true);
+    expect(lines.some((line) => line.startsWith("docker run"))).toBe(false);
+    expectNoRetryDump(ctx, true);
+  });
+
+  it("escrita recusada de APP_IMAGE grava o marcador e não repete o pg_dump", () => {
+    const ctx = arrange({ patchAppCode: "401" });
+    const result = run(ctx.env);
+    expect(result.status).not.toBe(0);
+    expect(result.stderr).toContain("Coolify recusou a escrita");
+    const lines = callsOf(ctx.mock);
+    expect(lines.some((line) => line.startsWith("docker run"))).toBe(true);
+    expect(lines.some((line) => line.includes("PATCH") && line.includes('"key": "APP_IMAGE"'))).toBe(true);
+    expectNoRetryDump(ctx, true);
+  });
+
+  it("ponta sem imagem deploya o commit anterior publicado e atestado", () => {
+    const ctx = arrange({
+      commits: [SHA_NEW, SHA_OLD],
+      checks: { [SHA_NEW]: "success", [SHA_OLD]: "success" },
+      digests: { [SHA_OLD]: { app: DIG_APP, migrate: DIG_MIG } },
+      attestSha: SHA_OLD,
+      healthSha: SHA_OLD,
+    });
+    const result = run(ctx.env);
+    expect(result.status).toBe(0);
+    const state = JSON.parse(readFileSync(ctx.state, "utf8")) as { sha: string; app_digest: string; migrate_digest: string };
+    expect(state).toMatchObject({ sha: SHA_OLD, app_digest: DIG_APP, migrate_digest: DIG_MIG });
+    const text = callsOf(ctx.mock).join("\n");
+    expect(text).toContain(`sha-${SHA_NEW.slice(0, 7)}`);
+    expect(text).toContain(`sha-${SHA_OLD.slice(0, 7)}`);
+    expect(text).toContain(DIG_APP);
+    expect(existsSync(ctx.failed)).toBe(false);
+    assertNoSecrets(combined(result, ctx.mock, ctx.log));
+  });
+
+  it("nenhuma imagem nos commits lidos grava o marcador e não sai 0", () => {
+    const ctx = arrange({
+      commits: [SHA_NEW, SHA_OLD],
+      checks: { [SHA_NEW]: "success", [SHA_OLD]: "success" },
+      digests: {},
+    });
+    const result = run(ctx.env);
+    expect(result.status).not.toBe(0);
+    expect(callsOf(ctx.mock).some((line) => line.startsWith("pg_dump") || line.includes("PATCH"))).toBe(false);
+    expect(JSON.parse(readFileSync(ctx.failed, "utf8")).result).toBe("sem_imagem");
+    expect(readFileSync(join(process.cwd(), "docs/ops/deploy-auto.md"), "utf8")).not.toContain("Imagem ainda não publicada: sai 0");
+    expectNoRetryDump(ctx, false);
+  });
+
   it("o runbook é de produção, restaura por env-file e deixa o BLOCK-12 pendente", () => {
     const doc = readFileSync(join(process.cwd(), "docs/ops/deploy-auto.md"), "utf8");
     expect(doc.startsWith("# Runbook · deployer pull de produção\n")).toBe(true);
@@ -1449,6 +1528,11 @@ os.execv("${join(bin, "curl.real")}", ["curl.real", *args])
     expect(doc).toContain("BLOCK-12");
     expect(doc).toContain("depende do Mendes");
     expect(doc).toContain("clear-failed");
+    expect(doc).toContain("cancel-in-progress");
+    expect(doc).toContain("20 commits");
+    expect(doc).toContain("sem_imagem");
+    expect(doc).toMatch(/## Incidente[\s\S]*erp-deployer pause/);
+    expect(doc).not.toContain("Imagem ainda não publicada: sai 0");
   });
 });
 
