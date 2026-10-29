@@ -1,0 +1,1 @@
+ALTER TABLE "Aluno" ALTER COLUMN "primeiroNome" SET NOT NULL;

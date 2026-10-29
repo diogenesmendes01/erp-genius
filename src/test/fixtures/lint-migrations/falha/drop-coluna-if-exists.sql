@@ -1,0 +1,1 @@
+ALTER TABLE IF EXISTS "Aluno" DROP IF EXISTS "nome";
