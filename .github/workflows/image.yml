@@ -30,13 +30,19 @@ jobs:
           cache: npm
       - name: Instalar dependências (npm ci)
         run: npm ci
+      - name: Reconstruir binários (prisma, @prisma/engines, esbuild)
+        run: npm rebuild prisma @prisma/engines esbuild --ignore-scripts=false
+      - name: Conferir o binário do esbuild
+        run: |
+          node -e "require('esbuild')"
+          npx esbuild --version
       - name: Gerar o client do Prisma
         run: npx prisma generate
       - name: Gerar os tipos de rota do Next
         run: npx next typegen
       - name: TypeScript (tsc --noEmit)
         env:
-          NODE_OPTIONS: --max-old-space-size=5120
+          NODE_OPTIONS: --max-old-space-size=6144
         run: npx tsc --noEmit
 
   lint:
@@ -74,6 +80,8 @@ jobs:
           cache: npm
       - name: Instalar dependências (npm ci)
         run: npm ci
+      - name: Reconstruir binários (prisma, @prisma/engines, esbuild)
+        run: npm rebuild prisma @prisma/engines esbuild --ignore-scripts=false
       - name: Gerar o client do Prisma
         run: npx prisma generate
       - name: Gerar os tipos de rota do Next
@@ -96,6 +104,8 @@ jobs:
           cache: npm
       - name: Instalar dependências (npm ci)
         run: npm ci
+      - name: Reconstruir binários (prisma, @prisma/engines, esbuild)
+        run: npm rebuild prisma @prisma/engines esbuild --ignore-scripts=false
       - name: Gerar o client do Prisma
         run: npx prisma generate
       - name: Build de produção (npm run build)

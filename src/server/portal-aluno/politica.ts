@@ -75,15 +75,45 @@ export function cookieSessaoPortalAluno(valor: string, expiraEm: Date) {
   };
 }
 
-export function origemPortalAlunoPermitida(request: Request): boolean {
-  const origem = request.headers.get("origin");
-  if (!origem) return false;
+type AmbienteApp = {
+  NODE_ENV?: string;
+  APP_BASE_URL?: string;
+};
+
+function urlHttpsPublica(valor: string): URL | null {
+  const bruto = valor.trim();
+  if (!bruto || bruto.endsWith("/")) return null;
   try {
-    const urlOrigem = new URL(origem);
-    const urlCanonica = new URL(request.url);
-    if (!['http:', 'https:'].includes(urlOrigem.protocol) || !['http:', 'https:'].includes(urlCanonica.protocol)) return false;
-    return urlOrigem.origin === urlCanonica.origin;
+    const url = new URL(bruto);
+    if (url.protocol !== "https:" || url.hostname.length === 0 || url.username !== "" || url.password !== "") return null;
+    if (url.pathname !== "/" || url.search !== "" || url.hash !== "") return null;
+    return url;
+  } catch {
+    return null;
+  }
+}
+
+export function lerAppBaseUrl(env: AmbienteApp = process.env): URL | null {
+  return urlHttpsPublica(env.APP_BASE_URL ?? "");
+}
+
+export function validarAppBaseUrlNoBoot(env: AmbienteApp = process.env): void {
+  if (env.NODE_ENV !== "production") return;
+  if (!lerAppBaseUrl(env)) throw new Error("APP_BASE_URL precisa ser uma URL https em produção.");
+}
+
+/** Origin tem de coincidir com APP_BASE_URL. Host, X-Forwarded-* e request.url não participam. */
+export function origemPortalAlunoPermitida(request: Request, env: AmbienteApp = process.env): boolean {
+  const bruto = request.headers.get("origin");
+  if (!bruto) return false;
+  let origem: URL;
+  try {
+    origem = new URL(bruto);
   } catch {
     return false;
   }
+  const base = lerAppBaseUrl(env);
+  if (base && origem.origin === base.origin) return true;
+  if (env.NODE_ENV === "production") return false;
+  return origem.protocol === "http:" && origem.hostname === "localhost";
 }
