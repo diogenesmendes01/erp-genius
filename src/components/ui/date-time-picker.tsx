@@ -29,7 +29,7 @@ type Props = Omit<InputHTMLAttributes<HTMLInputElement>, "type" | "value" | "def
   tipoInput?: "hidden" | "datetime-local";
 };
 
-const RE_DATA_HORA = /^(\d{4}-\d{2}-\d{2})T(\d{2}):(\d{2})(?::(\d{2})(?:\.(\d{1,3}))?)?$/;
+const RE_DATA_HORA = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})(?::(\d{2})(?:\.(\d{3}))?)?$/;
 
 /** 0 = HH:mm, 1 = HH:mm:ss, 2 = HH:mm:ss.SSS. O step do datetime-local é em segundos; o padrão é 60. */
 function precisaoMaxima(step: Limite) {
@@ -51,13 +51,26 @@ function segundosDoStep(step: Limite) {
   return 60;
 }
 
+function calendarioValido(ano: number, mes: number, dia: number) {
+  if (mes < 1 || mes > 12 || dia < 1) return false;
+  const data = new Date(ano, mes - 1, dia);
+  return data.getFullYear() === ano && data.getMonth() === mes - 1 && data.getDate() === dia;
+}
+
 function instanteComparavel(valor: string) {
   const m = RE_DATA_HORA.exec(valor);
   if (!m) return null;
-  const segundos = m[4];
-  const fracao = m[5];
+  const ano = Number(m[1]);
+  const mes = Number(m[2]);
+  const dia = Number(m[3]);
+  const hora = Number(m[4]);
+  const minuto = Number(m[5]);
+  const segundos = m[6];
+  const fracao = m[7];
+  if (hora > 23 || minuto > 59 || (segundos !== undefined && Number(segundos) > 59)) return null;
+  if (!calendarioValido(ano, mes, dia)) return null;
   const precisao = fracao !== undefined ? 2 : segundos !== undefined ? 1 : 0;
-  return { precisao, chave: `${m[1]}T${m[2]}:${m[3]}:${segundos ?? "00"}.${(fracao ?? "").padEnd(3, "0")}` };
+  return { precisao, chave: `${m[1]}-${m[2]}-${m[3]}T${m[4]}:${m[5]}:${segundos ?? "00"}.${(fracao ?? "").padEnd(3, "0")}` };
 }
 
 function chaveLimite(valor: string) {
