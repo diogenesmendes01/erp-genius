@@ -1,4 +1,6 @@
-import { Papel, type EtapaLead, type CorTag, Prisma } from "@prisma/client";
+import "server-only";
+
+import { Papel, Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { exigirSessaoComPapel, executarAcao, ErroRegra, type Resultado } from "@/server/_shared";
 import type { UsuarioSessao } from "@/server/_shared/sessao";
@@ -6,28 +8,11 @@ import { escopoComercialAtual } from "@/server/_shared/escopo-comercial";
 import { dataCivilInstitucional } from "@/server/operacao/fuso";
 import { palavrasDaBuscaLeads } from "@/server/comercial/filtros";
 import { atribuirDono } from "@/server/comercial/acoes";
+import { MAX_LOTE_CARTEIRA, type FiltrosCarteira, type LinhaCarteira, type VendedorCarteira } from "@/app/(app)/carteira/modelo";
 import { whereOportunidadeEmSql } from "./oportunidade-sql";
 
-export type FiltrosCarteira = {
-  donoId: string;
-  busca: string;
-  semInteracaoDias: "" | "7" | "15" | "30";
-  emTurma: boolean;
-  tipo: "todos" | "pf" | "pj";
-};
-
-export type LinhaCarteira = {
-  oportunidadeId: string;
-  pessoaId: string | null;
-  empresaId: string | null;
-  nome: string;
-  tipo: "pf" | "pj";
-  etapa: EtapaLead;
-  dono: { id: string; nome: string } | null;
-  diasSemInteracao: number;
-  turmaAtiva: string | null;
-  tags: { id: string; nome: string; cor: CorTag }[];
-};
+export type { FiltrosCarteira, LinhaCarteira, VendedorCarteira } from "@/app/(app)/carteira/modelo";
+export { MAX_LOTE_CARTEIRA, TEXTO_CONSEQUENCIA_REATRIBUICAO } from "@/app/(app)/carteira/modelo";
 
 type ParametrosUrl = Record<string, string | string[] | undefined>;
 const um = (v: string | string[] | undefined) => ((Array.isArray(v) ? v[0] : v) ?? "").trim();
@@ -44,12 +29,6 @@ export function lerFiltrosCarteira(p: ParametrosUrl): FiltrosCarteira {
   };
 }
 
-export type VendedorCarteira = { id: string; nome: string; total: number; cobertoPor: string | null };
-
-export const TEXTO_CONSEQUENCIA_REATRIBUICAO =
-  "Os atendimentos comerciais abertos passam para o novo responsável e as mensagens agendadas pelo responsável anterior são canceladas.";
-
-export const MAX_LOTE_CARTEIRA = 50;
 export const MAX_LINHAS_CARTEIRA = 500;
 const FUSO_PADRAO = "America/Sao_Paulo";
 

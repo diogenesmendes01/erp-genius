@@ -33,6 +33,7 @@ services:
       DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/erp?schema=public
       AUTH_SECRET: ${AUTH_SECRET:?defina no .env}
       NEXTAUTH_URL: https://${DOMINIO_APP:?defina no .env}
+      APP_BASE_URL: ${APP_BASE_URL}
       AUTH_TRUST_HOST: "true" # atrás do Caddy, o Auth.js confia no Host encaminhado
       CRON_SECRET: ${CRON_SECRET:?defina no .env}
       WHATSAPP_LIVE: ${WHATSAPP_LIVE:-}
