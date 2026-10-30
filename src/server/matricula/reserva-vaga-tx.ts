@@ -1,8 +1,11 @@
 import { createHash } from "node:crypto";
-import type { Prisma } from "@prisma/client";
+import { StatusTurma, type Prisma } from "@prisma/client";
 import { z } from "zod";
 import { ErroRegra, ErroPermissao, registrarEvento } from "@/server/_shared";
 import { conferirTurmaParaReserva } from "./reserva-disponibilidade";
+
+export const STATUS_TURMA_VENDA_RESERVA: readonly StatusTurma[] = [StatusTurma.ABERTA, StatusTurma.EM_ANDAMENTO];
+const MENSAGEM_TURMA_INDISPONIVEL_VENDA = "A turma selecionada não está disponível para venda.";
 
 const Entrada = z.object({ matriculaId: z.string().min(1), turmaId: z.string().min(1), autorId: z.string().min(1),
   motivo: z.string().trim().min(5).max(2000), chaveIdempotencia: z.string().min(8).max(100) }).strict();
@@ -30,6 +33,7 @@ export async function reservarVagaMatriculaTx(tx: Prisma.TransactionClient, inpu
   if (await tx.reservaVagaMatricula.count({ where: { matriculaId: matricula.id, status: { in: ["ATIVA", "MANTIDA_PENDENCIA"] } } })) throw new ErroRegra("Matrícula já possui reserva que ocupa vaga.");
   const turma = await tx.turma.findUnique({ where: { id: d.turmaId }, include: { nivel: true } });
   if (!turma || turma.modalidadeId !== matricula.produto.modalidadeId || turma.nivel.idiomaId !== matricula.produto.idiomaId) throw new ErroRegra("Turma incompatível com o produto contratado.");
+  if (!STATUS_TURMA_VENDA_RESERVA.includes(turma.status)) throw new ErroRegra(MENSAGEM_TURMA_INDISPONIVEL_VENDA);
   const { janela, conferencia, agora } = await conferirTurmaParaReserva(tx, turma);
   if (!janela) throw new ErroRegra("Configure e aprove a janela de admissão antes de reservar.");
   if (!conferencia.elegivel) throw new ErroRegra(`Reserva indisponível: ${conferencia.impedimentos.join(", ")}.`);
