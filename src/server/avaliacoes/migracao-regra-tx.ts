@@ -4,6 +4,7 @@ import { z } from "zod";
 import { ErroRegra, registrarEvento } from "@/server/_shared";
 import { conferirGestorAvaliacao } from "./regras-tx";
 import { exigirConteudoRegra } from "./regra-conteudo";
+import { lerConteudoRegra } from "./regra-schema";
 
 const id = z.string().min(1).max(100);
 export const RevisarMigracaoSchema = z.object({ turmaId: id, destinoId: id }).strict();
@@ -45,13 +46,18 @@ export async function contextoMigracaoRegra(tx: Prisma.TransactionClient, turmaI
   const origem = t.regraAvaliacaoId ? await tx.versaoRegraAvaliacao.findUniqueOrThrow({ where: { id: t.regraAvaliacaoId } }) : null;
   if (origem && destino.versao <= origem.versao) throw new ErroRegra("A turma já usa essa versão ou uma mais recente.");
   const alocacoes = await tx.alocacaoTurma.findMany({ where: { turmaId }, orderBy: { id: "asc" }, select: { id: true, alunoId: true, matriculaId: true, ativa: true, criadoEm: true, encerradaEm: true } });
-  const origemConteudo = origem ? exigirConteudoRegra(origem.conteudo) : null;
+  // #530 (C1): a ORIGEM é lida de forma tolerante — só para exibição/diff e para permitir sair de uma
+  // versão legada. Nada é calculado com esse conteúdo normalizado. O DESTINO continua estrito.
+  const origemLeitura = origem ? lerConteudoRegra(origem.conteudo) : null;
+  const origemConteudo = origemLeitura?.ok ? origemLeitura.conteudo : null;
   const destinoConteudo = exigirConteudoRegra(destino.conteudo);
   const snapshot = {
     turma: { ...t, dataInicio: t.dataInicio?.toISOString() ?? null, dataFim: t.dataFim?.toISOString() ?? null },
     encontros: encontros.map(e => ({ ...e, inicio: e.inicio.toISOString(), fim: e.fim.toISOString() })),
     alocacoes: alocacoes.map(a => ({ ...a, criadoEm: a.criadoEm.toISOString(), encerradaEm: a.encerradaEm?.toISOString() ?? null })),
-    origem: origem && origemConteudo ? { id: origem.id, versao: origem.versao, conteudo: origemConteudo } : null,
+    origem: origem && origemLeitura ? { id: origem.id, versao: origem.versao, conteudo: origemConteudo,
+      // campos extras só para origem legada: o hash de origens válidas não muda (propostas pendentes seguem válidas)
+      ...(origemLeitura.legado ? { legado: true as const, ilegivel: !origemLeitura.ok } : {}) } : null,
     destino: { id: destino.id, versao: destino.versao, conteudo: destinoConteudo },
   };
   const alteracoes = (Object.keys(destinoConteudo) as (keyof typeof destinoConteudo)[])

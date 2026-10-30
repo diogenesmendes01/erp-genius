@@ -60,7 +60,7 @@ export async function consultarMigracoesRegra(input: { turmaId: string; pagina?:
         }
         const { snapshot, ...resumo } = p;
         const impacto = z.object({ encontros: z.array(z.unknown()), alocacoes: z.array(z.object({ ativa: z.boolean() })) }).parse(snapshot);
-        // #530: leitura tolerante; versão legada é só exibida e bloqueia a decisão da proposta.
+        // #530: leitura tolerante para exibição; só DESTINO legado bloqueia a decisão (C1).
         const lerVersao = (v: { id: string; versao: number; conteudo: unknown }) => {
           const l = lerConteudoRegra(v.conteudo);
           if (!l.ok) console.warn("regra-avaliacao-legada", { regraId: v.id, caminhos: l.caminhos });
@@ -71,8 +71,8 @@ export async function consultarMigracoesRegra(input: { turmaId: string; pagina?:
         const destinoConteudo = destino.conteudo;
         const alteracoes = destinoConteudo ? (Object.keys(destinoConteudo) as (keyof typeof destinoConteudo)[])
           .filter(c => JSON.stringify(origem?.conteudo?.[c]) !== JSON.stringify(destinoConteudo[c])) : [];
-        const legado = destino.legado || !!origem?.legado;
-        const decidivel = !p.decisao && p.preparador.id !== u.id && !legado;
+        // #530 (C1): só o DESTINO precisa ser válido no schema atual; origem legada pode ser abandonada.
+        const decidivel = !p.decisao && p.preparador.id !== u.id && !destino.legado;
         propostas.push({ ...resumo, origem, destino, pendencia, alteracoes,
           encontrosRevisados: impacto.encontros.length, alocacoesAtivasRevisadas: impacto.alocacoes.filter(a => a.ativa).length,
           podeDecidir: decidivel, podeAprovar: decidivel && !pendencia });
