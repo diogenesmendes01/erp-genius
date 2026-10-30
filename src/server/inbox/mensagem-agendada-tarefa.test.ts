@@ -99,6 +99,57 @@ it("move a PENDENTE para o novo instante e exige confirmação fora da janela", 
   }
 });
 
+it("recusa mover a PENDENTE para horário anterior ou igual a agora", async () => {
+  vi.useFakeTimers({ toFake: ["Date"] });
+  vi.setSystemTime(new Date("2026-10-30T12:00:00.000Z"));
+  try {
+    const db = tx(linha());
+    const erro = "A tarefa tem mensagem agendada. Escolha data e horário no futuro, ou cancele a mensagem antes de remarcar para o passado.";
+    const anterior = new Date("2026-10-30T11:59:59.000Z");
+    const agora = new Date("2026-10-30T12:00:00.000Z");
+    await expect(moverMensagensPendentesDaTarefaTx(db as unknown as Prisma.TransactionClient, "autor", "t1", anterior)).rejects.toThrow(erro);
+    await expect(moverMensagensPendentesDaTarefaTx(db as unknown as Prisma.TransactionClient, "autor", "t1", agora)).rejects.toThrow(erro);
+    expect(janela).not.toHaveBeenCalled();
+    expect(db.intencaoMensagem.updateMany).not.toHaveBeenCalled();
+    expect(evento).not.toHaveBeenCalled();
+  } finally {
+    vi.useRealTimers();
+  }
+});
+
+it("move a PENDENTE dentro da janela sem confirmação", async () => {
+  vi.useFakeTimers({ toFake: ["Date"] });
+  vi.setSystemTime(new Date("2026-10-30T12:00:00.000Z"));
+  try {
+    const db = tx(linha());
+    const novo = new Date("2026-10-30T16:00:00.000Z");
+    janela.mockResolvedValueOnce(null);
+    await moverMensagensPendentesDaTarefaTx(db as unknown as Prisma.TransactionClient, "autor", "t1", novo);
+    expect(janela).toHaveBeenCalledExactlyOnceWith(novo, db);
+    expect(db.intencaoMensagem.updateMany).toHaveBeenCalledExactlyOnceWith({
+      where: { id: "m1", tarefaId: "t1", status: "PENDENTE", agendadaPara: quando },
+      data: { agendadaPara: novo },
+    });
+    expect(evento).toHaveBeenCalledExactlyOnceWith(db, expect.objectContaining({
+      tipo: "MensagemReagendada",
+      agregadoTipo: "AtendimentoWhatsApp",
+      agregadoId: "a1",
+      autorId: "autor",
+      payload: expect.objectContaining({
+        contexto: "tarefa379",
+        operacao: "REAGENDAR",
+        intencaoId: "m1",
+        tarefaId: "t1",
+        atendimentoId: "a1",
+        de: quando.toISOString(),
+        agendadaPara: novo.toISOString(),
+      }),
+    }));
+  } finally {
+    vi.useRealTimers();
+  }
+});
+
 it("o cancelamento da agendada não importa o cliente prisma global", () => {
   const src = readFileSync(new URL("./mensagem-agendada-tarefa.ts", import.meta.url), "utf8");
   expect(src).not.toMatch(/@\/lib\/prisma/);
