@@ -6,7 +6,7 @@ import { prisma } from "@/lib/prisma";
 import { executarAcao, exigirSessaoComPapel, ErroRegra, ErroPermissao, registrarEvento } from "@/server/_shared";
 import { bloquearLancamento } from "./lancamento-tx";
 import { docenteAtual } from "@/server/diario/permissoes";
-import { ConteudoRegraAvaliacaoSchema } from "./regra-schema";
+import { exigirConteudoRegra } from "./regra-conteudo";
 import { conferirGestorAvaliacao } from "./regras-tx";
 import { identificarMatriculaAvaliacao } from "./identificacao";
 import { carregarImpactosProgressaoPorAproveitamentoTx } from "./impactos-progressao-tx";
@@ -39,7 +39,7 @@ export async function consultarBaseCorrecaoRecuperacao(notaId: string) {
     const u = await exigirSessaoComPapel(Papel.PROFESSOR, Papel.GERENTE_PEDAGOGICO);
     return prisma.$transaction(async tx => {
       const r = await carregar(tx, u.id, id.parse(notaId));
-      return { notaId: r.n.id, ...r.vigente, versaoEsperada: r.versao, escala: ConteudoRegraAvaliacaoSchema.parse(r.n.realizacao.itemReserva.reserva.proposta.regra.conteudo).escala };
+      return { notaId: r.n.id, ...r.vigente, versaoEsperada: r.versao, escala: exigirConteudoRegra(r.n.realizacao.itemReserva.reserva.proposta.regra.conteudo).escala };
     });
   });
 }
@@ -56,7 +56,7 @@ export async function consultarCorrecoesRecuperacao(input: { notaId: string; ant
         select: { id: true, versao: true, origemId: true, nota: true, comentarioAluno: true, motivo: true, criadaEm: true, autorId: true, autor: { select: { nome: true } }, decisao: { select: { aprovada: true, motivo: true, criadaEm: true, decisor: { select: { nome: true } } } } } });
       return { identificacao: await identificarMatriculaAvaliacao(tx, r.a.matriculaId, r.a.turmaId), habilidade: r.n.realizacao.itemReserva.habilidade,
         realizacaoId: r.n.realizacaoId, notaId: r.n.id, original: { nota: r.n.nota, comentarioAluno: r.n.comentarioAluno }, vigente: r.vigente, versaoEsperada: r.versao,
-        escala: ConteudoRegraAvaliacaoSchema.parse(r.n.realizacao.itemReserva.reserva.proposta.regra.conteudo).escala,
+        escala: exigirConteudoRegra(r.n.realizacao.itemReserva.reserva.proposta.regra.conteudo).escala,
         proximaAntesVersao: propostas.length > 20 ? propostas[19].versao : null,
         propostas: propostas.slice(0,20).map(p => ({ id: p.id, versao: p.versao, nota: p.nota, comentarioAluno: p.comentarioAluno, motivo: p.motivo, criadaEm: p.criadaEm.toISOString(), autor: p.autor.nome,
           podeRevisar: gestao && p.autorId !== u.id && !p.decisao,
@@ -76,7 +76,7 @@ export async function proporCorrecaoRecuperacao(input: z.input<typeof propostaSc
         return { id: repetida.id, versao: repetida.versao };
       }
       if (d.origemId !== r.vigente.origemId || d.versaoEsperada !== r.versao) throw new ErroRegra("Confira novamente a nota vigente e a versão da proposta.");
-      const regra = ConteudoRegraAvaliacaoSchema.parse(r.n.realizacao.itemReserva.reserva.proposta.regra.conteudo), nota = new Prisma.Decimal(d.nota);
+      const regra = exigirConteudoRegra(r.n.realizacao.itemReserva.reserva.proposta.regra.conteudo), nota = new Prisma.Decimal(d.nota);
       if (nota.lt(regra.escala.minimo) || nota.gt(regra.escala.maximo)) throw new ErroRegra("Nota fora da escala aplicada.");
       if (nota.eq(r.vigente.nota) && d.comentarioAluno === r.vigente.comentarioAluno) throw new ErroRegra("Informe uma alteração de nota ou comentário.");
       const p = await tx.propostaCorrecaoRecuperacao.create({ data: { notaId: d.notaId, origemId: d.origemId, nota: d.nota, comentarioAluno: d.comentarioAluno, motivo: d.motivo, chaveIdempotencia: d.chaveIdempotencia, versao: d.versaoEsperada + 1, autorId: u.id, entradaHash } });

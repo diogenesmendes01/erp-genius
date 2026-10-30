@@ -1,7 +1,7 @@
 import { Prisma, type Prisma as PrismaTypes } from "@prisma/client";
 import { z } from "zod";
 import { bloquearLancamento } from "./lancamento-tx";
-import { ConteudoRegraAvaliacaoSchema } from "./regra-schema";
+import { exigirConteudoRegra } from "./regra-conteudo";
 
 export const EstadoSegundaChamadaSchema = z.object({
   alocacaoId: z.string(), matriculaId: z.string(), turmaId: z.string(), nivelId: z.string(), regraId: z.string(), codigoAvaliacao: z.string(),
@@ -13,7 +13,7 @@ export async function estadoSegundaChamadaTx(tx: PrismaTypes.TransactionClient, 
   const a = await bloquearLancamento(tx, alocacaoId);
   const turma = await tx.turma.findUniqueOrThrow({ where: { id: a.turmaId }, include: { regraAvaliacao: true } });
   const matricula = await tx.matricula.findUniqueOrThrow({ where: { id: a.matriculaId }, select: { status: true } });
-  const regra = turma.regraAvaliacao ? ConteudoRegraAvaliacaoSchema.parse(turma.regraAvaliacao.conteudo) : null;
+  const regra = turma.regraAvaliacao ? exigirConteudoRegra(turma.regraAvaliacao.conteudo) : null;
   const avaliacao = regra?.avaliacoes.find((item) => item.codigo === codigoAvaliacao);
   const oficial = await tx.registroAvaliacaoMatricula.findUnique({ where: { matriculaId_turmaId_codigoAvaliacao: { matriculaId: a.matriculaId, turmaId: a.turmaId, codigoAvaliacao } }, select: { versoes: { where: { decisao: { aprovada: true } }, take: 1, select: { id: true } } } });
   const [contagem] = await tx.$queryRaw<{ autorizacoes: bigint; extras: bigint; ocupadas: bigint }[]>(Prisma.sql`

@@ -6,7 +6,7 @@ import { prisma } from "@/lib/prisma";
 import { executarAcao, exigirSessaoComPapel, ErroRegra, ErroPermissao, registrarEvento } from "@/server/_shared";
 import { bloquearLancamento } from "./lancamento-tx";
 import { conferirGestorAvaliacao } from "./regras-tx";
-import { ConteudoRegraAvaliacaoSchema } from "./regra-schema";
+import { exigirConteudoRegra } from "./regra-conteudo";
 import { docenteAtual } from "@/server/diario/permissoes";
 import { designadoRecuperacao } from "./recuperacao-designacao-acesso";
 
@@ -41,7 +41,7 @@ export async function salvarNotaRecuperacao(input: z.input<typeof salvarSchema>)
       const ultima = await tx.notaRecuperacao.findFirst({ where: { realizacaoId: r.id }, orderBy: { versao: "desc" } });
       if ((ultima?.versao ?? 0) !== d.versaoEsperada) throw new ErroRegra("Atualize a versão antes de lançar.");
       if (await tx.notaRecuperacao.count({ where: { realizacaoId: r.id, decisao: { aprovada: true } } })) throw new ErroRegra("Nota oficial exige correção aprovada em fluxo próprio.");
-      const regra = ConteudoRegraAvaliacaoSchema.parse(r.itemReserva.reserva.proposta.regra.conteudo);
+      const regra = exigirConteudoRegra(r.itemReserva.reserva.proposta.regra.conteudo);
       if (d.submetida && d.nota === null) throw new ErroRegra("Informe a nota antes de submeter.");
       if (d.nota !== null && (new Prisma.Decimal(d.nota).lt(regra.escala.minimo) || new Prisma.Decimal(d.nota).gt(regra.escala.maximo))) throw new ErroRegra("Nota fora da escala configurada.");
       const n = await tx.notaRecuperacao.create({ data: { realizacaoId: r.id, autorId: u.id, versao: d.versaoEsperada + 1, nota: d.nota, comentarioAluno: d.comentarioAluno, submetida: d.submetida, chaveIdempotencia: d.chaveIdempotencia, entradaHash } });

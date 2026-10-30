@@ -22,8 +22,8 @@ function formularioDe(marcacao: string) {
 }
 
 describe("DateTimePicker — contrato do valor submetido", () => {
-  it("emite input hidden no formato YYYY-MM-DDTHH:mm com o mesmo name e data-fuso, mesmo se pedirem datetime-local", () => {
-    const marcacao = html(createElement(DateTimePicker, { name: "quando", value: "2026-12-01T13:05", fuso: "America/Sao_Paulo", tipoInput: "datetime-local" }));
+  it("emite input hidden no formato YYYY-MM-DDTHH:mm com o mesmo name e data-fuso", () => {
+    const marcacao = html(createElement(DateTimePicker, { name: "quando", value: "2026-12-01T13:05", fuso: "America/Sao_Paulo" }));
     expect(marcacao).not.toContain("datetime-local");
     expect(marcacao).not.toMatch(/<select\b/);
     const campo = inputs(marcacao).find((tag) => /name="quando"/.test(tag));
@@ -116,6 +116,8 @@ describe("mensagemRestricaoDataHora", () => {
     expect(mensagemRestricaoDataHora("2026-12-01T13:05", { required: true, step: 60 })).toBe("");
     expect(mensagemRestricaoDataHora("2026-12-01T13:05", { required: true, step: "60" })).toBe("");
     expect(mensagemRestricaoDataHora("2026-12-01T13:05:07", { required: true })).toBe("Informe data e hora.");
+    expect(mensagemRestricaoDataHora("2026-12-01T13:05:00", { required: true })).toBe("Informe data e hora.");
+    expect(mensagemRestricaoDataHora("2026-12-01T13:05:00", { required: true, step: 60 })).toBe("Informe data e hora.");
     expect(mensagemRestricaoDataHora("2026-12-01T13:05:07.123", { required: true, step: "60" })).toBe("Informe data e hora.");
   });
 

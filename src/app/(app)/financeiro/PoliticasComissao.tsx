@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { publicarPoliticaComissaoLocal } from "@/server/financeiro/politica-comissao-local";
 import { fusoDoCampoLocal } from "@/server/operacao/fuso-entrada";
@@ -18,6 +18,7 @@ import { DateTimePicker } from "@/components/ui/date-time-picker";
 export function PoliticasComissao({ dados, preferenciaFusoExibicao = null, fusoEscola }: { dados: NonNullable<Awaited<ReturnType<typeof configuracaoComissoes>>>; preferenciaFusoExibicao?: string | null; fusoEscola: string }) {
   const fusoCampo = fusoDoCampoLocal(preferenciaFusoExibicao, fusoEscola);
   const router = useRouter();
+  const formulario = useRef<HTMLFormElement>(null);
   const acao = useAcaoCliente({ idempotente: true });
   const [tipo, setTipo] = useState<"PERCENTUAL" | "VALOR_FIXO">("PERCENTUAL");
   const [paisId, setPaisId] = useState("");
@@ -35,12 +36,17 @@ export function PoliticasComissao({ dados, preferenciaFusoExibicao = null, fusoE
       percentual: tipo === "PERCENTUAL" ? valor : null, valorFixo: tipo === "VALOR_FIXO" ? valor : null,
       vigenciaLocal: String(form.get("vigencia") ?? ""), fuso: fusoCampo,
     }));
-    if (d?.tipo === "ok") { router.refresh(); setPercentual(""); setValorFixo(""); }
+    if (d?.tipo === "ok") {
+      router.refresh();
+      setPercentual("");
+      setValorFixo("");
+      formulario.current?.reset();
+    }
   }
   return <section className="space-y-4">
     <h2 className="text-lg font-medium">Políticas de comissão</h2>
     <p className="text-sm text-gray-600">Uma regra por oferta e moeda. Percentual usa a taxa de matrícula; valor fixo gera uma comissão por matrícula. Nova versão preserva comissões existentes.</p>
-    <form action={publicar} className="flex flex-wrap items-end gap-3 rounded border p-3 text-sm">
+    <form ref={formulario} className="flex flex-wrap items-end gap-3 rounded border p-3 text-sm" onSubmit={(event) => { event.preventDefault(); void publicar(new FormData(event.currentTarget)); }}>
       <label>País<CampoCombobox name="paisId" value={paisId} onChange={(e) => setPaisId(e.target.value)} className="block rounded border p-2" required vazio={"Selecione"} opcoes={dados.paises.map((p) => ({ valor: String(p.id), rotulo: `${p.nome} · ${p.moedaLocal}` }))} /></label>
       <label>Oferta<CampoCombobox name="produtoId" className="block rounded border p-2" required defaultValue="" vazio={"Selecione"} opcoes={dados.produtos.map((p) => ({ valor: String(p.id), rotulo: p.nome }))} /></label>
       <label>Tipo<CampoSelect value={tipo} onChange={(e) => setTipo(e.target.value as typeof tipo)} className="block rounded border p-2" opcoes={[{ valor: "PERCENTUAL", rotulo: "Percentual da taxa" }, { valor: "VALOR_FIXO", rotulo: "Valor fixo na moeda do país" }]} /></label>
@@ -49,7 +55,7 @@ export function PoliticasComissao({ dados, preferenciaFusoExibicao = null, fusoE
       ) : (
         <label>Valor<CampoMoeda required value={valorFixo} onChange={setValorFixo} moeda={moedaSelecionada} className="block w-28 rounded border p-2" /></label>
       )}
-      <label>Vigência (vazio = agora)<DateTimePicker name="vigencia" fuso={fusoCampo} className="block rounded border p-2" tipoInput="datetime-local" /><span className="block text-xs text-gray-600">Horário em {fusoCampo}.</span></label>
+      <label>Vigência (vazio = agora)<DateTimePicker name="vigencia" fuso={fusoCampo} className="block rounded border p-2" /><span className="block text-xs text-gray-600">Horário em {fusoCampo}.</span></label>
       <button disabled={acao.ocupado} className={botaoClasses({ tamanho: "lg" })}>Publicar nova versão</button>
     </form>
     <FeedbackAcao erro={acao.erro} />

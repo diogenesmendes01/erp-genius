@@ -3,7 +3,7 @@ import { ErroRegra } from "@/server/_shared";
 import { carregarImpactosFrequenciaAulaTx } from "@/server/avaliacoes/impactos-reposicao-tx";
 import { carregarFrequenciaNivelTx, simularFrequenciaCorrecaoAulaTx } from "@/server/avaliacoes/frequencia-nivel-tx";
 import { carregarEstadoFechamentoTx, simularFechamentoCorrecaoAulaTx } from "@/server/avaliacoes/fechamento-estado-tx";
-import { ConteudoRegraAvaliacaoSchema } from "@/server/avaliacoes/regra-schema";
+import { exigirConteudoRegra } from "@/server/avaliacoes/regra-conteudo";
 import { compararCorrecaoAula } from "./correcao-aula-comparacao";
 import { carregarDependenciasFinanceirasAulaTx } from "./correcao-aula-financeiro-tx";
 import { hashCorrecaoAula } from "./correcao-aula-schema";
@@ -50,7 +50,15 @@ export async function carregarImpactosCorrecaoAulaTx(
       simulacoes.push({ matriculaId: fonte.matriculaId, nivelId: fonte.nivelId, regraId: null, pendencia: "Confira a regra do vínculo mais recente antes de simular a frequência.", antes: null, depois: null });
       continue;
     }
-    const conteudo = ConteudoRegraAvaliacaoSchema.parse(regra.conteudo);
+    let conteudo;
+    try {
+      conteudo = exigirConteudoRegra(regra.conteudo);
+    } catch (erro) {
+      // #530 (C3): regra legada vira pendência legível por matrícula; nada é simulado/calculado.
+      if (!(erro instanceof ErroRegra)) throw erro;
+      simulacoes.push({ matriculaId: fonte.matriculaId, nivelId: fonte.nivelId, regraId: regra.id, pendencia: erro.message, antes: null, depois: null });
+      continue;
+    }
     const parametros = { matriculaId: fonte.matriculaId, nivelId: fonte.nivelId, minimoPercentual: conteudo.frequenciaMinimaPercentual, agora };
     const registro = comparacao.registros.find(r => r.matriculaId === fonte.matriculaId)!;
     const { apuradaEm: _antesEm, ...antes } = await carregarFrequenciaNivelTx(tx, parametros);

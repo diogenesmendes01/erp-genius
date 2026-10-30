@@ -6,7 +6,7 @@ import { prisma } from "@/lib/prisma";
 import { executarAcao, exigirSessaoComPapel } from "@/server/_shared";
 import { carregarConsolidadoAvaliacoesTx } from "./consolidado-tx";
 import { identificarMatriculaAvaliacao } from "./identificacao";
-import { ConteudoRegraAvaliacaoSchema } from "./regra-schema";
+import { exigirConteudoRegra } from "./regra-conteudo";
 import { HABILIDADES } from "./calculo";
 import { quantidadeExtraRecuperacaoTx } from "./extra-recuperacao-tx";
 import { preparacaoRecuperacaoVigenteTx } from "./recuperacao-preparacao-vigencia-tx";
@@ -24,7 +24,7 @@ export async function consultarPlanosRecuperacao(input: { alocacaoId: string; an
       const a = await tx.alocacaoTurma.findUniqueOrThrow({ where: { id: d.alocacaoId }, include: { matricula: true, turma: { include: { regraAvaliacao: true } } } });
       const usuario = await tx.usuario.findUniqueOrThrow({ where: { id: u.id }, select: { papeis: true } });
       const gestao = usuario.papeis.some(p => p === Papel.GERENTE_PEDAGOGICO || p === Papel.ADMINISTRADOR);
-      const regra = ConteudoRegraAvaliacaoSchema.parse(a.turma.regraAvaliacao!.conteudo);
+      const regra = exigirConteudoRegra(a.turma.regraAvaliacao!.conteudo);
       const limitesAutorizados = new Map(await Promise.all(regra.habilidades.map(async h => [h.habilidade, h.limiteRecuperacoes + await quantidadeExtraRecuperacaoTx(tx, a.matriculaId!, a.turma.nivelId, h.habilidade)] as const)));
       const ultima = await tx.propostaPlanoRecuperacao.findFirst({ where: { matriculaId: a.matriculaId!, nivelId: a.turma.nivelId }, orderBy: { versao: "desc" }, select: { versao: true } });
       const ps = await tx.propostaPlanoRecuperacao.findMany({ where: { alocacaoId: a.id, ...(d.antesVersao ? { versao: { lt: d.antesVersao } } : {}) }, orderBy: { versao: "desc" }, take: 21,

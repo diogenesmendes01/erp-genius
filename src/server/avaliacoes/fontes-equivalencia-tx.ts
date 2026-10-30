@@ -2,7 +2,7 @@ import { createHash } from "node:crypto";
 import type { Prisma } from "@prisma/client";
 import { ErroRegra } from "@/server/_shared";
 import { NotasLancamentoSchema } from "./lancamento-schema";
-import { ConteudoRegraAvaliacaoSchema } from "./regra-schema";
+import { exigirConteudoRegra } from "./regra-conteudo";
 import { calcularNotasNivel, HABILIDADES } from "./calculo";
 import { z } from "zod";
 import type { FonteOficialEquivalencia } from "./equivalencia-transferencia";
@@ -25,7 +25,7 @@ export async function carregarFontesEquivalenciaTx(tx: Prisma.TransactionClient,
   if (!vinculo) throw new ErroRegra("O vínculo ou a regra de origem mudou. Confira o aproveitamento novamente.");
   const regraPersistida = await tx.versaoRegraAvaliacao.findFirst({ where: { id: contexto.regraId, nivelId: contexto.nivelId }, select: { conteudo: true } });
   if (!regraPersistida) throw new ErroRegra("A regra de origem não pertence ao nível conferido.");
-  const regra = ConteudoRegraAvaliacaoSchema.parse(regraPersistida.conteudo);
+  const regra = exigirConteudoRegra(regraPersistida.conteudo);
 
   const registros = await tx.registroAvaliacaoMatricula.findMany({ where: {
     matriculaId: contexto.matriculaId, alocacaoId: contexto.alocacaoId,

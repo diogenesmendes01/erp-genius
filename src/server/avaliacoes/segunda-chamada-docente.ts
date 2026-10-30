@@ -5,7 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { janelaDaPagina, PAGINA_MAXIMA, recorteDaPagina } from "@/lib/pagina-url";
 import { executarAcao, exigirSessaoComPapel, ErroPermissao, ErroRegra } from "@/server/_shared";
 import { identificarMatriculaAvaliacao } from "./identificacao";
-import { ConteudoRegraAvaliacaoSchema } from "./regra-schema";
+import { exigirConteudoRegra } from "./regra-conteudo";
 import { carregarSituacoesNaAula } from "@/server/diario/historico-contratual";
 import { autorizacaoEspecialSegundaChamadaVigente } from "./segunda-chamada-autorizacao-especial";
 import { instanteUtcSql } from "./segunda-chamada-utc";
@@ -97,7 +97,7 @@ export async function consultarSegundaChamadaDocente(input: { reservaId: string 
       await exigirProfessorAtivo(tx, u.id);
       const [r] = await tx.$queryRaw<ReservaDocente[]>(Prisma.sql`${selecionarReserva} WHERE r.id=${d.reservaId} AND ${escopoDocente(u.id)} FOR SHARE OF r,p,e`);
       if (!r) throw new ErroRegra("Reserva de segunda chamada não encontrada ou não atribuída a você.");
-      const regra = ConteudoRegraAvaliacaoSchema.parse(r.regraConteudo);
+      const regra = exigirConteudoRegra(r.regraConteudo);
       const avaliacao = regra.avaliacoes.find(a => a.codigo === r.codigoAvaliacao);
       if (!avaliacao) throw new ErroRegra("Avaliação da segunda chamada não pertence à regra vigente.");
       return { reservaId: r.reservaId, alocacaoId: r.alocacaoId, identificacao: await identificarMatriculaAvaliacao(tx, r.matriculaId, r.turmaId), codigoAvaliacao: r.codigoAvaliacao,

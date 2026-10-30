@@ -7,7 +7,7 @@ import { executarAcao, exigirSessaoComPapel, ErroRegra, registrarEvento } from "
 import { bloquearLancamento } from "./lancamento-tx";
 import { conferirGestorAvaliacao } from "./regras-tx";
 import { carregarConsolidadoAvaliacoesTx } from "./consolidado-tx";
-import { ConteudoRegraAvaliacaoSchema } from "./regra-schema";
+import { exigirConteudoRegra } from "./regra-conteudo";
 import { preparacaoRecuperacaoVigenteTx } from "./recuperacao-preparacao-vigencia-tx";
 
 const schema = z.object({ propostaId: z.string().min(1).max(100), propostaHash: z.string().regex(/^[a-f0-9]{64}$/), disponibilizadaEm: z.string().datetime({ offset: true }),
@@ -36,7 +36,7 @@ export async function registrarDisponibilizacaoRecuperacao(input: z.input<typeof
       if ((autorizacaoPreparacaoId ? !especial : (!p.alocacao.ativa || p.matricula.status !== "ATIVA")) || p.alocacao.matriculaId !== p.matriculaId || p.alocacao.turma.nivelId !== p.nivelId || p.alocacao.turma.regraAvaliacaoId !== p.regraId) throw new ErroRegra("Confira o vínculo e a autorização aplicável à matrícula.");
       const atual = await carregarConsolidadoAvaliacoesTx(tx, u.id, p.alocacaoId, "BASE_PLANO");
       if (!isDeepStrictEqual(p.snapshot, atual)) throw new ErroRegra("As notas mudaram. Prepare nova conferência do plano.");
-      const prazoMinutos = ConteudoRegraAvaliacaoSchema.parse(p.regra.conteudo).recuperacao.prazoRealizacaoMinutos;
+      const prazoMinutos = exigirConteudoRegra(p.regra.conteudo).recuperacao.prazoRealizacaoMinutos;
       const prazoAte = new Date(inicio.getTime() + prazoMinutos * 60000);
       const v = await tx.disponibilizacaoPlanoRecuperacao.create({ data: { propostaId: p.id, autorId: u.id, disponibilizadaEm: inicio, prazoMinutos, prazoAte, condicoes: d.condicoes, evidenciaComunicacao: d.evidenciaComunicacao, autorizacaoPreparacaoId } });
       await registrarEvento(tx, { tipo: "PlanoRecuperacaoDisponibilizado", agregadoTipo: "Matricula", agregadoId: p.matriculaId, autorId: u.id,

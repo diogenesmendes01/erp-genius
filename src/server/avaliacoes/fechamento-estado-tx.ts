@@ -7,7 +7,7 @@ import { coletarConsolidadoAvaliacoesDoVinculoTx } from "./consolidado-tx";
 import { carregarFrequenciaNivelTx, simularFrequenciaCorrecaoAulaTx } from "./frequencia-nivel-tx";
 import { carregarPendenciasFechamentoTx } from "./pendencias-fechamento-tx";
 import { carregarFontesEquivalenciaTx } from "./fontes-equivalencia-tx";
-import { ConteudoRegraAvaliacaoSchema } from "./regra-schema";
+import { exigirConteudoRegra } from "./regra-conteudo";
 import { avaliarElegibilidadeFechamento } from "./fechamento-elegibilidade";
 
 function canonico(valor: unknown): unknown {
@@ -43,7 +43,7 @@ async function coletarEstadoAcademicoTx(tx: Prisma.TransactionClient, a: Alocaca
     select: { id: true, turmaId: true, turma: { select: { regraAvaliacaoId: true } } },
   });
   if (vinculos.at(-1)?.id !== a.id) throw new ErroRegra("Use o vínculo mais recente desta matrícula no nível para conferir o fechamento.");
-  const regra = ConteudoRegraAvaliacaoSchema.parse(turma.regraAvaliacao.conteudo);
+  const regra = exigirConteudoRegra(turma.regraAvaliacao.conteudo);
   const consolidado = await coletarConsolidadoAvaliacoesDoVinculoTx(tx, { alocacao: a, turma }, "ACOMPANHAMENTO");
   const parametrosFrequencia = { matriculaId: a.matriculaId, nivelId: turma.nivelId, minimoPercentual: regra.frequenciaMinimaPercentual, agora };
   const frequencia = chamada ? await simularFrequenciaCorrecaoAulaTx(tx, parametrosFrequencia, chamada)

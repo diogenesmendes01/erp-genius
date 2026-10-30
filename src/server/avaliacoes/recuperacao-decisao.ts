@@ -7,7 +7,7 @@ import { executarAcao, exigirSessaoComPapel, ErroRegra, registrarEvento } from "
 import { bloquearLancamento } from "./lancamento-tx";
 import { conferirGestorAvaliacao } from "./regras-tx";
 import { carregarConsolidadoAvaliacoesTx } from "./consolidado-tx";
-import { ConteudoRegraAvaliacaoSchema } from "./regra-schema";
+import { exigirConteudoRegra } from "./regra-conteudo";
 import { HABILIDADES } from "./calculo";
 import { quantidadeExtraRecuperacaoTx } from "./extra-recuperacao-tx";
 import { preparacaoRecuperacaoVigenteTx } from "./recuperacao-preparacao-vigencia-tx";
@@ -35,7 +35,7 @@ export async function decidirPlanoRecuperacao(input: z.input<typeof schema>) {
         const atual = await carregarConsolidadoAvaliacoesTx(tx, u.id, p.alocacaoId, "BASE_PLANO");
         if (!isDeepStrictEqual(p.snapshot, atual)) throw new ErroRegra("As notas ou suas fontes mudaram. Prepare uma nova proposta para revisão.");
         if (atual.resultado.atendeRequisitosNotas !== false) throw new ErroRegra("Confira a insuficiência de notas antes de aprovar.");
-        const regra = ConteudoRegraAvaliacaoSchema.parse(p.regra.conteudo);
+        const regra = exigirConteudoRegra(p.regra.conteudo);
         const atividades = z.array(z.object({ habilidade: z.enum(HABILIDADES) })).min(1).max(4).parse(p.atividades);
         for (const atividade of atividades) {
           const base = regra.habilidades.find(h => h.habilidade === atividade.habilidade)?.limiteRecuperacoes ?? 0;

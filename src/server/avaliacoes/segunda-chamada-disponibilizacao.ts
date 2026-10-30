@@ -6,7 +6,7 @@ import { prisma } from "@/lib/prisma";
 import { executarAcao, exigirSessaoComPapel, ErroRegra, registrarEvento } from "@/server/_shared";
 import { bloquearLancamento } from "./lancamento-tx";
 import { conferirGestorAvaliacao } from "./regras-tx";
-import { ConteudoRegraAvaliacaoSchema } from "./regra-schema";
+import { exigirConteudoRegra } from "./regra-conteudo";
 import { instanteUtcSql } from "./segunda-chamada-utc";
 
 const schema = z.object({ propostaId: z.string().min(1).max(100), propostaHash: z.string().regex(/^[a-f0-9]{64}$/), disponibilizadaEm: z.string().datetime({ offset: true }), condicoes: z.string().trim().min(5).max(4000), evidenciaComunicacao: z.string().trim().min(5).max(4000) }).strict();
@@ -33,7 +33,7 @@ export async function disponibilizarSegundaChamada(input: z.input<typeof schema>
       }
       if (!a.ativa || (await tx.matricula.findUniqueOrThrow({ where: { id: a.matriculaId }, select: { status: true } })).status !== "ATIVA") throw new ErroRegra("Disponibilização exige matrícula e vínculo ativos.");
       const regra = await tx.versaoRegraAvaliacao.findUniqueOrThrow({ where: { id: p.regraId }, select: { conteudo: true } });
-      const prazoRegraMinutos = ConteudoRegraAvaliacaoSchema.parse(regra.conteudo).segundaChamada.prazoRealizacaoMinutos;
+      const prazoRegraMinutos = exigirConteudoRegra(regra.conteudo).segundaChamada.prazoRealizacaoMinutos;
       const prazoAte = new Date(inicio.getTime() + prazoRegraMinutos * 60000), id = randomUUID();
       await tx.$executeRaw(Prisma.sql`INSERT INTO "DisponibilizacaoSegundaChamada" (id,"propostaId","autorId","disponibilizadaEm","prazoRegraMinutos","prazoAte",condicoes,"evidenciaComunicacao") VALUES (${id},${p.id},${u.id},${instanteUtcSql(inicio)},${prazoRegraMinutos},${instanteUtcSql(prazoAte)},${d.condicoes},${d.evidenciaComunicacao})`);
       await registrarEvento(tx, { tipo: "SegundaChamadaDisponibilizada", agregadoTipo: "Matricula", agregadoId: p.matriculaId, autorId: u.id, payload: { propostaId: p.id, disponibilizacaoId: id, prazoAte: prazoAte.toISOString(), prazoRegraMinutos } });

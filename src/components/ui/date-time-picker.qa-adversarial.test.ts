@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { createElement } from "react";
-import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeAll, describe, expect, it } from "vitest";
 import { DateTimePicker, mensagemRestricaoDataHora } from "@/components/ui/date-time-picker";
 
@@ -117,5 +117,18 @@ describe("DateTimePicker — R1 adversarial", () => {
     expect(screen.getAllByRole("alert")).toHaveLength(1);
     popover.remove();
     fora.remove();
+  });
+
+  it("C4: reset do form zera o erro já revelado", () => {
+    render(formulario());
+    const gatilho = screen.getByRole("button", { name: "Quando" });
+    fireEvent.blur(gatilho, { relatedTarget: null });
+    expect(screen.getByRole("alert").textContent).toContain(ERRO);
+    expect(gatilho.getAttribute("aria-invalid")).toBe("true");
+    const form = document.querySelector("form");
+    if (!(form instanceof HTMLFormElement)) throw new Error("form ausente");
+    act(() => { form.reset(); });
+    expect(screen.queryByRole("alert")).toBeNull();
+    expect(gatilho.hasAttribute("aria-invalid")).toBe(false);
   });
 });
