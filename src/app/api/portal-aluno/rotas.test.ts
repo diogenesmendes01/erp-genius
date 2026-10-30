@@ -1,10 +1,12 @@
-import { afterEach, beforeEach, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 const mocks = vi.hoisted(() => ({ entrar: vi.fn(), token: vi.fn(), recuperar: vi.fn() }));
 vi.mock("@/server/portal-aluno/identidade", () => ({ entrarPortalAluno: mocks.entrar, consumirTokenPortalAluno: mocks.token, solicitarRecuperacaoPortalAluno: mocks.recuperar }));
 vi.mock("@/server/portal-aluno/sessao", async () => {
   const politica = await import("@/server/portal-aluno/politica");
   return { cookieSessaoPortalAluno: politica.cookieSessaoPortalAluno };
 });
+import { ErroRegra } from "@/server/_shared";
+import { ErroConfigPortalIncompleta } from "@/server/portal-aluno/erros";
 import { POST as login } from "./sessao/route";
 import { POST as token } from "./token/route";
 import { POST as recuperar } from "./recuperacao/route";
@@ -136,4 +138,92 @@ it("token: token malformado, link vencido ou corpo ilegível continuam no 422 ge
     expect((await token(requisicao("{}"))).status).toBe(422);
   }
   expect((await token(requisicao("{nao-json"))).status).toBe(422);
+});
+
+describe("#536 login com configuração de prazos incompleta", () => {
+  const credenciais = { email: "aluna.segredo@example.test", senha: "Senha-Secreta-Do-Caso-536" };
+  const corpo = () => JSON.stringify(credenciais);
+  const MENSAGEM_CONFIG = "Configure todos os prazos do portal do aluno antes de emitir links ou sessões.";
+
+  it("T1: ErroConfigPortalIncompleta → 503 neutro, no-store, sem cookie e log estruturado sem PII", async () => {
+    const erro = vi.spyOn(console, "error").mockImplementation(() => {});
+    mocks.entrar.mockRejectedValue(new ErroConfigPortalIncompleta(["prazoSessaoPortalAlunoMinutos", "prazoConvitePortalAlunoMinutos"]));
+    const r = await login(requisicao(corpo()));
+    expect(r.status).toBe(503);
+    const texto = await r.text();
+    expect(JSON.parse(texto)).toEqual({ erro: "Portal temporariamente indisponível, procure a secretaria.", codigo: "PORTAL_INDISPONIVEL" });
+    expect(texto).not.toMatch(/prazo|config|ConfiguracaoOperacional/i);
+    expect(r.headers.get("cache-control")).toBe("no-store");
+    expect(r.headers.get("retry-after")).toBe("300");
+    expect(r.headers.get("set-cookie")).toBeNull();
+    expect(erro).toHaveBeenCalledOnce();
+    expect(erro).toHaveBeenCalledWith("portal-aluno.login.config-incompleta", {
+      codigo: "PORTAL_CONFIG_INCOMPLETA", camposAusentes: ["prazoSessaoPortalAlunoMinutos", "prazoConvitePortalAlunoMinutos"],
+    });
+    const log = JSON.stringify(erro.mock.calls);
+    expect(log).not.toContain(credenciais.email);
+    expect(log).not.toContain(credenciais.senha);
+  });
+
+  it("T1b: 503 é byte-idêntico independentemente das credenciais", async () => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    mocks.entrar.mockRejectedValue(new ErroConfigPortalIncompleta(["prazoSessaoPortalAlunoMinutos"]));
+    const a = await login(requisicao(corpo()));
+    const b = await login(requisicao(JSON.stringify({ email: "inexistente@example.test", senha: "errada" })));
+    expect(await a.text()).toBe(await b.text());
+    expect([...a.headers]).toEqual([...b.headers]);
+  });
+
+  it("T2: credenciais inválidas seguem 401 sem mudança", async () => {
+    mocks.entrar.mockResolvedValue({ autenticado: false });
+    const r = await login(requisicao(corpo()));
+    expect(r.status).toBe(401);
+    expect(await r.json()).toEqual({ erro: "Credenciais inválidas." });
+    expect(r.headers.get("cache-control")).toBe("no-store");
+    expect(r.headers.get("set-cookie")).toBeNull();
+  });
+
+  it.each([["ErroRegra genérico", () => new ErroRegra("Outra regra qualquer.")], ["Error", () => new Error("falha com aluna.segredo@example.test")]])(
+    "T3: %s nunca vira 503 e é logado só pelo nome", async (_n, criar) => {
+      const erro = vi.spyOn(console, "error").mockImplementation(() => {});
+      mocks.entrar.mockRejectedValue(criar());
+      const r = await login(requisicao(corpo()));
+      expect(r.status).toBe(500);
+      expect(await r.json()).toEqual({ erro: "Não foi possível iniciar a sessão. Tente novamente." });
+      expect(r.headers.get("cache-control")).toBe("no-store");
+      expect(r.headers.get("set-cookie")).toBeNull();
+      expect(erro).toHaveBeenCalledWith("portal-aluno.login.erro-inesperado", { nome: criar().name });
+      expect(JSON.stringify(erro.mock.calls)).not.toContain(credenciais.email);
+    });
+
+  it("T4: erro com a MESMA mensagem da config, mas de outra classe, não vira 503 (sem discriminação por string)", async () => {
+    vi.spyOn(console, "error").mockImplementation(() => {});
+    mocks.entrar.mockRejectedValueOnce(new ErroRegra(MENSAGEM_CONFIG));
+    expect((await login(requisicao(corpo()))).status).toBe(500);
+    const falso = Object.assign(new Error(MENSAGEM_CONFIG), { codigo: "PORTAL_CONFIG_INCOMPLETA", camposAusentes: [] });
+    mocks.entrar.mockRejectedValueOnce(falso);
+    expect((await login(requisicao(corpo()))).status).toBe(500);
+  });
+
+  it("entrada inválida (JSON ou Zod) mantém o 422 genérico com aviso sem dados", async () => {
+    const aviso = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const r = await login(requisicao("{nao-json"));
+    expect(r.status).toBe(422);
+    expect(mocks.entrar).not.toHaveBeenCalled();
+    const { z } = await import("zod");
+    const zod = z.object({ email: z.string() }).safeParse({});
+    mocks.entrar.mockRejectedValue(zod.success ? new Error("x") : zod.error);
+    const r2 = await login(requisicao(corpo()));
+    expect(r2.status).toBe(422);
+    expect(await r2.json()).toEqual({ erro: "Não foi possível iniciar a sessão." });
+    expect(aviso).toHaveBeenCalledWith("portal-aluno.login.entrada-invalida");
+    expect(aviso.mock.calls.every(c => c.length === 1)).toBe(true);
+  });
+
+  it("origem externa continua sendo a primeira checagem (403), mesmo com portal indisponível", async () => {
+    mocks.entrar.mockRejectedValue(new ErroConfigPortalIncompleta(["prazoSessaoPortalAlunoMinutos"]));
+    const r = await login(requisicao(corpo(), { origin: "https://outra.example" }));
+    expect(r.status).toBe(403);
+    expect(mocks.entrar).not.toHaveBeenCalled();
+  });
 });

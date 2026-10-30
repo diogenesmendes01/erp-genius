@@ -21,6 +21,8 @@ import {
   prepararTrocaEmailPortalAluno,
   solicitarRecuperacaoPortalAluno,
 } from "./identidade";
+import { ErroRegra } from "@/server/_shared";
+import { ErroConfigPortalIncompleta } from "./erros";
 import { exigirReposicaoDoPortalAluno } from "./reposicoes";
 import { lerSessaoPortalAluno } from "./sessao";
 
@@ -172,4 +174,82 @@ it("troca assistida exige validação e outro administrador, revoga acessos e is
   expect((await consumirTokenPortalAluno({ token: tokenRecuperacao, senha: "Senha do novo endereço 2026" })).tipo).toBe("SESSAO");
 
   await expect(exigirReposicaoDoPortalAluno("reposicao-de-outro-aluno", { sessaoId: "ignorada", contaId: conta.id, alunoId, email: "novo.portal@example.com" })).rejects.toThrow();
+});
+
+// #536: configuração incompleta de prazos — falha fechada ANTES de lockout e bcrypt, sem valor padrão.
+const credenciais536 = { email: "aluna.portal@example.com", senha: "Senha inicial segura 2026" };
+const anularPrazos536 = (dados: Record<string, null> = {
+  prazoSessaoPortalAlunoMinutos: null, prazoConvitePortalAlunoMinutos: null,
+  prazoRecuperacaoPortalAlunoMinutos: null, prazoValidacaoEmailPortalAlunoMinutos: null,
+}) => prisma.configuracaoOperacional.update({ where: { id: "escola" }, data: dados });
+const falhas536 = () => prisma.tentativaAutenticacaoPortalAluno.count();
+
+it("I1 #536: prazos nulos + senha correta lançam ErroConfigPortalIncompleta e não criam sessão", async () => {
+  await prepararContaAtiva();
+  const sessoesAntes = await prisma.sessaoPortalAluno.count();
+  await anularPrazos536();
+  const erro = await entrarPortalAluno(credenciais536).catch((e: unknown) => e);
+  expect(erro).toBeInstanceOf(ErroConfigPortalIncompleta);
+  expect((erro as ErroConfigPortalIncompleta).codigo).toBe("PORTAL_CONFIG_INCOMPLETA");
+  expect((erro as ErroConfigPortalIncompleta).camposAusentes).toHaveLength(4);
+  expect(await prisma.sessaoPortalAluno.count()).toBe(sessoesAntes);
+});
+
+it("I2 #536: prazos nulos + senha errada lançam o MESMO erro e não registram falha (sem oráculo de senha)", async () => {
+  await prepararContaAtiva();
+  await anularPrazos536();
+  const comSenhaErrada = await entrarPortalAluno({ ...credenciais536, senha: "Senha totalmente errada 2026" }).catch((e: unknown) => e);
+  const comSenhaCerta = await entrarPortalAluno(credenciais536).catch((e: unknown) => e);
+  expect(comSenhaErrada).toBeInstanceOf(ErroConfigPortalIncompleta);
+  expect(comSenhaCerta).toBeInstanceOf(ErroConfigPortalIncompleta);
+  expect((comSenhaErrada as Error).message).toBe((comSenhaCerta as Error).message);
+  expect(await falhas536()).toBe(0);
+});
+
+it("I3 #536: linha escola ausente ou apenas um prazo nulo também falham fechado", async () => {
+  await prepararContaAtiva();
+  await anularPrazos536({ prazoSessaoPortalAlunoMinutos: null });
+  const umNulo = await entrarPortalAluno(credenciais536).catch((e: unknown) => e);
+  expect(umNulo).toBeInstanceOf(ErroConfigPortalIncompleta);
+  expect((umNulo as ErroConfigPortalIncompleta).camposAusentes).toEqual(["prazoSessaoPortalAlunoMinutos"]);
+  await prisma.configuracaoOperacional.delete({ where: { id: "escola" } });
+  const semLinha = await entrarPortalAluno(credenciais536).catch((e: unknown) => e);
+  expect(semLinha).toBeInstanceOf(ErroConfigPortalIncompleta);
+  expect((semLinha as ErroConfigPortalIncompleta).camposAusentes).toHaveLength(4);
+  expect(await falhas536()).toBe(0);
+});
+
+it("I4 #536: config válida + senha errada continua {autenticado:false} e registra a falha", async () => {
+  await prepararContaAtiva();
+  expect(await entrarPortalAluno({ ...credenciais536, senha: "Senha totalmente errada 2026" })).toEqual({ autenticado: false });
+  expect(await falhas536()).toBe(1);
+});
+
+it("I5 #536: config válida + senha correta cria sessão", async () => {
+  await prepararContaAtiva();
+  const antes = await prisma.sessaoPortalAluno.count();
+  expect(await entrarPortalAluno(credenciais536)).toMatchObject({ autenticado: true });
+  expect(await prisma.sessaoPortalAluno.count()).toBe(antes + 1);
+});
+
+it("I6 #536: convite e recuperação com config nula seguem lançando ErroRegra com a mensagem atual", async () => {
+  const mensagem = "Configure todos os prazos do portal do aluno antes de emitir links ou sessões.";
+  await prepararContaAtiva();
+  await solicitarRecuperacaoPortalAluno({ email: credenciais536.email });
+  const conta = await prisma.contaPortalAluno.findUniqueOrThrow({ where: { alunoId } });
+  const envio = await prisma.solicitacaoEnvioPortalAluno.findFirstOrThrow({ where: { contaId: conta.id, finalidade: "RECUPERACAO", situacao: "PREPARADO" } });
+  const tokenRecuperacao = await despachar(envio.id);
+  await anularPrazos536();
+  const consumo = await consumirTokenPortalAluno({ token: tokenRecuperacao, senha: "Senha recuperada segura 2026" }).catch((e: unknown) => e);
+  expect(consumo).toBeInstanceOf(ErroRegra);
+  expect((consumo as Error).message).toBe(mensagem);
+  entrarEquipe(secretariaId);
+  const convite = await prepararConvitePortalAluno({ alunoId: outroAlunoId });
+  if (convite.ok && convite.dado && "solicitacaoEnvioId" in convite.dado && typeof convite.dado.solicitacaoEnvioId === "string") {
+    const despacho = await despachar(convite.dado.solicitacaoEnvioId).catch((e: unknown) => e);
+    expect(despacho).toBeInstanceOf(ErroRegra);
+    expect((despacho as Error).message).toBe(mensagem);
+  } else {
+    expect(convite).toEqual({ ok: false, erro: mensagem });
+  }
 });
