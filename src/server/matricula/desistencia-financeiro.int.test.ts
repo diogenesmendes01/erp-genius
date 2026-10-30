@@ -154,7 +154,7 @@ beforeEach(async () => {
 
   const nivel = await prisma.nivel.create({ data: { idiomaId: catalogo.idioma.id, codigo: "DESISTENCIA_FIN", ordem: 1 } });
   const turma = await prisma.turma.create({
-    data: { modalidadeId: catalogo.modalidade.id, nivelId: nivel.id, professorId: professor.id, capacidade: 2 },
+    data: { modalidadeId: catalogo.modalidade.id, nivelId: nivel.id, professorId: professor.id, capacidade: 2, status: "ABERTA" },
   });
   turmaId = turma.id;
   const janela = await prisma.janelaAdmissaoTurma.create({

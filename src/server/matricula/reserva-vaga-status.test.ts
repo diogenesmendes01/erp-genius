@@ -13,7 +13,7 @@ vi.mock("./reserva-disponibilidade", () => ({ conferirTurmaParaReserva: conferir
 
 import { reservarVagaMatriculaTx } from "./reserva-vaga-tx";
 
-const MENSAGEM = "A turma selecionada não está disponível para venda.";
+const MENSAGEM = "A turma selecionada não está aberta para venda. Abra a turma antes de reservar a vaga.";
 const AGORA = new Date("2026-10-30T15:00:00.000Z");
 const ENTRADA = {
   matriculaId: "matricula-1",

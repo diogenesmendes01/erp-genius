@@ -27,7 +27,7 @@ async function prepararFonte() {
   const produto = await prisma.produto.findUniqueOrThrow({ where: { id: catalogo.produto.id } });
   const professor = await criarUsuario(["PROFESSOR"]);
   const nivel = await prisma.nivel.create({ data: { idiomaId: produto.idiomaId, codigo: "EMISSAO_SQL", ordem: 1 } });
-  const turma = await prisma.turma.create({ data: { modalidadeId: produto.modalidadeId, nivelId: nivel.id, professorId: professor.id, capacidade: 4 } });
+  const turma = await prisma.turma.create({ data: { modalidadeId: produto.modalidadeId, nivelId: nivel.id, professorId: professor.id, capacidade: 4, status: "ABERTA" } });
   const janela = await prisma.janelaAdmissaoTurma.create({ data: { turmaId: turma.id, preparadorId: secretaria.id, versao: 1, limiteEntrada: new Date("2099-12-31T00:00:00.000Z"), fusoAdmissao: "UTC", motivo: "Janela da emissão", chaveIdempotencia: "emissao-sql-janela", entradaHash: "fixture" } });
   await prisma.decisaoJanelaAdmissao.create({ data: { propostaId: janela.id, decisorId: admin.id, aprovada: true, motivo: "Janela aprovada" } });
   const calendario = await prisma.versaoCalendarioEscolar.create({ data: { versao: 1, preparadorId: secretaria.id, fusoInstitucional: "UTC", periodos: [], motivo: "Calendário da emissão", chaveIdempotencia: "emissao-sql-calendario", entradaHash: "fixture" } });
