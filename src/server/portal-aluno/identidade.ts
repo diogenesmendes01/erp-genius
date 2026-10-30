@@ -22,6 +22,7 @@ import {
   type PrazosPortalAluno,
 } from "./politica";
 import { criarSessaoPortalAlunoTx } from "./sessao";
+import { CAMPOS_PRAZOS_PORTAL_ALUNO, ErroConfigPortalIncompleta } from "./erros";
 
 const instanteUtc = (valor: Date) => Prisma.sql`${valor}::timestamptz AT TIME ZONE 'UTC'`;
 const texto = z.string().trim().min(5).max(4000);
@@ -51,15 +52,17 @@ async function prazosPortalAlunoTx(tx: Prisma.TransactionClient): Promise<Prazos
       "prazoRecuperacaoPortalAlunoMinutos", "prazoValidacaoEmailPortalAlunoMinutos"
     FROM "ConfiguracaoOperacional" WHERE id = 'escola'
   `);
+  // #536: sem valores padrão; linha ausente ou qualquer prazo nulo/inválido falha fechado.
+  if (!configuracao) throw new ErroConfigPortalIncompleta([...CAMPOS_PRAZOS_PORTAL_ALUNO]);
   try {
-    return exigirPrazosPortalAluno(configuracao ?? {
-      prazoSessaoPortalAlunoMinutos: null,
-      prazoConvitePortalAlunoMinutos: null,
-      prazoRecuperacaoPortalAlunoMinutos: null,
-      prazoValidacaoEmailPortalAlunoMinutos: null,
-    });
+    return exigirPrazosPortalAluno(configuracao);
   } catch {
-    throw new ErroRegra("Configure todos os prazos do portal do aluno antes de emitir links ou sessões.");
+    // camposAusentes reaproveita a mesma regra de validação, campo a campo (só para o log; não é fallback).
+    const referencia = Object.fromEntries(CAMPOS_PRAZOS_PORTAL_ALUNO.map((campo) => [campo, 1])) as ConfiguracaoPrazos;
+    throw new ErroConfigPortalIncompleta(CAMPOS_PRAZOS_PORTAL_ALUNO.filter((campo) => {
+      try { exigirPrazosPortalAluno({ ...referencia, [campo]: configuracao[campo] }); return false; }
+      catch { return true; }
+    }));
   }
 }
 
@@ -193,6 +196,8 @@ export async function entrarPortalAluno(input: unknown) {
   try { email = normalizarEmailPortalAluno(dados.email); }
   catch { return { autenticado: false as const }; }
   const resultado = await prisma.$transaction(async (tx) => {
+    // #536: config ANTES do lockout e do bcrypt — sem oráculo de senha e sem desgaste do rate limit.
+    const prazos = await prazosPortalAlunoTx(tx);
     if (await loginPortalBloqueadoTx(tx, email)) return null;
     const [conta] = await tx.$queryRaw<ContaLinha[]>(Prisma.sql`
       SELECT id, "alunoId" AS "alunoId", "emailVerificado" AS "emailVerificado",
@@ -205,7 +210,6 @@ export async function entrarPortalAluno(input: unknown) {
       await registrarFalhaLoginPortal(tx, email);
       return null;
     }
-    const prazos = await prazosPortalAlunoTx(tx);
     const sessao = await criarSessaoPortalAlunoTx(tx, { contaId: conta.id, versaoConta: conta.versaoSessao, prazos });
     await limparFalhasLoginPortal(tx, email);
     return { conta, sessao };

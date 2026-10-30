@@ -62,6 +62,29 @@ describe("entrar no portal do aluno — mensagens de falha", () => {
     expect(m.replace).not.toHaveBeenCalled();
   });
 
+  it("#536: 503 com código PORTAL_INDISPONIVEL manda procurar a secretaria", async () => {
+    m.fetch.mockResolvedValueOnce({ ok: false, status: 503, json: async () => ({ erro: "qualquer texto do servidor", codigo: "PORTAL_INDISPONIVEL" }) });
+    await entrar();
+    expect(alertas()).toEqual(["Portal temporariamente indisponível, procure a secretaria."]);
+    expect(m.replace).not.toHaveBeenCalled();
+    expect(botaoEntrar()?.props.disabled).toBe(false);
+  });
+
+  it("#536: a detecção é pelo código, não pelo texto nem só pelo status", async () => {
+    const generico = ["O serviço está indisponível agora. Tente de novo em alguns minutos."];
+    const casos = [
+      { ok: false, status: 503, json: async () => ({ erro: "Portal temporariamente indisponível, procure a secretaria." }) },
+      { ok: false, status: 503, json: async () => ({ codigo: "OUTRO" }) },
+      { ok: false, status: 503, json: async () => { throw new SyntaxError("corpo inválido"); } },
+      { ok: false, status: 500, json: async () => ({ codigo: "PORTAL_INDISPONIVEL" }) },
+    ];
+    for (const caso of casos) {
+      m.fetch.mockResolvedValueOnce(caso);
+      await entrar();
+      expect(alertas()).toEqual(generico);
+    }
+  });
+
   it("falha de rede: pede para conferir a conexão", async () => {
     m.fetch.mockRejectedValueOnce(new TypeError("Failed to fetch"));
     await entrar();
