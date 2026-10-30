@@ -9,7 +9,16 @@ const MSG_CREDENCIAIS = "E-mail ou senha incorretos.";
 const MSG_RECUSADO = "Não foi possível entrar com esses dados. Confira o e-mail e a senha e tente de novo; se continuar, tente mais tarde.";
 const MSG_ORIGEM = "Não foi possível confirmar de onde veio o acesso. Abra o portal pelo endereço oficial e tente de novo.";
 const MSG_INDISPONIVEL = "O serviço está indisponível agora. Tente de novo em alguns minutos.";
+// #536: só o código PORTAL_INDISPONIVEL do 503 do login aciona esta mensagem; o texto do corpo nunca é exibido nem comparado.
+const MSG_PORTAL_INDISPONIVEL = "Portal temporariamente indisponível, procure a secretaria.";
 const MSG_SEM_SERVIDOR = "Não foi possível falar com o servidor. Verifique sua conexão e tente de novo.";
+
+async function codigoDaResposta(resposta: Response): Promise<unknown> {
+  try {
+    const corpo: unknown = await resposta.json();
+    return corpo && typeof corpo === "object" && "codigo" in corpo ? corpo.codigo : undefined;
+  } catch { return undefined; }
+}
 
 export default function EntrarPortalAlunoPage() {
   const router = useRouter();
@@ -36,6 +45,7 @@ export default function EntrarPortalAlunoPage() {
       if (resposta.status === 401) setErro(MSG_CREDENCIAIS);
       else if (resposta.status === 422) setErro(MSG_RECUSADO);
       else if (resposta.status === 403) setErro(MSG_ORIGEM);
+      else if (resposta.status === 503 && await codigoDaResposta(resposta) === "PORTAL_INDISPONIVEL") setErro(MSG_PORTAL_INDISPONIVEL);
       else setErro(MSG_INDISPONIVEL);
       return;
     }

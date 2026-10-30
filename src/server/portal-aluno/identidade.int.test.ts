@@ -245,11 +245,12 @@ it("I6 #536: convite e recuperação com config nula seguem lançando ErroRegra 
   expect((consumo as Error).message).toBe(mensagem);
   entrarEquipe(secretariaId);
   const convite = await prepararConvitePortalAluno({ alunoId: outroAlunoId });
-  if (convite.ok && convite.dado && "solicitacaoEnvioId" in convite.dado && typeof convite.dado.solicitacaoEnvioId === "string") {
-    const despacho = await despachar(convite.dado.solicitacaoEnvioId).catch((e: unknown) => e);
-    expect(despacho).toBeInstanceOf(ErroRegra);
-    expect((despacho as Error).message).toBe(mensagem);
-  } else {
-    expect(convite).toEqual({ ok: false, erro: mensagem });
+  // prepararConvitePortalAluno não lê prazos: o convite é registrado e a falha fechada ocorre no despacho (emissão do token).
+  expect(convite.ok).toBe(true);
+  if (!convite.ok || !convite.dado || !("solicitacaoEnvioId" in convite.dado) || typeof convite.dado.solicitacaoEnvioId !== "string") {
+    throw new Error("Convite não criou solicitação de envio.");
   }
+  const despacho = await despachar(convite.dado.solicitacaoEnvioId).catch((e: unknown) => e);
+  expect(despacho).toBeInstanceOf(ErroRegra);
+  expect((despacho as Error).message).toBe(mensagem);
 });
