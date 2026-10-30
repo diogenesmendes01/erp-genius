@@ -6,7 +6,7 @@ import { prisma } from "@/lib/prisma";
 import { executarAcao, exigirSessaoComPapel, ErroRegra, registrarEvento } from "@/server/_shared";
 import { bloquearLancamento } from "./lancamento-tx";
 import { conferirGestorAvaliacao } from "./regras-tx";
-import { ConteudoRegraAvaliacaoSchema } from "./regra-schema";
+import { exigirConteudoRegra } from "./regra-conteudo";
 import { identificarMatriculaAvaliacao } from "./identificacao";
 const id = z.string().min(1).max(100);
 const schema = z.object({ alocacaoId: id, codigoAvaliacao: id, professorId: id.nullable(), versaoEsperada: z.number().int().min(0).max(2147483646),
@@ -20,7 +20,7 @@ export async function consultarDesignacoesAvaliacao(input: { alocacaoId: string;
       const a = await bloquearLancamento(tx, d.alocacaoId); await conferirGestorAvaliacao(tx, u.id);
       const t = await tx.turma.findUniqueOrThrow({ where: { id: a.turmaId }, include: { regraAvaliacao: true } });
       if (!t.regraAvaliacao) throw new ErroRegra("Confira a regra vinculada à turma.");
-      const avaliacao = ConteudoRegraAvaliacaoSchema.parse(t.regraAvaliacao.conteudo).avaliacoes.find(av => av.codigo === d.codigoAvaliacao);
+      const avaliacao = exigirConteudoRegra(t.regraAvaliacao.conteudo).avaliacoes.find(av => av.codigo === d.codigoAvaliacao);
       if (!avaliacao) throw new ErroRegra("Avaliação não prevista na regra da turma.");
       const registro = await tx.registroAvaliacaoMatricula.findUnique({ where: { matriculaId_turmaId_codigoAvaliacao: { matriculaId: a.matriculaId, turmaId: a.turmaId, codigoAvaliacao: d.codigoAvaliacao } } });
       if (registro && (registro.alocacaoId !== a.id || registro.regraId !== t.regraAvaliacao.id)) throw new ErroRegra("Confira o aproveitamento de outro vínculo antes da designação.");
@@ -54,7 +54,7 @@ export async function designarAvaliador(input: z.input<typeof schema>) {
       }
       const t = await tx.turma.findUniqueOrThrow({ where: { id: a.turmaId }, include: { regraAvaliacao: true } });
       if (!t.regraAvaliacao) throw new ErroRegra("Confira a regra vinculada à turma.");
-      const regra = ConteudoRegraAvaliacaoSchema.parse(t.regraAvaliacao.conteudo);
+      const regra = exigirConteudoRegra(t.regraAvaliacao.conteudo);
       if (!regra.avaliacoes.some(av => av.codigo === d.codigoAvaliacao)) throw new ErroRegra("Avaliação não prevista na regra da turma.");
       let registro = await tx.registroAvaliacaoMatricula.findUnique({ where: { matriculaId_turmaId_codigoAvaliacao: { matriculaId: a.matriculaId, turmaId: a.turmaId, codigoAvaliacao: d.codigoAvaliacao } } });
       if (registro && (registro.alocacaoId !== a.id || registro.regraId !== t.regraAvaliacao.id)) throw new ErroRegra("Confira o aproveitamento de outro vínculo antes da designação.");

@@ -7,7 +7,7 @@ import { HABILIDADES } from "./calculo";
 import { bloquearLancamento } from "./lancamento-tx";
 import { conferirGestorAvaliacao } from "./regras-tx";
 import { carregarConsolidadoAvaliacoesTx } from "./consolidado-tx";
-import { ConteudoRegraAvaliacaoSchema } from "./regra-schema";
+import { exigirConteudoRegra } from "./regra-conteudo";
 import { prazoRecuperacaoVigente } from "./recuperacao-prazo";
 import { quantidadeExtraRecuperacaoTx } from "./extra-recuperacao-tx";
 
@@ -47,7 +47,7 @@ export async function reservarTentativaRecuperacaoTx(tx: Prisma.TransactionClien
   const atual = await carregarConsolidadoAvaliacoesTx(tx, autorId, p.alocacaoId, "BASE_PLANO");
   if (!isDeepStrictEqual(p.snapshot, atual)) throw new ErroRegra("As notas mudaram desde a aprovação. Prepare novo plano.");
   const atividades = z.array(z.object({ habilidade: z.enum(HABILIDADES) })).parse(p.atividades);
-  const regra = ConteudoRegraAvaliacaoSchema.parse(p.regra.conteudo);
+  const regra = exigirConteudoRegra(p.regra.conteudo);
   for (const habilidade of d.habilidades) {
     if (!atividades.some(a => a.habilidade === habilidade)) throw new ErroRegra("Habilidade não incluída no plano aprovado.");
     const ocupadas = await tx.itemReservaTentativaRecuperacao.count({ where: { habilidade, reserva: { proposta: { matriculaId: p.matriculaId, nivelId: p.nivelId } }, OR: [{ reserva: { cancelamento: null } }, { realizacao: { isNot: null } }] } });

@@ -13,15 +13,22 @@ const nomesCampos: Record<keyof ConteudoRegra, string> = {
   frequenciaMinimaPercentual: "Frequência mínima", habilidades: "Pesos, mínimos e limites por habilidade",
   avaliacoes: "Avaliações, pesos e segundas chamadas", recuperacao: "Prazos de recuperação", segundaChamada: "Prazos de segunda chamada",
 };
-type Versao = { versao: number; conteudo: ConteudoRegra };
+type Versao = { versao: number; conteudo: ConteudoRegra | null; legado?: boolean };
+function ConteudoVersao({ v }: { v: Versao }) {
+  if (!v.conteudo) return <p role="status" className="rounded border p-3">Versão em formato antigo — somente leitura. Publique uma nova versão para este nível. Conteúdo indisponível para revisão.</p>;
+  return <>
+    {v.legado && <p role="status" className="rounded border p-3">Versão em formato antigo — somente leitura. Publique uma nova versão para este nível. Campos ausentes aparecem com valores de compatibilidade, apenas para exibição.</p>}
+    <ResumoRegra conteudo={v.conteudo} />
+  </>;
+}
 function Comparacao({ origem, destino, alteracoes, encontros, alocacoes }: { origem: Versao | null; destino: Versao;
   alteracoes: (keyof ConteudoRegra)[]; encontros: number; alocacoes: number }) {
   return <div className="space-y-3">
     <p>{encontros} encontros registrados e {alocacoes} alocações ativas na revisão.</p>
     <p>{alteracoes.length ? `Campos alterados: ${alteracoes.map(c => nomesCampos[c]).join("; ")}.` : "Conteúdo equivalente; a referência da versão será atualizada."}</p>
     <div className="grid gap-4 xl:grid-cols-2">
-      <section className="space-y-2 rounded border p-3"><h3 className="font-medium">Origem {origem ? `— versão ${origem.versao}` : "— sem regra vinculada"}</h3>{origem ? <ResumoRegra conteudo={origem.conteudo} /> : <p>Primeira vinculação sujeita à aprovação.</p>}</section>
-      <section className="space-y-2 rounded border p-3"><h3 className="font-medium">Destino — versão {destino.versao}</h3><ResumoRegra conteudo={destino.conteudo} /></section>
+      <section className="space-y-2 rounded border p-3"><h3 className="font-medium">Origem {origem ? `— versão ${origem.versao}` : "— sem regra vinculada"}</h3>{origem ? <ConteudoVersao v={origem} /> : <p>Primeira vinculação sujeita à aprovação.</p>}</section>
+      <section className="space-y-2 rounded border p-3"><h3 className="font-medium">Destino — versão {destino.versao}</h3><ConteudoVersao v={destino} /></section>
     </div>
   </div>;
 }

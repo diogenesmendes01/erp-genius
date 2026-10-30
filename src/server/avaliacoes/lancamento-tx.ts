@@ -6,7 +6,7 @@ import { bloquearMatriculas } from "@/server/financeiro/recebimentos";
 import { carregarSituacoesNaAula } from "@/server/diario/historico-contratual";
 import { docenteAtual, vinculoCobre } from "@/server/diario/permissoes";
 import { alocacaoCobreAula } from "@/server/diario/alocacoes";
-import { ConteudoRegraAvaliacaoSchema } from "./regra-schema";
+import { exigirConteudoRegra } from "./regra-conteudo";
 import { NotasLancamentoSchema, OficializarLancamentoSchema, SalvarLancamentoSchema } from "./lancamento-schema";
 import { conferirGestorAvaliacao } from "./regras-tx";
 import { autorizacaoEspecialSegundaChamadaVigente } from "./segunda-chamada-autorizacao-especial";
@@ -79,7 +79,7 @@ export async function salvarLancamentoTx(tx: Prisma.TransactionClient, autorId: 
   if (!designadoSegunda && !(regularizacao && realizadorDesignadoSegundaHistoricamente) && !t.vinculosDocentes.some(v => v.professorId === realizadaPorId && vinculoCobre(v, quando)) && designacaoHistorica?.professorId !== realizadaPorId) throw new ErroRegra("A data não pertence à atribuição docente. Regularize a autoria antes do lançamento.");
   if (situacao !== "ATIVA" && !segundaEspecial) throw new ErroRegra("Confira a situação contratual na data da avaliação. Não presumir realização durante pausa ou encerramento.");
   if (!t.regraAvaliacao) throw new ErroRegra("A turma precisa de regra de avaliação vinculada.");
-  const regra = ConteudoRegraAvaliacaoSchema.parse(t.regraAvaliacao.conteudo);
+  const regra = exigirConteudoRegra(t.regraAvaliacao.conteudo);
   const avaliacao = regra.avaliacoes.find(av => av.codigo === d.codigoAvaliacao);
   if (!avaliacao || avaliacao.habilidades.length !== d.notas.length || d.notas.some(n => !avaliacao.habilidades.includes(n.habilidade))) throw new ErroRegra("As habilidades precisam corresponder à avaliação prevista na regra.");
   for (const n of d.notas) {

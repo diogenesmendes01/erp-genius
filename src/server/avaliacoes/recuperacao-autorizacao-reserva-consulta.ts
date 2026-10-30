@@ -10,7 +10,7 @@ import { carregarConsolidadoAvaliacoesTx } from "./consolidado-tx";
 import { identificarMatriculaAvaliacao } from "./identificacao";
 import { prazoRecuperacaoVigente } from "./recuperacao-prazo";
 import { HABILIDADES } from "./calculo";
-import { ConteudoRegraAvaliacaoSchema } from "./regra-schema";
+import { exigirConteudoRegra } from "./regra-conteudo";
 import { quantidadeExtraRecuperacaoTx } from "./extra-recuperacao-tx";
 
 export async function consultarAutorizacoesReservaRecuperacao(input: { propostaId: string; pagina?: number }) {
@@ -28,7 +28,7 @@ export async function consultarAutorizacoesReservaRecuperacao(input: { propostaI
         p.alocacao.matriculaId === p.matriculaId && p.alocacao.turma.nivelId === p.nivelId && p.alocacao.turma.regraAvaliacaoId === p.regraId && isDeepStrictEqual(p.snapshot, atual);
       const agora = new Date();
       const prazoGeral = p.disponibilizacao ? await prazoRecuperacaoVigente(tx, p.disponibilizacao.id) : null;
-      const regra = ConteudoRegraAvaliacaoSchema.parse(p.regra.conteudo);
+      const regra = exigirConteudoRegra(p.regra.conteudo);
       const saldos = new Map<string, number>();
       for (const habilidade of habilidades) {
         const ocupadas = await tx.itemReservaTentativaRecuperacao.count({ where: { habilidade, reserva: { proposta: { matriculaId: p.matriculaId, nivelId: p.nivelId } }, OR: [{ reserva: { cancelamento: null } }, { realizacao: { isNot: null } }] } });

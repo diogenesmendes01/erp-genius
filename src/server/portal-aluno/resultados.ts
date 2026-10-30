@@ -5,7 +5,7 @@ import { calcularNotasNivel, HABILIDADES } from "@/server/avaliacoes/calculo";
 import { carregarFrequenciaVinculoTx } from "@/server/avaliacoes/frequencia-tx";
 import { NotasLancamentoSchema } from "@/server/avaliacoes/lancamento-schema";
 import { carregarPendenciasResultadoTx } from "@/server/avaliacoes/pendencias-resultado-tx";
-import { ConteudoRegraAvaliacaoSchema } from "@/server/avaliacoes/regra-schema";
+import { exigirConteudoRegra } from "@/server/avaliacoes/regra-conteudo";
 import { carregarAproveitamentoAplicadoTx } from "@/server/avaliacoes/aproveitamento-aplicado-tx";
 import { carregarFontesEquivalenciaTx } from "@/server/avaliacoes/fontes-equivalencia-tx";
 import { exigirSessaoPortalAluno, type SessaoPortalAluno } from "./sessao";
@@ -83,7 +83,7 @@ async function montarAlocacaoPortal(
       },
     };
   }
-  const regra = ConteudoRegraAvaliacaoSchema.parse(alocacao.turma.regraAvaliacao.conteudo);
+  const regra = exigirConteudoRegra(alocacao.turma.regraAvaliacao.conteudo);
   const [registros, realizacoes, aproveitamento] = await Promise.all([
     tx.registroAvaliacaoMatricula.findMany({
       where: { matriculaId: alocacao.matriculaId, alocacaoId: alocacao.id, turmaId: alocacao.turmaId, regraId: alocacao.turma.regraAvaliacao.id },

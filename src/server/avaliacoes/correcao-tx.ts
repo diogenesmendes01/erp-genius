@@ -5,7 +5,7 @@ import { ErroPermissao, ErroRegra, registrarEvento } from "@/server/_shared";
 import { docenteAtual } from "@/server/diario/permissoes";
 import { bloquearLancamento } from "./lancamento-tx";
 import { NotasLancamentoSchema } from "./lancamento-schema";
-import { ConteudoRegraAvaliacaoSchema } from "./regra-schema";
+import { exigirConteudoRegra } from "./regra-conteudo";
 import { notaVigente } from "./nota-vigente";
 
 export const EntradaCorrecaoNotaSchema = z.object({ lancamentoId: z.string().min(1).max(100), origemHash: z.string().regex(/^[a-f0-9]{64}$/),
@@ -32,7 +32,7 @@ export async function proporCorrecaoNotaTx(tx: Prisma.TransactionClient, autorId
       if (!v.decisao?.aprovada) throw new ErroRegra("Somente notas oficializadas usam este fluxo. Revise o rascunho ou a submissão pendente.");
       const vigente = await notaVigente(tx, v);
       if (vigente.origemHash !== d.origemHash) throw new ErroRegra("Confira a versão oficial de origem.");
-      const regra = ConteudoRegraAvaliacaoSchema.parse(v.registro.regra.conteudo), av = regra.avaliacoes.find(x => x.codigo === v.registro.codigoAvaliacao);
+      const regra = exigirConteudoRegra(v.registro.regra.conteudo), av = regra.avaliacoes.find(x => x.codigo === v.registro.codigoAvaliacao);
       if (!av || av.habilidades.length !== d.notas.length || d.notas.some(n => !av.habilidades.includes(n.habilidade) || n.nota === null)) throw new ErroRegra("A correção exige notas de todas as habilidades desta avaliação.");
       if (d.notas.some(n => new Prisma.Decimal(n.nota!).lt(regra.escala.minimo) || new Prisma.Decimal(n.nota!).gt(regra.escala.maximo))) throw new ErroRegra("Nota fora da escala da regra aplicada.");
       const originais = vigente.notas;

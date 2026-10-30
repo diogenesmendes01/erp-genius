@@ -3,7 +3,7 @@ import { Papel } from "@prisma/client";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { executarAcao, exigirSessaoComPapel, ErroRegra } from "@/server/_shared";
-import { ConteudoRegraAvaliacaoSchema } from "./regra-schema";
+import { lerConteudoRegra } from "./regra-schema";
 import { bloquearMigracaoRegra, contextoMigracaoRegra, decidirMigracaoRegraTx, DecidirMigracaoSchema, proporMigracaoRegraTx, ProporMigracaoSchema, RevisarMigracaoSchema } from "./migracao-regra-tx";
 
 export async function revisarMigracaoRegra(input: z.input<typeof RevisarMigracaoSchema>) {
@@ -60,13 +60,22 @@ export async function consultarMigracoesRegra(input: { turmaId: string; pagina?:
         }
         const { snapshot, ...resumo } = p;
         const impacto = z.object({ encontros: z.array(z.unknown()), alocacoes: z.array(z.object({ ativa: z.boolean() })) }).parse(snapshot);
-        const origem = p.origem ? { ...p.origem, conteudo: ConteudoRegraAvaliacaoSchema.parse(p.origem.conteudo) } : null;
-        const destino = { ...p.destino, conteudo: ConteudoRegraAvaliacaoSchema.parse(p.destino.conteudo) };
-        const alteracoes = (Object.keys(destino.conteudo) as (keyof typeof destino.conteudo)[])
-          .filter(c => JSON.stringify(origem?.conteudo[c]) !== JSON.stringify(destino.conteudo[c]));
+        // #530: leitura tolerante para exibição; só DESTINO legado bloqueia a decisão (C1).
+        const lerVersao = (v: { id: string; versao: number; conteudo: unknown }) => {
+          const l = lerConteudoRegra(v.conteudo);
+          if (!l.ok) console.warn("regra-avaliacao-legada", { regraId: v.id, caminhos: l.caminhos });
+          return { ...v, conteudo: l.ok ? l.conteudo : null, legado: l.legado, ilegivel: !l.ok };
+        };
+        const origem = p.origem ? lerVersao(p.origem) : null;
+        const destino = lerVersao(p.destino);
+        const destinoConteudo = destino.conteudo;
+        const alteracoes = destinoConteudo ? (Object.keys(destinoConteudo) as (keyof typeof destinoConteudo)[])
+          .filter(c => JSON.stringify(origem?.conteudo?.[c]) !== JSON.stringify(destinoConteudo[c])) : [];
+        // #530 (C1): só o DESTINO precisa ser válido no schema atual; origem legada pode ser abandonada.
+        const decidivel = !p.decisao && p.preparador.id !== u.id && !destino.legado;
         propostas.push({ ...resumo, origem, destino, pendencia, alteracoes,
           encontrosRevisados: impacto.encontros.length, alocacoesAtivasRevisadas: impacto.alocacoes.filter(a => a.ativa).length,
-          podeDecidir: !p.decisao && p.preparador.id !== u.id, podeAprovar: !p.decisao && !pendencia && p.preparador.id !== u.id });
+          podeDecidir: decidivel, podeAprovar: decidivel && !pendencia });
       }
       return { propostas, pagina: d.pagina, temProxima: ps.length > 20 };
     });

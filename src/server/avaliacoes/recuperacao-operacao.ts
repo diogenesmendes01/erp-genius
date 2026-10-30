@@ -7,7 +7,7 @@ import { janelaDaPagina, PAGINA_MAXIMA, recorteDaPagina } from "@/lib/pagina-url
 import { executarAcao, exigirSessaoComPapel, ErroRegra } from "@/server/_shared";
 import { carregarConsolidadoAvaliacoesTx } from "./consolidado-tx";
 import { identificarMatriculaAvaliacao } from "./identificacao";
-import { ConteudoRegraAvaliacaoSchema } from "./regra-schema";
+import { exigirConteudoRegra } from "./regra-conteudo";
 import { prazoRecuperacaoVigente } from "./recuperacao-prazo";
 import { HABILIDADES } from "./calculo";
 import { docenteAtual } from "@/server/diario/permissoes";
@@ -30,7 +30,7 @@ export async function consultarOperacaoRecuperacao(input: { propostaId: string; 
       const usuario = await tx.usuario.findUniqueOrThrow({ where: { id: u.id }, select: { papeis: true } });
       const gestao = usuario.papeis.some(p => p === Papel.GERENTE_PEDAGOGICO || p === Papel.ADMINISTRADOR);
       const docente = usuario.papeis.includes(Papel.PROFESSOR) && docenteAtual(u.id, p.alocacao.turma);
-      const regra = ConteudoRegraAvaliacaoSchema.parse(p.regra.conteudo), ats = z.array(z.object({ habilidade: z.enum(HABILIDADES) })).parse(p.atividades);
+      const regra = exigirConteudoRegra(p.regra.conteudo), ats = z.array(z.object({ habilidade: z.enum(HABILIDADES) })).parse(p.atividades);
       const saldo = await Promise.all(ats.map(async h => {
         const filtro = { habilidade: h.habilidade, reserva: { proposta: { matriculaId: p.matriculaId, nivelId: p.nivelId } } };
         const [consumidas, reservadas] = await Promise.all([
