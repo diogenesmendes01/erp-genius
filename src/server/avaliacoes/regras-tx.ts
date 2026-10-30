@@ -2,7 +2,8 @@ import { createHash } from "node:crypto";
 import { Papel, Prisma } from "@prisma/client";
 import { z } from "zod";
 import { ErroPermissao, ErroRegra, registrarEvento } from "@/server/_shared";
-import { ConteudoRegraAvaliacaoSchema, DecidirRegraAvaliacaoSchema, PrepararRegraAvaliacaoSchema } from "./regra-schema";
+import { DecidirRegraAvaliacaoSchema, PrepararRegraAvaliacaoSchema } from "./regra-schema";
+import { exigirConteudoRegra } from "./regra-conteudo";
 
 const hash = (v: unknown) => createHash("sha256").update(JSON.stringify(v)).digest("hex");
 export async function conferirGestorAvaliacao(tx: Prisma.TransactionClient, autorId: string) {
@@ -42,12 +43,12 @@ export async function decidirRegraAvaliacaoTx(tx: Prisma.TransactionClient, auto
   await conferirGestorAvaliacao(tx, autorId);
   const r = await tx.versaoRegraAvaliacao.findUniqueOrThrow({ where: { id: d.regraId }, include: { decisao: true } });
   if (r.preparadorId === autorId) throw new ErroRegra("Outra pessoa da Gestão Pedagógica/Administração precisa decidir.");
-  if (r.conteudoHash !== d.conteudoHash || hash(ConteudoRegraAvaliacaoSchema.parse(r.conteudo)) !== r.conteudoHash) throw new ErroRegra("Confira o conteúdo exato antes de decidir.");
+  if (r.conteudoHash !== d.conteudoHash || hash(exigirConteudoRegra(r.conteudo)) !== r.conteudoHash) throw new ErroRegra("Confira o conteúdo exato antes de decidir.");
   if (r.decisao) {
     if (r.decisao.decisorId === autorId && r.decisao.aprovada === d.aprovada && r.decisao.motivo === d.motivo) return { id: r.decisao.id };
     throw new ErroRegra("Esta versão já possui decisão. Prepare outra versão para alterações.");
   }
-  ConteudoRegraAvaliacaoSchema.parse(r.conteudo);
+  exigirConteudoRegra(r.conteudo);
   if (d.aprovada) {
     const ultima = await tx.versaoRegraAvaliacao.findFirstOrThrow({ where: { nivelId: r.nivelId }, orderBy: { versao: "desc" }, select: { id: true } });
     if (ultima.id !== r.id) throw new ErroRegra("Existe proposta mais recente. Confira a versão atual antes de publicar.");

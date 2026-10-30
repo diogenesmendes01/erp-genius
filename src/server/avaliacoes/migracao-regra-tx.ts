@@ -3,7 +3,7 @@ import { Prisma } from "@prisma/client";
 import { z } from "zod";
 import { ErroRegra, registrarEvento } from "@/server/_shared";
 import { conferirGestorAvaliacao } from "./regras-tx";
-import { ConteudoRegraAvaliacaoSchema } from "./regra-schema";
+import { exigirConteudoRegra } from "./regra-conteudo";
 
 const id = z.string().min(1).max(100);
 export const RevisarMigracaoSchema = z.object({ turmaId: id, destinoId: id }).strict();
@@ -45,8 +45,8 @@ export async function contextoMigracaoRegra(tx: Prisma.TransactionClient, turmaI
   const origem = t.regraAvaliacaoId ? await tx.versaoRegraAvaliacao.findUniqueOrThrow({ where: { id: t.regraAvaliacaoId } }) : null;
   if (origem && destino.versao <= origem.versao) throw new ErroRegra("A turma já usa essa versão ou uma mais recente.");
   const alocacoes = await tx.alocacaoTurma.findMany({ where: { turmaId }, orderBy: { id: "asc" }, select: { id: true, alunoId: true, matriculaId: true, ativa: true, criadoEm: true, encerradaEm: true } });
-  const origemConteudo = origem ? ConteudoRegraAvaliacaoSchema.parse(origem.conteudo) : null;
-  const destinoConteudo = ConteudoRegraAvaliacaoSchema.parse(destino.conteudo);
+  const origemConteudo = origem ? exigirConteudoRegra(origem.conteudo) : null;
+  const destinoConteudo = exigirConteudoRegra(destino.conteudo);
   const snapshot = {
     turma: { ...t, dataInicio: t.dataInicio?.toISOString() ?? null, dataFim: t.dataFim?.toISOString() ?? null },
     encontros: encontros.map(e => ({ ...e, inicio: e.inicio.toISOString(), fim: e.fim.toISOString() })),

@@ -43,4 +43,17 @@ describe("regras de avaliação por nível", () => {
     expect(mocks.consultar).not.toHaveBeenCalled();
     expect(mocks.preferencia).not.toHaveBeenCalled();
   });
+
+  it("#530: versões legada e ilegível exibem aviso, sem 'Required' e sem decisão", async () => {
+    mocks.consultar.mockResolvedValue({ ok: true, dado: { ...dado, ultimaVersao: 2, regras: [
+      { ...dado.regras[0], id: "ilegivel", versao: 2, conteudo: null, legado: true, ilegivel: true },
+      { ...dado.regras[0], id: "legada", versao: 1, legado: true, ilegivel: false } ] } });
+    const html = renderToStaticMarkup(await Page({ params: Promise.resolve({ nivelId: "nivel" }), searchParams: Promise.resolve({}) }));
+    expect(html).toContain("Versão em formato antigo — conteúdo indisponível para revisão.");
+    expect(html).toContain("valores de compatibilidade");
+    expect(html).toContain("Versões em formato antigo não podem ser decididas");
+    expect(html).toContain("Parâmetros da regra");
+    expect(html).not.toContain("Required");
+    expect(html).not.toContain("Decidir regra");
+  });
 });

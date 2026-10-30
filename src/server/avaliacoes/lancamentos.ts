@@ -7,7 +7,7 @@ import { FusoInstitucionalSchema } from "@/server/operacao/fuso";
 import { DataHoraAvaliacaoSchema, MSG_LANCAMENTO_SEM_FUSO, instanteAvaliacaoLocal } from "./tempo";
 import { consultarFusoInstitucional } from "@/server/operacao/consultas";
 import { docenteAtual } from "@/server/diario/permissoes";
-import { ConteudoRegraAvaliacaoSchema } from "./regra-schema";
+import { exigirConteudoRegra } from "./regra-conteudo";
 import { notaVigente } from "./nota-vigente";
 import { identificarMatriculaAvaliacao } from "./identificacao";
 import { avaliacoesDesignadas } from "./designacao-acesso";
@@ -60,7 +60,7 @@ export async function consultarLancamentosAvaliacao(input: { alocacaoId: string;
       const historicoProprio = fresco.papeis.includes(Papel.PROFESSOR) && registro && await tx.versaoLancamentoAvaliacao.count({ where: { registroId: registro.id, ...autoriaPropria } }) > 0;
       const designado = fresco.papeis.includes(Papel.PROFESSOR) && !!registro && (await avaliacoesDesignadas(tx, a.id, u.id)).some(r => r.id === registro.id);
       if (!gestao && !professorAtual && !historicoProprio && !designado) throw new ErroPermissao();
-      const regra = t.regraAvaliacao ? ConteudoRegraAvaliacaoSchema.parse(t.regraAvaliacao.conteudo) : null;
+      const regra = t.regraAvaliacao ? exigirConteudoRegra(t.regraAvaliacao.conteudo) : null;
       const avaliacao = regra?.avaliacoes.find(av => av.codigo === d.codigoAvaliacao) ?? null;
       const ultima = registro ? await tx.versaoLancamentoAvaliacao.findFirst({ where: { registroId: registro.id }, orderBy: { versao: "desc" }, select: { id: true, versao: true, realizadaEm: true, notas: true } }) : null;
       const oficial = registro ? await tx.versaoLancamentoAvaliacao.count({ where: { registroId: registro.id, decisao: { aprovada: true } } }) > 0 : false;
@@ -101,7 +101,7 @@ export async function listarAvaliacoesAlocacao(alocacaoId: string) {
       const proprios = fresco.papeis.includes(Papel.PROFESSOR) ? await tx.registroAvaliacaoMatricula.findMany({ where: { matriculaId: a.matriculaId, turmaId: a.turmaId, versoes: { some: { OR: [{ autorId: u.id }, { realizadaPorId: u.id }] } } }, select: { codigoAvaliacao: true } }) : [];
       const designadas = fresco.papeis.includes(Papel.PROFESSOR) ? await avaliacoesDesignadas(tx, a.id, u.id) : [];
       if (!gestao && !atual && !proprios.length && !designadas.length) throw new ErroPermissao();
-      const regra = t.regraAvaliacao ? ConteudoRegraAvaliacaoSchema.parse(t.regraAvaliacao.conteudo) : null;
+      const regra = t.regraAvaliacao ? exigirConteudoRegra(t.regraAvaliacao.conteudo) : null;
       return { turma: t.nome ?? t.codigo ?? "Turma", regraVersao: t.regraAvaliacao?.versao ?? null,
         avaliacoes: (regra?.avaliacoes ?? []).filter(av => gestao || atual || [...proprios, ...designadas].some(p => p.codigoAvaliacao === av.codigo)).map(av => ({ codigo: av.codigo, titulo: av.titulo, etapa: av.etapa })),
       };

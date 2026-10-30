@@ -40,4 +40,19 @@ describe("executarAcao", () => {
     if (!r.ok) expect(r.erro).toMatch(/inesperado/i);
     spy.mockRestore();
   });
+
+  it("#530: mensagem padrão do Zod (Required etc.) vira 'Dados inválidos.' e loga só caminhos", async () => {
+    const spy = vi.spyOn(console, "warn").mockImplementation(() => {});
+    for (const fn of [
+      () => z.object({ recuperacao: z.object({ prazo: z.number() }) }).parse({}),
+      () => z.object({ n: z.number() }).parse({ n: "x" }),
+      () => z.object({ a: z.string() }).strict().parse({ a: "x", b: 1 }),
+      () => z.string().min(3).parse("a"),
+    ]) {
+      const r = await executarAcao(async () => { fn(); });
+      expect(r).toEqual({ ok: false, erro: "Dados inválidos." });
+    }
+    expect(spy).toHaveBeenCalledWith("dados-invalidos", { caminhos: ["recuperacao"] });
+    spy.mockRestore();
+  });
 });

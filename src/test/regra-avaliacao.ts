@@ -14,3 +14,33 @@ export function regraAvaliacaoTeste() {
     segundaChamada: { prazoRealizacaoMinutos: 2000, antecedenciaCancelamentoMinutos: 90 },
   });
 }
+
+type Json = Record<string, unknown>;
+const semCampos = (o: Json, campos: string[]) => Object.fromEntries(Object.entries(o).filter(([k]) => !campos.includes(k)));
+
+/**
+ * #530: conteúdos JSON legados, como gravados antes da evolução do schema (sem os campos
+ * adicionados pelas migrations de recuperação e segunda chamada). Reproduzem as versões de
+ * Português A1, A2, B1 e B2 do ambiente QA que exibiam apenas "Required".
+ */
+export function regrasLegadasPortugues(): Record<"A1" | "A2" | "B1" | "B2", Json> {
+  const base = JSON.parse(JSON.stringify(regraAvaliacaoTeste())) as Json & { habilidades: Json[]; avaliacoes: Json[] };
+  const habilidadesSemLimite = base.habilidades.map(h => semCampos(h, ["limiteRecuperacoes"]));
+  const avaliacoesSemLimite = base.avaliacoes.map(a => semCampos(a, ["limiteSegundasChamadas"]));
+  return {
+    // formato mais antigo: antes de limites, recuperação e segunda chamada
+    A1: { ...semCampos(base, ["recuperacao", "segundaChamada", "habilidades", "avaliacoes"]), titulo: "Português A1", habilidades: habilidadesSemLimite, avaliacoes: avaliacoesSemLimite },
+    // antes da segunda chamada
+    A2: { ...semCampos(base, ["segundaChamada", "avaliacoes"]), titulo: "Português A2", avaliacoes: avaliacoesSemLimite },
+    // sem limite de recuperação por habilidade
+    B1: { ...semCampos(base, ["habilidades"]), titulo: "Português B1", habilidades: habilidadesSemLimite },
+    // segunda chamada parcial (sem antecedência de cancelamento)
+    B2: { ...base, titulo: "Português B2", segundaChamada: { prazoRealizacaoMinutos: 2000 } },
+  };
+}
+
+/** Versão que nenhuma normalização recupera (campo obrigatório sem default conhecido). */
+export function regraLegadaIlegivel(): Json {
+  const base = JSON.parse(JSON.stringify(regraAvaliacaoTeste())) as Json;
+  return semCampos(base, ["titulo", "segundaChamada"]);
+}

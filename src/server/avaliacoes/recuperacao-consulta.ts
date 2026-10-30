@@ -7,7 +7,7 @@ import { executarAcao, exigirSessaoComPapel, ErroPermissao, ErroRegra } from "@/
 import { bloquearLancamento } from "./lancamento-tx";
 import { docenteAtual } from "@/server/diario/permissoes";
 import { identificarMatriculaAvaliacao } from "./identificacao";
-import { ConteudoRegraAvaliacaoSchema } from "./regra-schema";
+import { exigirConteudoRegra } from "./regra-conteudo";
 import { designadoRecuperacao } from "./recuperacao-designacao-acesso";
 
 export async function listarRecuperacoesRealizadas(input: { alocacaoId: string; pagina?: number }) {
@@ -61,7 +61,7 @@ export async function consultarNotaRecuperacao(input: { realizacaoId: string; an
       const notas = await tx.notaRecuperacao.findMany({ where: { realizacaoId: r.id, ...(d.antesVersao ? { versao: { lt: d.antesVersao } } : {}), ...(!gestao && !atual && !designado && r.professorId !== u.id ? { autorId: u.id } : {}) }, orderBy: { versao: "desc" }, take: 21,
         select: { id: true, versao: true, nota: true, comentarioAluno: true, submetida: true, entradaHash: true, criadaEm: true, autorId: true, correcoes: { where: { decisao: { aprovada: true } }, orderBy: { versao: "desc" }, take: 1, select: { id: true, nota: true, comentarioAluno: true, motivo: true } }, autor: { select: { nome: true } }, decisao: { select: { aprovada: true, motivo: true, criadaEm: true, decisor: { select: { nome: true } } } } } });
       return { alocacaoId: a.id, realizacaoId: r.id, realizadaEm: r.realizadaEm.toISOString(), realizadaPor: r.professor.nome, registradaPor: r.registradaPor?.nome ?? r.professor.nome, motivoRegularizacao: r.motivoRegularizacao, evidencia: r.evidencia, habilidade: r.itemReserva.habilidade,
-        identificacao: await identificarMatriculaAvaliacao(tx, a.matriculaId, a.turmaId), escala: ConteudoRegraAvaliacaoSchema.parse(r.itemReserva.reserva.proposta.regra.conteudo).escala,
+        identificacao: await identificarMatriculaAvaliacao(tx, a.matriculaId, a.turmaId), escala: exigirConteudoRegra(r.itemReserva.reserva.proposta.regra.conteudo).escala,
         versaoEsperada: ultima?.versao ?? 0, podeLancar: ((atual && r.professorId === u.id) || designado) && !oficial, oficial,
         proximaAntesVersao: notas.length > 20 ? notas[19].versao : null,
         notas: notas.slice(0, 20).map(n => {

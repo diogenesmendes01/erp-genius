@@ -7,7 +7,7 @@ import { docenteAtual } from "@/server/diario/permissoes";
 import { bloquearLancamento } from "./lancamento-tx";
 import { notaVigente } from "./nota-vigente";
 import { NotasLancamentoSchema } from "./lancamento-schema";
-import { ConteudoRegraAvaliacaoSchema } from "./regra-schema";
+import { exigirConteudoRegra } from "./regra-conteudo";
 import { identificarMatriculaAvaliacao } from "./identificacao";
 
 export async function consultarCorrecoesNota(input: { lancamentoId: string; pagina?: number }) {
@@ -25,7 +25,7 @@ export async function consultarCorrecoesNota(input: { lancamentoId: string; pagi
       if (!fresco?.ativo || !(gestao || (fresco.papeis.includes(Papel.PROFESSOR) && docenteAtual(u.id, t)))) throw new ErroPermissao();
       const v = await tx.versaoLancamentoAvaliacao.findUniqueOrThrow({ where: { id: d.lancamentoId }, include: { decisao: true, registro: { include: { regra: true } } } });
       if (!v.decisao?.aprovada) throw new ErroRegra("Esta avaliação ainda não possui notas oficiais.");
-      const vigente = await notaVigente(tx, v), regra = ConteudoRegraAvaliacaoSchema.parse(v.registro.regra.conteudo);
+      const vigente = await notaVigente(tx, v), regra = exigirConteudoRegra(v.registro.regra.conteudo);
       const ultima = await tx.propostaCorrecaoNota.findFirst({ where: { lancamentoId: v.id }, orderBy: { versao: "desc" }, select: { versao: true } });
       const propostas = await tx.propostaCorrecaoNota.findMany({ where: { lancamentoId: v.id }, orderBy: { versao: "desc" }, skip: (d.pagina - 1) * 20, take: 21,
         select: { id: true, versao: true, notas: true, origemHash: true, motivo: true, criadaEm: true, autor: { select: { id: true, nome: true } },

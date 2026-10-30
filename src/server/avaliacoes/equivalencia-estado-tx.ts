@@ -3,7 +3,7 @@ import { Prisma } from "@prisma/client";
 import { ErroRegra } from "@/server/_shared";
 import { bloquearEstadoAcademico, carregarEstadoAcademico } from "@/server/academico/estado";
 import { classificarDestinoAcademico, impedimentoEstadoAcademico, montarSnapshotMudancaAcademica, normalizarSnapshotMudancaAcademicaNoMarco, SnapshotMudancaAcademicaSchema } from "@/server/academico/regras";
-import { ConteudoRegraAvaliacaoSchema } from "./regra-schema";
+import { exigirConteudoRegra } from "./regra-conteudo";
 import { carregarFontesEquivalenciaTx } from "./fontes-equivalencia-tx";
 import { projetarEquivalenciaTransferencia, type EntradaEquivalenciaTransferencia } from "./equivalencia-transferencia";
 
@@ -56,8 +56,8 @@ export async function conferirEstadoEquivalenciaTx(tx: Prisma.TransactionClient,
   const origem = turmas.find(t => t.id === estado.origem!.turmaId)?.regraAvaliacao;
   const destino = turmas.find(t => t.id === estado.destino!.id)?.regraAvaliacao;
   if (!origem || !destino) throw new ErroRegra("As duas turmas precisam de regras de avaliação conferidas para o aproveitamento.");
-  const regraOrigem = ConteudoRegraAvaliacaoSchema.parse(origem.conteudo);
-  const regraDestino = ConteudoRegraAvaliacaoSchema.parse(destino.conteudo);
+  const regraOrigem = exigirConteudoRegra(origem.conteudo);
+  const regraDestino = exigirConteudoRegra(destino.conteudo);
   const contexto = { matriculaId: entrada.matriculaId, nivelOrigemId: estado.origem.turma.nivelId,
     nivelDestinoId: estado.destino.nivelId, alocacaoOrigemId: estado.origem.id,
     turmaOrigemId: estado.origem.turmaId, turmaDestinoId: estado.destino.id,

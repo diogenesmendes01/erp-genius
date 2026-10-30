@@ -3,7 +3,7 @@ import { ErroPermissao, ErroRegra } from "@/server/_shared";
 import { docenteAtual } from "@/server/diario/permissoes";
 import { bloquearLancamento } from "./lancamento-tx";
 import { NotasLancamentoSchema } from "./lancamento-schema";
-import { ConteudoRegraAvaliacaoSchema } from "./regra-schema";
+import { exigirConteudoRegra } from "./regra-conteudo";
 import { calcularNotasNivel, HABILIDADES } from "./calculo";
 import { z } from "zod";
 import { carregarAproveitamentoAplicadoTx } from "./aproveitamento-aplicado-tx";
@@ -28,7 +28,7 @@ export async function coletarConsolidadoAvaliacoesDoVinculoTx(
       const { alocacao: a, turma: t } = contexto;
       if (t.id !== a.turmaId) throw new ErroRegra("O contexto da turma não corresponde ao vínculo conferido.");
       if (!t.regraAvaliacao) throw new ErroRegra("Confira a regra de avaliação da turma antes de consolidar.");
-      const regra = ConteudoRegraAvaliacaoSchema.parse(t.regraAvaliacao.conteudo);
+      const regra = exigirConteudoRegra(t.regraAvaliacao.conteudo);
       const registros = await tx.registroAvaliacaoMatricula.findMany({ where: { matriculaId: a.matriculaId, turmaId: a.turmaId },
         select: { alocacaoId: true, regraId: true, codigoAvaliacao: true, versoes: { orderBy: { versao: "desc" }, take: 1,
           select: { id: true, notas: true, decisao: { select: { aprovada: true } }, propostasCorrecao: { where: { decisao: { aprovada: true } }, orderBy: { versao: "desc" }, take: 1, select: { id: true, notas: true } } } } } });

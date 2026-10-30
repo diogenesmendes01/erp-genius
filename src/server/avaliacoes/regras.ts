@@ -4,7 +4,7 @@ import { Papel } from "@prisma/client";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { executarAcao, exigirSessaoComPapel, ErroRegra } from "@/server/_shared";
-import { ConteudoRegraAvaliacaoSchema, DecidirRegraAvaliacaoSchema, PrepararRegraAvaliacaoSchema } from "./regra-schema";
+import { DecidirRegraAvaliacaoSchema, lerConteudoRegra, PrepararRegraAvaliacaoSchema } from "./regra-schema";
 import { conferirGestorAvaliacao, decidirRegraAvaliacaoTx, prepararRegraAvaliacaoTx } from "./regras-tx";
 
 export async function prepararRegraAvaliacao(input: z.input<typeof PrepararRegraAvaliacaoSchema>) {
@@ -36,8 +36,15 @@ export async function consultarRegrasAvaliacao(input: { nivelId: string; pagina?
       const vigente = await tx.versaoRegraAvaliacao.findFirst({ where: { nivelId: d.nivelId, decisao: { aprovada: true } }, orderBy: { versao: "desc" }, select: { id: true, versao: true } });
       const ultima = await tx.versaoRegraAvaliacao.findFirst({ where: { nivelId: d.nivelId }, orderBy: { versao: "desc" }, select: { id: true, versao: true } });
       return { nivel, ultimaVersao: ultima?.versao ?? 0,
-        regras: regras.slice(0, 20).map(r => ({ ...r, conteudo: ConteudoRegraAvaliacaoSchema.parse(r.conteudo), podeDecidir: !r.decisao && r.preparador.id !== u.id,
-          podeAprovar: !r.decisao && r.preparador.id !== u.id && r.id === ultima?.id })),
+        // #530: leitura tolerante a versões legadas. Versão legada (normalizada ou ilegível) é só leitura:
+        // não pode ser decidida, e a ilegível não entra como conteúdo inicial do formulário.
+        regras: regras.slice(0, 20).map(r => {
+          const leitura = lerConteudoRegra(r.conteudo);
+          if (!leitura.ok) console.warn("regra-avaliacao-legada", { regraId: r.id, caminhos: leitura.caminhos });
+          const decidivel = !r.decisao && r.preparador.id !== u.id && !leitura.legado;
+          return { ...r, conteudo: leitura.ok ? leitura.conteudo : null, legado: leitura.legado, ilegivel: !leitura.ok,
+            podeDecidir: decidivel, podeAprovar: decidivel && r.id === ultima?.id };
+        }),
         vigente, pagina: d.pagina, temProxima: regras.length > 20 };
     });
   });
