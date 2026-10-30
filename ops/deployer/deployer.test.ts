@@ -250,6 +250,14 @@ elif "/api/v1/applications/" in url and url.endswith("/envs") and method == "PAT
     code = "201"
     if "APP_MIGRATE_IMAGE" in body and (mock / "patch-migrate-code").exists():
         code = (mock / "patch-migrate-code").read_text(encoding="utf-8").strip()
+    elif "APP_MIGRATE_IMAGE" in body and (mock / "patch-migrate-fail-after").exists():
+        count_path = mock / "patch-migrate-count"
+        seen = int(count_path.read_text(encoding="utf-8")) if count_path.exists() else 0
+        seen += 1
+        count_path.write_text(str(seen), encoding="utf-8")
+        limit = int((mock / "patch-migrate-fail-after").read_text(encoding="utf-8").strip())
+        if seen > limit:
+            code = "500"
     elif "APP_IMAGE" in body and (mock / "patch-app-code").exists():
         code = (mock / "patch-app-code").read_text(encoding="utf-8").strip()
     elif "APP_IMAGE" in body and (mock / "patch-app-fail-after").exists():
@@ -424,6 +432,7 @@ type Scene = {
   patchMigrateCode?: string;
   patchAppCode?: string;
   patchAppFailAfter?: number;
+  patchMigrateFailAfter?: number;
   ghcrCode?: { role: "app" | "migrate"; sha: string; code: string };
   contract?: boolean;
   migrateUrl?: boolean;
@@ -484,6 +493,7 @@ function arrange(scene: Scene = {}): {
   if (scene.patchMigrateCode) writeFileSync(join(mock, "patch-migrate-code"), scene.patchMigrateCode);
   if (scene.patchAppCode) writeFileSync(join(mock, "patch-app-code"), scene.patchAppCode);
   if (scene.patchAppFailAfter !== undefined) writeFileSync(join(mock, "patch-app-fail-after"), String(scene.patchAppFailAfter));
+  if (scene.patchMigrateFailAfter !== undefined) writeFileSync(join(mock, "patch-migrate-fail-after"), String(scene.patchMigrateFailAfter));
   if (scene.ghcrCode) {
     const tag = `sha-${scene.ghcrCode.sha.slice(0, 7)}`;
     writeFileSync(join(mock, `ghcr-code-${scene.ghcrCode.role}-${tag}`), scene.ghcrCode.code);
@@ -1756,6 +1766,40 @@ os.execv("${join(bin, "curl.real")}", ["curl.real", *args])
     expect(lines.some((line) => line.includes("PATCH"))).toBe(false);
     expect(lines.some((line) => line.includes("/api/v1/deploy?"))).toBe(false);
     expect(result.status).not.toBe(0);
+  });
+
+  it("BLOCK-520-R9-01: APP_MIGRATE_IMAGE anterior sem digest aborta antes de qualquer PATCH", () => {
+    for (const anterior of [`${MIG_REPO}:latest`, MIG_REPO, `${MIG_REPO}@sha256:curto`]) {
+      const ctx = arrange({
+        envs: [
+          { key: "APP_IMAGE", value: `${APP_REPO}@${DIG_APP_PREV}`, is_preview: false },
+          { key: "APP_MIGRATE_IMAGE", value: anterior, is_preview: false },
+        ],
+      });
+      const result = run(ctx.env);
+      const lines = callsOf(ctx.mock);
+      expect(result.status).not.toBe(0);
+      expect(result.stderr).toContain("imagem anterior inválida");
+      expect(lines.some((line) => line.includes("PATCH"))).toBe(false);
+      expect(lines.some((line) => line.includes("/api/v1/deploy?"))).toBe(false);
+    }
+  });
+
+  it("BLOCK-520-R9-02: falha no primeiro PATCH do rollback (APP_MIGRATE_IMAGE) registra rollback parcial sem nada restaurado", () => {
+    const ctx = arrange({
+      healthSha: SHA_OTHER,
+      state: { sha: SHA_OLD, app: DIG_APP_PREV, migrate: DIG_MIG_PREV },
+      patchMigrateFailAfter: 1,
+    });
+    const result = run(ctx.env);
+    expect(result.status).not.toBe(0);
+    const esperado = "rollback parcial restauradas=nenhuma faltam=APP_MIGRATE_IMAGE APP_IMAGE";
+    const marker = JSON.parse(readFileSync(ctx.failed, "utf8")) as { result: string };
+    expect(marker.result).toContain(esperado);
+    expect(readFileSync(ctx.log, "utf8")).toContain(esperado);
+    const lines = callsOf(ctx.mock);
+    expect(lines.some((line) => line.includes("PATCH") && line.includes("APP_MIGRATE_IMAGE") && line.includes(DIG_MIG_PREV))).toBe(true);
+    expect(lines.some((line) => line.includes("PATCH") && line.includes('"key": "APP_IMAGE"') && line.includes(DIG_APP_PREV))).toBe(false);
   });
 
   it("falha no meio do rollback registra rollback parcial", () => {
