@@ -13,7 +13,17 @@ import {
 } from "./TurmaFormulario";
 import { ImportarTurmasModal } from "./ImportarTurmasModal";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { Button } from "@/components/ui/button";
 import { botaoClasses } from "@/components/Botao";
+import { abrirTurma, voltarTurmaParaPlanejada } from "@/server/turmas/acoes";
 import { EstadoVazio } from "@/components/EstadoVazio";
 import { formatarDataCivil } from "@/lib/data-civil";
 
@@ -40,6 +50,21 @@ export interface TurmaRow {
   regraAvaliacao: { id: string; versao: number } | null;
   _count: { alocacoes: number; reservasMatricula: number };
 }
+
+type AcaoStatus = "abrir" | "voltar";
+
+const TEXTOS_ACAO: Record<AcaoStatus, { titulo: string; descricao: string; confirmar: string }> = {
+  abrir: {
+    titulo: "Abrir turma para matrícula?",
+    descricao: "A turma passará a aparecer em Nova matrícula enquanto houver vaga.",
+    confirmar: "Abrir turma",
+  },
+  voltar: {
+    titulo: "Voltar turma para planejada?",
+    descricao: "A turma deixará de aparecer em Nova matrícula.",
+    confirmar: "Voltar para planejada",
+  },
+};
 
 function situacao(status: StatusTurma): { label: string; cls: string } {
   const porStatus: Record<StatusTurma, { label: string; cls: string }> = {
@@ -91,6 +116,24 @@ export function TurmasPainel({
   const [salvandoTurma, setSalvandoTurma] = useState(false);
   const [turmaAlterada, setTurmaAlterada] = useState(false);
   const [confirmandoDescarte, setConfirmandoDescarte] = useState(false);
+  const [confirmando, setConfirmando] = useState<null | { id: string; acao: AcaoStatus }>(null);
+  const [pendente, setPendente] = useState(false);
+  const [erroStatus, setErroStatus] = useState<string | null>(null);
+  const pedirConfirmacao = (id: string, acao: AcaoStatus) => { setErroStatus(null); setConfirmando({ id, acao }); };
+  const fecharConfirmacao = () => { if (pendente) return; setConfirmando(null); setErroStatus(null); };
+  const confirmarStatus = async () => {
+    if (!confirmando || pendente) return;
+    setPendente(true);
+    try {
+      const r = confirmando.acao === "abrir" ? await abrirTurma(confirmando.id) : await voltarTurmaParaPlanejada(confirmando.id);
+      if (r.ok) { setConfirmando(null); setErroStatus(null); } else setErroStatus(r.erro);
+    } catch {
+      setErroStatus("Não foi possível alterar o status da turma. Tente novamente.");
+    } finally {
+      setPendente(false);
+    }
+  };
+  const textos = confirmando ? TEXTOS_ACAO[confirmando.acao] : null;
   const fecharFormulario = () => { setForm("none"); setTurmaAlterada(false); setConfirmandoDescarte(false); };
 
   return (
@@ -136,6 +179,24 @@ export function TurmasPainel({
           />
         </DialogoFormularioTurma>
       )}
+
+      <AlertDialog open={!!confirmando} onOpenChange={(aberto) => { if (!aberto) fecharConfirmacao(); }}>
+        {textos && (
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>{textos.titulo}</AlertDialogTitle>
+              <AlertDialogDescription>{textos.descricao}</AlertDialogDescription>
+            </AlertDialogHeader>
+            {erroStatus && (
+              <p role="alert" className="rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-700">{erroStatus}</p>
+            )}
+            <AlertDialogFooter>
+              <Button variante="secundario" disabled={pendente} onClick={fecharConfirmacao}>Cancelar</Button>
+              <Button disabled={pendente} onClick={confirmarStatus}>{pendente ? "Salvando..." : textos.confirmar}</Button>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        )}
+      </AlertDialog>
 
       {turmas.length === 0 ? (
         <EstadoVazio bloco>Nenhuma turma cadastrada.</EstadoVazio>
@@ -202,6 +263,12 @@ export function TurmasPainel({
                           <Link href={destinoPrepararGrade(t.id)} className="text-xs text-brand-700 hover:text-brand-800">
                             Preparar grade
                           </Link>
+                        )}
+                        {t.status === "PLANEJADA" && (
+                          <Button variante="fantasma" tamanho="sm" onClick={() => pedirConfirmacao(t.id, "abrir")}>Abrir turma</Button>
+                        )}
+                        {t.status === "ABERTA" && t._count.alocacoes + t._count.reservasMatricula === 0 && (
+                          <Button variante="fantasma" tamanho="sm" onClick={() => pedirConfirmacao(t.id, "voltar")}>Voltar para planejada</Button>
                         )}
                         <button
                           onClick={() =>

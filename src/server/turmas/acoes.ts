@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { Papel, StatusTurma, type Prisma } from "@prisma/client";
+import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { gerarCodigo } from "@/lib/codigo";
 import {
@@ -23,6 +24,7 @@ import {
 } from "./schema";
 import { conferirConclusaoTurma } from "./conclusao-agenda";
 import { sincronizarVinculoDocente } from "./vinculo-docente";
+import { exigirTransicao } from "./transicoes";
 import { analisarComDatasDaEscola, ChaveIdempotenciaSchema } from "@/server/_shared/validacao";
 import { marcaIdempotencia, repeticaoIdempotente } from "@/server/_shared/idempotencia";
 import { fusoDaEscola } from "@/server/relatorios/atendimento";
@@ -253,42 +255,81 @@ const EVENTO_STATUS: Record<StatusTurma, string> = {
   CONCLUIDA: "TurmaConcluida",
 };
 
+const IdTurmaSchema = z.string().min(1);
+
+async function transicionarStatusTurma(
+  tx: Prisma.TransactionClient,
+  { id, para, autorId, origem, exigirSemOcupacao = false }: {
+    id: string; para: StatusTurma; autorId: string; origem?: "configuracao-turmas"; exigirSemOcupacao?: boolean;
+  },
+): Promise<void> {
+  await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended('calendario-escola', 0))`;
+  await tx.$queryRaw`SELECT id FROM "Turma" WHERE id = ${id} FOR UPDATE`;
+  await exigirGestorAtual(tx, autorId);
+  const turma = await tx.turma.findUnique({ where: { id } });
+  if (!turma) throw new ErroRegra("Turma não encontrada.");
+  if (turma.status === para) return;
+  if (turma.status === "CONCLUIDA") throw new ErroRegra("Uma turma concluída não pode ser reaberta pela mudança direta de status.");
+  exigirTransicao(turma.status, para);
+  const primeiro = await tx.encontroAgenda.findFirst({ where: { turmaId: id, status: { in: ["PREVISTO", "MINISTRADO"] } },
+    orderBy: [{ inicio: "asc" }, { id: "asc" }], select: { id: true, inicio: true } });
+  const iniciou = turma.status === "EM_ANDAMENTO" || (!!primeiro && primeiro.inicio <= new Date()) ||
+    await tx.aulaDiario.count({ where: { turmaId: id } }) > 0;
+  if (iniciou && (para === "PLANEJADA" || para === "ABERTA"))
+    throw new ErroRegra("A turma já iniciou; não pode retornar a um estado anterior ao início.");
+  if (para === "EM_ANDAMENTO" && (!primeiro || primeiro.inicio > new Date()))
+    throw new ErroRegra("O início exige o primeiro encontro válido da agenda no horário correspondente. Confira a agenda ou o histórico legado.");
+  if (exigirSemOcupacao) {
+    const alocacoes = await tx.alocacaoTurma.count({ where: { turmaId: id, ativa: true } });
+    const reservas = await tx.reservaVagaMatricula.count({ where: { turmaId: id, status: { in: ["ATIVA", "MANTIDA_PENDENCIA"] } } });
+    if (alocacoes + reservas > 0) throw new ErroRegra("Turma com matrícula ou reserva não pode voltar para planejada.");
+  }
+  const conclusao = para === "CONCLUIDA" ? await conferirConclusaoTurma(tx, id) : null;
+  const { count } = await tx.turma.updateMany({ where: { id, status: turma.status }, data: { status: para } });
+  if (count !== 1) throw new ErroRegra("A turma mudou de status; recarregue.");
+  await sincronizarVinculoDocente(tx, id, para === StatusTurma.CONCLUIDA ? null : turma.professorId);
+  await registrarEvento(tx, {
+    tipo: EVENTO_STATUS[para],
+    agregadoTipo: "Turma",
+    agregadoId: id,
+    autorId,
+    payload: {
+      de: turma.status, para, ...(origem ? { origem } : {}), ...(conclusao ? { conclusao } : {}),
+      ...(para === "EM_ANDAMENTO" && primeiro ? { encontroId: primeiro.id, inicioEfetivo: primeiro.inicio.toISOString() } : {}),
+    },
+  });
+}
+
 export async function alterarStatusTurma(id: string, novoStatus: StatusTurma): Promise<Resultado> {
   return executarAcao(async () => {
     const autor = await exigirGestorTurma();
     if (!Object.values(StatusTurma).includes(novoStatus)) throw new ErroRegra("Status de turma inválido.");
 
-    await prisma.$transaction(async (tx) => {
-      await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended('calendario-escola', 0))`;
-      await tx.$queryRaw`SELECT id FROM "Turma" WHERE id = ${id} FOR UPDATE`;
-      await exigirGestorAtual(tx, autor.id);
-      const turma = await tx.turma.findUnique({ where: { id } });
-      if (!turma) throw new ErroRegra("Turma não encontrada.");
-      if (turma.status === novoStatus) return;
-      if (turma.status === "CONCLUIDA") throw new ErroRegra("Uma turma concluída não pode ser reaberta pela mudança direta de status.");
-      const primeiro = await tx.encontroAgenda.findFirst({ where: { turmaId: id, status: { in: ["PREVISTO", "MINISTRADO"] } },
-        orderBy: [{ inicio: "asc" }, { id: "asc" }], select: { id: true, inicio: true } });
-      const iniciou = turma.status === "EM_ANDAMENTO" || (!!primeiro && primeiro.inicio <= new Date()) ||
-        await tx.aulaDiario.count({ where: { turmaId: id } }) > 0;
-      if (iniciou && (novoStatus === "PLANEJADA" || novoStatus === "ABERTA"))
-        throw new ErroRegra("A turma já iniciou; não pode retornar a um estado anterior ao início.");
-      if (novoStatus === "EM_ANDAMENTO" && (!primeiro || primeiro.inicio > new Date()))
-        throw new ErroRegra("O início exige o primeiro encontro válido da agenda no horário correspondente. Confira a agenda ou o histórico legado.");
-      const conclusao = novoStatus === "CONCLUIDA" ? await conferirConclusaoTurma(tx, id) : null;
-      const atualizada = await tx.turma.update({ where: { id }, data: { status: novoStatus } });
-      await sincronizarVinculoDocente(tx, id, novoStatus === StatusTurma.CONCLUIDA ? null : atualizada.professorId);
-      await registrarEvento(tx, {
-        tipo: EVENTO_STATUS[novoStatus],
-        agregadoTipo: "Turma",
-        agregadoId: id,
-        autorId: autor.id,
-        payload: { de: turma.status, para: novoStatus, ...(conclusao ? { conclusao } : {}), ...(novoStatus === "EM_ANDAMENTO" && primeiro ? { encontroId: primeiro.id, inicioEfetivo: primeiro.inicio.toISOString() } : {}) },
-      });
-    });
+    await prisma.$transaction((tx) => transicionarStatusTurma(tx, { id, para: novoStatus, autorId: autor.id }));
 
     revalidatePath(PATH);
     revalidatePath("/diario");
     revalidatePath("/alunos");
     revalidatePath("/inbox");
   });
+}
+
+async function mudarStatusPelaConfiguracao(idBruto: unknown, para: "ABERTA" | "PLANEJADA"): Promise<Resultado> {
+  return executarAcao(async () => {
+    const autor = await exigirGestorTurma();
+    const id = IdTurmaSchema.parse(idBruto);
+    await prisma.$transaction((tx) => transicionarStatusTurma(tx, {
+      id, para, autorId: autor.id, origem: "configuracao-turmas", exigirSemOcupacao: para === "PLANEJADA",
+    }));
+    revalidatePath(PATH);
+    revalidatePath("/matriculas/nova");
+  });
+}
+
+export async function abrirTurma(id: string): Promise<Resultado> {
+  return mudarStatusPelaConfiguracao(id, "ABERTA");
+}
+
+export async function voltarTurmaParaPlanejada(id: string): Promise<Resultado> {
+  return mudarStatusPelaConfiguracao(id, "PLANEJADA");
 }
