@@ -1,0 +1,17 @@
+[Unit]
+Description=Deploy pull do ERP Genius (UAT)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=deployer
+Group=deployer
+UMask=0077
+Environment=PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+ExecStart=/opt/erp-deployer/bin/deploy.sh
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+ReadWritePaths=/var/lib/erp-deployer /var/backups/erp-deployer

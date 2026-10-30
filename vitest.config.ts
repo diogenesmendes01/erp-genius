@@ -10,7 +10,7 @@ export default defineConfig({
   resolve: { alias: { "server-only": path.join(raiz, "src/test/server-only-stub.ts") } },
   test: {
     environment: "node",
-    include: ["src/**/*.test.ts"],
+    include: ["src/**/*.test.ts", "ops/deployer/**/*.test.ts"],
     exclude: ["**/node_modules/**", "src/**/*.int.test.ts"],
     pool: "forks",
     testTimeout: 30_000,

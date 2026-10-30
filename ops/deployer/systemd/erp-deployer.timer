@@ -1,0 +1,12 @@
+[Unit]
+Description=Agenda do deployer do ERP Genius (1 a 2 min)
+
+[Timer]
+OnBootSec=1min
+OnUnitInactiveSec=90s
+AccuracySec=15s
+Persistent=true
+Unit=erp-deployer.service
+
+[Install]
+WantedBy=timers.target

@@ -45,6 +45,8 @@ jobs:
         env:
           NODE_OPTIONS: --max-old-space-size=6144
         run: npx tsc --noEmit
+      - name: TypeScript do deployer (tsc -p ops/deployer --noEmit)
+        run: npx tsc -p ops/deployer --noEmit
 
   lint:
     name: lint
