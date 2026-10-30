@@ -78,18 +78,25 @@ it("corrida no update desfaz a decisão com erro de regra", async () => {
 });
 
 it("move a PENDENTE para o novo instante e exige confirmação fora da janela", async () => {
-  const db = tx(linha());
-  const novo = new Date("2026-10-30T16:00:00.000Z");
-  janela.mockResolvedValueOnce("Fora da janela de envio da escola.");
-  await expect(moverMensagensPendentesDaTarefaTx(db as unknown as Prisma.TransactionClient, "autor", "t1", novo)).rejects.toThrow("Confirme para mover a mensagem mesmo fora da janela");
-  expect(db.intencaoMensagem.updateMany).not.toHaveBeenCalled();
-  janela.mockResolvedValueOnce("Fora da janela de envio da escola.");
-  await moverMensagensPendentesDaTarefaTx(db as unknown as Prisma.TransactionClient, "autor", "t1", novo, { aceitarForaDaJanela: true });
-  expect(db.intencaoMensagem.updateMany).toHaveBeenCalledExactlyOnceWith({
-    where: { id: "m1", tarefaId: "t1", status: "PENDENTE", agendadaPara: quando },
-    data: { agendadaPara: novo },
-  });
-  expect(evento).toHaveBeenCalledExactlyOnceWith(db, expect.objectContaining({ tipo: "MensagemReagendada", payload: expect.objectContaining({ operacao: "REAGENDAR", agendadaPara: novo.toISOString() }) }));
+  // 16:00Z precisa continuar no futuro: moverMensagensPendentesDaTarefaTx compara com Date.now().
+  vi.useFakeTimers({ toFake: ["Date"] });
+  vi.setSystemTime(new Date("2026-10-30T12:00:00.000Z"));
+  try {
+    const db = tx(linha());
+    const novo = new Date("2026-10-30T16:00:00.000Z");
+    janela.mockResolvedValueOnce("Fora da janela de envio da escola.");
+    await expect(moverMensagensPendentesDaTarefaTx(db as unknown as Prisma.TransactionClient, "autor", "t1", novo)).rejects.toThrow("Confirme para mover a mensagem mesmo fora da janela");
+    expect(db.intencaoMensagem.updateMany).not.toHaveBeenCalled();
+    janela.mockResolvedValueOnce("Fora da janela de envio da escola.");
+    await moverMensagensPendentesDaTarefaTx(db as unknown as Prisma.TransactionClient, "autor", "t1", novo, { aceitarForaDaJanela: true });
+    expect(db.intencaoMensagem.updateMany).toHaveBeenCalledExactlyOnceWith({
+      where: { id: "m1", tarefaId: "t1", status: "PENDENTE", agendadaPara: quando },
+      data: { agendadaPara: novo },
+    });
+    expect(evento).toHaveBeenCalledExactlyOnceWith(db, expect.objectContaining({ tipo: "MensagemReagendada", payload: expect.objectContaining({ operacao: "REAGENDAR", agendadaPara: novo.toISOString() }) }));
+  } finally {
+    vi.useRealTimers();
+  }
 });
 
 it("o cancelamento da agendada não importa o cliente prisma global", () => {
