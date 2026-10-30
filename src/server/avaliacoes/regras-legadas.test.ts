@@ -56,6 +56,30 @@ describe("#530 consultarRegrasAvaliacao com versões legadas", () => {
     expect(console.warn).toHaveBeenCalledWith("regra-avaliacao-legada", { regraId: "ilegivel", caminhos: ["titulo"] });
   });
 
+  it("WARN-532-01: última versão ilegível → formulário parte da legível mais recente", async () => {
+    txNivel("B1", [versao("ilegivel", regraLegadaIlegivel(), 2), versao("valida", regraAvaliacaoTeste(), 1)]);
+    const r = await consultarRegrasAvaliacao({ nivelId: "nivel" });
+    if (!r.ok || !r.dado) throw new Error(JSON.stringify(r));
+    expect(r.dado.conteudoInicial).toEqual(regraAvaliacaoTeste());
+  });
+
+  it("WARN-532-01: legível fora da página atual também é encontrada", async () => {
+    const pagina = Array.from({ length: 21 }, (_, i) => versao(`ilegivel-${i}`, regraLegadaIlegivel(), 30 - i));
+    txNivel("B1", pagina);
+    const findMany = (m.tx.versaoRegraAvaliacao as { findMany: ReturnType<typeof vi.fn> }).findMany;
+    findMany.mockResolvedValueOnce(pagina).mockResolvedValueOnce([...pagina, { conteudo: regrasLegadasPortugues().B1 }]);
+    const r = await consultarRegrasAvaliacao({ nivelId: "nivel" });
+    if (!r.ok || !r.dado) throw new Error(JSON.stringify(r));
+    expect(r.dado.conteudoInicial).toMatchObject({ titulo: "Português B1" });
+  });
+
+  it("WARN-532-01: nenhuma versão legível → formulário vazio", async () => {
+    txNivel("B1", [versao("ilegivel", regraLegadaIlegivel(), 2), versao("ilegivel-2", regraLegadaIlegivel(), 1)]);
+    const r = await consultarRegrasAvaliacao({ nivelId: "nivel" });
+    if (!r.ok || !r.dado) throw new Error(JSON.stringify(r));
+    expect(r.dado.conteudoInicial).toBeNull();
+  });
+
   it("Pré A1/C1/C2 sem versão seguem iguais", async () => {
     for (const codigo of ["Pré A1", "C1", "C2"]) {
       txNivel(codigo, []);

@@ -25,14 +25,14 @@ export default async function RegraNivelPage({ params, searchParams }: { params:
       <h2 className="text-lg font-medium">Versão {v.versao} — {v.decisao ? v.decisao.aprovada ? "Publicada" : "Rejeitada" : "Aguardando conferência"}</h2>
       <p>Preparada por {v.preparador.nome} em {formatarInstanteExibicao(v.criadaEm, fusoExibicao, "UTC").texto} ({fusoExibicao}; origem UTC).</p><p className="whitespace-pre-wrap">Motivo: {v.motivo}</p>
       {v.conteudo ? <>
-        {v.legado && <p role="status" className="rounded border p-3">Versão em formato antigo: campos ausentes são exibidos com valores de compatibilidade, apenas para leitura. Publique uma nova versão para usar esta regra.</p>}
+        {v.legado && <p role="status" className="rounded border p-3">Versão em formato antigo — somente leitura. Publique uma nova versão para este nível. Campos ausentes aparecem com valores de compatibilidade, apenas para exibição.</p>}
         <ResumoRegra conteudo={v.conteudo} />
-      </> : <p role="status" className="rounded border p-3">Versão em formato antigo — conteúdo indisponível para revisão.</p>}
+      </> : <p role="status" className="rounded border p-3">Versão em formato antigo — somente leitura. Publique uma nova versão para este nível. Conteúdo indisponível para revisão.</p>}
       {v.decisao && <p className="whitespace-pre-wrap">Decisão por {v.decisao.decisor.nome}: {v.decisao.motivo}</p>}
       {v.podeDecidir && <DecidirRegra regraId={v.id} conteudoHash={v.conteudoHash} podeAprovar={v.podeAprovar} />}
       {!v.decisao && !v.podeDecidir && (v.legado ? <p>Versões em formato antigo não podem ser decididas. Prepare uma nova versão.</p> : <p>A decisão precisa ser registrada por outra pessoa autorizada.</p>)}
     </article>)}
     <nav aria-label="Páginas do histórico" className="flex gap-4">{d.pagina > 1 && <Link href={`?pagina=${d.pagina - 1}`}>Anterior</Link>}<span>Página {d.pagina}</span>{d.temProxima && <Link href={`?pagina=${d.pagina + 1}`}>Próxima</Link>}</nav>
-    {d.pagina === 1 && <ProporRegra key={d.ultimaVersao} nivelId={nivelId} versaoEsperada={d.ultimaVersao} inicial={d.regras.find(v => v.conteudo)?.conteudo ?? undefined} />}
+    {d.pagina === 1 && <ProporRegra key={d.ultimaVersao} nivelId={nivelId} versaoEsperada={d.ultimaVersao} inicial={d.conteudoInicial ?? undefined} />}
   </section>;
 }

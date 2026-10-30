@@ -35,11 +35,20 @@ export async function consultarRegrasAvaliacao(input: { nivelId: string; pagina?
       const regras = await tx.versaoRegraAvaliacao.findMany({ where: { nivelId: d.nivelId }, orderBy: { versao: "desc" }, skip: (d.pagina - 1) * 20, take: 21, select });
       const vigente = await tx.versaoRegraAvaliacao.findFirst({ where: { nivelId: d.nivelId, decisao: { aprovada: true } }, orderBy: { versao: "desc" }, select: { id: true, versao: true } });
       const ultima = await tx.versaoRegraAvaliacao.findFirst({ where: { nivelId: d.nivelId }, orderBy: { versao: "desc" }, select: { id: true, versao: true } });
-      return { nivel, ultimaVersao: ultima?.versao ?? 0,
+      const lidas = regras.slice(0, 20).map(r => ({ r, leitura: lerConteudoRegra(r.conteudo) }));
+      // #530 (WARN-532-01): o formulário de nova versão parte da versão LEGÍVEL mais recente, mesmo
+      // que a última seja ilegível; sem nenhuma legível, abre vazio.
+      let conteudoInicial = lidas.find(l => l.leitura.ok)?.leitura;
+      if (!conteudoInicial && regras.length) {
+        for (const v of await tx.versaoRegraAvaliacao.findMany({ where: { nivelId: d.nivelId }, orderBy: { versao: "desc" }, select: { conteudo: true } })) {
+          const l = lerConteudoRegra(v.conteudo);
+          if (l.ok) { conteudoInicial = l; break; }
+        }
+      }
+      return { nivel, ultimaVersao: ultima?.versao ?? 0, conteudoInicial: conteudoInicial?.ok ? conteudoInicial.conteudo : null,
         // #530: leitura tolerante a versões legadas. Versão legada (normalizada ou ilegível) é só leitura:
         // não pode ser decidida, e a ilegível não entra como conteúdo inicial do formulário.
-        regras: regras.slice(0, 20).map(r => {
-          const leitura = lerConteudoRegra(r.conteudo);
+        regras: lidas.map(({ r, leitura }) => {
           if (!leitura.ok) console.warn("regra-avaliacao-legada", { regraId: r.id, caminhos: leitura.caminhos });
           const decidivel = !r.decisao && r.preparador.id !== u.id && !leitura.legado;
           return { ...r, conteudo: leitura.ok ? leitura.conteudo : null, legado: leitura.legado, ilegivel: !leitura.ok,

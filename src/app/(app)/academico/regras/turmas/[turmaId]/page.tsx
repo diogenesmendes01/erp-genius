@@ -15,9 +15,9 @@ const nomesCampos: Record<keyof ConteudoRegra, string> = {
 };
 type Versao = { versao: number; conteudo: ConteudoRegra | null; legado?: boolean };
 function ConteudoVersao({ v }: { v: Versao }) {
-  if (!v.conteudo) return <p role="status" className="rounded border p-3">Versão em formato antigo — conteúdo indisponível para revisão.</p>;
+  if (!v.conteudo) return <p role="status" className="rounded border p-3">Versão em formato antigo — somente leitura. Publique uma nova versão para este nível. Conteúdo indisponível para revisão.</p>;
   return <>
-    {v.legado && <p role="status" className="rounded border p-3">Versão em formato antigo: campos ausentes são exibidos com valores de compatibilidade, apenas para leitura.</p>}
+    {v.legado && <p role="status" className="rounded border p-3">Versão em formato antigo — somente leitura. Publique uma nova versão para este nível. Campos ausentes aparecem com valores de compatibilidade, apenas para exibição.</p>}
     <ResumoRegra conteudo={v.conteudo} />
   </>;
 }

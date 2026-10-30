@@ -53,8 +53,8 @@ describe("migração de regra da turma", () => {
     mocks.historico.mockResolvedValue({ ok: true, dado: { propostas: [{ ...proposta, decisao: null, pendencia: "Regra de avaliação em formato antigo. Publique uma nova versão para este nível.",
       origem: { versao: 1, conteudo: {}, legado: true }, destino: { versao: 2, conteudo: null, legado: true } }], pagina: 1, temProxima: false } });
     const html = renderToStaticMarkup(await Page({ params: Promise.resolve({ turmaId: "qa_turma_aberta-kids" }), searchParams: Promise.resolve({}) }));
-    expect(html).toContain("valores de compatibilidade");
-    expect(html).toContain("Versão em formato antigo — conteúdo indisponível para revisão.");
+    expect(html).toContain("Versão em formato antigo — somente leitura. Publique uma nova versão para este nível. Campos ausentes");
+    expect(html).toContain("Versão em formato antigo — somente leitura. Publique uma nova versão para este nível. Conteúdo indisponível para revisão.");
     expect(html).toContain("Regra de avaliação em formato antigo.");
     expect(html).not.toContain("Required");
   });
