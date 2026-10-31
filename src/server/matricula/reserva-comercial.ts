@@ -5,7 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { executarAcao, exigirSessaoComPapel, ErroPermissao, ErroRegra } from "@/server/_shared";
 import { escopoComercialAtual } from "@/server/_shared/escopo-comercial";
 import { conferirTurmaParaReserva } from "./reserva-disponibilidade";
-import { reservarVagaMatriculaTx } from "./reserva-vaga-tx";
+import { conferenciaDeVendaNaListagem, reservarVagaMatriculaTx } from "./reserva-vaga-tx";
 
 const permitidos: Papel[] = [Papel.ADMINISTRADOR, Papel.SECRETARIA_ACADEMICA, Papel.VENDEDOR, Papel.GERENTE_COMERCIAL];
 const Entrada = z.object({ matriculaId: z.string().min(1), turmaId: z.string().min(1), motivo: z.string().trim().min(5).max(2000), chaveIdempotencia: z.string().min(8).max(100) }).strict();
@@ -51,7 +51,8 @@ export async function consultarTurmasParaReserva(input: { matriculaId: string; p
       const registros = [];
       for (const turma of turmas.slice(0, 10)) {
         const { janela, conferencia } = await conferirTurmaParaReserva(tx, turma);
-        registros.push({ id: turma.id, codigo: turma.codigo, nome: turma.nome, elegivel: conferencia.elegivel, impedimentos: conferencia.impedimentos, vagas: conferencia.vagas, limiteEntrada: janela?.limiteEntrada ?? null, fuso: janela?.fusoAdmissao ?? null });
+        const venda = conferenciaDeVendaNaListagem(turma.status, conferencia);
+        registros.push({ id: turma.id, codigo: turma.codigo, nome: turma.nome, elegivel: venda.elegivel, impedimentos: venda.impedimentos, vagas: venda.vagas, limiteEntrada: janela?.limiteEntrada ?? null, fuso: janela?.fusoAdmissao ?? null });
       }
       return { matricula: { id: m.id, codigo: m.codigo, status: m.status }, reservas: m.reservasVaga, prazoMinutos: config?.prazoReservaMinutos ?? null, podeReservar, registros, pagina: d.pagina, possuiMais: turmas.length > 10 };
     }, { isolationLevel: Prisma.TransactionIsolationLevel.RepeatableRead, timeout: 20000 });

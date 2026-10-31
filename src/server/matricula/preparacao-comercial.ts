@@ -7,6 +7,7 @@ import { prisma } from "@/lib/prisma";
 import { executarAcao, exigirSessaoComPapel, ErroPermissao, ErroRegra, registrarEvento } from "@/server/_shared";
 import { escopoComercialAtual } from "@/server/_shared/escopo-comercial";
 import { conferirTurmaParaReserva } from "./reserva-disponibilidade";
+import { conferenciaDeVendaNaListagem } from "./reserva-vaga-tx";
 import { CadastroInicialSchema, PreparacaoComercialSchema, prepararContratacaoTx } from "./preparacao-comercial-tx";
 import { sugestaoNovoCadastroDoLead } from "./sugestao-novo-cadastro";
 
@@ -78,7 +79,8 @@ export async function consultarOfertasPreparacao(input: { leadId: string; oferta
       const registros = [];
       for (const turma of turmas.slice(0, 10)) {
         const { conferencia } = await conferirTurmaParaReserva(tx, turma);
-        registros.push({ id: turma.id, nome: turma.codigo ?? turma.nome ?? "Turma sem código", elegivel: conferencia.elegivel, vagas: conferencia.vagas, impedimentos: conferencia.impedimentos });
+        const venda = conferenciaDeVendaNaListagem(turma.status, conferencia);
+        registros.push({ id: turma.id, nome: turma.codigo ?? turma.nome ?? "Turma sem código", elegivel: venda.elegivel, vagas: venda.vagas, impedimentos: venda.impedimentos });
       }
       const projetar = (o: NonNullable<typeof selecionada>) => ({ id: o.id, formaAgenda: o.formaAgenda, versaoEntrada: o.versaoEntrada, produtoId: o.produtoId, paisId: o.paisId, moeda: o.moeda, moedaCoerente: o.moeda === o.pais.moedaLocal, nome: `${o.produto.idioma.nome} · ${o.produto.modalidade.nome} · ${o.pais.nome}` });
       return { ofertas: ofertas.slice(0, 20).map(projetar), selecionada: selecionada ? projetar(selecionada) : null, pagina: d.pagina, possuiMais: ofertas.length > 20,

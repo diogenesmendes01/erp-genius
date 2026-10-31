@@ -62,6 +62,8 @@ import { beforeEach, expect, it, vi } from "vitest";
 import { prisma } from "@/lib/prisma";
 import { criarUsuario, seedCatalogoMinimo, truncarBanco } from "@/test/integracao";
 import { reservarVagaMatriculaTx } from "./reserva-vaga-tx";
+import { conferirTurmaParaReserva } from "./reserva-disponibilidade";
+import { alterarStatusTurma } from "@/server/turmas/acoes";
 let turmaId: string, autorId: string, matriculas: string[];
 beforeEach(async () => {
   await truncarBanco();
@@ -71,7 +73,7 @@ beforeEach(async () => {
   autorId = autor.id; authMock.mockResolvedValue({ user: { id: autorId } });
   const produto = await prisma.produto.findUniqueOrThrow({ where: { id: c.produto.id } });
   const nivel = await prisma.nivel.create({ data: { idiomaId: produto.idiomaId, codigo: "RESERVA", ordem: 1 } });
-  const turma = await prisma.turma.create({ data: { modalidadeId: produto.modalidadeId, nivelId: nivel.id, professorId: professor.id, capacidade: 1 } }); turmaId = turma.id;
+  const turma = await prisma.turma.create({ data: { modalidadeId: produto.modalidadeId, nivelId: nivel.id, professorId: professor.id, capacidade: 1, status: "ABERTA" } }); turmaId = turma.id;
   const janela = await prisma.janelaAdmissaoTurma.create({ data: { turmaId, preparadorId: autorId, versao: 1, limiteEntrada: new Date("2099-12-31"), fusoAdmissao: "UTC", motivo: "Fixture janela", chaveIdempotencia: "janela-reserva", entradaHash: "fixture" } });
   await prisma.decisaoJanelaAdmissao.create({ data: { propostaId: janela.id, decisorId: gestor.id, aprovada: true, motivo: "Fixture decisão" } });
   const calendario = await prisma.versaoCalendarioEscolar.create({ data: { versao: 1, preparadorId: autorId, fusoInstitucional: "UTC", periodos: [], motivo: "Fixture", chaveIdempotencia: "calendario-fixture", entradaHash: "fixture" } });
@@ -1690,4 +1692,94 @@ it.each([
   expect((await prisma.matricula.findUniqueOrThrow({ where: { id: r.matriculaId } })).status).not.toBe("ATIVA");
   await prisma.usuario.update({ where: { id: financeiroEntrada.id }, data: { ativo: false } });
   expect((await consultarPagamentosEntradaParticular(r.matriculaId)).ok).toBe(false);
+});
+
+const MENSAGEM_TURMA_FORA_DE_VENDA = "A turma selecionada não está aberta para venda. Abra a turma antes de reservar a vaga.";
+
+it("N1: reservarVagaContratacao em PLANEJADA com grade, janela e vaga é rejeitada sem criar reserva", async () => {
+  await prisma.turma.update({ where: { id: turmaId }, data: { status: "PLANEJADA" } });
+  const r = await reservarVagaContratacao({ matriculaId: matriculas[0], turmaId, motivo: "Reserva em turma planejada", chaveIdempotencia: "reserva-planejada-n1" });
+  expect(r).toEqual({ ok: false, erro: MENSAGEM_TURMA_FORA_DE_VENDA });
+  expect(await prisma.reservaVagaMatricula.count()).toBe(0);
+});
+
+it("N2: EM_ANDAMENTO aceita a reserva e CONCLUIDA é rejeitada com a mensagem da venda", async () => {
+  await prisma.turma.update({ where: { id: turmaId }, data: { status: "CONCLUIDA" } });
+  const recusa = await reservarVagaContratacao({ matriculaId: matriculas[1], turmaId, motivo: "Reserva em turma concluída", chaveIdempotencia: "reserva-concluida-n2" });
+  expect(recusa).toEqual({ ok: false, erro: MENSAGEM_TURMA_FORA_DE_VENDA });
+  expect(await prisma.reservaVagaMatricula.count()).toBe(0);
+  await prisma.turma.update({ where: { id: turmaId }, data: { status: "EM_ANDAMENTO" } });
+  const aceita = await reservarVagaContratacao({ matriculaId: matriculas[0], turmaId, motivo: "Reserva em turma em andamento", chaveIdempotencia: "reserva-andamento-n2" });
+  expect(aceita).toMatchObject({ ok: true });
+  expect(await prisma.reservaVagaMatricula.count({ where: { turmaId, status: "ATIVA" } })).toBe(1);
+});
+
+it("N3: ABERTA cria a reserva", async () => {
+  const r = await reservarVagaContratacao({ matriculaId: matriculas[0], turmaId, motivo: "Reserva em turma aberta", chaveIdempotencia: "reserva-aberta-n3" });
+  expect(r.ok).toBe(true);
+  expect(await prisma.reservaVagaMatricula.count({ where: { turmaId, status: "ATIVA" } })).toBe(1);
+});
+
+it("N4: prepararContratacaoTx em PLANEJADA sofre rollback sem matrícula, preparação ou evento", async () => {
+  await prisma.turma.update({ where: { id: turmaId }, data: { status: "PLANEJADA" } });
+  const anterior = await prisma.matricula.findUniqueOrThrow({ where: { id: matriculas[0] } });
+  const vendedor = await criarUsuario(["VENDEDOR"]);
+  const lead = await prisma.oportunidade.create({ data: { nome: "Preparação em turma planejada", vendedorDonoId: vendedor.id } });
+  const matriculasAntes = await prisma.matricula.count();
+  const eventosAntes = await prisma.evento.count();
+  const entrada = { autorId, leadId: lead.id, alunoId: anterior.alunoId, produtoId: anterior.produtoId, paisId: anterior.paisId, turmaId, regime: "MENSALIDADE" as const, taxaProposta: "100", valorServicoProposto: "200", motivo: "Preparação em turma planejada", chaveIdempotencia: "preparacao-planejada-n4" };
+  await expect(prisma.$transaction((tx) => prepararContratacaoTx(tx, entrada))).rejects.toThrow(MENSAGEM_TURMA_FORA_DE_VENDA);
+  expect(await prisma.matricula.count()).toBe(matriculasAntes);
+  expect(await prisma.preparacaoComercialMatricula.count()).toBe(0);
+  expect(await prisma.reservaVagaMatricula.count()).toBe(0);
+  expect(await prisma.evento.count()).toBe(eventosAntes);
+});
+
+it("N5: reserva criada em ABERTA continua conferível, mantida e cancelada depois da volta para PLANEJADA", async () => {
+  const criada = await prisma.$transaction((tx) => reservarVagaMatriculaTx(tx, dados(0)));
+  const gestor = await criarUsuario(["GERENTE_PEDAGOGICO"]);
+  authMock.mockResolvedValue({ user: { id: gestor.id } });
+  expect(await alterarStatusTurma(turmaId, "PLANEJADA")).toEqual({ ok: true, dado: undefined });
+  expect(await prisma.turma.findUniqueOrThrow({ where: { id: turmaId } })).toMatchObject({ status: "PLANEJADA" });
+  const reserva = await prisma.reservaVagaMatricula.findUniqueOrThrow({ where: { id: criada.id } });
+  expect(reserva.status).toBe("ATIVA");
+  const turma = await prisma.turma.findUniqueOrThrow({ where: { id: turmaId }, select: { id: true, status: true, capacidade: true } });
+  const conferencia = await prisma.$transaction((tx) => conferirTurmaParaReserva(tx, turma, criada.id));
+  expect(conferencia.conferencia.impedimentos).not.toContain("TURMA_NAO_ABERTA");
+  authMock.mockResolvedValue({ user: { id: autorId } });
+  const pendencias = await consultarPendenciasPreparacao(matriculas[0]);
+  if (!pendencias.ok || !pendencias.dado) throw new Error("Diagnóstico ausente");
+  expect(pendencias.dado.pendencias.map((p) => p.codigo).join(" ")).not.toContain("TURMA_NAO_ABERTA");
+  const excecao = await prisma.$transaction((tx) => conferirContinuidadeReserva(tx, criada.id));
+  expect(excecao.conferencia.impedimentos).not.toContain("TURMA_NAO_ABERTA");
+  const cobranca = await prisma.cobranca.create({ data: { matriculaId: matriculas[0], tipo: "MATRICULA", valorOriginal: 100, valorNegociado: 100, moeda: "CRC", vencimento: new Date() } });
+  await prisma.pagamentoInformado.create({ data: { cobrancaId: cobranca.id, autorId, valor: 100, moeda: "CRC", forma: "TRANSFERENCIA", dataPagamento: new Date(), chaveIdempotencia: "informe-reserva-n5" } });
+  await prisma.$executeRaw`UPDATE "ReservaVagaMatricula" SET "expiraEm" = "criadaEm" + interval '1 millisecond' WHERE id = ${criada.id}`;
+  expect(await conferirReservaSecretaria({ reservaId: criada.id })).toMatchObject({ ok: true, dado: { status: "MANTIDA_PENDENCIA" } });
+  expect((await prisma.reservaVagaMatricula.findUniqueOrThrow({ where: { id: criada.id } })).status).toBe("MANTIDA_PENDENCIA");
+  const proposta = await prepararResolucaoReserva({ reservaId: criada.id, versaoAnterior: 0, tipo: "LIBERAR", motivo: "Cancelar reserva de turma planejada", tratamentoContratacao: "Contratação segue no fluxo próprio, sem nova reserva.", chaveIdempotencia: "cancelar-reserva-n5" });
+  if (!proposta.ok || !proposta.dado) throw new Error("Proposta de cancelamento ausente");
+  const admin = await criarUsuario(["ADMINISTRADOR"]);
+  authMock.mockResolvedValue({ user: { id: admin.id } });
+  expect(await decidirResolucaoReserva({ propostaId: proposta.dado.id, aprovar: true, motivo: "Cancelamento conferido" })).toMatchObject({ ok: true });
+  expect((await prisma.reservaVagaMatricula.findUniqueOrThrow({ where: { id: criada.id } })).status).toBe("LIBERADA");
+  expect((await prisma.turma.findUniqueOrThrow({ where: { id: turmaId } })).status).toBe("PLANEJADA");
+});
+
+it("N6: listagens mostram PLANEJADA inelegível com TURMA_NAO_ABERTA e mantêm EM_ANDAMENTO elegível", async () => {
+  const matricula = await prisma.matricula.findUniqueOrThrow({ where: { id: matriculas[0] } });
+  const lead = await prisma.oportunidade.create({ data: { nome: "Ofertas da preparação", vendedorDonoId: autorId } });
+  const oferta = await prisma.produtoPais.findUniqueOrThrow({ where: { produtoId_paisId: { produtoId: matricula.produtoId, paisId: matricula.paisId } } });
+  const ver = async (status: "ABERTA" | "PLANEJADA" | "EM_ANDAMENTO", elegivel: boolean, impedimentos: string[]) => {
+    await prisma.turma.update({ where: { id: turmaId }, data: { status } });
+    const lista = await consultarTurmasParaReserva({ matriculaId: matriculas[0] });
+    if (!lista.ok || !lista.dado) throw new Error("Listagem ausente");
+    expect(lista.dado.registros.find((t) => t.id === turmaId)).toMatchObject({ elegivel, impedimentos });
+    const ofertas = await consultarOfertasPreparacao({ leadId: lead.id, ofertaId: oferta.id });
+    if (!ofertas.ok || !ofertas.dado) throw new Error("Ofertas ausentes");
+    expect(ofertas.dado.turmas.find((t) => t.id === turmaId)).toMatchObject({ elegivel, impedimentos });
+  };
+  await ver("ABERTA", true, []);
+  await ver("PLANEJADA", false, ["TURMA_NAO_ABERTA"]);
+  await ver("EM_ANDAMENTO", true, []);
 });

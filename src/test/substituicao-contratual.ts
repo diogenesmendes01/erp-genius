@@ -32,7 +32,7 @@ export async function prepararFixtureSubstituicaoContratual(authMock: AuthMock, 
   const c = await seedCatalogoMinimo();
   await prisma.produtoPais.updateMany({ data: { taxaPreviaAssinatura: false, adiantamentoHoraExigido: false } });
   const nivel = await prisma.nivel.create({ data: { idiomaId: c.produto.idiomaId, codigo: "Q116", ordem: 1 } });
-  const turma = await prisma.turma.create({ data: { modalidadeId: c.produto.modalidadeId, nivelId: nivel.id, professorId: professor.id, capacidade: 2 } });
+  const turma = await prisma.turma.create({ data: { modalidadeId: c.produto.modalidadeId, nivelId: nivel.id, professorId: professor.id, capacidade: 2, status: "ABERTA" } });
   const janela = await prisma.janelaAdmissaoTurma.create({ data: { turmaId: turma.id, preparadorId: secretaria.id, versao: 1, limiteEntrada: new Date("2099-12-31"), fusoAdmissao: "UTC", motivo: "Janela de teste", chaveIdempotencia: "janela-q116", entradaHash: "fixture" } });
   await prisma.decisaoJanelaAdmissao.create({ data: { propostaId: janela.id, decisorId: admin.id, aprovada: true, motivo: "Janela conferida" } });
   const calendario = await prisma.versaoCalendarioEscolar.create({ data: { versao: 1, preparadorId: secretaria.id, fusoInstitucional: "UTC", periodos: [], motivo: "Calendário de teste", chaveIdempotencia: "calendario-q116", entradaHash: "fixture" } });

@@ -21,6 +21,7 @@ vi.mock("@/server/_shared/sessao", async (original) => {
 });
 
 import { prisma } from "@/lib/prisma";
+import { ErroRegra } from "@/server/_shared";
 import { criarUsuario, eventosDo, seedCatalogoMinimo, truncarBanco } from "@/test/integracao";
 import { abrirTurma, alterarStatusTurma, voltarTurmaParaPlanejada } from "./acoes";
 import { listarTurmasAbertas } from "@/server/matricula/consultas";
@@ -256,9 +257,9 @@ describe("voltarTurmaParaPlanejada (#539)", () => {
     expect(await tipos(c.turma.id)).toEqual([]);
   });
 
-  it("V3: com a volta na frente, a reserva concorrente espera o commit e só é criada depois (pré-venda em PLANEJADA, por design)", async () => {
+  it("V3: com a volta na frente, a reserva concorrente espera o commit e é rejeitada sem criar vaga", async () => {
     const c = await cenario({ status: "ABERTA" });
-    let liberadoEm = 0;
+    let liberadoEm = 0, resolvidaEm = 0;
     const pronto = sinal(), liberar = sinal();
     let pid = 0;
     const bloqueador = prisma.$transaction(async (tx) => {
@@ -270,33 +271,46 @@ describe("voltarTurmaParaPlanejada (#539)", () => {
     await Promise.race([pronto.promessa, bloqueador]);
     const voltando = voltarTurmaParaPlanejada(c.turma.id);
     await esperarBloqueados(pid, 1);
-    const reservando = prisma.$transaction((tx) => reservarVagaMatriculaTx(tx, c.reserva(0)), { timeout: 10000 });
+    const reservando = prisma.$transaction((tx) => reservarVagaMatriculaTx(tx, c.reserva(0)), { timeout: 10000 }).then((r) => r, (erro: unknown) => {
+      resolvidaEm = Date.now();
+      throw erro;
+    });
     try { await esperarBloqueados(pid, 2); } finally { liberadoEm = Date.now(); liberar.liberar(); await bloqueador; }
-    const [volta, reserva] = await Promise.all([voltando, reservando]);
+    const volta = await voltando;
+    const erro = await reservando.then(() => null, (falha: unknown) => falha);
     expect(volta).toEqual({ ok: true, dado: undefined });
-    const criada = await prisma.reservaVagaMatricula.findUniqueOrThrow({ where: { id: reserva.id } });
-    const [evento] = await eventosDo("Turma", c.turma.id);
-    expect(evento.tipo).toBe("TurmaPlanejada");
-    expect(criada.criadaEm.getTime()).toBeGreaterThanOrEqual(liberadoEm);
+    expect(erro).toBeInstanceOf(ErroRegra);
+    expect((erro as ErroRegra).message).toBe("A turma selecionada não está aberta para venda. Abra a turma antes de reservar a vaga.");
+    expect(resolvidaEm).toBeGreaterThanOrEqual(liberadoEm);
+    expect(await prisma.reservaVagaMatricula.count({ where: { turmaId: c.turma.id } })).toBe(0);
     expect(await statusDe(c.turma.id)).toBe("PLANEJADA");
+    expect((await eventosDo("Turma", c.turma.id)).map((e) => e.tipo)).toEqual(["TurmaPlanejada"]);
   });
 
-  it("V3: disputa Promise.all repetida nunca termina PLANEJADA com reserva criada antes da volta", async () => {
+  it("V3: disputa Promise.all repetida termina ABERTA com 1 reserva ou PLANEJADA com 0", async () => {
     for (let rodada = 0; rodada < 5; rodada++) {
       await truncarBanco();
       const c = await cenario({ status: "ABERTA" });
-      const [volta] = await Promise.all([voltarTurmaParaPlanejada(c.turma.id), prisma.$transaction((tx) => reservarVagaMatriculaTx(tx, c.reserva(0)))]);
+      const [volta, reserva] = await Promise.allSettled([
+        voltarTurmaParaPlanejada(c.turma.id),
+        prisma.$transaction((tx) => reservarVagaMatriculaTx(tx, c.reserva(0))),
+      ]);
       const status = await statusDe(c.turma.id);
+      const n = await prisma.reservaVagaMatricula.count({ where: { turmaId: c.turma.id } });
       const evento = (await eventosDo("Turma", c.turma.id)).find((e) => e.tipo === "TurmaPlanejada");
-      if (volta.ok) {
+      const voltaOk = volta.status === "fulfilled" && volta.value.ok;
+      if (voltaOk) {
         expect(status).toBe("PLANEJADA");
+        expect(n).toBe(0);
         expect(evento).toBeDefined();
+        expect(reserva.status).toBe("rejected");
       } else {
-        expect(volta.erro).toBe("Turma com matrícula ou reserva não pode voltar para planejada.");
         expect(status).toBe("ABERTA");
+        expect(n).toBe(1);
         expect(evento).toBeUndefined();
+        expect(reserva.status).toBe("fulfilled");
+        expect(volta.status === "fulfilled" ? volta.value : { ok: false, erro: "" }).toEqual({ ok: false, erro: "Turma com matrícula ou reserva não pode voltar para planejada." });
       }
-      expect(await prisma.reservaVagaMatricula.count({ where: { turmaId: c.turma.id } })).toBe(1);
     }
   });
 });
