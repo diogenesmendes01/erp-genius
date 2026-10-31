@@ -81,8 +81,9 @@ describe("notificações", () => {
   it("lista as 20 últimas só do usuário e marca como lida", async () => {
     const ids: string[] = [];
     for (let i = 0; i < 22; i++) {
+      const refId = await tarefa({ titulo: `N${i}` });
       const n = await prisma.notificacaoUsuario.create({
-        data: { usuarioId: vendedor.id, tipo: "LEMBRETE_TAREFA", refTipo: "Tarefa", refId: `t${i}`, titulo: `N${i}`, criadaEm: new Date(agora.getTime() + i * 1000) },
+        data: { usuarioId: vendedor.id, tipo: "LEMBRETE_TAREFA", refTipo: "Tarefa", refId, titulo: `N${i}`, criadaEm: new Date(agora.getTime() + i * 1000) },
       });
       ids.push(n.id);
     }

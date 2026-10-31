@@ -21,7 +21,7 @@ async function exigir(u: Parameters<typeof capacidadesAria>[0], cap: CapacidadeA
 }
 
 async function travarAgente(tx: Tx): Promise<void> {
-  await tx.agenteIA.upsert({ where: { id: ID_AGENTE }, create: { id: ID_AGENTE }, update: {} });
+  await tx.$executeRaw`INSERT INTO "AgenteIA" ("id") VALUES (${ID_AGENTE}) ON CONFLICT ("id") DO NOTHING`;
   await tx.$queryRaw`SELECT "id" FROM "AgenteIA" WHERE "id" = ${ID_AGENTE} FOR UPDATE`;
 }
 

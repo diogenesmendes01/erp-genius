@@ -1,6 +1,6 @@
 import {afterAll,afterEach,beforeEach,expect,it,vi} from "vitest";
 import {Papel,type Prisma} from "@prisma/client";
-import {writeFile} from "node:fs/promises";
+import {mkdir,writeFile} from "node:fs/promises";
 import {resolve} from "node:path";
 import type {UsuarioSessao} from "@/server/_shared/sessao";
 type CapturaCatalogo={model:"tipoDocumento";operation:"findMany";consultaRealConcluida:true;quantidade:number};
@@ -31,7 +31,7 @@ import {cenarioCadastroPessoa,conectarCadastro,barreiraCadastro,type CenarioCada
 import {obterContato} from "./contatos";
 import {escopoComercialAtual} from "@/server/_shared/escopo-comercial";
 function request(ativo=true){const cache=new Map<unknown,unknown>();m.react!.__SERVER_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE.A=ativo?{getCacheForType(criar:()=>unknown){if(!cache.has(criar))cache.set(criar,criar());return cache.get(criar);}}:null;}
-beforeEach(async()=>{m.armada=false;m.chegou=null;m.capturas.length=0;await truncarBanco();request();});afterEach(()=>{m.armada=false;request(false);});afterAll(async()=>{await prisma.$disconnect();await writeFile(resolve("output","inbox-340-cache-canarios-"+process.pid+"-private.json"),JSON.stringify({canarios:m.canarios,revogacoes:m.revogacoes,qualificacao:"SQL real e callthrough da TX protegida; React.cache real/dispatcher instrumental, não renderizaçãoRSC."},null,2)+"\n","utf8");});
+beforeEach(async()=>{m.armada=false;m.chegou=null;m.capturas.length=0;await truncarBanco();request();});afterEach(()=>{m.armada=false;request(false);});afterAll(async()=>{await prisma.$disconnect();await mkdir("output",{recursive:true});await writeFile(resolve("output","inbox-340-cache-canarios-"+process.pid+"-private.json"),JSON.stringify({canarios:m.canarios,revogacoes:m.revogacoes,qualificacao:"SQL real e callthrough da TX protegida; React.cache real/dispatcher instrumental, não renderizaçãoRSC."},null,2)+"\n","utf8");});
 async function preparar(){const c=await cenarioCadastroPessoa();await prisma.pessoa.update({where:{id:c.pessoa.id},data:{documento:"FICTICIO-CACHE340",tipoDocumentoId:c.tipo.id,nascimento:new Date("2000-02-29T00:00:00Z")}});return c;}
 async function confirmarCanario(){
  const chegou=barreiraCadastro(),soltar=barreiraCadastro(),registro:CanarioCatalogo={sqlCanarioConfirmado:false,capturaConfirmada:false,retornoConfirmado:false,capturas:[]};m.canarios.push(registro);m.capturas.length=0;m.armada=true;m.chegou=chegou.liberar;m.soltar=soltar.promessa;

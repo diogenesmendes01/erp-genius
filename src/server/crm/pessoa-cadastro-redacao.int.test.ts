@@ -1,5 +1,5 @@
 import {afterAll,beforeEach,expect,it,vi} from "vitest";
-import {writeFile} from "node:fs/promises";
+import {mkdir,writeFile} from "node:fs/promises";
 const m=vi.hoisted(()=>{const nomeApp="inbox340-redacao-"+process.pid,url=new URL(process.env.DATABASE_URL!);url.searchParams.set("connection_limit","1");url.searchParams.set("application_name",nomeApp);process.env.DATABASE_URL=url.toString();(globalThis as {prisma?:unknown}).prisma=undefined;return {auth:vi.fn(),nomeApp};});
 vi.mock("@/lib/auth",()=>({auth:m.auth}));vi.mock("next/cache",()=>({revalidatePath:vi.fn()}));
 import {prisma} from "@/lib/prisma";
@@ -9,7 +9,7 @@ import {editarPessoa} from "./contatos";
 const canaisCanario:string[][]=[];
 function coletarLogger(){const capturas:{canal:string;texto:string}[]=[];const spies=(["log","error","warn","info"] as const).map(canal=>{const original=console[canal].bind(console);return vi.spyOn(console,canal).mockImplementation((...args:unknown[])=>{capturas.push({canal,texto:args.map(String).join(" ")});original(...args);});});return {capturas,restaurar(){for(const spy of spies)spy.mockRestore();}};}
 async function canarioLogger(log:ReturnType<typeof coletarLogger>){await expect(prisma.$executeRaw`SELECT 1/0`).rejects.toThrow();await vi.waitFor(()=>expect(log.capturas.some(x=>x.texto.includes("prisma:error"))).toBe(true));const canais=[...new Set(log.capturas.filter(x=>x.texto.includes("prisma:error")).map(x=>x.canal))];expect(canais.length).toBeGreaterThan(0);canaisCanario.push(canais);}
-beforeEach(async()=>{vi.restoreAllMocks();await truncarBanco();});afterAll(async()=>{await prisma.$disconnect();await writeFile("output/inbox-340-redacao-canais-"+process.pid+"-private.json",JSON.stringify({canaisCanario,emissaoRealPreservada:true},null,2)+"\n","utf8");});
+beforeEach(async()=>{vi.restoreAllMocks();await truncarBanco();});afterAll(async()=>{await prisma.$disconnect();await mkdir("output",{recursive:true});await writeFile("output/inbox-340-redacao-canais-"+process.pid+"-private.json",JSON.stringify({canaisCanario,emissaoRealPreservada:true},null,2)+"\n","utf8");});
 async function comFKRetida(c:CenarioCadastroPessoa,durante:(observer:Awaited<ReturnType<typeof conectarCadastro>>,pid:number,banco:string)=>Promise<void>){
  const empresa=await prisma.empresa.create({data:{nome:"Empresa fictícia340"}});
  await prisma.oportunidade.create({data:{nome:"Empresa visível340",empresaId:empresa.id,vendedorDonoId:c.dono.id,b2b:true}});
