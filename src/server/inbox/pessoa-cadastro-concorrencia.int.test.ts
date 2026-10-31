@@ -1,4 +1,4 @@
-import {writeFile} from "node:fs/promises";
+import {mkdir,writeFile} from "node:fs/promises";
 import {resolve} from "node:path";
 import {PrismaClient} from "@prisma/client";
 import {afterAll,beforeEach,expect,it,vi} from "vitest";
@@ -51,7 +51,7 @@ it("dois writers reais serializados preservam Doc quando o outro altera só nome
   if(pb)await pb.then(v=>{resultadoB=typeof v==="boolean"?v:typeof v;},e=>{resultadoB={erro:e instanceof Error?e.name:"desconhecido"};});
   await a.$disconnect();await b.$disconnect();await observer.end();
   const writers=grafo.filter(n=>n.pid===writerA?.pid||n.pid===writerB?.pid);
-  await writeFile(arquivo,JSON.stringify({versao:1,fixturePessoaId:c.pessoa.id,holderPid:holder.pid,writerA,writerB,observadoEm,validado,grafo,caminhos,diretosAoHolder:writers.filter(n=>n.bloqueadores.includes(holder.pid)).length,resultados:{a:resultadoA,b:resultadoB},qualificacao:"SQL real; grafo só de PIDs conhecidos. Não inferir hard/soft nem deadlock geral além da observação."},null,2)+"\n","utf8");
+  await mkdir("output",{recursive:true});await writeFile(arquivo,JSON.stringify({versao:1,fixturePessoaId:c.pessoa.id,holderPid:holder.pid,writerA,writerB,observadoEm,validado,grafo,caminhos,diretosAoHolder:writers.filter(n=>n.bloqueadores.includes(holder.pid)).length,resultados:{a:resultadoA,b:resultadoB},qualificacao:"SQL real; grafo só de PIDs conhecidos. Não inferir hard/soft nem deadlock geral além da observação."},null,2)+"\n","utf8");
   console.info("GRAFO_340",arquivo);
  }
  await expect(pa).resolves.toBe(true);await expect(pb).resolves.toBe(true);

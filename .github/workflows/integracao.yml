@@ -1,13 +1,17 @@
 name: Integração
 
 on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
   schedule:
     - cron: "17 6 * * *"
   workflow_dispatch:
 
 concurrency:
-  group: integracao-${{ github.ref }}
-  cancel-in-progress: false
+  group: integracao-${{ github.event_name == 'pull_request' && format('pr-{0}', github.head_ref) || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 permissions:
   contents: read
@@ -62,6 +66,8 @@ jobs:
         env:
           PRISMA_TESTE_TIMEOUT_MS: "540000"
         run: node scripts/prisma-teste.mjs migrate deploy
+      - name: Diretório de artefatos dos testes
+        run: mkdir -p output
       - name: Testes de integração (npm run test:int, shard ${{ matrix.shard }}/4)
         timeout-minutes: 100
         run: npm run test:int -- --shard=${{ matrix.shard }}/4

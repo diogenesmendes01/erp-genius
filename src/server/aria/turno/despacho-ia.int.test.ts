@@ -15,6 +15,7 @@ import { seedCanal } from "@/test/integracao-whatsapp";
 import { garantirAtendimento } from "@/server/whatsapp/atendimentos";
 import { despacharFila } from "@/server/whatsapp/despachante";
 import { enviarTextoInbox } from "@/server/whatsapp/acoes";
+import { assumirConversaDaAria } from "@/server/whatsapp/acoes-atendimento";
 import { processarMensagemNormalizada } from "@/server/whatsapp/inbound";
 import { Papel } from "@prisma/client";
 import { configPadrao } from "../config-schema";
@@ -97,6 +98,8 @@ describe("despacho da resposta da Aria", () => {
     const m = await c.inbound("Quero saber das turmas de inglês");
     expect(await processarTurnoAria(m.id, { provedor })).toMatchObject({ resultado: "RESPONDEU" });
     authMock.mockResolvedValue({ user: { id: c.dono.id } });
+    expect(await enviarTextoInbox({ conversaId: c.at.id, texto: "Oi, aqui é a Camila" })).toEqual({ ok: false, erro: "Assuma a conversa para responder." });
+    expect((await assumirConversaDaAria(c.at.id)).ok).toBe(true);
     expect((await enviarTextoInbox({ conversaId: c.at.id, texto: "Oi, aqui é a Camila" })).ok).toBe(true);
     expect(await despacharFila()).toMatchObject({ despachadas: 0 });
     expect(enviarTextoMock).toHaveBeenCalledTimes(1);

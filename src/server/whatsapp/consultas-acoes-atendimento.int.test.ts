@@ -21,7 +21,11 @@ async function cenario(finalidade: "AGENDA" | "VENDAS" = "AGENDA") {
   const gc = await criarUsuario([Papel.GERENTE_COMERCIAL], "Gerente");
   const numero = await criarNumeroSetor({ telefoneE164: "+5511999990001", setores: ["COMERCIAL"], finalidade, donoId: null });
   const contato = await prisma.contatoWhatsApp.create({ data: { telefoneE164: "+50688880001" } });
-  const a = await prisma.$transaction((tx) => garantirAtendimento(tx, { numeroId: numero.id, contatoId: contato.id, finalidade: "COMERCIAL" }));
+  const lead = finalidade === "VENDAS"
+    ? await prisma.oportunidade.create({ data: { nome: "Lead do cartão", telefoneE164: "+50688880001", vendedorDonoId: v1.id } })
+    : null;
+  if (lead) await prisma.contatoWhatsApp.update({ where: { id: contato.id }, data: { leadId: lead.id } });
+  const a = await prisma.$transaction((tx) => garantirAtendimento(tx, { numeroId: numero.id, contatoId: contato.id, finalidade: "COMERCIAL", leadId: lead?.id }));
   await prisma.atendimentoWhatsApp.update({ where: { id: a.id }, data: { responsavelId: v1.id, status: "EM_ATENDIMENTO" } });
   return { v1, v2, gc, a, numero };
 }
@@ -76,7 +80,7 @@ describe("contatosParaCartao", () => {
     const outro = await criarNumeroSetor({ telefoneE164: "+5511999990003", setores: ["COMERCIAL", "SECRETARIA"] });
     await prisma.numeroWhatsApp.update({ where: { id: outro.id }, data: { rotulo: "Atendimento geral" } });
     const excluido = await criarNumeroSetor({ telefoneE164: "+5511999990004", setores: ["COMERCIAL"] });
-    await prisma.numeroWhatsApp.update({ where: { id: excluido.id }, data: { excluidoEm: new Date() } });
+    await prisma.numeroWhatsApp.update({ where: { id: excluido.id }, data: { excluidoEm: new Date(), ativo: false } });
     como(v1);
     expect((await contatosParaCartao(a.id)).map((c) => c.id)).toEqual([outro.id, numero.id]);
   });

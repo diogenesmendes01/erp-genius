@@ -13,8 +13,8 @@ const HASH_BASE: Record<string, string> = {
   guard_identidade_destinatario_aviso_agenda: "e572bc232c823241c656314c34df1a6b",
   validar_contexto_financeiro_atendimento_whatsapp: "f73eef8ea4a2c107115e367c3ea04e3d",
   validar_destino_direto_pedagogico_atual_265: "9df47f4f56f5a61122f28f62836b5af2",
-  validar_intencao_destino_direto_pedagogico_atual_265: "21a332497435c9ebf0ad188fcee87c38",
-  validar_intencao_pedagogica_264: "c891ca31460be811c75b15cba3e85409",
+  validar_intencao_destino_direto_pedagogico_atual_265: "ac24a1419e0c1318e323acc6ce13630c",
+  validar_intencao_pedagogica_264: "606b521da7db02c204d865db0bb6bb05",
 };
 
 describe("pg_proc do WhatsApp", () => {

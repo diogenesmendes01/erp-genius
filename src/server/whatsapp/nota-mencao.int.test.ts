@@ -171,6 +171,7 @@ it("falha na criação de um aviso reverte a nota inteira, sem skipDuplicates", 
 it("sino preserva SLA21 e lembrete22 depois de vinte mencoes com leitura revogada", async () => {
   const { a, destino } = await cenario();
   const usuario = await prisma.usuario.update({ where: { id: destino.id }, data: { papeis: [Papel.VENDEDOR] } });
+  await prisma.tarefa.create({ data: { id: "tarefa-ficticia-p2", titulo: "Lembrete legado", tipo: "LIGACAO", setor: "COMERCIAL", fusoOrigem: "UTC", responsavelId: destino.id } });
   await prisma.notificacaoUsuario.createMany({ data: [
     ...Array.from({ length: 20 }, (_, i) => ({
       id: "p2-revogada-" + i, usuarioId: destino.id, tipo: "MENCAO_NOTA" as const,
